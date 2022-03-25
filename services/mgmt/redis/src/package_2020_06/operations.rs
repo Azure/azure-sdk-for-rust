@@ -180,20 +180,20 @@ pub mod operations {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -426,20 +426,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -496,20 +496,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -576,20 +576,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -658,20 +658,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -743,20 +743,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -828,20 +828,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -902,20 +902,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -977,20 +977,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1050,20 +1050,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1128,20 +1128,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1207,20 +1207,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1292,20 +1292,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1374,20 +1374,20 @@ pub mod redis {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1516,20 +1516,20 @@ pub mod firewall_rules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1595,20 +1595,20 @@ pub mod firewall_rules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1679,20 +1679,20 @@ pub mod firewall_rules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1771,20 +1771,20 @@ pub mod firewall_rules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1912,20 +1912,20 @@ pub mod patch_schedules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1991,20 +1991,20 @@ pub mod patch_schedules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2075,20 +2075,20 @@ pub mod patch_schedules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2167,20 +2167,20 @@ pub mod patch_schedules {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2308,20 +2308,20 @@ pub mod linked_server {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2394,20 +2394,20 @@ pub mod linked_server {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2486,20 +2486,20 @@ pub mod linked_server {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2561,20 +2561,20 @@ pub mod linked_server {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2706,20 +2706,20 @@ pub mod private_endpoint_connections {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2785,20 +2785,20 @@ pub mod private_endpoint_connections {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2857,6 +2857,11 @@ pub mod private_endpoint_connections {
     }
     pub mod put {
         use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Created201(models::PrivateEndpointConnection),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2864,20 +2869,20 @@ pub mod private_endpoint_connections {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2889,7 +2894,7 @@ pub mod private_endpoint_connections {
             pub(crate) properties: models::PrivateEndpointConnection,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnection, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/redis/{}/privateEndpointConnections/{}",
@@ -2920,8 +2925,9 @@ pub mod private_endpoint_connections {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateEndpointConnection =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+                            Ok(Response::Created201(rsp_value))
                         }
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ErrorResponse =
@@ -2950,20 +2956,20 @@ pub mod private_endpoint_connections {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3044,20 +3050,20 @@ pub mod private_link_resources {
                 status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {

@@ -3,12 +3,16 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 pub type CanonicalSupportPlanInfo = Vec<CanonicalSupportPlanInfoDefinition>;
+#[doc = "Definition object with the properties of a canonical plan"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalSupportPlanInfoDefinition {
+    #[doc = "Support plan type."]
     #[serde(rename = "supportPlanType", default, skip_serializing_if = "Option::is_none")]
     pub support_plan_type: Option<canonical_support_plan_info_definition::SupportPlanType>,
+    #[doc = "Flag to indicate if this support plan type is currently enabled for the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "The one time charge status for the subscription."]
     #[serde(rename = "oneTimeCharge", default, skip_serializing_if = "Option::is_none")]
     pub one_time_charge: Option<canonical_support_plan_info_definition::OneTimeCharge>,
 }
@@ -19,6 +23,7 @@ impl CanonicalSupportPlanInfoDefinition {
 }
 pub mod canonical_support_plan_info_definition {
     use super::*;
+    #[doc = "Support plan type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportPlanType {
         #[serde(rename = "essential")]
@@ -28,6 +33,7 @@ pub mod canonical_support_plan_info_definition {
         #[serde(rename = "advanced")]
         Advanced,
     }
+    #[doc = "The one time charge status for the subscription."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OneTimeCharge {
         #[serde(rename = "no")]
@@ -38,8 +44,10 @@ pub mod canonical_support_plan_info_definition {
         OnReenabled,
     }
 }
+#[doc = "The properties of the Canonical support plan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalSupportPlanProperties {
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
 }
@@ -50,6 +58,7 @@ impl CanonicalSupportPlanProperties {
 }
 pub mod canonical_support_plan_properties {
     use super::*;
+    #[doc = "The provisioning state of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -61,14 +70,19 @@ pub mod canonical_support_plan_properties {
         Upgrading,
     }
 }
+#[doc = "The status of the Canonical support plan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CanonicalSupportPlanResponseEnvelope {
+    #[doc = "The id of the ARM resource, e.g. \"/subscriptions/{id}/providers/Microsoft.Addons/supportProvider/{supportProviderName}/supportPlanTypes/{planTypeName}\"."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the Canonical support plan, i.e. \"essential\", \"standard\" or \"advanced\"."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Microsoft.Addons/supportProvider"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The properties of the Canonical support plan."]
     pub properties: CanonicalSupportPlanProperties,
 }
 impl CanonicalSupportPlanResponseEnvelope {
@@ -81,9 +95,12 @@ impl CanonicalSupportPlanResponseEnvelope {
         }
     }
 }
+#[doc = "Error description and code explaining why an operation failed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
+    #[doc = "Description of the error."]
     pub message: String,
+    #[doc = "Service specific error code which serves as the substatus for the HTTP error code."]
     pub code: String,
 }
 impl ErrorDefinition {
@@ -92,8 +109,10 @@ impl ErrorDefinition {
     }
 }
 pub type OperationList = Vec<OperationsDefinition>;
+#[doc = "List of supported operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListValue {
+    #[doc = "List of supported operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<OperationList>,
 }
@@ -102,10 +121,13 @@ impl OperationListValue {
         Self::default()
     }
 }
+#[doc = "Definition object with the name and properties of an operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDefinition {
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display object with properties of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationsDisplayDefinition>,
 }
@@ -114,14 +136,19 @@ impl OperationsDefinition {
         Self::default()
     }
 }
+#[doc = "Display object with properties of the operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDisplayDefinition {
+    #[doc = "Resource provider of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Short description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }

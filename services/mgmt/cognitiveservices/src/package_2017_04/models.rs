@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Check Domain availability parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckDomainAvailabilityParameter {
+    #[doc = "The subdomain name to use."]
     #[serde(rename = "subdomainName")]
     pub subdomain_name: String,
+    #[doc = "The Type of the resource."]
     #[serde(rename = "type")]
     pub type_: String,
 }
@@ -14,14 +17,19 @@ impl CheckDomainAvailabilityParameter {
         Self { subdomain_name, type_ }
     }
 }
+#[doc = "Check Domain availability result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckDomainAvailabilityResult {
+    #[doc = "Indicates the given SKU is available or not."]
     #[serde(rename = "isSubdomainAvailable", default, skip_serializing_if = "Option::is_none")]
     pub is_subdomain_available: Option<bool>,
+    #[doc = "Reason why the SKU is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "The subdomain name to use."]
     #[serde(rename = "subdomainName", default, skip_serializing_if = "Option::is_none")]
     pub subdomain_name: Option<String>,
+    #[doc = "The Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -30,10 +38,14 @@ impl CheckDomainAvailabilityResult {
         Self::default()
     }
 }
+#[doc = "Check SKU availability parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckSkuAvailabilityParameter {
+    #[doc = "The SKU of the resource."]
     pub skus: Vec<SkuName>,
+    #[doc = "Required. Indicates the type of cognitive service account."]
     pub kind: CognitiveServicesAccountKind,
+    #[doc = "The Type of the resource."]
     #[serde(rename = "type")]
     pub type_: String,
 }
@@ -42,18 +54,25 @@ impl CheckSkuAvailabilityParameter {
         Self { skus, kind, type_ }
     }
 }
+#[doc = "Check SKU availability result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckSkuAvailabilityResult {
+    #[doc = "Required. Indicates the type of cognitive service account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<CognitiveServicesAccountKind>,
+    #[doc = "The Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of SKU."]
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<SkuName>,
+    #[doc = "Indicates the given SKU is available or not."]
     #[serde(rename = "skuAvailable", default, skip_serializing_if = "Option::is_none")]
     pub sku_available: Option<bool>,
+    #[doc = "Reason why the SKU is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "Additional error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -62,8 +81,10 @@ impl CheckSkuAvailabilityResult {
         Self::default()
     }
 }
+#[doc = "Check SKU availability result list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckSkuAvailabilityResultList {
+    #[doc = "Check SKU availability result list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CheckSkuAvailabilityResult>,
 }
@@ -72,26 +93,37 @@ impl CheckSkuAvailabilityResultList {
         Self::default()
     }
 }
+#[doc = "Cognitive Services Account is an Azure resource representing the provisioned account, its type, location and SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccount {
+    #[doc = "Entity Tag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The id of the created account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Required. Indicates the type of cognitive service account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<CognitiveServicesAccountKind>,
+    #[doc = "The location of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The name of the created account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties of Cognitive Services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CognitiveServicesAccountProperties>,
+    #[doc = "The SKU of the cognitive services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Managed service identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
@@ -100,26 +132,37 @@ impl CognitiveServicesAccount {
         Self::default()
     }
 }
+#[doc = "The api properties for special APIs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountApiProperties {
+    #[doc = "(QnAMaker Only) The runtime endpoint of QnAMaker."]
     #[serde(rename = "qnaRuntimeEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub qna_runtime_endpoint: Option<String>,
+    #[doc = "(QnAMaker Only) The Azure Search endpoint key of QnAMaker."]
     #[serde(rename = "qnaAzureSearchEndpointKey", default, skip_serializing_if = "Option::is_none")]
     pub qna_azure_search_endpoint_key: Option<String>,
+    #[doc = "(QnAMaker Only) The Azure Search endpoint id of QnAMaker."]
     #[serde(rename = "qnaAzureSearchEndpointId", default, skip_serializing_if = "Option::is_none")]
     pub qna_azure_search_endpoint_id: Option<String>,
+    #[doc = "(Bing Search Only) The flag to enable statistics of Bing Search."]
     #[serde(rename = "statisticsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub statistics_enabled: Option<bool>,
+    #[doc = "(Personalization Only) The flag to enable statistics of Bing Search."]
     #[serde(rename = "eventHubConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_connection_string: Option<String>,
+    #[doc = "(Personalization Only) The storage account connection string."]
     #[serde(rename = "storageAccountConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_connection_string: Option<String>,
+    #[doc = "(Metrics Advisor Only) The Azure AD Client Id (Application Id)."]
     #[serde(rename = "aadClientId", default, skip_serializing_if = "Option::is_none")]
     pub aad_client_id: Option<String>,
+    #[doc = "(Metrics Advisor Only) The Azure AD Tenant Id."]
     #[serde(rename = "aadTenantId", default, skip_serializing_if = "Option::is_none")]
     pub aad_tenant_id: Option<String>,
+    #[doc = "(Metrics Advisor Only) The super user of Metrics Advisor."]
     #[serde(rename = "superUser", default, skip_serializing_if = "Option::is_none")]
     pub super_user: Option<String>,
+    #[doc = "(Metrics Advisor Only) The website name of Metrics Advisor."]
     #[serde(rename = "websiteName", default, skip_serializing_if = "Option::is_none")]
     pub website_name: Option<String>,
 }
@@ -128,8 +171,10 @@ impl CognitiveServicesAccountApiProperties {
         Self::default()
     }
 }
+#[doc = "The list of cognitive services accounts operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountEnumerateSkusResult {
+    #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesResourceAndSku>,
 }
@@ -138,10 +183,13 @@ impl CognitiveServicesAccountEnumerateSkusResult {
         Self::default()
     }
 }
+#[doc = "The access keys for the cognitive services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountKeys {
+    #[doc = "Gets the value of key 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key1: Option<String>,
+    #[doc = "Gets the value of key 2."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }
@@ -151,10 +199,13 @@ impl CognitiveServicesAccountKeys {
     }
 }
 pub type CognitiveServicesAccountKind = String;
+#[doc = "The list of cognitive services accounts operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountListResult {
+    #[doc = "The link used to get the next page of accounts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesAccount>,
 }
@@ -163,34 +214,49 @@ impl CognitiveServicesAccountListResult {
         Self::default()
     }
 }
+#[doc = "Properties of Cognitive Services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountProperties {
+    #[doc = "Gets the status of the cognitive services account at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cognitive_services_account_properties::ProvisioningState>,
+    #[doc = "Endpoint of the created account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
+    #[doc = "The internal identifier."]
     #[serde(rename = "internalId", default, skip_serializing_if = "Option::is_none")]
     pub internal_id: Option<String>,
+    #[doc = "Gets the capabilities of the cognitive services account. Each item indicates the capability of a specific feature. The values are read-only and for reference only."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<SkuCapability>,
+    #[doc = "If the resource is migrated from an existing key."]
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
+    #[doc = "Sku change info of account."]
     #[serde(rename = "skuChangeInfo", default, skip_serializing_if = "Option::is_none")]
     pub sku_change_info: Option<CognitiveServicesAccountSkuChangeInfo>,
+    #[doc = "Optional subdomain name used for token-based authentication."]
     #[serde(rename = "customSubDomainName", default, skip_serializing_if = "Option::is_none")]
     pub custom_sub_domain_name: Option<String>,
+    #[doc = "A set of rules governing the network accessibility."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
+    #[doc = "Properties to configure Encryption"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "The storage accounts for this resource."]
     #[serde(rename = "userOwnedStorage", default, skip_serializing_if = "Vec::is_empty")]
     pub user_owned_storage: Vec<UserOwnedStorage>,
+    #[doc = "The private endpoint connection associated with the Cognitive Services account."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "Whether or not public endpoint access is allowed for this account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<cognitive_services_account_properties::PublicNetworkAccess>,
+    #[doc = "The api properties for special APIs."]
     #[serde(rename = "apiProperties", default, skip_serializing_if = "Option::is_none")]
     pub api_properties: Option<CognitiveServicesAccountApiProperties>,
+    #[doc = "Gets the date of cognitive services account creation."]
     #[serde(rename = "dateCreated", default, skip_serializing_if = "Option::is_none")]
     pub date_created: Option<String>,
 }
@@ -201,6 +267,7 @@ impl CognitiveServicesAccountProperties {
 }
 pub mod cognitive_services_account_properties {
     use super::*;
+    #[doc = "Gets the status of the cognitive services account at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -211,18 +278,23 @@ pub mod cognitive_services_account_properties {
         Succeeded,
         Failed,
     }
+    #[doc = "Whether or not public endpoint access is allowed for this account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Sku change info of account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountSkuChangeInfo {
+    #[doc = "Gets the count of downgrades."]
     #[serde(rename = "countOfDowngrades", default, skip_serializing_if = "Option::is_none")]
     pub count_of_downgrades: Option<f64>,
+    #[doc = "Gets the count of upgrades after downgrades."]
     #[serde(rename = "countOfUpgradesAfterDowngrades", default, skip_serializing_if = "Option::is_none")]
     pub count_of_upgrades_after_downgrades: Option<f64>,
+    #[doc = "Gets the last change date."]
     #[serde(rename = "lastChangeDate", default, skip_serializing_if = "Option::is_none")]
     pub last_change_date: Option<String>,
 }
@@ -231,10 +303,13 @@ impl CognitiveServicesAccountSkuChangeInfo {
         Self::default()
     }
 }
+#[doc = "Cognitive Services resource type and SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesResourceAndSku {
+    #[doc = "Resource Namespace and Type"]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "The SKU of the cognitive services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -243,10 +318,13 @@ impl CognitiveServicesResourceAndSku {
         Self::default()
     }
 }
+#[doc = "Properties to configure Encryption"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
+    #[doc = "Properties to configure keyVault Properties"]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
+    #[doc = "Enumerates the possible value of keySource for Encryption"]
     #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
 }
@@ -257,6 +335,7 @@ impl Encryption {
 }
 pub mod encryption {
     use super::*;
+    #[doc = "Enumerates the possible value of keySource for Encryption"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         #[serde(rename = "Microsoft.CognitiveServices")]
@@ -270,8 +349,10 @@ pub mod encryption {
         }
     }
 }
+#[doc = "Cognitive Services error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "Cognitive Services error body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
 }
@@ -280,9 +361,12 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "Cognitive Services error body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorBody {
+    #[doc = "error code"]
     pub code: String,
+    #[doc = "error message"]
     pub message: String,
 }
 impl ErrorBody {
@@ -290,14 +374,19 @@ impl ErrorBody {
         Self { code, message }
     }
 }
+#[doc = "Managed service identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "Type of managed service identity."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
+    #[doc = "Tenant of managed service identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Principal Id of managed service identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The list of user assigned identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
@@ -308,6 +397,7 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "Type of managed service identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
@@ -315,8 +405,10 @@ pub mod identity {
         UserAssigned,
     }
 }
+#[doc = "A rule governing the accessibility from a specific ip address or ip range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpRule {
+    #[doc = "An IPv4 address range in CIDR notation, such as '124.56.78.91' (simple IP address) or '124.56.78.0/24' (all addresses that start with 124.56.78)."]
     pub value: String,
 }
 impl IpRule {
@@ -324,12 +416,16 @@ impl IpRule {
         Self { value }
     }
 }
+#[doc = "Properties to configure keyVault Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
+    #[doc = "Name of the Key from KeyVault"]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
+    #[doc = "Version of the Key from KeyVault"]
     #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
+    #[doc = "Uri of KeyVault"]
     #[serde(rename = "keyVaultUri", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_uri: Option<String>,
 }
@@ -338,10 +434,13 @@ impl KeyVaultProperties {
         Self::default()
     }
 }
+#[doc = "A metric name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricName {
+    #[doc = "The name of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The friendly name of the metric."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -350,12 +449,16 @@ impl MetricName {
         Self::default()
     }
 }
+#[doc = "A set of rules governing the network accessibility."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSet {
+    #[doc = "The default action when no rule from ipRules and from virtualNetworkRules match. This is only used after the bypass property has been evaluated."]
     #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<network_rule_set::DefaultAction>,
+    #[doc = "The list of IP address rules."]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_rules: Vec<IpRule>,
+    #[doc = "The list of virtual network rules."]
     #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
 }
@@ -366,20 +469,26 @@ impl NetworkRuleSet {
 }
 pub mod network_rule_set {
     use super::*;
+    #[doc = "The default action when no rule from ipRules and from virtualNetworkRules match. This is only used after the bypass property has been evaluated."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
         Allow,
         Deny,
     }
 }
+#[doc = "The operation supported by Cognitive Services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayInfo {
+    #[doc = "The description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The action that users can perform, based on their permission level."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Service provider: Microsoft Cognitive Services."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -388,14 +497,19 @@ impl OperationDisplayInfo {
         Self::default()
     }
 }
+#[doc = "The operation supported by Cognitive Services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The operation supported by Cognitive Services."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
+    #[doc = "The origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Additional properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -404,10 +518,13 @@ impl OperationEntity {
         Self::default()
     }
 }
+#[doc = "The list of cognitive services accounts operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
+    #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
@@ -416,8 +533,10 @@ impl OperationEntityListResult {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -426,14 +545,18 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint Connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the PrivateEndpointConnectProperties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+    #[doc = "Entity Tag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The location of the private endpoint connection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -442,8 +565,10 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "A list of private endpoint connections"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
@@ -452,12 +577,16 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the PrivateEndpointConnectProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The Private Endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The private link resource group ids."]
     #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
     pub group_ids: Vec<String>,
 }
@@ -470,6 +599,7 @@ impl PrivateEndpointConnectionProperties {
         }
     }
 }
+#[doc = "The private endpoint connection status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
     Pending,
@@ -477,10 +607,12 @@ pub enum PrivateEndpointServiceConnectionStatus {
     Rejected,
     Disconnected,
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -489,8 +621,10 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
@@ -499,14 +633,19 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "The private link resource Private link DNS zone name."]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
@@ -515,12 +654,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -529,8 +672,10 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "Regenerate key parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyParameters {
+    #[doc = "key name to generate (Key1|Key2)"]
     #[serde(rename = "keyName")]
     pub key_name: regenerate_key_parameters::KeyName,
 }
@@ -541,18 +686,23 @@ impl RegenerateKeyParameters {
 }
 pub mod regenerate_key_parameters {
     use super::*;
+    #[doc = "key name to generate (Key1|Key2)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         Key1,
         Key2,
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -561,18 +711,25 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Describes an available Cognitive Services SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSku {
+    #[doc = "The type of resource the SKU applies to."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "The name of SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the tier of Cognitive Services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "The Kind of resources that are supported in this SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "The set of locations that the SKU is available."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
+    #[doc = "The restrictions because of which SKU cannot be used. This is empty if there are no restrictions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<ResourceSkuRestrictions>,
 }
@@ -583,8 +740,10 @@ impl ResourceSku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictionInfo {
+    #[doc = "Locations where the SKU is restricted"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
+    #[doc = "List of availability zones where the SKU is restricted."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
@@ -593,14 +752,18 @@ impl ResourceSkuRestrictionInfo {
         Self::default()
     }
 }
+#[doc = "Describes restrictions of a SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictions {
+    #[doc = "The type of restrictions."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_sku_restrictions::Type>,
+    #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
     #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
     pub restriction_info: Option<ResourceSkuRestrictionInfo>,
+    #[doc = "The reason for restriction."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
@@ -611,20 +774,25 @@ impl ResourceSkuRestrictions {
 }
 pub mod resource_sku_restrictions {
     use super::*;
+    #[doc = "The type of restrictions."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Location,
         Zone,
     }
+    #[doc = "The reason for restriction."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonCode {
         QuotaId,
         NotAvailableForSubscription,
     }
 }
+#[doc = "The Get Skus operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkusResult {
+    #[doc = "The list of skus available for the subscription."]
     pub value: Vec<ResourceSku>,
+    #[doc = "The uri to fetch the next page of Skus."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -633,9 +801,12 @@ impl ResourceSkusResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "The SKU of the cognitive services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The name of SKU."]
     pub name: SkuName,
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
@@ -646,6 +817,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Free,
@@ -654,10 +826,13 @@ pub mod sku {
         Enterprise,
     }
 }
+#[doc = "SkuCapability indicates the capability of a certain feature."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuCapability {
+    #[doc = "The name of the SkuCapability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The value of the SkuCapability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -667,6 +842,7 @@ impl SkuCapability {
     }
 }
 pub type SkuName = String;
+#[doc = "The unit of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UnitType {
     Count,
@@ -677,20 +853,28 @@ pub enum UnitType {
     BytesPerSecond,
     Milliseconds,
 }
+#[doc = "The usage data for a usage request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "The unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<UnitType>,
+    #[doc = "A metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricName>,
+    #[doc = "The quota period used to summarize the usage values."]
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
     pub quota_period: Option<String>,
+    #[doc = "Maximum value for this metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
+    #[doc = "Current value for this metric."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<f64>,
+    #[doc = "Next reset time for current quota."]
     #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
     pub next_reset_time: Option<String>,
+    #[doc = "Cognitive Services account quota usage status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<usage::Status>,
 }
@@ -701,6 +885,7 @@ impl Usage {
 }
 pub mod usage {
     use super::*;
+    #[doc = "Cognitive Services account quota usage status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Included,
@@ -709,8 +894,10 @@ pub mod usage {
         Unknown,
     }
 }
+#[doc = "The response to a list usage request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesResult {
+    #[doc = "The list of usages for Cognitive Service account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
@@ -719,10 +906,13 @@ impl UsagesResult {
         Self::default()
     }
 }
+#[doc = "User-assigned managed identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
+    #[doc = "Azure Active Directory principal ID associated with this Identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Client App Id associated with this identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
@@ -731,8 +921,10 @@ impl UserAssignedIdentity {
         Self::default()
     }
 }
+#[doc = "The user owned storage for Cognitive Services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserOwnedStorage {
+    #[doc = "Full resource id of a Microsoft.Storage resource."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -741,11 +933,15 @@ impl UserOwnedStorage {
         Self::default()
     }
 }
+#[doc = "A rule governing the accessibility from a specific virtual network."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
+    #[doc = "Full resource id of a vnet subnet, such as '/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/subnet1'."]
     pub id: String,
+    #[doc = "Gets the state of virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "Ignore missing vnet service endpoint or not."]
     #[serde(rename = "ignoreMissingVnetServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub ignore_missing_vnet_service_endpoint: Option<bool>,
 }

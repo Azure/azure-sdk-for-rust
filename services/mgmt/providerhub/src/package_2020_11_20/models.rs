@@ -61,7 +61,9 @@ impl CheckinManifestInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckinManifestParams {
+    #[doc = "The environment supplied to the checkin manifest operation."]
     pub environment: String,
+    #[doc = "The baseline ARM manifest location supplied to the checkin manifest operation."]
     #[serde(rename = "baselineArmManifestLocation")]
     pub baseline_arm_manifest_location: String,
 }
@@ -73,10 +75,12 @@ impl CheckinManifestParams {
         }
     }
 }
+#[doc = "Rollout details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the rollout."]
     pub properties: serde_json::Value,
 }
 impl CustomRollout {
@@ -91,6 +95,7 @@ impl CustomRollout {
 pub struct CustomRolloutArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomRollout>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -164,10 +169,12 @@ impl CustomRolloutStatus {
         Self::default()
     }
 }
+#[doc = "Default rollout definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the rollout."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -180,6 +187,7 @@ impl DefaultRollout {
 pub struct DefaultRolloutArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DefaultRollout>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -282,16 +290,22 @@ pub mod default_rollout_status {
         Failed,
     }
 }
+#[doc = "Standard error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "Server-defined set of error codes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Target of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Array of details about specific errors that led to this reported error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<Error>,
+    #[doc = "Object containing more specific information than  the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
@@ -300,8 +314,10 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "Standard error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Standard error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
@@ -414,10 +430,13 @@ pub mod identity_management_properties {
         DelegatedResourceIdentity,
     }
 }
+#[doc = "Inner error containing list of errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "Specific error code than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Object containing more specific information than the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
@@ -547,6 +566,7 @@ impl NotificationEndpoint {
         Self::default()
     }
 }
+#[doc = "The notification registration definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistration {
     #[serde(flatten)]
@@ -563,6 +583,7 @@ impl NotificationRegistration {
 pub struct NotificationRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NotificationRegistration>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -623,6 +644,7 @@ pub mod notification_registration_properties {
 pub struct OperationsContent {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of an Operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationsDefinition>,
 }
@@ -631,13 +653,17 @@ impl OperationsContent {
         Self::default()
     }
 }
+#[doc = "Properties of an Operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
+    #[doc = "Name of the operation."]
     pub name: String,
+    #[doc = "Indicates whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operations_definition::Origin>,
+    #[doc = "Display information of the operation."]
     pub display: serde_json::Value,
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operations_definition::ActionType>,
@@ -674,6 +700,7 @@ pub mod operations_definition {
 pub struct OperationsDefinitionArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationsDefinition>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -738,6 +765,7 @@ impl ProviderRegistration {
 pub struct ProviderRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProviderRegistration>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -785,6 +813,7 @@ pub mod provider_registration_properties {
         RolloutInProgress,
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -830,12 +859,16 @@ pub mod request_header_options {
         UnboundedClientGroupMembership,
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1211,6 +1244,7 @@ impl ResourceTypeRegistration {
 pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceTypeRegistration>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1502,6 +1536,7 @@ impl SkuResource {
 pub struct SkuResourceArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuResource>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

@@ -1,8 +1,8 @@
 # Frequently Asked Questions
 
-## When will the crates be published to crates.io?
+## Why is it unofficial?
 
-We want them to be published soon too! [Milestones](https://github.com/Azure/azure-sdk-for-rust/milestones) have been created to help figure out issues remaining.
+This is an *unofficial* Azure SDK because it is not yet supported by Azure Support or the Azure SDK team. It has been built primarily by volunteers on their own time. For more information, see the [project history](HISTORY.md).
 
 ## How do we build a case for making it official?
 

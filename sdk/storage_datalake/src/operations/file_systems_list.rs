@@ -4,10 +4,11 @@ use azure_core::AppendToUrlQuery;
 use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
-use std::pin::Pin;
+
+type ListFileSystems = Pageable<ListFileSystemsResponse, azure_core::Error>;
 
 #[derive(Debug, Clone)]
-pub struct ListFileSystems {
+pub struct ListFileSystemsBuilder {
     client: DataLakeClient,
     prefix: Option<Prefix>,
     next_marker: Option<NextMarker>,
@@ -17,7 +18,7 @@ pub struct ListFileSystems {
     context: Option<Context>,
 }
 
-impl ListFileSystems {
+impl ListFileSystemsBuilder {
     pub(crate) fn new(client: DataLakeClient, context: Option<Context>) -> Self {
         Self {
             client,
@@ -39,8 +40,8 @@ impl ListFileSystems {
         context: Context => Some(context),
     }
 
-    pub fn into_stream(self) -> Pin<Box<Pageable<ListFileSystemsResponse>>> {
-        let make_request = move |continuation: Option<String>| {
+    pub fn into_stream(self) -> ListFileSystems {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
 
@@ -58,11 +59,9 @@ impl ListFileSystems {
                     this.next_marker.append_to_url_query(&mut url);
                 };
 
-                let mut request = this
-                    .client
-                    .prepare_request_pipeline(url.as_str(), http::Method::GET);
+                let mut request = this.client.prepare_request(url.as_str(), http::Method::GET);
 
-                azure_core::headers::add_optional_header2(&this.client_request_id, &mut request)?;
+                request.insert_headers(&this.client_request_id);
 
                 let response = this
                     .client
@@ -77,7 +76,7 @@ impl ListFileSystems {
             }
         };
 
-        Box::pin(Pageable::new(make_request))
+        Pageable::new(make_request)
     }
 }
 
@@ -92,7 +91,7 @@ impl ListFileSystemsResponse {
     pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
-        let file_system_list: FileSystemList = serde_json::from_slice(&body)?;
+        let file_system_list: FileSystemList = body.try_into()?;
 
         Ok(ListFileSystemsResponse {
             common_storage_response_headers: (&headers).try_into()?,

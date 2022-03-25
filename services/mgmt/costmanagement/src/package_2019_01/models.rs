@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The common properties of the export."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommonExportProperties {
+    #[doc = "The format of the export being delivered."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<common_export_properties::Format>,
+    #[doc = "The delivery information associated with a export."]
     #[serde(rename = "deliveryInfo")]
     pub delivery_info: ExportDeliveryInfo,
+    #[doc = "The definition of a query."]
     pub definition: QueryDefinition,
 }
 impl CommonExportProperties {
@@ -21,6 +25,7 @@ impl CommonExportProperties {
 }
 pub mod common_export_properties {
     use super::*;
+    #[doc = "The format of the export being delivered."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Format {
         Csv,
@@ -64,8 +69,10 @@ impl DimensionProperties {
         Self::default()
     }
 }
+#[doc = "Result of listing dimensions. It contains a list of available dimensions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DimensionsListResult {
+    #[doc = "The list of dimensions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Dimension>,
 }
@@ -74,10 +81,13 @@ impl DimensionsListResult {
         Self::default()
     }
 }
+#[doc = "The details of the error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -86,8 +96,10 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The details of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
@@ -96,10 +108,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "A export resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Export {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportProperties>,
 }
@@ -108,11 +122,15 @@ impl Export {
         Self::default()
     }
 }
+#[doc = "The destination information for the delivery of the export. To allow access to a storage account, you must register the account's subscription with the Microsoft.CostManagementExports resource provider. This is required once per subscription. When creating an export in the Azure portal, it is done automatically. However, API users need to register the subscription. For more information see https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-supported-services ."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDeliveryDestination {
+    #[doc = "The resource id of the storage account where exports will be delivered."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[doc = "The name of the container where exports will be uploaded."]
     pub container: String,
+    #[doc = "The name of the directory where exports will be uploaded."]
     #[serde(rename = "rootFolderPath", default, skip_serializing_if = "Option::is_none")]
     pub root_folder_path: Option<String>,
 }
@@ -125,8 +143,10 @@ impl ExportDeliveryDestination {
         }
     }
 }
+#[doc = "The delivery information associated with a export."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDeliveryInfo {
+    #[doc = "The destination information for the delivery of the export. To allow access to a storage account, you must register the account's subscription with the Microsoft.CostManagementExports resource provider. This is required once per subscription. When creating an export in the Azure portal, it is done automatically. However, API users need to register the subscription. For more information see https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-supported-services ."]
     pub destination: ExportDeliveryDestination,
 }
 impl ExportDeliveryInfo {
@@ -134,10 +154,12 @@ impl ExportDeliveryInfo {
         Self { destination }
     }
 }
+#[doc = "A export execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportExecution {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of the export execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportExecutionProperties>,
 }
@@ -146,8 +168,10 @@ impl ExportExecution {
         Self::default()
     }
 }
+#[doc = "Result of listing exports execution history of a export by name"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportExecutionListResult {
+    #[doc = "The list of export executions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExportExecution>,
 }
@@ -156,22 +180,31 @@ impl ExportExecutionListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the export execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportExecutionProperties {
+    #[doc = "The type of the export execution."]
     #[serde(rename = "executionType", default, skip_serializing_if = "Option::is_none")]
     pub execution_type: Option<export_execution_properties::ExecutionType>,
+    #[doc = "The status of the export execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<export_execution_properties::Status>,
+    #[doc = "The identifier for the entity that executed the export. For OnDemand executions, it is the email id. For Scheduled executions, it is the constant value - System."]
     #[serde(rename = "submittedBy", default, skip_serializing_if = "Option::is_none")]
     pub submitted_by: Option<String>,
+    #[doc = "The time when export was queued to be executed."]
     #[serde(rename = "submittedTime", default, skip_serializing_if = "Option::is_none")]
     pub submitted_time: Option<String>,
+    #[doc = "The time when export was picked up to be executed."]
     #[serde(rename = "processingStartTime", default, skip_serializing_if = "Option::is_none")]
     pub processing_start_time: Option<String>,
+    #[doc = "The time when export execution finished."]
     #[serde(rename = "processingEndTime", default, skip_serializing_if = "Option::is_none")]
     pub processing_end_time: Option<String>,
+    #[doc = "The name of the file export got written to."]
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
+    #[doc = "The common properties of the export."]
     #[serde(rename = "runSettings", default, skip_serializing_if = "Option::is_none")]
     pub run_settings: Option<CommonExportProperties>,
 }
@@ -182,11 +215,13 @@ impl ExportExecutionProperties {
 }
 pub mod export_execution_properties {
     use super::*;
+    #[doc = "The type of the export execution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ExecutionType {
         OnDemand,
         Scheduled,
     }
+    #[doc = "The status of the export execution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Queued,
@@ -198,8 +233,10 @@ pub mod export_execution_properties {
         DataNotAvailable,
     }
 }
+#[doc = "Result of listing exports. It contains a list of available exports in the scope provided."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportListResult {
+    #[doc = "The list of exports."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Export>,
 }
@@ -208,10 +245,12 @@ impl ExportListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the export."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportProperties {
     #[serde(flatten)]
     pub common_export_properties: CommonExportProperties,
+    #[doc = "The schedule associated with a export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<ExportSchedule>,
 }
@@ -223,9 +262,12 @@ impl ExportProperties {
         }
     }
 }
+#[doc = "The start and end date for recurrence schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportRecurrencePeriod {
+    #[doc = "The start date of recurrence."]
     pub from: String,
+    #[doc = "The end date of recurrence."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<String>,
 }
@@ -234,11 +276,15 @@ impl ExportRecurrencePeriod {
         Self { from, to: None }
     }
 }
+#[doc = "The schedule associated with a export."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportSchedule {
+    #[doc = "The status of the schedule. Whether active or not. If inactive, the export's scheduled execution is paused."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<export_schedule::Status>,
+    #[doc = "The schedule recurrence."]
     pub recurrence: export_schedule::Recurrence,
+    #[doc = "The start and end date for recurrence schedule."]
     #[serde(rename = "recurrencePeriod", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_period: Option<ExportRecurrencePeriod>,
 }
@@ -253,11 +299,13 @@ impl ExportSchedule {
 }
 pub mod export_schedule {
     use super::*;
+    #[doc = "The status of the schedule. Whether active or not. If inactive, the export's scheduled execution is paused."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Active,
         Inactive,
     }
+    #[doc = "The schedule recurrence."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Recurrence {
         Daily,
@@ -266,10 +314,13 @@ pub mod export_schedule {
         Annually,
     }
 }
+#[doc = "A Cost management REST API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -280,12 +331,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.CostManagement."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Dimensions, Query."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -295,10 +350,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of listing cost management operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of cost management operations supported by the Microsoft.CostManagement resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -319,9 +377,12 @@ impl Query {
         Self::default()
     }
 }
+#[doc = "The aggregation expression to be used in the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryAggregation {
+    #[doc = "The name of the column to aggregate."]
     pub name: String,
+    #[doc = "The name of the aggregation function to use."]
     pub function: query_aggregation::Function,
 }
 impl QueryAggregation {
@@ -331,6 +392,7 @@ impl QueryAggregation {
 }
 pub mod query_aggregation {
     use super::*;
+    #[doc = "The name of the aggregation function to use."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Function {
         Sum,
@@ -348,15 +410,20 @@ impl QueryColumn {
         Self::default()
     }
 }
+#[doc = "The type of the column in the export."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryColumnType {
     Tag,
     Dimension,
 }
+#[doc = "The comparison expression to be used in the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryComparisonExpression {
+    #[doc = "The name of the column to use in comparison."]
     pub name: String,
+    #[doc = "The operator to use for comparison."]
     pub operator: query_comparison_expression::Operator,
+    #[doc = "Array of values to use for comparison"]
     pub values: Vec<String>,
 }
 impl QueryComparisonExpression {
@@ -366,23 +433,31 @@ impl QueryComparisonExpression {
 }
 pub mod query_comparison_expression {
     use super::*;
+    #[doc = "The operator to use for comparison."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         In,
     }
 }
+#[doc = "The definition of data present in the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryDataset {
+    #[doc = "The granularity of rows in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<query_dataset::Granularity>,
+    #[doc = "The configuration of dataset in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<QueryDatasetConfiguration>,
+    #[doc = "Dictionary of aggregation expression to use in the query. The key of each item in the dictionary is the alias for the aggregated column. Query can have up to 2 aggregation clauses."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
+    #[doc = "Array of group by expression to use in the query. Query can have up to 2 group by clauses."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub grouping: Vec<QueryGrouping>,
+    #[doc = "Array of sorting by columns in query."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sorting: Vec<QuerySortingConfiguration>,
+    #[doc = "The filter expression to be used in the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<QueryFilter>,
 }
@@ -393,14 +468,17 @@ impl QueryDataset {
 }
 pub mod query_dataset {
     use super::*;
+    #[doc = "The granularity of rows in the query."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Granularity {
         Daily,
         Hourly,
     }
 }
+#[doc = "The configuration of dataset in the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryDatasetConfiguration {
+    #[doc = "Array of column names to be included in the query. Any valid query column name is allowed. If not provided, then query includes all columns."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<String>,
 }
@@ -409,13 +487,18 @@ impl QueryDatasetConfiguration {
         Self::default()
     }
 }
+#[doc = "The definition of a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryDefinition {
+    #[doc = "The type of the query."]
     #[serde(rename = "type")]
     pub type_: query_definition::Type,
+    #[doc = "The time frame for pulling data for the query. If custom, then a specific time period must be provided."]
     pub timeframe: query_definition::Timeframe,
+    #[doc = "The start and end date for pulling data for the query."]
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<QueryTimePeriod>,
+    #[doc = "The definition of data present in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dataset: Option<QueryDataset>,
 }
@@ -431,10 +514,12 @@ impl QueryDefinition {
 }
 pub mod query_definition {
     use super::*;
+    #[doc = "The type of the query."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Usage,
     }
+    #[doc = "The time frame for pulling data for the query. If custom, then a specific time period must be provided."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Timeframe {
         WeekToDate,
@@ -448,16 +533,22 @@ pub mod query_definition {
         TheLastBillingMonth,
     }
 }
+#[doc = "The filter expression to be used in the export."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryFilter {
+    #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub and: Vec<QueryFilter>,
+    #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<QueryFilter>,
+    #[doc = "The filter expression to be used in the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not: Box<Option<QueryFilter>>,
+    #[doc = "The comparison expression to be used in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<QueryComparisonExpression>,
+    #[doc = "The comparison expression to be used in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<QueryComparisonExpression>,
 }
@@ -466,10 +557,13 @@ impl QueryFilter {
         Self::default()
     }
 }
+#[doc = "The group by expression to be used in the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryGrouping {
+    #[doc = "The type of the column in the export."]
     #[serde(rename = "type")]
     pub type_: QueryColumnType,
+    #[doc = "The name of the column to group."]
     pub name: String,
 }
 impl QueryGrouping {
@@ -481,6 +575,7 @@ impl QueryGrouping {
 pub struct QueryProperties {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of columns"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<QueryColumn>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -491,8 +586,10 @@ impl QueryProperties {
         Self::default()
     }
 }
+#[doc = "Result of query. It contains all columns listed under groupings and aggregation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryResult {
+    #[doc = "The list of usage data."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Query>,
 }
@@ -501,10 +598,13 @@ impl QueryResult {
         Self::default()
     }
 }
+#[doc = "The configuration for sorting in the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuerySortingConfiguration {
+    #[doc = "The sorting direction"]
     #[serde(rename = "querySortingDirection", default, skip_serializing_if = "Option::is_none")]
     pub query_sorting_direction: Option<query_sorting_configuration::QuerySortingDirection>,
+    #[doc = "The name of the column to use in sorting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -515,15 +615,19 @@ impl QuerySortingConfiguration {
 }
 pub mod query_sorting_configuration {
     use super::*;
+    #[doc = "The sorting direction"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QuerySortingDirection {
         Ascending,
         Descending,
     }
 }
+#[doc = "The start and end date for pulling data for the query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryTimePeriod {
+    #[doc = "The start date to pull data from."]
     pub from: String,
+    #[doc = "The end date to pull data to."]
     pub to: String,
 }
 impl QueryTimePeriod {
@@ -531,14 +635,19 @@ impl QueryTimePeriod {
         Self { from, to }
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

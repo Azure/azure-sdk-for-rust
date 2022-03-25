@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Represents AAD (Azure Active Directory) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "AAD (Azure Active Directory) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadDataConnectorProperties>,
 }
@@ -17,10 +19,13 @@ impl AadDataConnector {
         }
     }
 }
+#[doc = "AAD (Azure Active Directory) data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadDataConnectorProperties {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Alerts data type for data connectors."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
@@ -29,10 +34,12 @@ impl AadDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Represents AATP (Azure Advanced Threat Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AatpDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "AATP (Azure Advanced Threat Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AatpDataConnectorProperties>,
 }
@@ -44,10 +51,13 @@ impl AatpDataConnector {
         }
     }
 }
+#[doc = "AATP (Azure Advanced Threat Protection) data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AatpDataConnectorProperties {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Alerts data type for data connectors."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
@@ -56,10 +66,12 @@ impl AatpDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Represents ASC (Azure Security Center) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AscDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "ASC (Azure Security Center) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AscDataConnectorProperties>,
 }
@@ -71,10 +83,12 @@ impl AscDataConnector {
         }
     }
 }
+#[doc = "ASC (Azure Security Center) data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AscDataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
+    #[doc = "The subscription id to connect to, and get the data from."]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }
@@ -83,8 +97,10 @@ impl AscDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Action property bag base."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionPropertiesBase {
+    #[doc = "Logic App Resource Id, /subscriptions/{my-subscription}/resourceGroups/{my-resource-group}/providers/Microsoft.Logic/workflows/{my-workflow-id}."]
     #[serde(rename = "logicAppResourceId")]
     pub logic_app_resource_id: String,
 }
@@ -93,10 +109,12 @@ impl ActionPropertiesBase {
         Self { logic_app_resource_id }
     }
 }
+#[doc = "Action for alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionRequest {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Action property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionRequestProperties>,
 }
@@ -105,10 +123,12 @@ impl ActionRequest {
         Self::default()
     }
 }
+#[doc = "Action property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionRequestProperties {
     #[serde(flatten)]
     pub action_properties_base: ActionPropertiesBase,
+    #[doc = "Logic App Callback URL for this specific workflow."]
     #[serde(rename = "triggerUri")]
     pub trigger_uri: String,
 }
@@ -120,12 +140,15 @@ impl ActionRequestProperties {
         }
     }
 }
+#[doc = "Action for alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionResponse {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Etag of the action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Action property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionResponseProperties>,
 }
@@ -134,10 +157,12 @@ impl ActionResponse {
         Self::default()
     }
 }
+#[doc = "Action property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionResponseProperties {
     #[serde(flatten)]
     pub action_properties_base: ActionPropertiesBase,
+    #[doc = "The name of the logic app's workflow."]
     #[serde(rename = "workflowId", default, skip_serializing_if = "Option::is_none")]
     pub workflow_id: Option<String>,
 }
@@ -149,10 +174,13 @@ impl ActionResponseProperties {
         }
     }
 }
+#[doc = "List all the actions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionsList {
+    #[doc = "URL to fetch the next set of actions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of actions."]
     pub value: Vec<ActionResponse>,
 }
 impl ActionsList {
@@ -160,10 +188,12 @@ impl ActionsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRule {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
+    #[doc = "The kind of the alert rule"]
     pub kind: AlertRuleKind,
 }
 impl AlertRule {
@@ -174,16 +204,19 @@ impl AlertRule {
         }
     }
 }
+#[doc = "The kind of the alert rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertRuleKind {
     Scheduled,
     MicrosoftSecurityIncidentCreation,
     Fusion,
 }
+#[doc = "Alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleTemplate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The kind of the alert rule"]
     pub kind: AlertRuleKind,
 }
 impl AlertRuleTemplate {
@@ -194,10 +227,13 @@ impl AlertRuleTemplate {
         }
     }
 }
+#[doc = "alert rule template data sources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRuleTemplateDataSource {
+    #[doc = "The connector id that provides the following data types"]
     #[serde(rename = "connectorId", default, skip_serializing_if = "Option::is_none")]
     pub connector_id: Option<String>,
+    #[doc = "The data types used by the alert rule template"]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub data_types: Vec<String>,
 }
@@ -206,16 +242,20 @@ impl AlertRuleTemplateDataSource {
         Self::default()
     }
 }
+#[doc = "The alert rule template status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertRuleTemplateStatus {
     Installed,
     Available,
     NotAvailable,
 }
+#[doc = "List all the alert rule templates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleTemplatesList {
+    #[doc = "URL to fetch the next set of alert rule templates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of alert rule templates."]
     pub value: Vec<AlertRuleTemplate>,
 }
 impl AlertRuleTemplatesList {
@@ -223,6 +263,7 @@ impl AlertRuleTemplatesList {
         Self { next_link: None, value }
     }
 }
+#[doc = "The operation against the threshold that triggers alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertRuleTriggerOperator {
     GreaterThan,
@@ -230,10 +271,13 @@ pub enum AlertRuleTriggerOperator {
     Equal,
     NotEqual,
 }
+#[doc = "List all the alert rules."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRulesList {
+    #[doc = "URL to fetch the next set of alert rules."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of alert rules."]
     pub value: Vec<AlertRule>,
 }
 impl AlertRulesList {
@@ -241,6 +285,7 @@ impl AlertRulesList {
         Self { next_link: None, value }
     }
 }
+#[doc = "The severity of the alert"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertSeverity {
     High,
@@ -248,8 +293,10 @@ pub enum AlertSeverity {
     Low,
     Informational,
 }
+#[doc = "Alerts data type for data connectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsDataTypeOfDataConnector {
+    #[doc = "Common field for data type in data connectors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alerts: Option<DataConnectorDataTypeCommon>,
 }
@@ -258,6 +305,7 @@ impl AlertsDataTypeOfDataConnector {
         Self::default()
     }
 }
+#[doc = "The severity for alerts created by this alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AttackTactic {
     InitialAccess,
@@ -273,10 +321,12 @@ pub enum AttackTactic {
     CommandAndControl,
     Impact,
 }
+#[doc = "Represents Amazon Web Services CloudTrail data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCloudTrailDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "Amazon Web Services CloudTrail data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AwsCloudTrailDataConnectorProperties>,
 }
@@ -288,8 +338,10 @@ impl AwsCloudTrailDataConnector {
         }
     }
 }
+#[doc = "The available data types for Amazon Web Services CloudTrail data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AwsCloudTrailDataConnectorDataTypes {
+    #[doc = "Logs data type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logs: Option<serde_json::Value>,
 }
@@ -298,10 +350,13 @@ impl AwsCloudTrailDataConnectorDataTypes {
         Self::default()
     }
 }
+#[doc = "Amazon Web Services CloudTrail data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AwsCloudTrailDataConnectorProperties {
+    #[doc = "The Aws Role Arn (with CloudTrailReadOnly policy) that is used to access the Aws account."]
     #[serde(rename = "awsRoleArn", default, skip_serializing_if = "Option::is_none")]
     pub aws_role_arn: Option<String>,
+    #[doc = "The available data types for Amazon Web Services CloudTrail data connector."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AwsCloudTrailDataConnectorDataTypes>,
 }
@@ -310,10 +365,12 @@ impl AwsCloudTrailDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Represents a bookmark in Azure Security Insights."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Bookmark {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Describes bookmark properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BookmarkProperties>,
 }
@@ -322,10 +379,13 @@ impl Bookmark {
         Self::default()
     }
 }
+#[doc = "List all the bookmarks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BookmarkList {
+    #[doc = "URL to fetch the next set of cases."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of bookmarks."]
     pub value: Vec<Bookmark>,
 }
 impl BookmarkList {
@@ -333,31 +393,45 @@ impl BookmarkList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Describes bookmark properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BookmarkProperties {
+    #[doc = "The time the bookmark was created"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "User information that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<UserInfo>,
+    #[doc = "The display name of the bookmark"]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "List of labels relevant to this bookmark"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<Label>,
+    #[doc = "The notes of the bookmark"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+    #[doc = "The query of the bookmark."]
     pub query: String,
+    #[doc = "The query result of the bookmark."]
     #[serde(rename = "queryResult", default, skip_serializing_if = "Option::is_none")]
     pub query_result: Option<String>,
+    #[doc = "The last time the bookmark was updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<String>,
+    #[doc = "User information that made some action"]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<UserInfo>,
+    #[doc = "The bookmark event time"]
     #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
     pub event_time: Option<String>,
+    #[doc = "The start time for the query"]
     #[serde(rename = "queryStartTime", default, skip_serializing_if = "Option::is_none")]
     pub query_start_time: Option<String>,
+    #[doc = "The end time for the query"]
     #[serde(rename = "queryEndTime", default, skip_serializing_if = "Option::is_none")]
     pub query_end_time: Option<String>,
+    #[doc = "Describes related incident information for the bookmark"]
     #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
 }
@@ -380,14 +454,19 @@ impl BookmarkProperties {
         }
     }
 }
+#[doc = "Information on the client (user or application) that made some action"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientInfo {
+    #[doc = "The email of the client."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[doc = "The name of the client."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object id of the client."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
+    #[doc = "The user principal name of the client."]
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
 }
@@ -396,8 +475,10 @@ impl ClientInfo {
         Self::default()
     }
 }
+#[doc = "An error response for a resource management request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -406,10 +487,12 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "Data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnector {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
+    #[doc = "The kind of the data connector"]
     pub kind: DataConnectorKind,
 }
 impl DataConnector {
@@ -420,8 +503,10 @@ impl DataConnector {
         }
     }
 }
+#[doc = "Common field for data type in data connectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorDataTypeCommon {
+    #[doc = "Describe whether this data type connection is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<data_connector_data_type_common::State>,
 }
@@ -432,12 +517,14 @@ impl DataConnectorDataTypeCommon {
 }
 pub mod data_connector_data_type_common {
     use super::*;
+    #[doc = "Describe whether this data type connection is enabled or not."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
         Disabled,
     }
 }
+#[doc = "The kind of the data connector"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DataConnectorKind {
     AzureActiveDirectory,
@@ -449,10 +536,13 @@ pub enum DataConnectorKind {
     AzureAdvancedThreatProtection,
     MicrosoftDefenderAdvancedThreatProtection,
 }
+#[doc = "List all the data connectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorList {
+    #[doc = "URL to fetch the next set of data connectors."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of data connectors."]
     pub value: Vec<DataConnector>,
 }
 impl DataConnectorList {
@@ -460,8 +550,10 @@ impl DataConnectorList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Properties data connector on tenant level."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorTenantId {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -470,8 +562,10 @@ impl DataConnectorTenantId {
         Self::default()
     }
 }
+#[doc = "Data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorWithAlertsProperties {
+    #[doc = "Alerts data type for data connectors."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
@@ -480,10 +574,13 @@ impl DataConnectorWithAlertsProperties {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -492,16 +589,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -510,10 +613,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Represents Fusion alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
+    #[doc = "Fusion alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FusionAlertRuleProperties>,
 }
@@ -525,19 +630,27 @@ impl FusionAlertRule {
         }
     }
 }
+#[doc = "Fusion alert rule base property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionAlertRuleProperties {
+    #[doc = "The Name of the alert rule template used to create this rule."]
     #[serde(rename = "alertRuleTemplateName")]
     pub alert_rule_template_name: String,
+    #[doc = "The description of the alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name for alerts created by this alert rule."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Determines whether this alert rule is enabled or disabled."]
     pub enabled: bool,
+    #[doc = "The last time that this alert has been modified."]
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
+    #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverity>,
+    #[doc = "The tactics of the alert rule"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
@@ -554,10 +667,12 @@ impl FusionAlertRuleProperties {
         }
     }
 }
+#[doc = "Represents Fusion alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionAlertRuleTemplate {
     #[serde(flatten)]
     pub alert_rule_template: AlertRuleTemplate,
+    #[doc = "Represents Fusion alert rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FusionAlertRuleTemplateProperties>,
 }
@@ -569,22 +684,31 @@ impl FusionAlertRuleTemplate {
         }
     }
 }
+#[doc = "Represents Fusion alert rule template properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FusionAlertRuleTemplateProperties {
+    #[doc = "the number of alert rules that were created by this template"]
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
+    #[doc = "The time that this alert rule template has been added."]
     #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
+    #[doc = "The description of the alert rule template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name for alert rule template."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The required data connectors for this template"]
     #[serde(rename = "requiredDataConnectors", default, skip_serializing_if = "Vec::is_empty")]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
+    #[doc = "The alert rule template status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AlertRuleTemplateStatus>,
+    #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverity>,
+    #[doc = "The tactics of the alert rule template"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
@@ -593,10 +717,12 @@ impl FusionAlertRuleTemplateProperties {
         Self::default()
     }
 }
+#[doc = "Represents an incident in Azure Security Insights."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Incident {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Describes incident properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncidentProperties>,
 }
@@ -605,16 +731,22 @@ impl Incident {
         Self::default()
     }
 }
+#[doc = "Incident additional data property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentAdditionalData {
+    #[doc = "The number of alerts in the incident"]
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i32>,
+    #[doc = "The number of bookmarks in the incident"]
     #[serde(rename = "bookmarksCount", default, skip_serializing_if = "Option::is_none")]
     pub bookmarks_count: Option<i32>,
+    #[doc = "The number of comments in the incident"]
     #[serde(rename = "commentsCount", default, skip_serializing_if = "Option::is_none")]
     pub comments_count: Option<i32>,
+    #[doc = "List of product names of alerts in the incident"]
     #[serde(rename = "alertProductNames", default, skip_serializing_if = "Vec::is_empty")]
     pub alert_product_names: Vec<String>,
+    #[doc = "The tactics associated with incident"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
@@ -623,10 +755,12 @@ impl IncidentAdditionalData {
         Self::default()
     }
 }
+#[doc = "Represents an incident comment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentComment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Incident comment property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncidentCommentProperties>,
 }
@@ -635,10 +769,13 @@ impl IncidentComment {
         Self::default()
     }
 }
+#[doc = "List of incident comments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentCommentList {
+    #[doc = "URL to fetch the next set of comments."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of comments."]
     pub value: Vec<IncidentComment>,
 }
 impl IncidentCommentList {
@@ -646,11 +783,15 @@ impl IncidentCommentList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Incident comment property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentCommentProperties {
+    #[doc = "The time the comment was created"]
     #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_time_utc: Option<String>,
+    #[doc = "The comment message"]
     pub message: String,
+    #[doc = "Information on the client (user or application) that made some action"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<ClientInfo>,
 }
@@ -663,14 +804,19 @@ impl IncidentCommentProperties {
         }
     }
 }
+#[doc = "Describes related incident information for the bookmark"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentInfo {
+    #[doc = "Incident Id"]
     #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
     pub incident_id: Option<String>,
+    #[doc = "The severity of the incident"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<IncidentSeverityEnum>,
+    #[doc = "The title of the incident"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "Relation Name"]
     #[serde(rename = "relationName", default, skip_serializing_if = "Option::is_none")]
     pub relation_name: Option<String>,
 }
@@ -679,10 +825,13 @@ impl IncidentInfo {
         Self::default()
     }
 }
+#[doc = "Represents an incident label"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentLabel {
+    #[doc = "The name of the label"]
     #[serde(rename = "labelName")]
     pub label_name: String,
+    #[doc = "The type of the label"]
     #[serde(rename = "labelType", default, skip_serializing_if = "Option::is_none")]
     pub label_type: Option<incident_label::LabelType>,
 }
@@ -696,16 +845,20 @@ impl IncidentLabel {
 }
 pub mod incident_label {
     use super::*;
+    #[doc = "The type of the label"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LabelType {
         User,
         System,
     }
 }
+#[doc = "List all the incidents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentList {
+    #[doc = "URL to fetch the next set of incidents."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of incidents."]
     pub value: Vec<Incident>,
 }
 impl IncidentList {
@@ -713,14 +866,19 @@ impl IncidentList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Information on the user an incident is assigned to"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentOwnerInfo {
+    #[doc = "The email of the user the incident is assigned to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[doc = "The name of the user the incident is assigned to."]
     #[serde(rename = "assignedTo", default, skip_serializing_if = "Option::is_none")]
     pub assigned_to: Option<String>,
+    #[doc = "The object id of the user the incident is assigned to."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
+    #[doc = "The user principal name of the user the incident is assigned to."]
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
 }
@@ -729,38 +887,56 @@ impl IncidentOwnerInfo {
         Self::default()
     }
 }
+#[doc = "Describes incident properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentProperties {
+    #[doc = "Incident additional data property bag."]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<IncidentAdditionalData>,
+    #[doc = "The reason the incident was closed"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub classification: Option<incident_properties::Classification>,
+    #[doc = "Describes the reason the incident was closed"]
     #[serde(rename = "classificationComment", default, skip_serializing_if = "Option::is_none")]
     pub classification_comment: Option<String>,
+    #[doc = "The classification reason the incident was closed with"]
     #[serde(rename = "classificationReason", default, skip_serializing_if = "Option::is_none")]
     pub classification_reason: Option<incident_properties::ClassificationReason>,
+    #[doc = "The time the incident was created"]
     #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_time_utc: Option<String>,
+    #[doc = "The description of the incident"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The time of the first activity in the incident"]
     #[serde(rename = "firstActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub first_activity_time_utc: Option<String>,
+    #[doc = "The deep-link url to the incident in Azure portal"]
     #[serde(rename = "incidentUrl", default, skip_serializing_if = "Option::is_none")]
     pub incident_url: Option<String>,
+    #[doc = "A sequential number"]
     #[serde(rename = "incidentNumber", default, skip_serializing_if = "Option::is_none")]
     pub incident_number: Option<i32>,
+    #[doc = "List of labels relevant to this incident"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<IncidentLabel>,
+    #[doc = "The time of the last activity in the incident"]
     #[serde(rename = "lastActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_activity_time_utc: Option<String>,
+    #[doc = "The last time the incident was updated"]
     #[serde(rename = "lastModifiedTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time_utc: Option<String>,
+    #[doc = "Information on the user an incident is assigned to"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub owner: Option<IncidentOwnerInfo>,
+    #[doc = "List of resource ids of Analytic rules related to the incident"]
     #[serde(rename = "relatedAnalyticRuleIds", default, skip_serializing_if = "Vec::is_empty")]
     pub related_analytic_rule_ids: Vec<String>,
+    #[doc = "The severity of the incident"]
     pub severity: IncidentSeverityEnum,
+    #[doc = "The status of the incident"]
     pub status: incident_properties::Status,
+    #[doc = "The title of the incident"]
     pub title: String,
 }
 impl IncidentProperties {
@@ -788,6 +964,7 @@ impl IncidentProperties {
 }
 pub mod incident_properties {
     use super::*;
+    #[doc = "The reason the incident was closed"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Classification {
         Undetermined,
@@ -795,6 +972,7 @@ pub mod incident_properties {
         BenignPositive,
         FalsePositive,
     }
+    #[doc = "The classification reason the incident was closed with"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ClassificationReason {
         SuspiciousActivity,
@@ -802,6 +980,7 @@ pub mod incident_properties {
         IncorrectAlertLogic,
         InaccurateData,
     }
+    #[doc = "The status of the incident"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         New,
@@ -809,6 +988,7 @@ pub mod incident_properties {
         Closed,
     }
 }
+#[doc = "The severity of the incident"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IncidentSeverityEnum {
     High,
@@ -817,10 +997,12 @@ pub enum IncidentSeverityEnum {
     Informational,
 }
 pub type Label = String;
+#[doc = "Represents MCAS (Microsoft Cloud App Security) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct McasDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "MCAS (Microsoft Cloud App Security) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<McasDataConnectorProperties>,
 }
@@ -832,12 +1014,15 @@ impl McasDataConnector {
         }
     }
 }
+#[doc = "The available data types for MCAS (Microsoft Cloud App Security) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct McasDataConnectorDataTypes {
     #[serde(flatten)]
     pub alerts_data_type_of_data_connector: AlertsDataTypeOfDataConnector,
+    #[doc = "Common field for data type in data connectors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alerts: Option<DataConnectorDataTypeCommon>,
+    #[doc = "Common field for data type in data connectors."]
     #[serde(rename = "discoveryLogs", default, skip_serializing_if = "Option::is_none")]
     pub discovery_logs: Option<DataConnectorDataTypeCommon>,
 }
@@ -846,10 +1031,13 @@ impl McasDataConnectorDataTypes {
         Self::default()
     }
 }
+#[doc = "MCAS (Microsoft Cloud App Security) data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct McasDataConnectorProperties {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The available data types for MCAS (Microsoft Cloud App Security) data connector."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<McasDataConnectorDataTypes>,
 }
@@ -858,10 +1046,12 @@ impl McasDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Represents MDATP (Microsoft Defender Advanced Threat Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MdatpDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "MDATP (Microsoft Defender Advanced Threat Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MdatpDataConnectorProperties>,
 }
@@ -873,10 +1063,13 @@ impl MdatpDataConnector {
         }
     }
 }
+#[doc = "MDATP (Microsoft Defender Advanced Threat Protection) data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdatpDataConnectorProperties {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Alerts data type for data connectors."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
@@ -885,10 +1078,12 @@ impl MdatpDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Represents MicrosoftSecurityIncidentCreation rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
+    #[doc = "MicrosoftSecurityIncidentCreation rule property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MicrosoftSecurityIncidentCreationAlertRuleProperties>,
 }
@@ -900,14 +1095,19 @@ impl MicrosoftSecurityIncidentCreationAlertRule {
         }
     }
 }
+#[doc = "MicrosoftSecurityIncidentCreation rule common property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
+    #[doc = "the alerts' displayNames on which the cases will be generated"]
     #[serde(rename = "displayNamesFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub display_names_filter: Vec<String>,
+    #[doc = "the alerts' displayNames on which the cases will not be generated"]
     #[serde(rename = "displayNamesExcludeFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub display_names_exclude_filter: Vec<String>,
+    #[doc = "The alerts' productName on which the cases will be generated"]
     #[serde(rename = "productFilter")]
     pub product_filter: MicrosoftSecurityProductName,
+    #[doc = "the alerts' severities on which the cases will be generated"]
     #[serde(rename = "severitiesFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub severities_filter: Vec<AlertSeverity>,
 }
@@ -921,17 +1121,23 @@ impl MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
         }
     }
 }
+#[doc = "MicrosoftSecurityIncidentCreation rule property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleProperties {
     #[serde(flatten)]
     pub microsoft_security_incident_creation_alert_rule_common_properties: MicrosoftSecurityIncidentCreationAlertRuleCommonProperties,
+    #[doc = "The Name of the alert rule template used to create this rule."]
     #[serde(rename = "alertRuleTemplateName", default, skip_serializing_if = "Option::is_none")]
     pub alert_rule_template_name: Option<String>,
+    #[doc = "The description of the alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name for alerts created by this alert rule."]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Determines whether this alert rule is enabled or disabled."]
     pub enabled: bool,
+    #[doc = "The last time that this alert has been modified."]
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
 }
@@ -951,10 +1157,12 @@ impl MicrosoftSecurityIncidentCreationAlertRuleProperties {
         }
     }
 }
+#[doc = "Represents MicrosoftSecurityIncidentCreation rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplate {
     #[serde(flatten)]
     pub alert_rule_template: AlertRuleTemplate,
+    #[doc = "MicrosoftSecurityIncidentCreation rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties>,
 }
@@ -966,26 +1174,37 @@ impl MicrosoftSecurityIncidentCreationAlertRuleTemplate {
         }
     }
 }
+#[doc = "MicrosoftSecurityIncidentCreation rule template properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
+    #[doc = "the number of alert rules that were created by this template"]
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
+    #[doc = "The time that this alert rule template has been added."]
     #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
+    #[doc = "The description of the alert rule template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name for alert rule template."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The required data connectors for this template"]
     #[serde(rename = "requiredDataConnectors", default, skip_serializing_if = "Vec::is_empty")]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
+    #[doc = "The alert rule template status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AlertRuleTemplateStatus>,
+    #[doc = "the alerts' displayNames on which the cases will be generated"]
     #[serde(rename = "displayNamesFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub display_names_filter: Vec<String>,
+    #[doc = "the alerts' displayNames on which the cases will not be generated"]
     #[serde(rename = "displayNamesExcludeFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub display_names_exclude_filter: Vec<String>,
+    #[doc = "The alerts' productName on which the cases will be generated"]
     #[serde(rename = "productFilter")]
     pub product_filter: MicrosoftSecurityProductName,
+    #[doc = "the alerts' severities on which the cases will be generated"]
     #[serde(rename = "severitiesFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub severities_filter: Vec<AlertSeverity>,
 }
@@ -1005,6 +1224,7 @@ impl MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
         }
     }
 }
+#[doc = "The alerts' productName on which the cases will be generated"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MicrosoftSecurityProductName {
     #[serde(rename = "Microsoft Cloud App Security")]
@@ -1018,10 +1238,12 @@ pub enum MicrosoftSecurityProductName {
     #[serde(rename = "Azure Security Center for IoT")]
     AzureSecurityCenterForIoT,
 }
+#[doc = "Consent for Office365 tenant that already made."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeConsent {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Consent property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeConsentProperties>,
 }
@@ -1030,10 +1252,13 @@ impl OfficeConsent {
         Self::default()
     }
 }
+#[doc = "List of all the office365 consents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeConsentList {
+    #[doc = "URL to fetch the next set of office consents."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of the consents."]
     pub value: Vec<OfficeConsent>,
 }
 impl OfficeConsentList {
@@ -1041,10 +1266,13 @@ impl OfficeConsentList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Consent property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeConsentProperties {
+    #[doc = "The tenantId of the Office365 with the consent."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The tenant name of the Office365 with the consent."]
     #[serde(rename = "tenantName", default, skip_serializing_if = "Option::is_none")]
     pub tenant_name: Option<String>,
 }
@@ -1053,10 +1281,12 @@ impl OfficeConsentProperties {
         Self::default()
     }
 }
+#[doc = "Represents office data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "Office data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeDataConnectorProperties>,
 }
@@ -1068,12 +1298,16 @@ impl OfficeDataConnector {
         }
     }
 }
+#[doc = "The available data types for office data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeDataConnectorDataTypes {
+    #[doc = "Exchange data type connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exchange: Option<serde_json::Value>,
+    #[doc = "SharePoint data type connection."]
     #[serde(rename = "sharePoint", default, skip_serializing_if = "Option::is_none")]
     pub share_point: Option<serde_json::Value>,
+    #[doc = "Teams data type connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub teams: Option<serde_json::Value>,
 }
@@ -1082,10 +1316,13 @@ impl OfficeDataConnectorDataTypes {
         Self::default()
     }
 }
+#[doc = "Office data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeDataConnectorProperties {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The available data types for office data connector."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<OfficeDataConnectorDataTypes>,
 }
@@ -1094,12 +1331,16 @@ impl OfficeDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "Operation provided by provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -1110,14 +1351,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Properties of the operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Description of the operation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+        #[doc = "Operation name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Provider name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
     }
@@ -1127,10 +1373,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Lists the operations available in the SecurityInsights RP."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
+    #[doc = "URL to fetch the next set of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
 impl OperationsList {
@@ -1138,12 +1387,16 @@ impl OperationsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1152,14 +1405,19 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "An azure resource object with an Etag property"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWithEtag {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Etag of the azure resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1168,10 +1426,12 @@ impl ResourceWithEtag {
         Self::default()
     }
 }
+#[doc = "Represents scheduled alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
+    #[doc = "Scheduled alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledAlertRuleProperties>,
 }
@@ -1183,18 +1443,25 @@ impl ScheduledAlertRule {
         }
     }
 }
+#[doc = "Schedule alert rule template property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledAlertRuleCommonProperties {
+    #[doc = "The query that creates alerts for this rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
+    #[doc = "The frequency (in ISO 8601 duration format) for this alert rule to run."]
     #[serde(rename = "queryFrequency", default, skip_serializing_if = "Option::is_none")]
     pub query_frequency: Option<String>,
+    #[doc = "The period (in ISO 8601 duration format) that this alert rule looks at."]
     #[serde(rename = "queryPeriod", default, skip_serializing_if = "Option::is_none")]
     pub query_period: Option<String>,
+    #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverity>,
+    #[doc = "The operation against the threshold that triggers alert rule."]
     #[serde(rename = "triggerOperator", default, skip_serializing_if = "Option::is_none")]
     pub trigger_operator: Option<AlertRuleTriggerOperator>,
+    #[doc = "The threshold triggers this alert rule."]
     #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
     pub trigger_threshold: Option<i32>,
 }
@@ -1203,23 +1470,32 @@ impl ScheduledAlertRuleCommonProperties {
         Self::default()
     }
 }
+#[doc = "Scheduled alert rule base property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledAlertRuleProperties {
     #[serde(flatten)]
     pub scheduled_alert_rule_common_properties: ScheduledAlertRuleCommonProperties,
+    #[doc = "The Name of the alert rule template used to create this rule."]
     #[serde(rename = "alertRuleTemplateName", default, skip_serializing_if = "Option::is_none")]
     pub alert_rule_template_name: Option<String>,
+    #[doc = "The description of the alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name for alerts created by this alert rule."]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Determines whether this alert rule is enabled or disabled."]
     pub enabled: bool,
+    #[doc = "The last time that this alert rule has been modified."]
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
+    #[doc = "The suppression (in ISO 8601 duration format) to wait since last time this alert rule been triggered."]
     #[serde(rename = "suppressionDuration")]
     pub suppression_duration: String,
+    #[doc = "Determines whether the suppression for this alert rule is enabled or disabled."]
     #[serde(rename = "suppressionEnabled")]
     pub suppression_enabled: bool,
+    #[doc = "The tactics of the alert rule"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
@@ -1238,10 +1514,12 @@ impl ScheduledAlertRuleProperties {
         }
     }
 }
+#[doc = "Represents scheduled alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledAlertRuleTemplate {
     #[serde(flatten)]
     pub alert_rule_template: AlertRuleTemplate,
+    #[doc = "Scheduled alert rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledAlertRuleTemplateProperties>,
 }
@@ -1253,32 +1531,46 @@ impl ScheduledAlertRuleTemplate {
         }
     }
 }
+#[doc = "Scheduled alert rule template properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledAlertRuleTemplateProperties {
+    #[doc = "the number of alert rules that were created by this template"]
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
+    #[doc = "The time that this alert rule template has been added."]
     #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
+    #[doc = "The description of the alert rule template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name for alert rule template."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The required data connectors for this template"]
     #[serde(rename = "requiredDataConnectors", default, skip_serializing_if = "Vec::is_empty")]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
+    #[doc = "The alert rule template status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AlertRuleTemplateStatus>,
+    #[doc = "The query that creates alerts for this rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
+    #[doc = "The frequency (in ISO 8601 duration format) for this alert rule to run."]
     #[serde(rename = "queryFrequency", default, skip_serializing_if = "Option::is_none")]
     pub query_frequency: Option<String>,
+    #[doc = "The period (in ISO 8601 duration format) that this alert rule looks at."]
     #[serde(rename = "queryPeriod", default, skip_serializing_if = "Option::is_none")]
     pub query_period: Option<String>,
+    #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverity>,
+    #[doc = "The operation against the threshold that triggers alert rule."]
     #[serde(rename = "triggerOperator", default, skip_serializing_if = "Option::is_none")]
     pub trigger_operator: Option<AlertRuleTriggerOperator>,
+    #[doc = "The threshold triggers this alert rule."]
     #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
     pub trigger_threshold: Option<i32>,
+    #[doc = "The tactics of the alert rule template"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
@@ -1287,10 +1579,12 @@ impl ScheduledAlertRuleTemplateProperties {
         Self::default()
     }
 }
+#[doc = "Represents threat intelligence data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
+    #[doc = "TI (Threat Intelligence) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TiDataConnectorProperties>,
 }
@@ -1302,8 +1596,10 @@ impl TiDataConnector {
         }
     }
 }
+#[doc = "The available data types for TI (Threat Intelligence) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TiDataConnectorDataTypes {
+    #[doc = "Data type for indicators connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub indicators: Option<serde_json::Value>,
 }
@@ -1312,12 +1608,16 @@ impl TiDataConnectorDataTypes {
         Self::default()
     }
 }
+#[doc = "TI (Threat Intelligence) data connector properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TiDataConnectorProperties {
+    #[doc = "The tenant id to connect to, and get the data from."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The lookback period for the feed to be imported."]
     #[serde(rename = "tipLookbackPeriod", default, skip_serializing_if = "Option::is_none")]
     pub tip_lookback_period: Option<String>,
+    #[doc = "The available data types for TI (Threat Intelligence) data connector."]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<TiDataConnectorDataTypes>,
 }
@@ -1326,18 +1626,25 @@ impl TiDataConnectorProperties {
         Self::default()
     }
 }
+#[doc = "ThreatIntelligence property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligence {
+    #[doc = "Confidence (must be between 0 and 1)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
+    #[doc = "Name of the provider from whom this Threat Intelligence information was received"]
     #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
+    #[doc = "Report link"]
     #[serde(rename = "reportLink", default, skip_serializing_if = "Option::is_none")]
     pub report_link: Option<String>,
+    #[doc = "Threat description (free text)"]
     #[serde(rename = "threatDescription", default, skip_serializing_if = "Option::is_none")]
     pub threat_description: Option<String>,
+    #[doc = "Threat name (e.g. \"Jedobot malware\")"]
     #[serde(rename = "threatName", default, skip_serializing_if = "Option::is_none")]
     pub threat_name: Option<String>,
+    #[doc = "Threat type (e.g. \"Botnet\")"]
     #[serde(rename = "threatType", default, skip_serializing_if = "Option::is_none")]
     pub threat_type: Option<String>,
 }
@@ -1346,12 +1653,16 @@ impl ThreatIntelligence {
         Self::default()
     }
 }
+#[doc = "User information that made some action"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserInfo {
+    #[doc = "The email of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[doc = "The name of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object id of the user."]
     #[serde(rename = "objectId")]
     pub object_id: String,
 }

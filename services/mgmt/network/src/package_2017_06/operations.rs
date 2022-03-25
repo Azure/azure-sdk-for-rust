@@ -655,20 +655,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -732,20 +732,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -818,20 +818,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -887,20 +887,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -959,20 +959,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1034,20 +1034,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1108,20 +1108,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1182,20 +1182,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1264,20 +1264,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1335,20 +1335,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1406,20 +1406,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1477,20 +1477,20 @@ pub mod application_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1678,20 +1678,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1763,20 +1763,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1849,20 +1849,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1918,20 +1918,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1988,20 +1988,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2065,20 +2065,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2144,20 +2144,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2212,20 +2212,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2281,20 +2281,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2355,20 +2355,20 @@ pub mod network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2465,20 +2465,20 @@ pub mod network_interface_ip_configurations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2540,20 +2540,20 @@ pub mod network_interface_ip_configurations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2635,20 +2635,20 @@ pub mod network_interface_load_balancers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2771,20 +2771,20 @@ pub mod load_balancers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2856,20 +2856,20 @@ pub mod load_balancers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2942,20 +2942,20 @@ pub mod load_balancers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3011,20 +3011,20 @@ pub mod load_balancers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3079,20 +3079,20 @@ pub mod load_balancers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3183,20 +3183,20 @@ pub mod load_balancer_backend_address_pools {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3258,20 +3258,20 @@ pub mod load_balancer_backend_address_pools {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3366,20 +3366,20 @@ pub mod load_balancer_frontend_ip_configurations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3441,20 +3441,20 @@ pub mod load_balancer_frontend_ip_configurations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3582,20 +3582,20 @@ pub mod inbound_nat_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3654,20 +3654,20 @@ pub mod inbound_nat_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3741,20 +3741,20 @@ pub mod inbound_nat_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3829,20 +3829,20 @@ pub mod inbound_nat_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3934,20 +3934,20 @@ pub mod load_balancer_load_balancing_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4009,20 +4009,20 @@ pub mod load_balancer_load_balancing_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4102,20 +4102,20 @@ pub mod load_balancer_network_interfaces {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4210,20 +4210,20 @@ pub mod load_balancer_probes {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4284,20 +4284,20 @@ pub mod load_balancer_probes {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4446,20 +4446,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4531,20 +4531,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4617,20 +4617,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4686,20 +4686,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4754,20 +4754,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4824,20 +4824,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4906,20 +4906,20 @@ pub mod virtual_networks {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5047,20 +5047,20 @@ pub mod subnets {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5134,20 +5134,20 @@ pub mod subnets {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5222,20 +5222,20 @@ pub mod subnets {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5293,20 +5293,20 @@ pub mod subnets {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5431,20 +5431,20 @@ pub mod virtual_network_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5510,20 +5510,20 @@ pub mod virtual_network_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5598,20 +5598,20 @@ pub mod virtual_network_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5669,20 +5669,20 @@ pub mod virtual_network_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5804,20 +5804,20 @@ pub mod network_security_groups {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5889,20 +5889,20 @@ pub mod network_security_groups {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -5975,20 +5975,20 @@ pub mod network_security_groups {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6044,20 +6044,20 @@ pub mod network_security_groups {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6114,20 +6114,20 @@ pub mod network_security_groups {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6252,20 +6252,20 @@ pub mod security_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6331,20 +6331,20 @@ pub mod security_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6419,20 +6419,20 @@ pub mod security_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6490,20 +6490,20 @@ pub mod security_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6596,20 +6596,20 @@ pub mod default_security_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6668,20 +6668,20 @@ pub mod default_security_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6796,20 +6796,20 @@ pub mod route_tables {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6881,20 +6881,20 @@ pub mod route_tables {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6967,20 +6967,20 @@ pub mod route_tables {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7036,20 +7036,20 @@ pub mod route_tables {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7106,20 +7106,20 @@ pub mod route_tables {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7240,20 +7240,20 @@ pub mod routes {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7319,20 +7319,20 @@ pub mod routes {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7407,20 +7407,20 @@ pub mod routes {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7478,20 +7478,20 @@ pub mod routes {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7665,20 +7665,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7750,20 +7750,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7836,20 +7836,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7905,20 +7905,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7973,20 +7973,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8043,20 +8043,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8115,20 +8115,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8184,20 +8184,20 @@ pub mod public_ip_addresses {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8277,20 +8277,20 @@ pub mod check_dns_name_availability {
     pub enum Error {
         #[error("Unexpected HTTP status code {}", status_code)]
         UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-        #[error("Failed to parse request URL: {0}")]
-        ParseUrl(url::ParseError),
-        #[error("Failed to build request: {0}")]
-        BuildRequest(http::Error),
-        #[error("Failed to serialize request body: {0}")]
-        Serialize(serde_json::Error),
-        #[error("Failed to get access token: {0}")]
-        GetToken(azure_core::Error),
-        #[error("Failed to execute request: {0}")]
-        SendRequest(azure_core::Error),
-        #[error("Failed to get response bytes: {0}")]
-        ResponseBytes(azure_core::StreamError),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        Deserialize(serde_json::Error, bytes::Bytes),
+        #[error("Failed to parse request URL")]
+        ParseUrl(#[source] url::ParseError),
+        #[error("Failed to build request")]
+        BuildRequest(#[source] http::Error),
+        #[error("Failed to serialize request body")]
+        Serialize(#[source] serde_json::Error),
+        #[error("Failed to get access token")]
+        GetToken(#[source] azure_core::Error),
+        #[error("Failed to execute request")]
+        SendRequest(#[source] azure_core::Error),
+        #[error("Failed to get response bytes")]
+        ResponseBytes(#[source] azure_core::StreamError),
+        #[error("Failed to deserialize response, body: {1:?}")]
+        Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
     #[derive(Clone)]
     pub struct Builder {
@@ -8367,20 +8367,20 @@ pub mod available_endpoint_services {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8505,20 +8505,20 @@ pub mod express_route_circuit_authorizations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8586,20 +8586,20 @@ pub mod express_route_circuit_authorizations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8674,20 +8674,20 @@ pub mod express_route_circuit_authorizations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8745,20 +8745,20 @@ pub mod express_route_circuit_authorizations {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8883,20 +8883,20 @@ pub mod express_route_circuit_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8964,20 +8964,20 @@ pub mod express_route_circuit_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9052,20 +9052,20 @@ pub mod express_route_circuit_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9123,20 +9123,20 @@ pub mod express_route_circuit_peerings {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9336,20 +9336,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9413,20 +9413,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9499,20 +9499,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9573,20 +9573,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9648,20 +9648,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9723,20 +9723,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9793,20 +9793,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9865,20 +9865,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9939,20 +9939,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10011,20 +10011,20 @@ pub mod express_route_circuits {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10093,20 +10093,20 @@ pub mod express_route_service_providers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10244,20 +10244,20 @@ pub mod route_filters {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10329,20 +10329,20 @@ pub mod route_filters {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10409,20 +10409,20 @@ pub mod route_filters {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10489,20 +10489,20 @@ pub mod route_filters {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10558,20 +10558,20 @@ pub mod route_filters {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10628,20 +10628,20 @@ pub mod route_filters {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10779,20 +10779,20 @@ pub mod route_filter_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10858,20 +10858,20 @@ pub mod route_filter_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10940,20 +10940,20 @@ pub mod route_filter_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11022,20 +11022,20 @@ pub mod route_filter_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11093,20 +11093,20 @@ pub mod route_filter_rules {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11360,20 +11360,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11437,20 +11437,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11522,20 +11522,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11590,20 +11590,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11660,20 +11660,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11728,20 +11728,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11807,20 +11807,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11892,20 +11892,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11977,20 +11977,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12062,20 +12062,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12147,20 +12147,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12232,20 +12232,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12317,20 +12317,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12402,20 +12402,20 @@ pub mod network_watchers {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12578,20 +12578,20 @@ pub mod packet_captures {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12652,20 +12652,20 @@ pub mod packet_captures {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12733,20 +12733,20 @@ pub mod packet_captures {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12808,20 +12808,20 @@ pub mod packet_captures {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12884,20 +12884,20 @@ pub mod packet_captures {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12958,20 +12958,20 @@ pub mod packet_captures {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13042,20 +13042,20 @@ pub mod bgp_service_communities {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13125,20 +13125,20 @@ pub mod usages {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13348,20 +13348,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13425,20 +13425,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13511,20 +13511,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13580,20 +13580,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13652,20 +13652,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13732,20 +13732,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13819,20 +13819,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13888,20 +13888,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13967,20 +13967,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14054,20 +14054,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14133,20 +14133,20 @@ pub mod virtual_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14307,20 +14307,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14386,20 +14386,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14472,20 +14472,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14541,20 +14541,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14618,20 +14618,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14698,20 +14698,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14776,20 +14776,20 @@ pub mod virtual_network_gateway_connections {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14905,20 +14905,20 @@ pub mod local_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -14982,20 +14982,20 @@ pub mod local_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -15068,20 +15068,20 @@ pub mod local_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -15137,20 +15137,20 @@ pub mod local_network_gateways {
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrl(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequest(http::Error),
-            #[error("Failed to serialize request body: {0}")]
-            Serialize(serde_json::Error),
-            #[error("Failed to get access token: {0}")]
-            GetToken(azure_core::Error),
-            #[error("Failed to execute request: {0}")]
-            SendRequest(azure_core::Error),
-            #[error("Failed to get response bytes: {0}")]
-            ResponseBytes(azure_core::StreamError),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            Deserialize(serde_json::Error, bytes::Bytes),
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {

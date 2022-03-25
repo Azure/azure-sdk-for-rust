@@ -1,5 +1,4 @@
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ContentLength(i32);
@@ -10,26 +9,13 @@ impl ContentLength {
     }
 }
 
-impl AddAsHeader for ContentLength {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        if self.0 <= 0 {
-            builder.header(http::header::CONTENT_LENGTH, -1)
-        } else {
-            builder.header(http::header::CONTENT_LENGTH, self.0)
-        }
+impl Header for ContentLength {
+    fn name(&self) -> headers::HeaderName {
+        http::header::CONTENT_LENGTH.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        if self.0 >= 0 {
-            let (header_name, header_value) = (http::header::CONTENT_LENGTH, self.0);
-            request
-                .headers_mut()
-                .append(header_name, http::HeaderValue::from(header_value));
-        };
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        let count = if self.0 < 0 { -1 } else { self.0 };
+        format!("{}", count).into()
     }
 }

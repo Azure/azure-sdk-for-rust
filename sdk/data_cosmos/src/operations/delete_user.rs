@@ -1,30 +1,60 @@
 use crate::headers::from_headers::*;
 use crate::prelude::*;
-use azure_core::{
-    headers::session_token_from_headers, Request as HttpRequest, Response as HttpResponse,
-};
+use azure_core::{headers::session_token_from_headers, Context, Response as HttpResponse};
 
-#[derive(Debug, Clone, Default)]
-pub struct DeleteUserOptions {
+#[derive(Debug, Clone)]
+pub struct DeleteUserBuilder {
+    client: UserClient,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl DeleteUserOptions {
-    pub fn new() -> Self {
+impl DeleteUserBuilder {
+    pub(crate) fn new(client: UserClient) -> Self {
         Self {
+            client,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        request.set_body(bytes::Bytes::from_static(&[]).into());
+    pub fn into_future(self) -> DeleteUser {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_with_user_name(http::Method::DELETE);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.set_body(bytes::Bytes::from_static(&[]).into());
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Users),
+                    &mut request,
+                )
+                .await?;
 
-        Ok(())
+            DeleteUserResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type DeleteUser = futures::future::BoxFuture<'static, crate::Result<DeleteUserResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for DeleteUserBuilder {
+    type IntoFuture = DeleteUser;
+    type Output = <DeleteUser as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
     }
 }
 

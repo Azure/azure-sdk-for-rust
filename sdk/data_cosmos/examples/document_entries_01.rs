@@ -1,22 +1,21 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::error::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -38,23 +37,21 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.into_database_client(database_name);
-    let client = client.into_collection_client(collection_name);
+    let client = client.database_client(database_name);
+    let client = client.collection_client(collection_name);
 
     let mut doc = MySampleStruct {
-        id: Cow::Owned(format!("unique_id{}", 500)),
-        a_string: Cow::Borrowed("Something here"),
+        id: format!("unique_id{}", 500),
+        a_string: "Something here".into(),
         a_number: 600,
         a_timestamp: chrono::Utc::now().timestamp(),
     };
 
     // let's add an entity.
     let create_document_response = client
-        .create_document(
-            Context::new(),
-            &doc,
-            CreateDocumentOptions::new().is_upsert(true),
-        )
+        .create_document(doc.clone())
+        .is_upsert(true)
+        .into_future()
         .await?;
 
     println!(
@@ -63,22 +60,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let get_document_response = client
-        .clone()
-        .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document::<serde_json::Value>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&create_document_response),
-        )
+        .document_client(doc.id.clone(), &doc.id)?
+        .get_document()
+        .consistency_level(&create_document_response)
+        .into_future::<serde_json::Value>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
     let get_document_response = client
-        .clone()
-        .into_document_client("ciccia", &doc.id)?
-        .get_document::<serde_json::Value>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&create_document_response),
-        )
+        .document_client("ciccia", &doc.id)?
+        .get_document()
+        .consistency_level(&create_document_response)
+        .into_future::<serde_json::Value>()
         .await?;
     println!(
         "get_document_response == {:#?}\n\n\n",
@@ -88,16 +81,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_documents_response = client
         .list_documents()
         .consistency_level(&get_document_response)
-        .execute::<serde_json::Value>()
-        .await?;
+        .into_stream::<serde_json::Value>()
+        .next()
+        .await
+        .unwrap()?;
     println!("list_documents_response == {:#?}", list_documents_response);
 
     let query_documents_response = client
-        .query_documents()
+        .query_documents("SELECT * FROM c WHERE c.a_number = 600")
         .consistency_level(&list_documents_response)
         .query_cross_partition(true)
-        .execute::<serde_json::Value, _>("SELECT * FROM c WHERE c.a_number = 600")
-        .await?;
+        .into_stream::<serde_json::Value>()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "query_documents_response == {:#?}",
         query_documents_response
@@ -106,12 +103,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     doc.a_number = 43;
 
     let replace_document_response = client
-        .into_document_client(doc.id.clone(), &doc.id)?
-        .replace_document(
-            Context::new(),
-            &doc,
-            ReplaceDocumentOptions::new().consistency_level(&query_documents_response),
-        )
+        .document_client(doc.id.clone(), &doc.id)?
+        .replace_document(doc)
+        .consistency_level(&query_documents_response)
+        .into_future()
         .await?;
     println!(
         "replace_document_response == {:#?}",

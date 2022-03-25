@@ -1,6 +1,4 @@
-use crate::headers::*;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::{headers, Header};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SequenceNumberCondition {
@@ -9,35 +7,22 @@ pub enum SequenceNumberCondition {
     Equal(u64),
 }
 
-impl AddAsHeader for SequenceNumberCondition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+impl Header for SequenceNumberCondition {
+    fn name(&self) -> headers::HeaderName {
         match self {
-            SequenceNumberCondition::Equal(val) => {
-                builder.header(IF_SEQUENCE_NUMBER_EQ, &val.to_string() as &str)
-            }
-            SequenceNumberCondition::LessOrEqual(val) => {
-                builder.header(IF_SEQUENCE_NUMBER_LE, &val.to_string() as &str)
-            }
-            SequenceNumberCondition::Less(val) => {
-                builder.header(IF_SEQUENCE_NUMBER_LT, &val.to_string() as &str)
-            }
+            SequenceNumberCondition::Equal(_) => headers::IF_SEQUENCE_NUMBER_EQ,
+            SequenceNumberCondition::LessOrEqual(_) => headers::IF_SEQUENCE_NUMBER_LE,
+            SequenceNumberCondition::Less(_) => headers::IF_SEQUENCE_NUMBER_LT,
         }
+        .into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        let (header_name, val) = match self {
-            SequenceNumberCondition::Equal(val) => (IF_SEQUENCE_NUMBER_EQ, val),
-            SequenceNumberCondition::LessOrEqual(val) => (IF_SEQUENCE_NUMBER_LE, val),
-            SequenceNumberCondition::Less(val) => (IF_SEQUENCE_NUMBER_LT, val),
-        };
-
-        request
-            .headers_mut()
-            .append(header_name, http::HeaderValue::from_str(&val.to_string())?);
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        match self {
+            SequenceNumberCondition::Equal(val) => val.to_string(),
+            SequenceNumberCondition::LessOrEqual(val) => val.to_string(),
+            SequenceNumberCondition::Less(val) => val.to_string(),
+        }
+        .into()
     }
 }

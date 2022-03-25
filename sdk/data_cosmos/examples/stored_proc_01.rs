@@ -6,6 +6,7 @@
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -40,32 +41,34 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database_name);
-    let collection_client = database_client.into_collection_client(collection_name);
-    let stored_procedure_client = collection_client
-        .clone()
-        .into_stored_procedure_client(stored_procedure_name);
+    let database = client.database_client(database_name);
+    let collection = database.collection_client(collection_name);
+    let stored_procedure = collection.stored_procedure_client(stored_procedure_name);
 
-    let list_stored_procedures_response =
-        collection_client.list_stored_procedures().execute().await?;
+    let list_stored_procedures_response = collection
+        .list_stored_procedures()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "list_stored_procedures_response == {:#?}",
         list_stored_procedures_response
     );
 
-    let create_stored_procedure_response = stored_procedure_client
-        .create_stored_procedure()
-        .execute(function_body)
+    let create_stored_procedure_response = stored_procedure
+        .create_stored_procedure(function_body)
+        .into_future()
         .await?;
     println!(
         "create_stored_procedure_response == {:#?}",
         create_stored_procedure_response
     );
 
-    let execute_stored_procedure_response = stored_procedure_client
+    let execute_stored_procedure_response = stored_procedure
         .execute_stored_procedure()
         .parameters(["Robert"])
-        .execute::<serde_json::Value>()
+        .into_future::<serde_json::Value>()
         .await?;
 
     println!(
@@ -74,12 +77,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     println!(
         "Response as JSON:\n{}",
-        execute_stored_procedure_response.payload.to_string()
+        execute_stored_procedure_response.payload
     );
 
-    let delete_stored_procedure_response = stored_procedure_client
+    let delete_stored_procedure_response = stored_procedure
         .delete_stored_procedure()
-        .execute()
+        .into_future()
         .await?;
     println!(
         "delete_stored_procedure_response == {:#?}",

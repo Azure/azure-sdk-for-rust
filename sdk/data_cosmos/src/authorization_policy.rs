@@ -2,10 +2,11 @@ use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::TimeNonce;
-use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_core::{Context, Policy, PolicyResult, Request};
+use hmac::{Hmac, Mac};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
-use ring::hmac;
+use sha2::Sha256;
 use std::borrow::Cow;
 use std::sync::Arc;
 use url::form_urlencoded;
@@ -43,14 +44,13 @@ impl Policy for AuthorizationPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 
-        if next.is_empty() {
-            return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(
-                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
-            )));
-        }
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
 
         let time_nonce = TimeNonce::new();
 
@@ -100,7 +100,7 @@ impl Policy for AuthorizationPolicy {
 /// 2. Find if the uri **is** the ending string (without the leading slash). If so return an empty
 ///    string. This covers the exception of the rule above.
 /// 3. Return the received uri unchanged.
-// TODO: will become private as soon as cosmos_client will be migrated
+// TODO: will become private as soon as client will be migrated
 // to pipeline arch.
 pub(crate) fn generate_resource_link(uri: &str) -> &str {
     static ENDING_STRINGS: &[&str] = &[
@@ -229,10 +229,11 @@ fn string_to_sign(
 /// encoded and returned to the caller. Possibile optimization: profile if the HMAC struct
 /// initialization is expensive and, if so, cache it somehow to avoid recreating it at every
 /// request.
-fn encode_str_to_sign(str_to_sign: &str, key: &[u8]) -> String {
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, key);
-    let sig = hmac::sign(&key, str_to_sign.as_bytes());
-    base64::encode(sig.as_ref())
+fn encode_str_to_sign(data: &str, key: &[u8]) -> String {
+    let mut hmac = Hmac::<Sha256>::new_from_slice(key).unwrap();
+    hmac.update(data.as_bytes());
+    let signature = hmac.finalize().into_bytes();
+    base64::encode(&signature)
 }
 
 #[cfg(test)]

@@ -2,17 +2,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Access mode types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AccessMode {
     Open,
     PrivateOnly,
 }
+#[doc = "Properties that define the scope private link mode settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessModeSettings {
+    #[doc = "Access mode types."]
     #[serde(rename = "queryAccessMode")]
     pub query_access_mode: AccessMode,
+    #[doc = "Access mode types."]
     #[serde(rename = "ingestionAccessMode")]
     pub ingestion_access_mode: AccessMode,
+    #[doc = "List of exclusions that override the default access mode settings for specific private endpoint connections."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exclusions: Vec<AccessModeSettingsExclusion>,
 }
@@ -25,12 +30,16 @@ impl AccessModeSettings {
         }
     }
 }
+#[doc = "Properties that define the scope private link mode settings exclusion item. This setting applies to a specific private endpoint connection and overrides the default settings for that private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessModeSettingsExclusion {
+    #[doc = "The private endpoint connection name associated to the private endpoint on which we want to apply the specific access mode settings."]
     #[serde(rename = "privateEndpointConnectionName", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_connection_name: Option<String>,
+    #[doc = "Access mode types."]
     #[serde(rename = "queryAccessMode", default, skip_serializing_if = "Option::is_none")]
     pub query_access_mode: Option<AccessMode>,
+    #[doc = "Access mode types."]
     #[serde(rename = "ingestionAccessMode", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_access_mode: Option<AccessMode>,
 }
@@ -39,11 +48,14 @@ impl AccessModeSettingsExclusion {
         Self::default()
     }
 }
+#[doc = "An Azure Monitor PrivateLinkScope definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScope {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Properties that define a Azure Monitor PrivateLinkScope resource."]
     pub properties: AzureMonitorPrivateLinkScopeProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -56,9 +68,12 @@ impl AzureMonitorPrivateLinkScope {
         }
     }
 }
+#[doc = "Describes the list of Azure Monitor PrivateLinkScope resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScopeListResult {
+    #[doc = "List of Azure Monitor PrivateLinkScope definitions."]
     pub value: Vec<AzureMonitorPrivateLinkScope>,
+    #[doc = "The URI to get the next set of Azure Monitor PrivateLinkScope definitions if too many PrivateLinkScopes where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -67,12 +82,16 @@ impl AzureMonitorPrivateLinkScopeListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Properties that define a Azure Monitor PrivateLinkScope resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScopeProperties {
+    #[doc = "Current state of this PrivateLinkScope: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Provisioning ,Succeeded, Canceled and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "List of private endpoint connections."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "Properties that define the scope private link mode settings."]
     #[serde(rename = "accessModeSettings")]
     pub access_mode_settings: AccessModeSettings,
 }
@@ -85,8 +104,10 @@ impl AzureMonitorPrivateLinkScopeProperties {
         }
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -95,10 +116,13 @@ impl DefaultErrorResponse {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -107,16 +131,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -125,18 +155,25 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "The status of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
+    #[doc = "The operation Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Start time of the job in standard ISO8601 format."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time of the job in standard ISO8601 format."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The status of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -145,8 +182,10 @@ impl OperationStatus {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -155,10 +194,12 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint Connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the PrivateEndpointConnectProperties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -167,8 +208,10 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "List of private endpoint connection associated with the specified storage account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
@@ -177,12 +220,16 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the PrivateEndpointConnectProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The Private Endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
@@ -195,6 +242,7 @@ impl PrivateEndpointConnectionProperties {
         }
     }
 }
+#[doc = "The current provisioning state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
     Succeeded,
@@ -202,16 +250,19 @@ pub enum PrivateEndpointConnectionProvisioningState {
     Deleting,
     Failed,
 }
+#[doc = "The private endpoint connection status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
     Pending,
     Approved,
     Rejected,
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -220,8 +271,10 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
@@ -230,12 +283,16 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "The private link resource Private link DNS zone name."]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
@@ -244,12 +301,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -258,6 +319,7 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -268,12 +330,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -282,12 +348,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "A private link scoped resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a private link scoped resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopedResourceProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -296,10 +365,13 @@ impl ScopedResource {
         Self::default()
     }
 }
+#[doc = "A list of scoped resources in a private link scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResourceListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScopedResource>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -308,10 +380,13 @@ impl ScopedResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link scoped resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResourceProperties {
+    #[doc = "The resource id of the scoped Azure monitor resource."]
     #[serde(rename = "linkedResourceId", default, skip_serializing_if = "Option::is_none")]
     pub linked_resource_id: Option<String>,
+    #[doc = "State of the private endpoint connection."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -320,8 +395,10 @@ impl ScopedResourceProperties {
         Self::default()
     }
 }
+#[doc = "A container holding only the Tags for a resource, allowing the user to update the tags on a PrivateLinkScope instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -330,12 +407,15 @@ impl TagsResource {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {
@@ -347,18 +427,25 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -369,6 +456,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -376,6 +464,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

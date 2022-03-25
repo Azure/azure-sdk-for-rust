@@ -6,37 +6,52 @@ use serde::{Deserialize, Serialize};
 pub struct SparkBatchJob {
     #[serde(rename = "livyInfo", default, skip_serializing_if = "Option::is_none")]
     pub livy_info: Option<SparkBatchJobState>,
+    #[doc = "The batch name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The workspace name."]
     #[serde(rename = "workspaceName", default, skip_serializing_if = "Option::is_none")]
     pub workspace_name: Option<String>,
+    #[doc = "The Spark pool name."]
     #[serde(rename = "sparkPoolName", default, skip_serializing_if = "Option::is_none")]
     pub spark_pool_name: Option<String>,
+    #[doc = "The submitter name."]
     #[serde(rename = "submitterName", default, skip_serializing_if = "Option::is_none")]
     pub submitter_name: Option<String>,
+    #[doc = "The submitter identifier."]
     #[serde(rename = "submitterId", default, skip_serializing_if = "Option::is_none")]
     pub submitter_id: Option<String>,
+    #[doc = "The artifact identifier."]
     #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
     pub artifact_id: Option<String>,
+    #[doc = "The job type."]
     #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
     pub job_type: Option<spark_batch_job::JobType>,
+    #[doc = "The Spark batch job result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<spark_batch_job::Result>,
     #[serde(rename = "schedulerInfo", default, skip_serializing_if = "Option::is_none")]
     pub scheduler_info: Option<SparkScheduler>,
     #[serde(rename = "pluginInfo", default, skip_serializing_if = "Option::is_none")]
     pub plugin_info: Option<SparkServicePlugin>,
+    #[doc = "The error information."]
     #[serde(rename = "errorInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub error_info: Vec<SparkServiceError>,
+    #[doc = "The tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The session Id."]
     pub id: i32,
+    #[doc = "The application id of this session"]
     #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
+    #[doc = "The detailed application info."]
     #[serde(rename = "appInfo", default, skip_serializing_if = "Option::is_none")]
     pub app_info: Option<serde_json::Value>,
+    #[doc = "The batch state"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The log lines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub log: Vec<String>,
 }
@@ -66,11 +81,13 @@ impl SparkBatchJob {
 }
 pub mod spark_batch_job {
     use super::*;
+    #[doc = "The job type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum JobType {
         SparkBatch,
         SparkSession,
     }
+    #[doc = "The Spark batch job result."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Result {
         Uncertain,
@@ -79,10 +96,14 @@ pub mod spark_batch_job {
         Cancelled,
     }
 }
+#[doc = "Response for batch list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkBatchJobCollection {
+    #[doc = "The start index of fetched sessions."]
     pub from: i32,
+    #[doc = "Number of sessions fetched."]
     pub total: i32,
+    #[doc = "Batch list"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sessions: Vec<SparkBatchJob>,
 }
@@ -152,20 +173,28 @@ impl SparkBatchJobOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkBatchJobState {
+    #[doc = "the time that at which \"not_started\" livy state was first seen."]
     #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
     pub not_started_at: Option<String>,
+    #[doc = "the time that at which \"starting\" livy state was first seen."]
     #[serde(rename = "startingAt", default, skip_serializing_if = "Option::is_none")]
     pub starting_at: Option<String>,
+    #[doc = "the time that at which \"running\" livy state was first seen."]
     #[serde(rename = "runningAt", default, skip_serializing_if = "Option::is_none")]
     pub running_at: Option<String>,
+    #[doc = "time that at which \"dead\" livy state was first seen."]
     #[serde(rename = "deadAt", default, skip_serializing_if = "Option::is_none")]
     pub dead_at: Option<String>,
+    #[doc = "the time that at which \"success\" livy state was first seen."]
     #[serde(rename = "successAt", default, skip_serializing_if = "Option::is_none")]
     pub success_at: Option<String>,
+    #[doc = "the time that at which \"killed\" livy state was first seen."]
     #[serde(rename = "killedAt", default, skip_serializing_if = "Option::is_none")]
     pub killed_at: Option<String>,
+    #[doc = "the time that at which \"recovering\" livy state was first seen."]
     #[serde(rename = "recoveringAt", default, skip_serializing_if = "Option::is_none")]
     pub recovering_at: Option<String>,
+    #[doc = "the Spark job state."]
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
     pub current_state: Option<String>,
     #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
@@ -497,6 +526,7 @@ impl SparkStatement {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkStatementCancellationResult {
+    #[doc = "The msg property from the Livy API. The value is always \"canceled\"."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msg: Option<String>,
 }

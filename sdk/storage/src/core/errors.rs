@@ -73,6 +73,14 @@ pub enum Error {
     HeadersNotFound(Vec<String>),
     #[error("error writing the header value: {0}")]
     InvalidHeaderValue(#[from] azure_core::HttpHeaderError),
+    #[error("error generating hmac: {0}")]
+    Hmac(#[from] hmac::digest::InvalidLength),
+}
+
+impl From<azure_core::error::Error> for Error {
+    fn from(err: azure_core::error::Error) -> Self {
+        Self::CoreError(err.into())
+    }
 }
 
 impl From<azure_core::HttpError> for Error {

@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The CheckNameAvailability operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
+    #[doc = "Gets a boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or invalid and cannot be used."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Gets the reason that a storage account name could not be used. The Reason element is only returned if NameAvailable is false."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_result::Reason>,
+    #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -18,16 +22,20 @@ impl CheckNameAvailabilityResult {
 }
 pub mod check_name_availability_result {
     use super::*;
+    #[doc = "Gets the reason that a storage account name could not be used. The Reason element is only returned if NameAvailable is false."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         AccountNameInvalid,
         AlreadyExists,
     }
 }
+#[doc = "The custom domain assigned to this storage account. This can be set via Update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomain {
+    #[doc = "Gets or sets the custom domain name. Name is the CNAME source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether indirect CName validation is enabled. Default value is false. This should only be set on updates"]
     #[serde(rename = "useSubDomainName", default, skip_serializing_if = "Option::is_none")]
     pub use_sub_domain_name: Option<bool>,
 }
@@ -36,12 +44,16 @@ impl CustomDomain {
         Self::default()
     }
 }
+#[doc = "The URIs that are used to perform a retrieval of a public blob, queue or table object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoints {
+    #[doc = "Gets the blob endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blob: Option<String>,
+    #[doc = "Gets the queue endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub queue: Option<String>,
+    #[doc = "Gets the table endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<String>,
 }
@@ -52,13 +64,18 @@ impl Endpoints {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -73,6 +90,7 @@ impl Resource {
         }
     }
 }
+#[doc = "The storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
     #[serde(flatten)]
@@ -100,6 +118,7 @@ impl StorageAccountCheckNameAvailabilityParameters {
         Self::default()
     }
 }
+#[doc = "The parameters to provide for the account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountCreateParameters {
     #[serde(flatten)]
@@ -115,10 +134,13 @@ impl StorageAccountCreateParameters {
         }
     }
 }
+#[doc = "The access keys for the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountKeys {
+    #[doc = "Gets the value of key 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key1: Option<String>,
+    #[doc = "Gets the value of key 2."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }
@@ -127,10 +149,13 @@ impl StorageAccountKeys {
         Self::default()
     }
 }
+#[doc = "The list storage accounts operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListResult {
+    #[doc = "Gets the list of storage accounts and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageAccount>,
+    #[doc = "Gets the link to the next set of results. Currently this will always be empty as the API does not support pagination."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -141,26 +166,37 @@ impl StorageAccountListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
+    #[doc = "Gets the status of the storage account at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<storage_account_properties::ProvisioningState>,
+    #[doc = "Gets the type of the storage account."]
     #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
     pub account_type: Option<storage_account_properties::AccountType>,
+    #[doc = "The URIs that are used to perform a retrieval of a public blob, queue or table object."]
     #[serde(rename = "primaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub primary_endpoints: Option<Endpoints>,
+    #[doc = "Gets the location of the primary for the storage account."]
     #[serde(rename = "primaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub primary_location: Option<String>,
+    #[doc = "Gets the status indicating whether the primary location of the storage account is available or unavailable."]
     #[serde(rename = "statusOfPrimary", default, skip_serializing_if = "Option::is_none")]
     pub status_of_primary: Option<storage_account_properties::StatusOfPrimary>,
+    #[doc = "Gets the timestamp of the most recent instance of a failover to the secondary location. Only the most recent timestamp is retained. This element is not returned if there has never been a failover instance. Only available if the accountType is StandardGRS or StandardRAGRS."]
     #[serde(rename = "lastGeoFailoverTime", default, skip_serializing_if = "Option::is_none")]
     pub last_geo_failover_time: Option<String>,
+    #[doc = "Gets the location of the geo replicated secondary for the storage account. Only available if the accountType is StandardGRS or StandardRAGRS."]
     #[serde(rename = "secondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub secondary_location: Option<String>,
+    #[doc = "Gets the status indicating whether the secondary location of the storage account is available or unavailable. Only available if the accountType is StandardGRS or StandardRAGRS."]
     #[serde(rename = "statusOfSecondary", default, skip_serializing_if = "Option::is_none")]
     pub status_of_secondary: Option<storage_account_properties::StatusOfSecondary>,
+    #[doc = "Gets the creation date and time of the storage account in UTC."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "The custom domain assigned to this storage account. This can be set via Update."]
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
+    #[doc = "The URIs that are used to perform a retrieval of a public blob, queue or table object."]
     #[serde(rename = "secondaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub secondary_endpoints: Option<Endpoints>,
 }
@@ -171,6 +207,7 @@ impl StorageAccountProperties {
 }
 pub mod storage_account_properties {
     use super::*;
+    #[doc = "Gets the status of the storage account at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -178,6 +215,7 @@ pub mod storage_account_properties {
         ResolvingDns,
         Succeeded,
     }
+    #[doc = "Gets the type of the storage account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
         #[serde(rename = "Standard_LRS")]
@@ -191,11 +229,13 @@ pub mod storage_account_properties {
         #[serde(rename = "Premium_LRS")]
         PremiumLrs,
     }
+    #[doc = "Gets the status indicating whether the primary location of the storage account is available or unavailable."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusOfPrimary {
         Available,
         Unavailable,
     }
+    #[doc = "Gets the status indicating whether the secondary location of the storage account is available or unavailable. Only available if the accountType is StandardGRS or StandardRAGRS."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusOfSecondary {
         Available,
@@ -204,6 +244,7 @@ pub mod storage_account_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesCreateParameters {
+    #[doc = "Gets or sets the account type."]
     #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
     pub account_type: Option<storage_account_properties_create_parameters::AccountType>,
 }
@@ -214,6 +255,7 @@ impl StorageAccountPropertiesCreateParameters {
 }
 pub mod storage_account_properties_create_parameters {
     use super::*;
+    #[doc = "Gets or sets the account type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
         #[serde(rename = "Standard_LRS")]
@@ -230,8 +272,10 @@ pub mod storage_account_properties_create_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesUpdateParameters {
+    #[doc = "Gets or sets the account type. Note that StandardZRS and PremiumLRS accounts cannot be changed to other account types, and other account types cannot be changed to StandardZRS or PremiumLRS."]
     #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
     pub account_type: Option<storage_account_properties_update_parameters::AccountType>,
+    #[doc = "The custom domain assigned to this storage account. This can be set via Update."]
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
 }
@@ -242,6 +286,7 @@ impl StorageAccountPropertiesUpdateParameters {
 }
 pub mod storage_account_properties_update_parameters {
     use super::*;
+    #[doc = "Gets or sets the account type. Note that StandardZRS and PremiumLRS accounts cannot be changed to other account types, and other account types cannot be changed to StandardZRS or PremiumLRS."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
         #[serde(rename = "Standard_LRS")]
@@ -276,6 +321,7 @@ pub mod storage_account_regenerate_key_parameters {
         Key2,
     }
 }
+#[doc = "The parameters to update on the account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountUpdateParameters {
     #[serde(flatten)]
@@ -293,6 +339,7 @@ impl StorageAccountUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -301,14 +348,19 @@ impl SubResource {
         Self::default()
     }
 }
+#[doc = "Describes Storage Resource Usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Gets the unit of measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
+    #[doc = "Gets the current count of the allocated resources in the subscription."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i32>,
+    #[doc = "Gets the maximum count of the resources that can be allocated in the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
+    #[doc = "The Usage Names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
@@ -319,6 +371,7 @@ impl Usage {
 }
 pub mod usage {
     use super::*;
+    #[doc = "Gets the unit of measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
@@ -329,8 +382,10 @@ pub mod usage {
         BytesPerSecond,
     }
 }
+#[doc = "The List Usages operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
+    #[doc = "Gets or sets the list Storage Resource Usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
@@ -339,10 +394,13 @@ impl UsageListResult {
         Self::default()
     }
 }
+#[doc = "The Usage Names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
+    #[doc = "Gets a string describing the resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets a localized string describing the resource name."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }

@@ -1,4 +1,4 @@
-use azure_core::AddAsHeader;
+use azure_core::headers::{self, AsHeaders};
 pub mod requests;
 pub mod responses;
 
@@ -10,7 +10,6 @@ use azure_core::headers::{
 use azure_core::{LeaseDuration, LeaseState, LeaseStatus};
 use azure_storage::parsing_xml::{cast_must, cast_optional, traverse};
 use chrono::{DateTime, Utc};
-use http::request::Builder;
 use http::{header, HeaderMap};
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -23,31 +22,17 @@ create_enum!(
     (Blob, "blob")
 );
 
-impl AddAsHeader for PublicAccess {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+impl AsHeaders for PublicAccess {
+    type Iter = std::option::IntoIter<(headers::HeaderName, headers::HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
         match self {
-            PublicAccess::Blob => builder.header(BLOB_PUBLIC_ACCESS, "blob"),
-            PublicAccess::Container => builder.header(BLOB_PUBLIC_ACCESS, "container"),
-            PublicAccess::None => builder,
+            PublicAccess::Blob => Some((BLOB_PUBLIC_ACCESS.into(), "blob".into())).into_iter(),
+            PublicAccess::Container => {
+                Some((BLOB_PUBLIC_ACCESS.into(), "container".into())).into_iter()
+            }
+            PublicAccess::None => None.into_iter(),
         }
-    }
-
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        let (header_name, header_value) = match self {
-            PublicAccess::Blob => (BLOB_PUBLIC_ACCESS, "blob"),
-            PublicAccess::Container => (BLOB_PUBLIC_ACCESS, "container"),
-            PublicAccess::None => return Ok(()),
-        };
-
-        request.headers_mut().append(
-            header_name,
-            http::header::HeaderValue::from_str(header_value)?,
-        );
-
-        Ok(())
     }
 }
 

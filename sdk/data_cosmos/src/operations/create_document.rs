@@ -10,10 +10,11 @@ use http::StatusCode;
 use serde::Serialize;
 use std::convert::TryFrom;
 
-use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 
 #[derive(Debug, Clone)]
-pub struct CreateDocumentOptions {
+pub struct CreateDocumentBuilder<D> {
+    client: CollectionClient,
     is_upsert: IsUpsert,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition>,
@@ -21,11 +22,14 @@ pub struct CreateDocumentOptions {
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
     partition_key: Option<String>,
+    document: D,
+    context: Context,
 }
 
-impl CreateDocumentOptions {
-    pub fn new() -> Self {
+impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
+    pub(crate) fn new(client: CollectionClient, document: D) -> Self {
         Self {
+            client,
             is_upsert: IsUpsert::No,
             indexing_directive: IndexingDirective::Default,
             if_match_condition: None,
@@ -33,6 +37,8 @@ impl CreateDocumentOptions {
             consistency_level: None,
             allow_tentative_writes: TentativeWritesAllowance::Deny,
             partition_key: None,
+            document,
+            context: Context::new(),
         }
     }
 
@@ -43,6 +49,7 @@ impl CreateDocumentOptions {
         allow_tentative_writes: TentativeWritesAllowance,
         is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
         indexing_directive: IndexingDirective,
+        context: Context => context,
     }
 
     pub fn partition_key<PK: Serialize>(
@@ -53,30 +60,53 @@ impl CreateDocumentOptions {
         Ok(self)
     }
 
-    pub(crate) fn decorate_request<'b, DOC>(
-        &self,
-        req: &mut HttpRequest,
-        document: &'b DOC,
-    ) -> crate::Result<()>
-    where
-        DOC: Serialize + CosmosEntity<'b>,
-    {
-        let serialized = serde_json::to_string(document)?;
-        let partition_key = match &self.partition_key {
-            Some(s) => s.clone(),
-            None => serialize_partition_key(&document.partition_key())?,
-        };
+    pub fn into_future(self) -> CreateDocument {
+        Box::pin(async move {
+            let document = self.document;
+            let serialized = serde_json::to_string(&document)?;
+            let partition_key = match self.partition_key {
+                Some(s) => s,
+                None => serialize_partition_key(&document.partition_key())?,
+            };
+            let mut request = self.client.prepare_doc_request_pipeline(http::Method::POST);
 
-        add_as_partition_key_header_serialized2(&partition_key, req);
-        azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
-        azure_core::headers::add_optional_header2(&self.if_modified_since, req)?;
-        azure_core::headers::add_optional_header2(&self.consistency_level, req)?;
-        azure_core::headers::add_mandatory_header2(&self.is_upsert, req)?;
-        azure_core::headers::add_mandatory_header2(&self.indexing_directive, req)?;
-        azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, req)?;
+            add_as_partition_key_header_serialized2(&partition_key, &mut request);
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.is_upsert);
+            request.insert_headers(&self.indexing_directive);
+            request.insert_headers(&self.allow_tentative_writes);
 
-        req.set_body(bytes::Bytes::from(serialized).into());
-        Ok(())
+            request.set_body(bytes::Bytes::from(serialized).into());
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Documents),
+                    &mut request,
+                )
+                .await?;
+
+            CreateDocumentResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type CreateDocument =
+    futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
+
+#[cfg(feature = "into_future")]
+impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture
+    for CreateDocumentBuilder<D>
+{
+    type IntoFuture = CreateDocument;
+    type Output = <CreateDocument as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
     }
 }
 

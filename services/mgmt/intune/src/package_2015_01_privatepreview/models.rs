@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Android Policy entity for Intune MAM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AndroidMamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Intune MAM iOS Policy Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AndroidMamPolicyProperties>,
 }
@@ -17,6 +19,7 @@ impl AndroidMamPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AndroidMamPolicyCollection {
     pub value: Vec<AndroidMamPolicy>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -25,6 +28,7 @@ impl AndroidMamPolicyCollection {
         Self { value, nextlink: None }
     }
 }
+#[doc = "Intune MAM iOS Policy Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AndroidMamPolicyProperties {
     #[serde(flatten)]
@@ -70,6 +74,7 @@ pub mod android_mam_policy_properties {
         }
     }
 }
+#[doc = "Application entity for Intune MAM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
     #[serde(flatten)]
@@ -85,6 +90,7 @@ impl Application {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationCollection {
     pub value: Vec<Application>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -127,6 +133,7 @@ pub mod application_properties {
         }
     }
 }
+#[doc = "Device entity for Intune."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
     #[serde(flatten)]
@@ -142,6 +149,7 @@ impl Device {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCollection {
     pub value: Vec<Device>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -183,6 +191,7 @@ impl Error {
         Self { code, message }
     }
 }
+#[doc = "Flagged Enrolled App for the given tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledApp {
     #[serde(flatten)]
@@ -195,9 +204,11 @@ impl FlaggedEnrolledApp {
         Self::default()
     }
 }
+#[doc = "Flagged Enrolled App collection for the given tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedEnrolledAppCollection {
     pub value: Vec<FlaggedEnrolledApp>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -236,6 +247,7 @@ impl FlaggedEnrolledAppProperties {
         Self::default()
     }
 }
+#[doc = "Flagged user for the given tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedUser {
     #[serde(flatten)]
@@ -248,9 +260,11 @@ impl FlaggedUser {
         Self::default()
     }
 }
+#[doc = "Flagged user collection for the given tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedUserCollection {
     pub value: Vec<FlaggedUser>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -271,6 +285,7 @@ impl FlaggedUserProperties {
         Self::default()
     }
 }
+#[doc = "Group entity for Intune MAM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupItem {
     #[serde(flatten)]
@@ -296,6 +311,7 @@ impl GroupProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupsCollection {
     pub value: Vec<GroupItem>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -307,6 +323,7 @@ impl GroupsCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IosmamPolicyCollection {
     pub value: Vec<IOsmamPolicy>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -315,6 +332,7 @@ impl IosmamPolicyCollection {
         Self { value, nextlink: None }
     }
 }
+#[doc = "Location entity for given tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
     #[serde(flatten)]
@@ -330,6 +348,7 @@ impl Location {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocationCollection {
     pub value: Vec<Location>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -348,8 +367,10 @@ impl LocationProperties {
         Self { host_name }
     }
 }
+#[doc = "MAM Policy request body for properties Intune MAM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MamPolicyAppIdOrGroupIdPayload {
+    #[doc = "Android Policy request body for Intune MAM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MamPolicyAppOrGroupIdProperties>,
 }
@@ -358,6 +379,7 @@ impl MamPolicyAppIdOrGroupIdPayload {
         Self::default()
     }
 }
+#[doc = "Android Policy request body for Intune MAM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MamPolicyAppOrGroupIdProperties {
     pub url: String,
@@ -561,6 +583,7 @@ pub mod mam_policy_properties {
         }
     }
 }
+#[doc = "OperationResult entity for Intune."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResult {
     #[serde(flatten)]
@@ -576,6 +599,7 @@ impl OperationResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultCollection {
     pub value: Vec<OperationResult>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
@@ -610,14 +634,19 @@ impl OperationResultProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource Tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource Location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -626,6 +655,7 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Default Statuses entity for the given tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusesDefault {
     #[serde(flatten)]
@@ -664,6 +694,7 @@ impl StatusesProperties {
         Self::default()
     }
 }
+#[doc = "Device entity for Intune."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WipeDeviceOperationResult {
     #[serde(flatten)]
@@ -685,10 +716,12 @@ impl WipeDeviceOperationResultProperties {
         Self { value }
     }
 }
+#[doc = "iOS Policy entity for Intune MAM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IOsmamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Intune MAM iOS Policy Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IOsmamPolicyProperties>,
 }
@@ -697,6 +730,7 @@ impl IOsmamPolicy {
         Self::default()
     }
 }
+#[doc = "Intune MAM iOS Policy Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IOsmamPolicyProperties {
     #[serde(flatten)]

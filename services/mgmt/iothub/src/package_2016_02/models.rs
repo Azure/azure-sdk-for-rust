@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The IoT hub cloud-to-device messaging properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudToDeviceProperties {
+    #[doc = "The max delivery count for cloud-to-device messages in the device queue. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#cloud-to-device-messages."]
     #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_count: Option<i32>,
+    #[doc = "The default time to live for cloud-to-device messages in the device queue. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#cloud-to-device-messages."]
     #[serde(rename = "defaultTtlAsIso8601", default, skip_serializing_if = "Option::is_none")]
     pub default_ttl_as_iso8601: Option<String>,
+    #[doc = "The properties of the feedback queue for cloud-to-device messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub feedback: Option<FeedbackProperties>,
 }
@@ -16,14 +20,19 @@ impl CloudToDeviceProperties {
         Self::default()
     }
 }
+#[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
+    #[doc = "The error code."]
     #[serde(rename = "Code", default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The HTTP status code."]
     #[serde(rename = "HttpStatusCode", default, skip_serializing_if = "Option::is_none")]
     pub http_status_code: Option<String>,
+    #[doc = "The error message."]
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error details."]
     #[serde(rename = "Details", default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
@@ -32,12 +41,16 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "The properties of the EventHubConsumerGroupInfo object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConsumerGroupInfo {
+    #[doc = "The tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The Event Hub-compatible consumer group identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The Event Hub-compatible consumer group name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -46,10 +59,13 @@ impl EventHubConsumerGroupInfo {
         Self::default()
     }
 }
+#[doc = "The JSON-serialized array of Event Hub-compatible consumer group names with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConsumerGroupsListResult {
+    #[doc = "The array of Event Hub-compatible consumer group names."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
+    #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -58,16 +74,22 @@ impl EventHubConsumerGroupsListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the provisioned Event Hub-compatible endpoint used by the IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubProperties {
+    #[doc = "The retention time for device-to-cloud messages in days. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#device-to-cloud-messages"]
     #[serde(rename = "retentionTimeInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_time_in_days: Option<i64>,
+    #[doc = "The number of partitions for receiving device-to-cloud messages in the Event Hub-compatible endpoint. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#device-to-cloud-messages."]
     #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
     pub partition_count: Option<i32>,
+    #[doc = "The partition ids in the Event Hub-compatible endpoint."]
     #[serde(rename = "partitionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub partition_ids: Vec<String>,
+    #[doc = "The Event Hub-compatible name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "The Event Hub-compatible endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
@@ -76,10 +98,13 @@ impl EventHubProperties {
         Self::default()
     }
 }
+#[doc = "Use to provide parameters when requesting an export of all devices in the IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDevicesRequest {
+    #[doc = "The export blob container URI."]
     #[serde(rename = "ExportBlobContainerUri")]
     pub export_blob_container_uri: String,
+    #[doc = "The value indicating whether keys should be excluded during export."]
     #[serde(rename = "ExcludeKeys")]
     pub exclude_keys: bool,
 }
@@ -91,12 +116,16 @@ impl ExportDevicesRequest {
         }
     }
 }
+#[doc = "The properties of the feedback queue for cloud-to-device messages."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FeedbackProperties {
+    #[doc = "The lock duration for the feedback queue. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#cloud-to-device-messages."]
     #[serde(rename = "lockDurationAsIso8601", default, skip_serializing_if = "Option::is_none")]
     pub lock_duration_as_iso8601: Option<String>,
+    #[doc = "The period of time for which a message is available to consume before it is expired by the IoT hub. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#cloud-to-device-messages."]
     #[serde(rename = "ttlAsIso8601", default, skip_serializing_if = "Option::is_none")]
     pub ttl_as_iso8601: Option<String>,
+    #[doc = "The number of times the IoT hub attempts to deliver a message on the feedback queue. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-messaging#cloud-to-device-messages."]
     #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_count: Option<i32>,
 }
@@ -105,10 +134,13 @@ impl FeedbackProperties {
         Self::default()
     }
 }
+#[doc = "Use to provide parameters when requesting an import of all devices in the hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportDevicesRequest {
+    #[doc = "The input blob container URI."]
     #[serde(rename = "InputBlobContainerUri")]
     pub input_blob_container_uri: String,
+    #[doc = "The output blob container URI."]
     #[serde(rename = "OutputBlobContainerUri")]
     pub output_blob_container_uri: String,
 }
@@ -120,14 +152,19 @@ impl ImportDevicesRequest {
         }
     }
 }
+#[doc = "IoT Hub capacity information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubCapacity {
+    #[doc = "The minimum number of units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<i64>,
+    #[doc = "The maximum number of units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<i64>,
+    #[doc = "The default number of units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i64>,
+    #[doc = "The type of the scaling enabled."]
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<iot_hub_capacity::ScaleType>,
 }
@@ -138,6 +175,7 @@ impl IotHubCapacity {
 }
 pub mod iot_hub_capacity {
     use super::*;
+    #[doc = "The type of the scaling enabled."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
         Automatic,
@@ -145,16 +183,22 @@ pub mod iot_hub_capacity {
         None,
     }
 }
+#[doc = "The description of the IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDescription {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The subscription identifier."]
     pub subscriptionid: String,
+    #[doc = "The name of the resource group that contains the IoT hub. A resource group name uniquely identifies the resource group within the subscription."]
     pub resourcegroup: String,
+    #[doc = "The Etag field is *not* required. If it is provided in the response body, it must also be provided as a header per the normal ETag convention."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The properties of an IoT hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IotHubProperties>,
+    #[doc = "Information about the SKU of the IoT hub."]
     pub sku: IotHubSkuInfo,
 }
 impl IotHubDescription {
@@ -169,10 +213,13 @@ impl IotHubDescription {
         }
     }
 }
+#[doc = "The JSON-serialized array of IotHubDescription objects with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDescriptionListResult {
+    #[doc = "The array of IotHubDescription objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotHubDescription>,
+    #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -181,12 +228,16 @@ impl IotHubDescriptionListResult {
         Self::default()
     }
 }
+#[doc = "The properties indicating whether a given IoT hub name is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubNameAvailabilityInfo {
+    #[doc = "The value which indicates whether the provided name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason for unavailability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<iot_hub_name_availability_info::Reason>,
+    #[doc = "The detailed reason message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -197,36 +248,50 @@ impl IotHubNameAvailabilityInfo {
 }
 pub mod iot_hub_name_availability_info {
     use super::*;
+    #[doc = "The reason for unavailability."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         Invalid,
         AlreadyExists,
     }
 }
+#[doc = "The properties of an IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubProperties {
+    #[doc = "The shared access policies you can use to secure a connection to the IoT hub."]
     #[serde(rename = "authorizationPolicies", default, skip_serializing_if = "Vec::is_empty")]
     pub authorization_policies: Vec<SharedAccessSignatureAuthorizationRule>,
+    #[doc = "The IP filter rules."]
     #[serde(rename = "ipFilterRules", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_filter_rules: Vec<IpFilterRule>,
+    #[doc = "The provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The name of the host."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The Event Hub-compatible endpoint properties. The possible keys to this dictionary are events and operationsMonitoringEvents. Both of these keys have to be present in the dictionary while making create or update calls for the IoT hub."]
     #[serde(rename = "eventHubEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_endpoints: Option<serde_json::Value>,
+    #[doc = "The list of Azure Storage endpoints where you can upload files. Currently you can configure only one Azure Storage account and that MUST have its key as $default. Specifying more than one storage account causes an error to be thrown. Not specifying a value for this property when the enableFileUploadNotifications property is set to True, causes an error to be thrown."]
     #[serde(rename = "storageEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoints: Option<serde_json::Value>,
+    #[doc = "The messaging endpoint properties for the file upload notification queue."]
     #[serde(rename = "messagingEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub messaging_endpoints: Option<serde_json::Value>,
+    #[doc = "If True, file upload notifications are enabled."]
     #[serde(rename = "enableFileUploadNotifications", default, skip_serializing_if = "Option::is_none")]
     pub enable_file_upload_notifications: Option<bool>,
+    #[doc = "The IoT hub cloud-to-device messaging properties."]
     #[serde(rename = "cloudToDevice", default, skip_serializing_if = "Option::is_none")]
     pub cloud_to_device: Option<CloudToDeviceProperties>,
+    #[doc = "Comments."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comments: Option<String>,
+    #[doc = "The operations monitoring properties for the IoT hub. The possible keys to the dictionary are Connections, DeviceTelemetry, C2DCommands, DeviceIdentityOperations, FileUploadOperations."]
     #[serde(rename = "operationsMonitoringProperties", default, skip_serializing_if = "Option::is_none")]
     pub operations_monitoring_properties: Option<OperationsMonitoringProperties>,
+    #[doc = "The capabilities and features enabled for the IoT hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub features: Option<iot_hub_properties::Features>,
 }
@@ -237,18 +302,23 @@ impl IotHubProperties {
 }
 pub mod iot_hub_properties {
     use super::*;
+    #[doc = "The capabilities and features enabled for the IoT hub."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Features {
         None,
         DeviceManagement,
     }
 }
+#[doc = "Quota metrics properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubQuotaMetricInfo {
+    #[doc = "The name of the quota metric."]
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The current value for the quota metric."]
     #[serde(rename = "CurrentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
+    #[doc = "The maximum value of the quota metric."]
     #[serde(rename = "MaxValue", default, skip_serializing_if = "Option::is_none")]
     pub max_value: Option<i64>,
 }
@@ -257,10 +327,13 @@ impl IotHubQuotaMetricInfo {
         Self::default()
     }
 }
+#[doc = "The JSON-serialized array of IotHubQuotaMetricInfo objects with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubQuotaMetricInfoListResult {
+    #[doc = "The array of quota metrics objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotHubQuotaMetricInfo>,
+    #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -269,11 +342,15 @@ impl IotHubQuotaMetricInfoListResult {
         Self::default()
     }
 }
+#[doc = "SKU properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubSkuDescription {
+    #[doc = "The type of the resource."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Information about the SKU of the IoT hub."]
     pub sku: IotHubSkuInfo,
+    #[doc = "IoT Hub capacity information."]
     pub capacity: IotHubCapacity,
 }
 impl IotHubSkuDescription {
@@ -285,10 +362,13 @@ impl IotHubSkuDescription {
         }
     }
 }
+#[doc = "The JSON-serialized array of IotHubSkuDescription objects with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubSkuDescriptionListResult {
+    #[doc = "The array of IotHubSkuDescription."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotHubSkuDescription>,
+    #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -297,11 +377,15 @@ impl IotHubSkuDescriptionListResult {
         Self::default()
     }
 }
+#[doc = "Information about the SKU of the IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubSkuInfo {
+    #[doc = "The name of the SKU."]
     pub name: iot_hub_sku_info::Name,
+    #[doc = "The billing tier for the IoT hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<iot_hub_sku_info::Tier>,
+    #[doc = "The number of provisioned IoT Hub units. See: https://docs.microsoft.com/azure/azure-subscription-service-limits#iot-hub-limits."]
     pub capacity: i64,
 }
 impl IotHubSkuInfo {
@@ -315,6 +399,7 @@ impl IotHubSkuInfo {
 }
 pub mod iot_hub_sku_info {
     use super::*;
+    #[doc = "The name of the SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         F1,
@@ -322,17 +407,22 @@ pub mod iot_hub_sku_info {
         S2,
         S3,
     }
+    #[doc = "The billing tier for the IoT hub."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Free,
         Standard,
     }
 }
+#[doc = "The IP filter rules for the IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpFilterRule {
+    #[doc = "The name of the IP filter rule."]
     #[serde(rename = "filterName")]
     pub filter_name: String,
+    #[doc = "The desired action for requests captured by this rule."]
     pub action: ip_filter_rule::Action,
+    #[doc = "A string that contains the IP address range in CIDR notation for the rule."]
     #[serde(rename = "ipMask")]
     pub ip_mask: String,
 }
@@ -347,28 +437,38 @@ impl IpFilterRule {
 }
 pub mod ip_filter_rule {
     use super::*;
+    #[doc = "The desired action for requests captured by this rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Accept,
         Reject,
     }
 }
+#[doc = "The properties of the Job Response object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResponse {
+    #[doc = "The job identifier."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
+    #[doc = "The start time of the job."]
     #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub start_time_utc: Option<String>,
+    #[doc = "The time the job stopped processing."]
     #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub end_time_utc: Option<String>,
+    #[doc = "The type of the job."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_response::Type>,
+    #[doc = "The status of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_response::Status>,
+    #[doc = "If status == failed, this string containing the reason for the failure."]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
+    #[doc = "The status message for the job."]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
     pub status_message: Option<String>,
+    #[doc = "The job identifier of the parent job, if any."]
     #[serde(rename = "parentJobId", default, skip_serializing_if = "Option::is_none")]
     pub parent_job_id: Option<String>,
 }
@@ -379,6 +479,7 @@ impl JobResponse {
 }
 pub mod job_response {
     use super::*;
+    #[doc = "The type of the job."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "unknown")]
@@ -402,6 +503,7 @@ pub mod job_response {
         #[serde(rename = "firmwareUpdate")]
         FirmwareUpdate,
     }
+    #[doc = "The status of the job."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "unknown")]
@@ -418,10 +520,13 @@ pub mod job_response {
         Cancelled,
     }
 }
+#[doc = "The JSON-serialized array of JobResponse objects with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResponseListResult {
+    #[doc = "The array of JobResponse objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobResponse>,
+    #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -430,12 +535,16 @@ impl JobResponseListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the messaging endpoints used by this IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MessagingEndpointProperties {
+    #[doc = "The lock duration. See: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-file-upload."]
     #[serde(rename = "lockDurationAsIso8601", default, skip_serializing_if = "Option::is_none")]
     pub lock_duration_as_iso8601: Option<String>,
+    #[doc = "The period of time for which a message is available to consume before it is expired by the IoT hub. See: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-file-upload."]
     #[serde(rename = "ttlAsIso8601", default, skip_serializing_if = "Option::is_none")]
     pub ttl_as_iso8601: Option<String>,
+    #[doc = "The number of times the IoT hub attempts to deliver a message. See: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-file-upload."]
     #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_count: Option<i32>,
 }
@@ -444,8 +553,10 @@ impl MessagingEndpointProperties {
         Self::default()
     }
 }
+#[doc = "Input values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationInputs {
+    #[doc = "The name of the IoT hub to check."]
     #[serde(rename = "Name")]
     pub name: String,
 }
@@ -454,6 +565,7 @@ impl OperationInputs {
         Self { name }
     }
 }
+#[doc = "The operations monitoring properties for the IoT hub. The possible keys to the dictionary are Connections, DeviceTelemetry, C2DCommands, DeviceIdentityOperations, FileUploadOperations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsMonitoringProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -464,12 +576,16 @@ impl OperationsMonitoringProperties {
         Self::default()
     }
 }
+#[doc = "Identity registry statistics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryStatistics {
+    #[doc = "The total count of devices in the identity registry."]
     #[serde(rename = "totalDeviceCount", default, skip_serializing_if = "Option::is_none")]
     pub total_device_count: Option<i64>,
+    #[doc = "The count of enabled devices in the identity registry."]
     #[serde(rename = "enabledDeviceCount", default, skip_serializing_if = "Option::is_none")]
     pub enabled_device_count: Option<i64>,
+    #[doc = "The count of disabled devices in the identity registry."]
     #[serde(rename = "disabledDeviceCount", default, skip_serializing_if = "Option::is_none")]
     pub disabled_device_count: Option<i64>,
 }
@@ -478,15 +594,21 @@ impl RegistryStatistics {
         Self::default()
     }
 }
+#[doc = "The common properties of an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The resource identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The resource location."]
     pub location: String,
+    #[doc = "The resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -501,14 +623,19 @@ impl Resource {
         }
     }
 }
+#[doc = "The properties of an IoT hub shared access policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedAccessSignatureAuthorizationRule {
+    #[doc = "The name of the shared access policy."]
     #[serde(rename = "keyName")]
     pub key_name: String,
+    #[doc = "The primary key."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The secondary key."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
+    #[doc = "The permissions assigned to the shared access policy."]
     pub rights: shared_access_signature_authorization_rule::Rights,
 }
 impl SharedAccessSignatureAuthorizationRule {
@@ -523,6 +650,7 @@ impl SharedAccessSignatureAuthorizationRule {
 }
 pub mod shared_access_signature_authorization_rule {
     use super::*;
+    #[doc = "The permissions assigned to the shared access policy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Rights {
         RegistryRead,
@@ -553,10 +681,13 @@ pub mod shared_access_signature_authorization_rule {
         RegistryReadRegistryWriteServiceConnectDeviceConnect,
     }
 }
+#[doc = "The list of shared access policies with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessSignatureAuthorizationRuleListResult {
+    #[doc = "The list of shared access policies."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SharedAccessSignatureAuthorizationRule>,
+    #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -565,12 +696,16 @@ impl SharedAccessSignatureAuthorizationRuleListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the Azure Storage endpoint for file upload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageEndpointProperties {
+    #[doc = "The period of time for which the SAS URI generated by IoT Hub for file upload is valid. See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-file-upload#file-upload-notification-configuration-options."]
     #[serde(rename = "sasTtlAsIso8601", default, skip_serializing_if = "Option::is_none")]
     pub sas_ttl_as_iso8601: Option<String>,
+    #[doc = "The connection string for the Azure Storage account to which files are uploaded."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
+    #[doc = "The name of the root container where you upload files. The container need not exist but should be creatable using the connectionString specified."]
     #[serde(rename = "containerName")]
     pub container_name: String,
 }

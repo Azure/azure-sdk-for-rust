@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Key Vault container for a certificate that is purchased through Azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceCertificate {
+    #[doc = "Key Vault resource Id."]
     #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_id: Option<String>,
+    #[doc = "Key Vault secret name."]
     #[serde(rename = "keyVaultSecretName", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_name: Option<String>,
+    #[doc = "Status of the Key Vault secret."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<app_service_certificate::ProvisioningState>,
 }
@@ -18,6 +22,7 @@ impl AppServiceCertificate {
 }
 pub mod app_service_certificate {
     use super::*;
+    #[doc = "Status of the Key Vault secret."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Initialized,
@@ -33,9 +38,12 @@ pub mod app_service_certificate {
         Unknown,
     }
 }
+#[doc = "Collection of certificate order certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServiceCertificateCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<AppServiceCertificateResource>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -44,10 +52,12 @@ impl AppServiceCertificateCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "SSL certificate purchase order."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServiceCertificateOrder {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "AppServiceCertificateOrder resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<app_service_certificate_order::Properties>,
 }
@@ -61,48 +71,68 @@ impl AppServiceCertificateOrder {
 }
 pub mod app_service_certificate_order {
     use super::*;
+    #[doc = "AppServiceCertificateOrder resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
+        #[doc = "State of the Key Vault secret."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub certificates: Option<serde_json::Value>,
+        #[doc = "Certificate distinguished name."]
         #[serde(rename = "distinguishedName", default, skip_serializing_if = "Option::is_none")]
         pub distinguished_name: Option<String>,
+        #[doc = "Domain verification token."]
         #[serde(rename = "domainVerificationToken", default, skip_serializing_if = "Option::is_none")]
         pub domain_verification_token: Option<String>,
+        #[doc = "Duration in years (must be between 1 and 3)."]
         #[serde(rename = "validityInYears", default, skip_serializing_if = "Option::is_none")]
         pub validity_in_years: Option<i32>,
+        #[doc = "Certificate key size."]
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
+        #[doc = "Certificate product type."]
         #[serde(rename = "productType")]
         pub product_type: properties::ProductType,
+        #[doc = "<code>true</code> if the certificate should be automatically renewed when it expires; otherwise, <code>false</code>."]
         #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
         pub auto_renew: Option<bool>,
+        #[doc = "Status of certificate order."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "Current order status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<properties::Status>,
+        #[doc = "SSL certificate details."]
         #[serde(rename = "signedCertificate", default, skip_serializing_if = "Option::is_none")]
         pub signed_certificate: Option<CertificateDetails>,
+        #[doc = "Last CSR that was created for this order."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub csr: Option<String>,
+        #[doc = "SSL certificate details."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub intermediate: Option<CertificateDetails>,
+        #[doc = "SSL certificate details."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub root: Option<CertificateDetails>,
+        #[doc = "Current serial number of the certificate."]
         #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
         pub serial_number: Option<String>,
+        #[doc = "Certificate last issuance time."]
         #[serde(rename = "lastCertificateIssuanceTime", default, skip_serializing_if = "Option::is_none")]
         pub last_certificate_issuance_time: Option<String>,
+        #[doc = "Certificate expiration time."]
         #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
         pub expiration_time: Option<String>,
+        #[doc = "<code>true</code> if private key is external; otherwise, <code>false</code>."]
         #[serde(rename = "isPrivateKeyExternal", default, skip_serializing_if = "Option::is_none")]
         pub is_private_key_external: Option<bool>,
+        #[doc = "Reasons why App Service Certificate is not renewable at the current moment."]
         #[serde(
             rename = "appServiceCertificateNotRenewableReasons",
             default,
             skip_serializing_if = "Vec::is_empty"
         )]
         pub app_service_certificate_not_renewable_reasons: Vec<String>,
+        #[doc = "Time stamp when the certificate would be auto renewed next"]
         #[serde(rename = "nextAutoRenewalTimeStamp", default, skip_serializing_if = "Option::is_none")]
         pub next_auto_renewal_time_stamp: Option<String>,
     }
@@ -133,11 +163,13 @@ pub mod app_service_certificate_order {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Certificate product type."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProductType {
             StandardDomainValidatedSsl,
             StandardDomainValidatedWildCardSsl,
         }
+        #[doc = "Status of certificate order."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProvisioningState {
             Succeeded,
@@ -146,6 +178,7 @@ pub mod app_service_certificate_order {
             InProgress,
             Deleting,
         }
+        #[doc = "Current order status."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum Status {
             Pendingissuance,
@@ -161,9 +194,12 @@ pub mod app_service_certificate_order {
         }
     }
 }
+#[doc = "Collection of certificate orders."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServiceCertificateOrderCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<AppServiceCertificateOrder>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -172,10 +208,12 @@ impl AppServiceCertificateOrderCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "ARM resource for a certificate order that is purchased through Azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceCertificateOrderPatchResource {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "AppServiceCertificateOrderPatchResource resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<app_service_certificate_order_patch_resource::Properties>,
 }
@@ -186,48 +224,68 @@ impl AppServiceCertificateOrderPatchResource {
 }
 pub mod app_service_certificate_order_patch_resource {
     use super::*;
+    #[doc = "AppServiceCertificateOrderPatchResource resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
+        #[doc = "State of the Key Vault secret."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub certificates: Option<serde_json::Value>,
+        #[doc = "Certificate distinguished name."]
         #[serde(rename = "distinguishedName", default, skip_serializing_if = "Option::is_none")]
         pub distinguished_name: Option<String>,
+        #[doc = "Domain verification token."]
         #[serde(rename = "domainVerificationToken", default, skip_serializing_if = "Option::is_none")]
         pub domain_verification_token: Option<String>,
+        #[doc = "Duration in years (must be between 1 and 3)."]
         #[serde(rename = "validityInYears", default, skip_serializing_if = "Option::is_none")]
         pub validity_in_years: Option<i32>,
+        #[doc = "Certificate key size."]
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
+        #[doc = "Certificate product type."]
         #[serde(rename = "productType")]
         pub product_type: properties::ProductType,
+        #[doc = "<code>true</code> if the certificate should be automatically renewed when it expires; otherwise, <code>false</code>."]
         #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
         pub auto_renew: Option<bool>,
+        #[doc = "Status of certificate order."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "Current order status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<properties::Status>,
+        #[doc = "SSL certificate details."]
         #[serde(rename = "signedCertificate", default, skip_serializing_if = "Option::is_none")]
         pub signed_certificate: Option<CertificateDetails>,
+        #[doc = "Last CSR that was created for this order."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub csr: Option<String>,
+        #[doc = "SSL certificate details."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub intermediate: Option<CertificateDetails>,
+        #[doc = "SSL certificate details."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub root: Option<CertificateDetails>,
+        #[doc = "Current serial number of the certificate."]
         #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
         pub serial_number: Option<String>,
+        #[doc = "Certificate last issuance time."]
         #[serde(rename = "lastCertificateIssuanceTime", default, skip_serializing_if = "Option::is_none")]
         pub last_certificate_issuance_time: Option<String>,
+        #[doc = "Certificate expiration time."]
         #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
         pub expiration_time: Option<String>,
+        #[doc = "<code>true</code> if private key is external; otherwise, <code>false</code>."]
         #[serde(rename = "isPrivateKeyExternal", default, skip_serializing_if = "Option::is_none")]
         pub is_private_key_external: Option<bool>,
+        #[doc = "Reasons why App Service Certificate is not renewable at the current moment."]
         #[serde(
             rename = "appServiceCertificateNotRenewableReasons",
             default,
             skip_serializing_if = "Vec::is_empty"
         )]
         pub app_service_certificate_not_renewable_reasons: Vec<String>,
+        #[doc = "Time stamp when the certificate would be auto renewed next"]
         #[serde(rename = "nextAutoRenewalTimeStamp", default, skip_serializing_if = "Option::is_none")]
         pub next_auto_renewal_time_stamp: Option<String>,
     }
@@ -258,11 +316,13 @@ pub mod app_service_certificate_order_patch_resource {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Certificate product type."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProductType {
             StandardDomainValidatedSsl,
             StandardDomainValidatedWildCardSsl,
         }
+        #[doc = "Status of certificate order."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProvisioningState {
             Succeeded,
@@ -271,6 +331,7 @@ pub mod app_service_certificate_order_patch_resource {
             InProgress,
             Deleting,
         }
+        #[doc = "Current order status."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum Status {
             Pendingissuance,
@@ -286,10 +347,12 @@ pub mod app_service_certificate_order_patch_resource {
         }
     }
 }
+#[doc = "Key Vault container ARM resource for a certificate that is purchased through Azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceCertificatePatchResource {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "Key Vault container for a certificate that is purchased through Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppServiceCertificate>,
 }
@@ -298,10 +361,12 @@ impl AppServiceCertificatePatchResource {
         Self::default()
     }
 }
+#[doc = "Key Vault container ARM resource for a certificate that is purchased through Azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServiceCertificateResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Key Vault container for a certificate that is purchased through Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppServiceCertificate>,
 }
@@ -313,24 +378,34 @@ impl AppServiceCertificateResource {
         }
     }
 }
+#[doc = "SSL certificate details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateDetails {
+    #[doc = "Certificate Version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
+    #[doc = "Certificate Serial Number."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
+    #[doc = "Certificate Thumbprint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "Certificate Subject."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
+    #[doc = "Date Certificate is valid from."]
     #[serde(rename = "notBefore", default, skip_serializing_if = "Option::is_none")]
     pub not_before: Option<String>,
+    #[doc = "Date Certificate is valid to."]
     #[serde(rename = "notAfter", default, skip_serializing_if = "Option::is_none")]
     pub not_after: Option<String>,
+    #[doc = "Certificate Signature algorithm."]
     #[serde(rename = "signatureAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub signature_algorithm: Option<String>,
+    #[doc = "Certificate Issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issuer: Option<String>,
+    #[doc = "Raw certificate data."]
     #[serde(rename = "rawData", default, skip_serializing_if = "Option::is_none")]
     pub raw_data: Option<String>,
 }
@@ -339,10 +414,12 @@ impl CertificateDetails {
         Self::default()
     }
 }
+#[doc = "SSL certificate email."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateEmail {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "CertificateEmail resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<certificate_email::Properties>,
 }
@@ -353,10 +430,13 @@ impl CertificateEmail {
 }
 pub mod certificate_email {
     use super::*;
+    #[doc = "CertificateEmail resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Email id."]
         #[serde(rename = "emailId", default, skip_serializing_if = "Option::is_none")]
         pub email_id: Option<String>,
+        #[doc = "Time stamp."]
         #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
         pub time_stamp: Option<String>,
     }
@@ -366,10 +446,12 @@ pub mod certificate_email {
         }
     }
 }
+#[doc = "Certificate order action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateOrderAction {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "CertificateOrderAction resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<certificate_order_action::Properties>,
 }
@@ -380,10 +462,13 @@ impl CertificateOrderAction {
 }
 pub mod certificate_order_action {
     use super::*;
+    #[doc = "CertificateOrderAction resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Action type."]
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<properties::Type>,
+        #[doc = "Time at which the certificate action was performed."]
         #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
         pub created_at: Option<String>,
     }
@@ -394,6 +479,7 @@ pub mod certificate_order_action {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Action type."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum Type {
             CertificateIssued,
@@ -413,9 +499,12 @@ pub mod certificate_order_action {
         }
     }
 }
+#[doc = "Collection of Azure resource manager operation metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CsmOperationCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<CsmOperationDescription>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -424,14 +513,17 @@ impl CsmOperationCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "Description of an operation available for Microsoft.Web resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Meta data about operation used for display in portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<CsmOperationDisplay>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Properties available for a Microsoft.Web resource provider operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CsmOperationDescriptionProperties>,
 }
@@ -440,8 +532,10 @@ impl CsmOperationDescription {
         Self::default()
     }
 }
+#[doc = "Properties available for a Microsoft.Web resource provider operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDescriptionProperties {
+    #[doc = "Resource metrics service provided by Microsoft.Insights resource provider."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -450,6 +544,7 @@ impl CsmOperationDescriptionProperties {
         Self::default()
     }
 }
+#[doc = "Meta data about operation used for display in portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -466,6 +561,7 @@ impl CsmOperationDisplay {
         Self::default()
     }
 }
+#[doc = "Dimension of a resource metric. For e.g. instance specific HTTP requests for a web app, \nwhere instance name is dimension of the metric HTTP request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -482,6 +578,7 @@ impl Dimension {
         Self::default()
     }
 }
+#[doc = "Retention policy of a resource metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
@@ -494,6 +591,7 @@ impl MetricAvailability {
         Self::default()
     }
 }
+#[doc = "Definition of a single resource metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -532,8 +630,10 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Identifies an object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NameIdentifier {
+    #[doc = "Name of the object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -542,14 +642,19 @@ impl NameIdentifier {
         Self::default()
     }
 }
+#[doc = "Azure proxy only resource. This resource is not tracked by Azure Resource Manager."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -558,10 +663,12 @@ impl ProxyOnlyResource {
         Self::default()
     }
 }
+#[doc = "Class representing certificate reissue request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReissueCertificateOrderRequest {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "ReissueCertificateOrderRequest resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<reissue_certificate_order_request::Properties>,
 }
@@ -572,14 +679,19 @@ impl ReissueCertificateOrderRequest {
 }
 pub mod reissue_certificate_order_request {
     use super::*;
+    #[doc = "ReissueCertificateOrderRequest resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Certificate Key Size."]
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
+        #[doc = "Delay in hours to revoke existing certificate after the new certificate is issued."]
         #[serde(rename = "delayExistingRevokeInHours", default, skip_serializing_if = "Option::is_none")]
         pub delay_existing_revoke_in_hours: Option<i32>,
+        #[doc = "Csr to be used for re-key operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub csr: Option<String>,
+        #[doc = "Should we change the ASC type (from managed private key to external private key and vice versa)."]
         #[serde(rename = "isPrivateKeyExternal", default, skip_serializing_if = "Option::is_none")]
         pub is_private_key_external: Option<bool>,
     }
@@ -589,10 +701,12 @@ pub mod reissue_certificate_order_request {
         }
     }
 }
+#[doc = "Class representing certificate renew request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RenewCertificateOrderRequest {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "RenewCertificateOrderRequest resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<renew_certificate_order_request::Properties>,
 }
@@ -603,12 +717,16 @@ impl RenewCertificateOrderRequest {
 }
 pub mod renew_certificate_order_request {
     use super::*;
+    #[doc = "RenewCertificateOrderRequest resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Certificate Key Size."]
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
+        #[doc = "Csr to be used for re-key operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub csr: Option<String>,
+        #[doc = "Should we change the ASC type (from managed private key to external private key and vice versa)."]
         #[serde(rename = "isPrivateKeyExternal", default, skip_serializing_if = "Option::is_none")]
         pub is_private_key_external: Option<bool>,
     }
@@ -618,17 +736,24 @@ pub mod renew_certificate_order_request {
         }
     }
 }
+#[doc = "Azure resource. This resource is tracked in Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource Location."]
     pub location: String,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -644,6 +769,7 @@ impl Resource {
         }
     }
 }
+#[doc = "Resource metrics service provided by Microsoft.Insights resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
@@ -654,8 +780,10 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "Site seal"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SiteSeal {
+    #[doc = "HTML snippet"]
     pub html: String,
 }
 impl SiteSeal {
@@ -663,10 +791,13 @@ impl SiteSeal {
         Self { html }
     }
 }
+#[doc = "Site seal request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteSealRequest {
+    #[doc = "If <code>true</code> use the light color theme for site seal; otherwise, use the default color theme."]
     #[serde(rename = "lightTheme", default, skip_serializing_if = "Option::is_none")]
     pub light_theme: Option<bool>,
+    #[doc = "Locale of site seal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
 }

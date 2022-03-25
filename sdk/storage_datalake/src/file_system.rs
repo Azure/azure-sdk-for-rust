@@ -1,7 +1,6 @@
 use azure_core::Etag;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::Response;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,13 +18,37 @@ pub(crate) struct FileSystemList {
     pub file_systems: Vec<FileSystem>,
 }
 
-impl TryFrom<&Response<Bytes>> for FileSystemList {
+impl TryFrom<Bytes> for FileSystemList {
     type Error = crate::Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
-        trace!("{}", std::str::from_utf8(response.body())?);
+    fn try_from(response: Bytes) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_slice::<FileSystemList>(response.as_ref())?)
+    }
+}
 
-        let file_system_list: FileSystemList = serde_json::from_slice(response.body())?;
-        Ok(file_system_list)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Path {
+    pub content_length: i64,
+    pub etag: Etag,
+    pub group: String,
+    pub is_directory: bool,
+    #[serde(with = "azure_core::parsing::rfc2822_time_format")]
+    pub last_modified: DateTime<Utc>,
+    pub name: String,
+    pub owner: String,
+    pub permissions: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct PathList {
+    pub paths: Vec<Path>,
+}
+
+impl TryFrom<Bytes> for PathList {
+    type Error = crate::Error;
+
+    fn try_from(response: Bytes) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_slice::<PathList>(response.as_ref())?)
     }
 }

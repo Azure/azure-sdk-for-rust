@@ -3,10 +3,13 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 pub type ArrayOfStrings = Vec<String>;
+#[doc = "Update compatibility information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compatibility {
+    #[doc = "The manufacturer of device the update is compatible with."]
     #[serde(rename = "deviceManufacturer")]
     pub device_manufacturer: String,
+    #[doc = "The model of device the update is compatible with."]
     #[serde(rename = "deviceModel")]
     pub device_model: String,
 }
@@ -18,26 +21,37 @@ impl Compatibility {
         }
     }
 }
+#[doc = "Deployment metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Deployment {
+    #[doc = "Gets or sets the deployment identifier."]
     #[serde(rename = "deploymentId")]
     pub deployment_id: String,
+    #[doc = "Supported deployment types."]
     #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
+    #[doc = "Gets or sets the device class identifier."]
     #[serde(rename = "deviceClassId", default, skip_serializing_if = "Option::is_none")]
     pub device_class_id: Option<String>,
+    #[doc = "Gets or sets the Deployment start datetime."]
     #[serde(rename = "startDateTime")]
     pub start_date_time: String,
+    #[doc = "Supported deployment group types."]
     #[serde(rename = "deviceGroupType")]
     pub device_group_type: DeviceGroupType,
+    #[doc = "Gets or sets the device group definition."]
     #[serde(rename = "deviceGroupDefinition")]
     pub device_group_definition: Vec<String>,
+    #[doc = "Update identifier."]
     #[serde(rename = "updateId")]
     pub update_id: UpdateId,
+    #[doc = "Boolean flag indicating whether the deployment was canceled."]
     #[serde(rename = "isCanceled", default, skip_serializing_if = "Option::is_none")]
     pub is_canceled: Option<bool>,
+    #[doc = "Boolean flag indicating whether the deployment has been retried."]
     #[serde(rename = "isRetried", default, skip_serializing_if = "Option::is_none")]
     pub is_retried: Option<bool>,
+    #[doc = "Boolean flag indicating whether the deployment was completed."]
     #[serde(rename = "isCompleted", default, skip_serializing_if = "Option::is_none")]
     pub is_completed: Option<bool>,
 }
@@ -64,14 +78,19 @@ impl Deployment {
         }
     }
 }
+#[doc = "Deployment device status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentDeviceState {
+    #[doc = "Device identity."]
     #[serde(rename = "deviceId")]
     pub device_id: String,
+    #[doc = "The number of times this deployment has been retried on this device."]
     #[serde(rename = "retryCount")]
     pub retry_count: i32,
+    #[doc = "Boolean flag indicating whether this device is in a newer deployment and can no longer retry this deployment."]
     #[serde(rename = "movedOnToNewDeployment")]
     pub moved_on_to_new_deployment: bool,
+    #[doc = "Deployment state."]
     #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
@@ -85,10 +104,13 @@ impl DeploymentDeviceState {
         }
     }
 }
+#[doc = "Deployment device state filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentDeviceStatesFilter {
+    #[doc = "Device Identifier."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+    #[doc = "The deployment device state."]
     #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
     pub device_state: Option<DeviceState>,
 }
@@ -97,12 +119,16 @@ impl DeploymentDeviceStatesFilter {
         Self::default()
     }
 }
+#[doc = "Deployment filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentFilter {
+    #[doc = "Update provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Update name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Update version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -111,26 +137,35 @@ impl DeploymentFilter {
         Self::default()
     }
 }
+#[doc = "Deployment state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeploymentState {
     Active,
     Superseded,
     Canceled,
 }
+#[doc = "Deployment status metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentStatus {
+    #[doc = "Deployment state."]
     #[serde(rename = "deploymentState")]
     pub deployment_state: DeploymentState,
+    #[doc = "Gets or sets the total number of devices in the deployment."]
     #[serde(rename = "totalDevices", default, skip_serializing_if = "Option::is_none")]
     pub total_devices: Option<i32>,
+    #[doc = "Gets or sets the number of incompatible devices in the deployment."]
     #[serde(rename = "devicesIncompatibleCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_incompatible_count: Option<i32>,
+    #[doc = "Gets or sets the number of devices that are currently in deployment."]
     #[serde(rename = "devicesInProgressCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_in_progress_count: Option<i32>,
+    #[doc = "Gets or sets the number of devices that have completed deployment with a failure."]
     #[serde(rename = "devicesCompletedFailedCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_completed_failed_count: Option<i32>,
+    #[doc = "Gets or sets the number of devices which have successfully completed deployment."]
     #[serde(rename = "devicesCompletedSucceededCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_completed_succeeded_count: Option<i32>,
+    #[doc = "Gets or sets the number of devices which have had their deployment canceled."]
     #[serde(rename = "devicesCanceledCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_canceled_count: Option<i32>,
 }
@@ -147,30 +182,42 @@ impl DeploymentStatus {
         }
     }
 }
+#[doc = "Supported deployment types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeploymentType {
     Complete,
     Download,
     Install,
 }
+#[doc = "Device metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Device {
+    #[doc = "Device identity."]
     #[serde(rename = "deviceId")]
     pub device_id: String,
+    #[doc = "Device class identity."]
     #[serde(rename = "deviceClassId")]
     pub device_class_id: String,
+    #[doc = "Device manufacturer."]
     pub manufacturer: String,
+    #[doc = "Device model."]
     pub model: String,
+    #[doc = "Device group identity."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "Update identifier."]
     #[serde(rename = "lastAttemptedUpdateId", default, skip_serializing_if = "Option::is_none")]
     pub last_attempted_update_id: Option<UpdateId>,
+    #[doc = "Deployment state."]
     #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<DeviceDeploymentState>,
+    #[doc = "Update identifier."]
     #[serde(rename = "installedUpdateId", default, skip_serializing_if = "Option::is_none")]
     pub installed_update_id: Option<UpdateId>,
+    #[doc = "Boolean flag indicating whether the latest update is installed on the device"]
     #[serde(rename = "onLatestUpdate")]
     pub on_latest_update: bool,
+    #[doc = "The deployment identifier for the last deployment to the device"]
     #[serde(rename = "lastDeploymentId", default, skip_serializing_if = "Option::is_none")]
     pub last_deployment_id: Option<String>,
 }
@@ -190,12 +237,17 @@ impl Device {
         }
     }
 }
+#[doc = "Device class metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceClass {
+    #[doc = "The device class identifier."]
     #[serde(rename = "deviceClassId")]
     pub device_class_id: String,
+    #[doc = "Device manufacturer"]
     pub manufacturer: String,
+    #[doc = "Device model."]
     pub model: String,
+    #[doc = "Update identifier."]
     #[serde(rename = "bestCompatibleUpdateId")]
     pub best_compatible_update_id: UpdateId,
 }
@@ -209,6 +261,7 @@ impl DeviceClass {
         }
     }
 }
+#[doc = "Deployment state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeviceDeploymentState {
     Succeeded,
@@ -217,8 +270,10 @@ pub enum DeviceDeploymentState {
     Canceled,
     Incompatible,
 }
+#[doc = "Operation status filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceFilter {
+    #[doc = "Device group identifier."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
 }
@@ -227,12 +282,14 @@ impl DeviceFilter {
         Self::default()
     }
 }
+#[doc = "Supported deployment group types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeviceGroupType {
     All,
     Devices,
     DeviceGroupDefinitions,
 }
+#[doc = "The deployment device state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeviceState {
     NotStarted,
@@ -243,10 +300,13 @@ pub enum DeviceState {
     Failed,
     Succeeded,
 }
+#[doc = "Device tag properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTag {
+    #[doc = "Tag name."]
     #[serde(rename = "tagName")]
     pub tag_name: String,
+    #[doc = "Number of devices with this tag."]
     #[serde(rename = "deviceCount")]
     pub device_count: i64,
 }
@@ -255,16 +315,23 @@ impl DeviceTag {
         Self { tag_name, device_count }
     }
 }
+#[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
+    #[doc = "Server defined error code."]
     pub code: String,
+    #[doc = "A human-readable representation of the error."]
     pub message: String,
+    #[doc = "The target of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "An array of errors that led to the reported error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<Error>,
+    #[doc = "An object containing more specific information than the current object about the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
+    #[doc = "Date and time in UTC when the error occurred."]
     #[serde(rename = "occurredDateTime", default, skip_serializing_if = "Option::is_none")]
     pub occurred_date_time: Option<String>,
 }
@@ -280,17 +347,24 @@ impl Error {
         }
     }
 }
+#[doc = "Update file metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct File {
+    #[doc = "File identity, generated by server at import time."]
     #[serde(rename = "fileId")]
     pub file_id: String,
+    #[doc = "File name."]
     #[serde(rename = "fileName")]
     pub file_name: String,
+    #[doc = "File size in number of bytes."]
     #[serde(rename = "sizeInBytes")]
     pub size_in_bytes: i64,
+    #[doc = "Mapping of hashing algorithm to base64 encoded hash values."]
     pub hashes: serde_json::Value,
+    #[doc = "File MIME type."]
     #[serde(rename = "mimeType", default, skip_serializing_if = "Option::is_none")]
     pub mime_type: Option<String>,
+    #[doc = "File ETag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -306,9 +380,12 @@ impl File {
         }
     }
 }
+#[doc = "Metadata describing an update file."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileImportMetadata {
+    #[doc = "Update file name as specified inside import manifest."]
     pub filename: String,
+    #[doc = "Azure Blob location from which the update file can be downloaded by Device Update for IoT Hub. This is typically a read-only SAS-protected blob URL with an expiration set to at least 4 hours."]
     pub url: String,
 }
 impl FileImportMetadata {
@@ -316,15 +393,21 @@ impl FileImportMetadata {
         Self { filename, url }
     }
 }
+#[doc = "Group details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Group {
+    #[doc = "Group identity."]
     #[serde(rename = "groupId")]
     pub group_id: String,
+    #[doc = "Supported group types."]
     #[serde(rename = "groupType")]
     pub group_type: GroupType,
+    #[doc = "IoT Hub tags."]
     pub tags: Vec<String>,
+    #[doc = "Date and time when the update was created."]
     #[serde(rename = "createdDateTime")]
     pub created_date_time: String,
+    #[doc = "The number of devices in the group."]
     #[serde(rename = "deviceCount", default, skip_serializing_if = "Option::is_none")]
     pub device_count: Option<i64>,
 }
@@ -339,12 +422,16 @@ impl Group {
         }
     }
 }
+#[doc = "Group best updates filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupBestUpdatesFilter {
+    #[doc = "Update provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Update name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Update version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -353,15 +440,20 @@ impl GroupBestUpdatesFilter {
         Self::default()
     }
 }
+#[doc = "Supported group types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum GroupType {
     IoTHubTag,
 }
+#[doc = "Metadata describing the import manifest, a document which describes the files and other metadata about an update version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportManifestMetadata {
+    #[doc = "Azure Blob location from which the import manifest can be downloaded by Device Update for IoT Hub. This is typically a read-only SAS-protected blob URL with an expiration set to at least 4 hours."]
     pub url: String,
+    #[doc = "File size in number of bytes."]
     #[serde(rename = "sizeInBytes")]
     pub size_in_bytes: i64,
+    #[doc = "A JSON object containing the hash(es) of the file. At least SHA256 hash is required. This object can be thought of as a set of key-value pairs where the key is the hash algorithm, and the value is the hash of the file calculated using that algorithm."]
     pub hashes: serde_json::Value,
 }
 impl ImportManifestMetadata {
@@ -373,10 +465,13 @@ impl ImportManifestMetadata {
         }
     }
 }
+#[doc = "Import update input metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportUpdateInput {
+    #[doc = "Metadata describing the import manifest, a document which describes the files and other metadata about an update version."]
     #[serde(rename = "importManifest")]
     pub import_manifest: ImportManifestMetadata,
+    #[doc = "One or more update file properties like filename and source URL."]
     pub files: Vec<FileImportMetadata>,
 }
 impl ImportUpdateInput {
@@ -384,13 +479,18 @@ impl ImportUpdateInput {
         Self { import_manifest, files }
     }
 }
+#[doc = "An object containing more specific information than the current object about the error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerError {
+    #[doc = "A more specific error code than what was provided by the containing error."]
     pub code: String,
+    #[doc = "A human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The internal error or exception message."]
     #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
     pub error_detail: Option<String>,
+    #[doc = "An object containing more specific information than the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Box<Option<InnerError>>,
 }
@@ -404,23 +504,33 @@ impl InnerError {
         }
     }
 }
+#[doc = "Operation metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
+    #[doc = "Operation Id."]
     #[serde(rename = "operationId")]
     pub operation_id: String,
+    #[doc = "Operation status."]
     pub status: OperationStatus,
+    #[doc = "Update identifier."]
     #[serde(rename = "updateId", default, skip_serializing_if = "Option::is_none")]
     pub update_id: Option<UpdateId>,
+    #[doc = "Location of the imported update when operation is successful."]
     #[serde(rename = "resourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub resource_location: Option<String>,
+    #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
+    #[doc = "Operation correlation identity that can used by Microsoft Support for troubleshooting."]
     #[serde(rename = "traceId", default, skip_serializing_if = "Option::is_none")]
     pub trace_id: Option<String>,
+    #[doc = "Date and time in UTC when the operation status was last updated."]
     #[serde(rename = "lastActionDateTime")]
     pub last_action_date_time: String,
+    #[doc = "Date and time in UTC when the operation was created."]
     #[serde(rename = "createdDateTime")]
     pub created_date_time: String,
+    #[doc = "Operation ETag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -439,8 +549,10 @@ impl Operation {
         }
     }
 }
+#[doc = "Operation status filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
+    #[doc = "Operation status filter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
 }
@@ -449,11 +561,13 @@ impl OperationFilter {
         Self::default()
     }
 }
+#[doc = "Operation status filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperationFilterStatus {
     Running,
     NotStarted,
 }
+#[doc = "Operation status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperationStatus {
     Undefined,
@@ -462,10 +576,13 @@ pub enum OperationStatus {
     Succeeded,
     Failed,
 }
+#[doc = "The list of deployment device states."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeploymentDeviceStates {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeploymentDeviceState>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -474,10 +591,13 @@ impl PageableListOfDeploymentDeviceStates {
         Self::default()
     }
 }
+#[doc = "The list of deployments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeployments {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Deployment>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -486,10 +606,13 @@ impl PageableListOfDeployments {
         Self::default()
     }
 }
+#[doc = "The list of device classes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceClasses {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceClass>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -498,10 +621,13 @@ impl PageableListOfDeviceClasses {
         Self::default()
     }
 }
+#[doc = "The list of device tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceTags {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceTag>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -510,10 +636,13 @@ impl PageableListOfDeviceTags {
         Self::default()
     }
 }
+#[doc = "The list of devices."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDevices {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Device>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -522,10 +651,13 @@ impl PageableListOfDevices {
         Self::default()
     }
 }
+#[doc = "The list of groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfGroups {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Group>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -534,10 +666,13 @@ impl PageableListOfGroups {
         Self::default()
     }
 }
+#[doc = "The list of operations with server paging support."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfOperations {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -546,10 +681,13 @@ impl PageableListOfOperations {
         Self::default()
     }
 }
+#[doc = "The list of strings with server paging support."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfStrings {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -558,10 +696,13 @@ impl PageableListOfStrings {
         Self::default()
     }
 }
+#[doc = "The list of updatable devices."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdatableDevices {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UpdatableDevices>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -570,10 +711,13 @@ impl PageableListOfUpdatableDevices {
         Self::default()
     }
 }
+#[doc = "The list of update identities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdateIds {
+    #[doc = "The collection of pageable items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UpdateId>,
+    #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -582,10 +726,13 @@ impl PageableListOfUpdateIds {
         Self::default()
     }
 }
+#[doc = "Update identifier and the number of devices for which the update is applicable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdatableDevices {
+    #[doc = "Update identifier."]
     #[serde(rename = "updateId")]
     pub update_id: UpdateId,
+    #[doc = "Total number of devices for which the update is applicable."]
     #[serde(rename = "deviceCount")]
     pub device_count: i64,
 }
@@ -594,21 +741,30 @@ impl UpdatableDevices {
         Self { update_id, device_count }
     }
 }
+#[doc = "Update metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Update {
+    #[doc = "Update identifier."]
     #[serde(rename = "updateId")]
     pub update_id: UpdateId,
+    #[doc = "Update type."]
     #[serde(rename = "updateType")]
     pub update_type: String,
+    #[doc = "String interpreted by Device Update client to determine if the update is installed on the device."]
     #[serde(rename = "installedCriteria")]
     pub installed_criteria: String,
+    #[doc = "List of update compatibility information."]
     pub compatibility: Vec<Compatibility>,
+    #[doc = "Schema version of manifest used to import the update."]
     #[serde(rename = "manifestVersion")]
     pub manifest_version: String,
+    #[doc = "Date and time in UTC when the update was imported."]
     #[serde(rename = "importedDateTime")]
     pub imported_date_time: String,
+    #[doc = "Date and time in UTC when the update was created."]
     #[serde(rename = "createdDateTime")]
     pub created_date_time: String,
+    #[doc = "Update ETag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -634,14 +790,19 @@ impl Update {
         }
     }
 }
+#[doc = "Update compliance information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateCompliance {
+    #[doc = "Total number of devices."]
     #[serde(rename = "totalDeviceCount")]
     pub total_device_count: i64,
+    #[doc = "Number of devices on the latest update."]
     #[serde(rename = "onLatestUpdateDeviceCount")]
     pub on_latest_update_device_count: i64,
+    #[doc = "Number of devices with a newer update available."]
     #[serde(rename = "newUpdatesAvailableDeviceCount")]
     pub new_updates_available_device_count: i64,
+    #[doc = "Number of devices with update in-progress."]
     #[serde(rename = "updatesInProgressDeviceCount")]
     pub updates_in_progress_device_count: i64,
 }
@@ -660,10 +821,14 @@ impl UpdateCompliance {
         }
     }
 }
+#[doc = "Update identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateId {
+    #[doc = "Update provider."]
     pub provider: String,
+    #[doc = "Update name."]
     pub name: String,
+    #[doc = "Update version."]
     pub version: String,
 }
 impl UpdateId {

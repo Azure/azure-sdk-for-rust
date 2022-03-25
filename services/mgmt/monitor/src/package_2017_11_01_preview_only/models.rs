@@ -2,13 +2,18 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The baseline values for a single sensitivity value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Baseline {
+    #[doc = "the sensitivity of the baseline."]
     pub sensitivity: baseline::Sensitivity,
+    #[doc = "The low thresholds of the baseline."]
     #[serde(rename = "lowThresholds")]
     pub low_thresholds: Vec<f64>,
+    #[doc = "The high thresholds of the baseline."]
     #[serde(rename = "highThresholds")]
     pub high_thresholds: Vec<f64>,
+    #[doc = "the array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
 }
@@ -24,6 +29,7 @@ impl Baseline {
 }
 pub mod baseline {
     use super::*;
+    #[doc = "the sensitivity of the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Sensitivity {
         Low,
@@ -31,10 +37,13 @@ pub mod baseline {
         High,
     }
 }
+#[doc = "Represents a baseline metadata value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineMetadataValue {
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "the value of the metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -43,18 +52,25 @@ impl BaselineMetadataValue {
         Self::default()
     }
 }
+#[doc = "The baseline properties class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineProperties {
+    #[doc = "The timespan for which the data was retrieved. Its value consists of two datetimes concatenated, separated by '/'.  This may be adjusted in the future and returned back from what was originally requested."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timespan: Option<String>,
+    #[doc = "The interval (window size) for which the metric data was returned in.  This may be adjusted in the future and returned back from what was originally requested.  This is not present if a metadata request was made."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
+    #[doc = "The aggregation type of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<String>,
+    #[doc = "the array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+    #[doc = "the baseline values for each sensitivity."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub baseline: Vec<Baseline>,
+    #[doc = "the baseline metadata values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<BaselineMetadataValue>,
 }
@@ -63,14 +79,19 @@ impl BaselineProperties {
         Self::default()
     }
 }
+#[doc = "The response to a baseline query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineResponse {
+    #[doc = "the metric baseline Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "the resource type of the baseline resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "The baseline properties class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaselineProperties>,
 }
@@ -79,12 +100,16 @@ impl BaselineResponse {
         Self::default()
     }
 }
+#[doc = "The response to a calculate baseline call."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CalculateBaselineResponse {
+    #[doc = "the resource type of the baseline resource."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "the array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+    #[doc = "the baseline values for each sensitivity."]
     pub baseline: Vec<Baseline>,
 }
 impl CalculateBaselineResponse {
@@ -96,10 +121,13 @@ impl CalculateBaselineResponse {
         }
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -108,9 +136,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The localizable string class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
+    #[doc = "the invariant value."]
     pub value: String,
+    #[doc = "the locale specific value."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -122,10 +153,14 @@ impl LocalizableString {
         }
     }
 }
+#[doc = "The time series info needed for calculating the baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesInformation {
+    #[doc = "the list of sensitivities for calculating the baseline."]
     pub sensitivities: Vec<String>,
+    #[doc = "The metric values to calculate the baseline."]
     pub values: Vec<f64>,
+    #[doc = "the array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
 }

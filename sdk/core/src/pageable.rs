@@ -1,5 +1,8 @@
 use futures::stream::unfold;
 use futures::Stream;
+use pin_project::pin_project;
+
+use crate::prelude::Continuation;
 
 macro_rules! r#try {
     ($expr:expr $(,)?) => {
@@ -16,14 +19,16 @@ macro_rules! r#try {
 ///
 /// Internally uses the Azure specific continuation header to
 /// make repeated requests to Azure yielding a new page each time.
-pub struct Pageable<T> {
-    stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, crate::Error>>>>,
+#[pin_project]
+pub struct Pageable<T, E> {
+    #[pin]
+    stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>>>>,
 }
 
-impl<T: Continuable> Pageable<T> {
-    pub fn new<F>(make_request: impl Fn(Option<String>) -> F + Clone + 'static) -> Self
+impl<T: Continuable, E> Pageable<T, E> {
+    pub fn new<F>(make_request: impl Fn(Option<Continuation>) -> F + Clone + 'static) -> Self
     where
-        F: std::future::Future<Output = Result<T, crate::Error>> + 'static,
+        F: std::future::Future<Output = Result<T, E>> + 'static,
     {
         let stream = unfold(State::Init, move |state: State| {
             let make_request = make_request.clone();
@@ -31,7 +36,7 @@ impl<T: Continuable> Pageable<T> {
                 let response = match state {
                     State::Init => r#try!(make_request(None).await),
                     State::Continuation(token) => {
-                        r#try!(make_request(Some(token)).await)
+                        r#try!(make_request(Some(Continuation::new(token))).await)
                     }
                     State::Done => return None,
                 };
@@ -50,18 +55,19 @@ impl<T: Continuable> Pageable<T> {
     }
 }
 
-impl<T> Stream for Pageable<T> {
-    type Item = Result<T, crate::Error>;
+impl<T, E> Stream for Pageable<T, E> {
+    type Item = Result<T, E>;
 
     fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
+        self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
-        std::pin::Pin::new(&mut self.stream).poll_next(cx)
+        let this = self.project();
+        this.stream.poll_next(cx)
     }
 }
 
-impl<T> std::fmt::Debug for Pageable<T> {
+impl<T, O> std::fmt::Debug for Pageable<T, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Pageable").finish_non_exhaustive()
     }

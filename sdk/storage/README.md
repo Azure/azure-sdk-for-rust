@@ -1,19 +1,8 @@
-# Azure SDK for Rust - Azure Storage 
+# Azure Storage crate
 
-Azure storage crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-for-rust). It contains common code for accessing a [storage account](https://docs.microsoft.com/azure/storage/common/storage-account-overview). Please use these crates for additional functionality:
 
-## Usage
-
-This crate has several features depending on what part of the storage service you need:
-* Account
-* Blob
-* Queue
-* Table
-
-By default all of these features are turned on. If you only need a specific feature, make sure to specify which features you need in your `Cargo.toml` file like so:
-
-```toml
-[dependencies]
-# specifying strictly "blob" feature
-azure_storage = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust", default-features = false, features = ["blob"] }
-```
+- [azure_data_tables](https://crates.io/crates/azure_data_tables)
+- [azure_storage_blobs](https://crates.io/crates/azure_storage_blobs)
+- [azure_storage_datalake](https://crates.io/crates/azure_storage_datalake)
+- [azure_storage_queues](https://crates.io/crates/azure_storage_queues)

@@ -4,29 +4,63 @@ use crate::headers::from_headers::*;
 use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct GetCollectionOptions {
+pub struct GetCollectionBuilder {
+    client: CollectionClient,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl GetCollectionOptions {
-    pub fn new() -> Self {
+impl GetCollectionBuilder {
+    pub(crate) fn new(client: CollectionClient) -> Self {
         Self {
+            client,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
+    pub fn into_future(self) -> GetCollection {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_with_collection_name(http::Method::GET);
 
-        Ok(())
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Collections),
+                    &mut request,
+                )
+                .await?;
+
+            GetCollectionResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type GetCollection = futures::future::BoxFuture<'static, crate::Result<GetCollectionResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for GetCollectionBuilder {
+    type IntoFuture = GetCollection;
+    type Output = <GetCollection as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
     }
 }
 

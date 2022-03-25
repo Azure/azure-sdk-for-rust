@@ -2,17 +2,24 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Parameters used to create an account Shared Access Signature (SAS) token. The REST API access control is provided by Azure Maps Role Based Access (RBAC) identity and access."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountSasParameters {
+    #[doc = "The Map account key to use for signing."]
     #[serde(rename = "signingKey")]
     pub signing_key: account_sas_parameters::SigningKey,
+    #[doc = "The principal Id also known as the object Id of a User Assigned Managed Identity currently assigned to the Map Account. To assign a Managed Identity of the account, use operation Create or Update an assign a User Assigned Identity resource Id."]
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[doc = "Optional, allows control of which region locations are permitted access to Azure Maps REST APIs with the SAS token. Example: \"eastus\", \"westus2\". Omitting this parameter will allow all region locations to be accessible."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<String>,
+    #[doc = "Required parameter which represents the desired maximum request per second to allowed for the given SAS token. This does not guarantee perfect accuracy in measurements but provides application safe guards of abuse with eventual enforcement."]
     #[serde(rename = "maxRatePerSecond")]
     pub max_rate_per_second: i32,
+    #[doc = "The date time offset of when the token validity begins. For example \"2017-05-24T10:42:03.1567373Z\"."]
     pub start: String,
+    #[doc = "The date time offset of when the token validity expires. For example \"2017-05-24T10:42:03.1567373Z\""]
     pub expiry: String,
 }
 impl AccountSasParameters {
@@ -35,6 +42,7 @@ impl AccountSasParameters {
 }
 pub mod account_sas_parameters {
     use super::*;
+    #[doc = "The Map account key to use for signing."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SigningKey {
         #[serde(rename = "primaryKey")]
@@ -43,8 +51,10 @@ pub mod account_sas_parameters {
         SecondaryKey,
     }
 }
+#[doc = "Specifies a CORS rule for the Map Account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
+    #[doc = "Required if CorsRule element is present. A list of origin domains that will be allowed via CORS, or \"*\" to allow all domains"]
     #[serde(rename = "allowedOrigins")]
     pub allowed_origins: Vec<String>,
 }
@@ -53,8 +63,10 @@ impl CorsRule {
         Self { allowed_origins }
     }
 }
+#[doc = "Sets the CORS rules. You can include up to five CorsRule elements in the request. "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CorsRules {
+    #[doc = "The list of CORS rules. You can include up to five CorsRule elements in the request. "]
     #[serde(rename = "corsRules", default, skip_serializing_if = "Vec::is_empty")]
     pub cors_rules: Vec<CorsRule>,
 }
@@ -63,11 +75,14 @@ impl CorsRules {
         Self::default()
     }
 }
+#[doc = "An Azure resource which represents Maps Creator product and provides ability to manage private location data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Creator {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Creator resource properties"]
     pub properties: CreatorProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -80,10 +95,13 @@ impl Creator {
         }
     }
 }
+#[doc = "A list of Creator resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreatorList {
+    #[doc = "a Creator account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Creator>,
+    #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -92,10 +110,13 @@ impl CreatorList {
         Self::default()
     }
 }
+#[doc = "Creator resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreatorProperties {
+    #[doc = "The state of the resource provisioning, terminal states: Succeeded, Failed, Canceled"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The storage units to be allocated. Integer values from 1 to 100, inclusive."]
     #[serde(rename = "storageUnits")]
     pub storage_units: i32,
 }
@@ -107,10 +128,13 @@ impl CreatorProperties {
         }
     }
 }
+#[doc = "Parameters used to update an existing Creator resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreatorUpdateParameters {
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Creator resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreatorProperties>,
 }
@@ -119,18 +143,25 @@ impl CreatorUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Dimension of map account, for example API Category, Api Name, Result Type, and Response Code."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
+    #[doc = "Display name of dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of dimension."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Internal name of the dimension."]
     #[serde(rename = "internalName", default, skip_serializing_if = "Option::is_none")]
     pub internal_name: Option<String>,
+    #[doc = "Internal metric name of the dimension."]
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
+    #[doc = "Source Mdm Namespace of the dimension."]
     #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_namespace: Option<String>,
+    #[doc = "Flag to indicate exporting to Azure Monitor."]
     #[serde(rename = "toBeExportedToShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_to_shoebox: Option<bool>,
 }
@@ -139,10 +170,13 @@ impl Dimension {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -151,16 +185,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -169,8 +209,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -179,6 +221,7 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The Kind of the Maps Account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Kind {
     Gen1,
@@ -189,10 +232,13 @@ impl Default for Kind {
         Self::Gen1
     }
 }
+#[doc = "Linked resource is reference to a resource deployed in an Azure subscription, add the linked resource `uniqueName` value as an optional parameter for operations on Azure Maps Geospatial REST APIs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedResource {
+    #[doc = "A provided name which uniquely identifies the linked resource."]
     #[serde(rename = "uniqueName")]
     pub unique_name: String,
+    #[doc = "ARM resource id in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Storage/accounts/{storageName}'."]
     pub id: String,
 }
 impl LinkedResource {
@@ -201,14 +247,19 @@ impl LinkedResource {
     }
 }
 pub type LinkedResources = Vec<LinkedResource>;
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServiceIdentity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_service_identity::Type>,
+    #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
@@ -219,6 +270,7 @@ impl ManagedServiceIdentity {
 }
 pub mod managed_service_identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
@@ -228,17 +280,23 @@ pub mod managed_service_identity {
         None,
     }
 }
+#[doc = "An Azure resource which represents access to a suite of Maps REST APIs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsAccount {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The SKU of the Maps Account."]
     pub sku: Sku,
+    #[doc = "The Kind of the Maps Account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<Kind>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
+    #[doc = "Additional Map account properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MapsAccountProperties>,
 }
@@ -254,14 +312,19 @@ impl MapsAccount {
         }
     }
 }
+#[doc = "The set of keys which can be used to access the Maps REST APIs. Two keys are provided for key rotation without interruption."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountKeys {
+    #[doc = "The last updated date and time of the primary key."]
     #[serde(rename = "primaryKeyLastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub primary_key_last_updated: Option<String>,
+    #[doc = "The primary key for accessing the Maps REST APIs."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The secondary key for accessing the Maps REST APIs."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
+    #[doc = "The last updated date and time of the secondary key."]
     #[serde(rename = "secondaryKeyLastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key_last_updated: Option<String>,
 }
@@ -270,16 +333,22 @@ impl MapsAccountKeys {
         Self::default()
     }
 }
+#[doc = "Additional Map account properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountProperties {
+    #[doc = "A unique identifier for the maps account"]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
+    #[doc = "Allows toggle functionality on Azure Policy to disable Azure Maps local authentication support. This will disable Shared Keys authentication from any usage."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
+    #[doc = "The provisioning state of the Map account resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The array of associated resources to the Map account. Linked resource in the array cannot individually update, you must update all linked resources in the array together. These resources may be used on operations on the Azure Maps REST API. Access is controlled by the Map Account Managed Identity(s) permissions to those resource(s)."]
     #[serde(rename = "linkedResources", default, skip_serializing_if = "Option::is_none")]
     pub linked_resources: Option<LinkedResources>,
+    #[doc = "Sets the CORS rules. You can include up to five CorsRule elements in the request. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cors: Option<CorsRules>,
 }
@@ -288,8 +357,10 @@ impl MapsAccountProperties {
         Self::default()
     }
 }
+#[doc = "A new Sas token which can be used to access the Maps REST APIs and is controlled by the specified Managed identity permissions on Azure (IAM) Role Based Access Control."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountSasToken {
+    #[doc = "The shared access signature access token."]
     #[serde(rename = "accountSasToken", default, skip_serializing_if = "Option::is_none")]
     pub account_sas_token: Option<String>,
 }
@@ -298,16 +369,22 @@ impl MapsAccountSasToken {
         Self::default()
     }
 }
+#[doc = "Parameters used to update an existing Maps Account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountUpdateParameters {
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The Kind of the Maps Account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<Kind>,
+    #[doc = "The SKU of the Maps Account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
+    #[doc = "Additional Map account properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MapsAccountProperties>,
 }
@@ -316,10 +393,13 @@ impl MapsAccountUpdateParameters {
         Self::default()
     }
 }
+#[doc = "A list of Maps Accounts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccounts {
+    #[doc = "a Maps Account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MapsAccount>,
+    #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -328,8 +408,10 @@ impl MapsAccounts {
         Self::default()
     }
 }
+#[doc = "Whether the operation refers to the primary or secondary key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsKeySpecification {
+    #[doc = "Whether the operation refers to the primary or secondary key."]
     #[serde(rename = "keyType")]
     pub key_type: maps_key_specification::KeyType,
 }
@@ -340,6 +422,7 @@ impl MapsKeySpecification {
 }
 pub mod maps_key_specification {
     use super::*;
+    #[doc = "Whether the operation refers to the primary or secondary key."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {
         #[serde(rename = "primary")]
@@ -348,10 +431,13 @@ pub mod maps_key_specification {
         Secondary,
     }
 }
+#[doc = "The set of operations available for Maps."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsOperations {
+    #[doc = "An operation available for Maps."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDetail>,
+    #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -360,28 +446,40 @@ impl MapsOperations {
         Self::default()
     }
 }
+#[doc = "Metric specification of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
+    #[doc = "Name of metric specification."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of metric specification."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Display description of metric specification."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "Unit could be Count."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Dimensions of map account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
+    #[doc = "Aggregation type could be Average."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "The property to decide fill gap with zero or not."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
+    #[doc = "The category this metric specification belong to, could be Capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "Account Resource Id."]
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
+    #[doc = "Source metrics account."]
     #[serde(rename = "sourceMdmAccount", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_account: Option<String>,
+    #[doc = "Internal metric name."]
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
 }
@@ -390,16 +488,22 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Operation detail payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDetail {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Operation display payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Properties of operation, include metric specifications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
@@ -408,14 +512,19 @@ impl OperationDetail {
         Self::default()
     }
 }
+#[doc = "Operation display payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Resource provider of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Localized friendly name for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Localized friendly description for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -424,8 +533,10 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Properties of operation, include metric specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
+    #[doc = "One property of operation, include metric specifications."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -434,12 +545,16 @@ impl OperationProperties {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -448,8 +563,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "One property of operation, include metric specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
+    #[doc = "Metric specifications of operation."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
 }
@@ -458,9 +575,12 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "The SKU of the Maps Account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The name of the SKU, in standard format (such as S0)."]
     pub name: sku::Name,
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
@@ -471,6 +591,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "The name of the SKU, in standard format (such as S0)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         S0,
@@ -478,12 +599,15 @@ pub mod sku {
         G2,
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {
@@ -495,18 +619,25 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -517,6 +648,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -524,6 +656,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

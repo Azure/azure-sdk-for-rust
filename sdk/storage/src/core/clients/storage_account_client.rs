@@ -1,6 +1,7 @@
 use crate::headers::CONTENT_MD5;
 use crate::{
     core::{ConnectionString, No},
+    hmac::sign,
     shared_access_signature::account_sas::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
     },
@@ -13,7 +14,6 @@ use http::{
     method::Method,
     request::{Builder, Request},
 };
-use ring::hmac;
 use std::sync::Arc;
 use url::Url;
 
@@ -415,7 +415,7 @@ impl StorageAccountClient {
             request.body(azure_core::EMPTY_BODY)
         }?;
 
-        debug!("using request == {:#?}", request);
+        trace!("using request == {:#?}", request);
 
         Ok((request, url))
     }
@@ -450,20 +450,10 @@ fn generate_authorization(
     // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
-    let auth = encode_str_to_sign(&str_to_sign, key);
+    let auth = sign(&str_to_sign, key).unwrap();
     // debug!("auth == {:?}", auth);
 
     format!("SharedKey {}:{}", account, auth)
-}
-
-fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(hmac_key).unwrap());
-    let sig = hmac::sign(&key, str_to_sign.as_bytes());
-
-    // let res = hmac.result();
-    // debug!("{:?}", res.code());
-
-    base64::encode(sig.as_ref())
 }
 
 fn add_if_exists<K: AsHeaderName>(h: &HeaderMap, key: K) -> &str {

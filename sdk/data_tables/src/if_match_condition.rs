@@ -1,6 +1,6 @@
-use azure_core::{AddAsHeader, Etag};
+use azure_core::headers::{self, Header};
+use azure_core::Etag;
 use http::header::IF_MATCH;
-use http::request::Builder;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum IfMatchCondition {
@@ -14,28 +14,16 @@ impl From<Etag> for IfMatchCondition {
     }
 }
 
-impl AddAsHeader for IfMatchCondition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        match self {
-            IfMatchCondition::Etag(etag) => builder.header(IF_MATCH, etag.as_ref()),
-            IfMatchCondition::Any => builder.header(IF_MATCH, "*"),
-        }
+impl Header for IfMatchCondition {
+    fn name(&self) -> headers::HeaderName {
+        IF_MATCH.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        let (header_name, header_value) = match self {
-            IfMatchCondition::Etag(etag) => (IF_MATCH, etag.as_ref()),
-            IfMatchCondition::Any => (IF_MATCH, "*"),
-        };
-
-        request.headers_mut().append(
-            header_name,
-            http::header::HeaderValue::from_str(header_value)?,
-        );
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        match self {
+            IfMatchCondition::Etag(etag) => etag.to_string(),
+            IfMatchCondition::Any => "*".to_owned(),
+        }
+        .into()
     }
 }

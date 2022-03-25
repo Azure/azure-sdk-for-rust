@@ -1,8 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
-use azure_data_cosmos::prelude::{
-    CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions,
-};
 use serde::{Deserialize, Serialize};
 
 mod setup;
@@ -10,18 +6,19 @@ mod setup;
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use collection::*;
+use futures::StreamExt;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 struct MyDocument {
     id: String,
     hello: u32,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MyDocument {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MyDocument {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -39,7 +36,7 @@ async fn create_and_delete_document() {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -49,44 +46,45 @@ async fn create_and_delete_document() {
         excluded_paths: vec![],
     };
 
-    let options = CreateCollectionOptions::new("/id")
+    database
+        .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::Throughput(400))
-        .indexing_policy(indexing_policy);
-    database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .indexing_policy(indexing_policy)
+        .into_future()
         .await
         .unwrap();
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     // create a new document
     let document_data = MyDocument {
         id: DOCUMENT_NAME.to_owned(),
         hello: 42,
     };
-    collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+    collection
+        .create_document(document_data.clone())
+        .into_future()
         .await
         .unwrap();
 
-    let documents = collection_client
+    let documents = collection
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .documents;
     assert!(documents.len() == 1);
 
     // try to get the contents of the previously created document
-    let document_client = collection_client
-        .clone()
-        .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
+    let document = collection
+        .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
 
-    let document_after_get = document_client
-        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
+    let document_after_get = document
+        .get_document()
+        .into_future::<MyDocument>()
         .await
         .unwrap();
 
@@ -97,23 +95,19 @@ async fn create_and_delete_document() {
     }
 
     // delete document
-    document_client
-        .delete_document(Context::new(), DeleteDocumentOptions::new())
-        .await
-        .unwrap();
+    document.delete_document().into_future().await.unwrap();
 
-    let documents = collection_client
+    let documents = collection
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .documents;
     assert!(documents.len() == 0);
 
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }
 
 #[tokio::test]
@@ -129,7 +123,7 @@ async fn query_documents() {
         .into_future()
         .await
         .unwrap();
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -139,42 +133,45 @@ async fn query_documents() {
         excluded_paths: vec![],
     };
 
-    let options = CreateCollectionOptions::new("/id")
+    database
+        .create_collection(COLLECTION_NAME, "/id")
         .indexing_policy(indexing_policy)
-        .offer(Offer::S2);
-    database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .offer(Offer::S2)
+        .into_future()
         .await
         .unwrap();
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     // create a new document
     let document_data = MyDocument {
         id: DOCUMENT_NAME.to_owned(),
         hello: 42,
     };
-    collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+    collection
+        .create_document(document_data.clone())
+        .into_future()
         .await
         .unwrap();
 
-    let documents = collection_client
+    let documents = collection
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .documents;
     assert!(documents.len() == 1);
 
     // now query all documents and see if we get the correct result
-    let query_result = collection_client
-        .query_documents()
+    let query_result = collection
+        .query_documents("SELECT * FROM c")
         .query_cross_partition(true)
-        .execute::<MyDocument, _>("SELECT * FROM c")
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .into_documents()
         .unwrap()
@@ -184,10 +181,7 @@ async fn query_documents() {
     assert!(query_result[0].document_attributes.rid() == documents[0].document_attributes.rid());
     assert_eq!(query_result[0].result, document_data);
 
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }
 
 #[tokio::test]
@@ -203,7 +197,7 @@ async fn replace_document() {
         .into_future()
         .await
         .unwrap();
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -213,62 +207,60 @@ async fn replace_document() {
         excluded_paths: vec![],
     };
 
-    let options = CreateCollectionOptions::new("/id")
+    database
+        .create_collection(COLLECTION_NAME, "/id")
         .indexing_policy(indexing_policy)
-        .offer(Offer::S2);
-    database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .offer(Offer::S2)
+        .into_future()
         .await
         .unwrap();
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     // create a new document
     let mut document_data = MyDocument {
         id: DOCUMENT_NAME.to_owned(),
         hello: 42,
     };
-    collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+    collection
+        .create_document(document_data.clone())
+        .into_future()
         .await
         .unwrap();
 
-    let documents = collection_client
+    let documents = collection
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap();
     assert!(documents.documents.len() == 1);
 
     // replace document with optimistic concurrency and session token
     document_data.hello = 190;
-    collection_client
-        .clone()
-        .into_document_client(document_data.id.clone(), &document_data.id)
+    collection
+        .document_client(document_data.id.clone(), &document_data.id)
         .unwrap()
-        .replace_document(
-            Context::new(),
-            &document_data,
-            ReplaceDocumentOptions::new()
-                .consistency_level(ConsistencyLevel::from(&documents))
-                .if_match_condition(IfMatchCondition::Match(
-                    documents.documents[0]
-                        .document_attributes
-                        .etag()
-                        .to_string(),
-                )),
-        )
+        .replace_document(document_data)
+        .consistency_level(ConsistencyLevel::from(&documents))
+        .if_match_condition(IfMatchCondition::Match(
+            documents.documents[0]
+                .document_attributes
+                .etag()
+                .to_string(),
+        ))
+        .into_future()
         .await
         .unwrap();
 
     // now get the replaced document
-    let document_client = collection_client
-        .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
+    let document = collection
+        .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
-    let document_after_get = document_client
-        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
+    let document_after_get = document
+        .get_document()
+        .into_future::<MyDocument>()
         .await
         .unwrap();
 
@@ -278,8 +270,5 @@ async fn replace_document() {
         panic!("document not found");
     }
 
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }

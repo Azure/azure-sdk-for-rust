@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The allowed type DNS record types for this profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AllowedEndpointRecordType {
     DomainName,
@@ -9,10 +10,13 @@ pub enum AllowedEndpointRecordType {
     IPv6Address,
     Any,
 }
+#[doc = "Parameters supplied to check Traffic Manager name operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckTrafficManagerRelativeDnsNameAvailabilityParameters {
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -21,8 +25,10 @@ impl CheckTrafficManagerRelativeDnsNameAvailabilityParameters {
         Self::default()
     }
 }
+#[doc = "An error returned by the Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The content of an error returned by the Azure Resource Manager"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -31,14 +37,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The content of an error returned by the Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Error target"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -47,8 +58,10 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "The result of the request or operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeleteOperationResult {
+    #[doc = "The result of the operation or request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boolean: Option<bool>,
 }
@@ -57,12 +70,16 @@ impl DeleteOperationResult {
         Self::default()
     }
 }
+#[doc = "Class containing DNS settings in a Traffic Manager profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsConfig {
+    #[doc = "The relative DNS name provided by this Traffic Manager profile. This value is combined with the DNS domain name used by Azure Traffic Manager to form the fully-qualified domain name (FQDN) of the profile."]
     #[serde(rename = "relativeName", default, skip_serializing_if = "Option::is_none")]
     pub relative_name: Option<String>,
+    #[doc = "The fully-qualified domain name (FQDN) of the Traffic Manager profile. This is formed from the concatenation of the RelativeName with the DNS domain used by Azure Traffic Manager."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "The DNS Time-To-Live (TTL), in seconds. This informs the local DNS resolvers and DNS clients how long to cache DNS responses provided by this Traffic Manager profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
 }
@@ -71,10 +88,12 @@ impl DnsConfig {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoint {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Class representing a Traffic Manager endpoint properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointProperties>,
 }
@@ -83,32 +102,46 @@ impl Endpoint {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager endpoint properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointProperties {
+    #[doc = "The Azure Resource URI of the of the endpoint. Not applicable to endpoints of type 'ExternalEndpoints'."]
     #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_id: Option<String>,
+    #[doc = "The fully-qualified DNS name or IP address of the endpoint. Traffic Manager returns this value in DNS responses to direct traffic to this endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The status of the endpoint. If the endpoint is Enabled, it is probed for endpoint health and is included in the traffic routing method."]
     #[serde(rename = "endpointStatus", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_status: Option<endpoint_properties::EndpointStatus>,
+    #[doc = "The weight of this endpoint when using the 'Weighted' traffic routing method. Possible values are from 1 to 1000."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<i64>,
+    #[doc = "The priority of this endpoint when using the 'Priority' traffic routing method. Possible values are from 1 to 1000, lower values represent higher priority. This is an optional parameter.  If specified, it must be specified on all endpoints, and no two endpoints can share the same priority value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i64>,
+    #[doc = "Specifies the location of the external or nested endpoints when using the 'Performance' traffic routing method."]
     #[serde(rename = "endpointLocation", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_location: Option<String>,
+    #[doc = "The monitoring status of the endpoint."]
     #[serde(rename = "endpointMonitorStatus", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_monitor_status: Option<endpoint_properties::EndpointMonitorStatus>,
+    #[doc = "The minimum number of endpoints that must be available in the child profile in order for the parent profile to be considered available. Only applicable to endpoint of type 'NestedEndpoints'."]
     #[serde(rename = "minChildEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub min_child_endpoints: Option<i64>,
+    #[doc = "The minimum number of IPv4 (DNS record type A) endpoints that must be available in the child profile in order for the parent profile to be considered available. Only applicable to endpoint of type 'NestedEndpoints'."]
     #[serde(rename = "minChildEndpointsIPv4", default, skip_serializing_if = "Option::is_none")]
     pub min_child_endpoints_i_pv4: Option<i64>,
+    #[doc = "The minimum number of IPv6 (DNS record type AAAA) endpoints that must be available in the child profile in order for the parent profile to be considered available. Only applicable to endpoint of type 'NestedEndpoints'."]
     #[serde(rename = "minChildEndpointsIPv6", default, skip_serializing_if = "Option::is_none")]
     pub min_child_endpoints_i_pv6: Option<i64>,
+    #[doc = "The list of countries/regions mapped to this endpoint when using the 'Geographic' traffic routing method. Please consult Traffic Manager Geographic documentation for a full list of accepted values."]
     #[serde(rename = "geoMapping", default, skip_serializing_if = "Vec::is_empty")]
     pub geo_mapping: Vec<String>,
+    #[doc = "The list of subnets, IP addresses, and/or address ranges mapped to this endpoint when using the 'Subnet' traffic routing method. An empty list will match all ranges not covered by other endpoints."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subnets: Vec<serde_json::Value>,
+    #[doc = "List of custom headers."]
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_headers: Vec<serde_json::Value>,
 }
@@ -119,11 +152,13 @@ impl EndpointProperties {
 }
 pub mod endpoint_properties {
     use super::*;
+    #[doc = "The status of the endpoint. If the endpoint is Enabled, it is probed for endpoint health and is included in the traffic routing method."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointStatus {
         Enabled,
         Disabled,
     }
+    #[doc = "The monitoring status of the endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointMonitorStatus {
         CheckingEndpoint,
@@ -134,8 +169,10 @@ pub mod endpoint_properties {
         Stopped,
     }
 }
+#[doc = "Class representing the properties of the Geographic hierarchy used with the Geographic traffic routing method."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeographicHierarchyProperties {
+    #[doc = "Class representing a region in the Geographic hierarchy used with the Geographic traffic routing method."]
     #[serde(rename = "geographicHierarchy", default, skip_serializing_if = "Option::is_none")]
     pub geographic_hierarchy: Option<Region>,
 }
@@ -144,10 +181,13 @@ impl GeographicHierarchyProperties {
         Self::default()
     }
 }
+#[doc = "Class which is a sparse representation of a Traffic Manager endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapEndpoint {
+    #[doc = "The ARM Resource ID of this Traffic Manager endpoint."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "A number uniquely identifying this endpoint in query experiences."]
     #[serde(rename = "endpointId", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_id: Option<i64>,
 }
@@ -156,10 +196,12 @@ impl HeatMapEndpoint {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapModel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Class representing a Traffic Manager HeatMap properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HeatMapProperties>,
 }
@@ -168,14 +210,19 @@ impl HeatMapModel {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapProperties {
+    #[doc = "The beginning of the time window for this HeatMap, inclusive."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The ending of the time window for this HeatMap, exclusive."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The endpoints used in this HeatMap calculation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<HeatMapEndpoint>,
+    #[doc = "The traffic flows produced in this HeatMap calculation."]
     #[serde(rename = "trafficFlows", default, skip_serializing_if = "Vec::is_empty")]
     pub traffic_flows: Vec<TrafficFlow>,
 }
@@ -184,24 +231,34 @@ impl HeatMapProperties {
         Self::default()
     }
 }
+#[doc = "Class containing endpoint monitoring settings in a Traffic Manager profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorConfig {
+    #[doc = "The profile-level monitoring status of the Traffic Manager profile."]
     #[serde(rename = "profileMonitorStatus", default, skip_serializing_if = "Option::is_none")]
     pub profile_monitor_status: Option<monitor_config::ProfileMonitorStatus>,
+    #[doc = "The protocol (HTTP, HTTPS or TCP) used to probe for endpoint health."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<monitor_config::Protocol>,
+    #[doc = "The TCP port used to probe for endpoint health."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
+    #[doc = "The path relative to the endpoint domain name used to probe for endpoint health."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "The monitor interval for endpoints in this profile. This is the interval at which Traffic Manager will check the health of each endpoint in this profile."]
     #[serde(rename = "intervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub interval_in_seconds: Option<i64>,
+    #[doc = "The monitor timeout for endpoints in this profile. This is the time that Traffic Manager allows endpoints in this profile to response to the health check."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The number of consecutive failed health check that Traffic Manager tolerates before declaring an endpoint in this profile Degraded after the next failed health check."]
     #[serde(rename = "toleratedNumberOfFailures", default, skip_serializing_if = "Option::is_none")]
     pub tolerated_number_of_failures: Option<i64>,
+    #[doc = "List of custom headers."]
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_headers: Vec<serde_json::Value>,
+    #[doc = "List of expected status code ranges."]
     #[serde(rename = "expectedStatusCodeRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub expected_status_code_ranges: Vec<serde_json::Value>,
 }
@@ -212,6 +269,7 @@ impl MonitorConfig {
 }
 pub mod monitor_config {
     use super::*;
+    #[doc = "The profile-level monitoring status of the Traffic Manager profile."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProfileMonitorStatus {
         CheckingEndpoints,
@@ -220,6 +278,7 @@ pub mod monitor_config {
         Disabled,
         Inactive,
     }
+    #[doc = "The protocol (HTTP, HTTPS or TCP) used to probe for endpoint health."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         #[serde(rename = "HTTP")]
@@ -230,10 +289,12 @@ pub mod monitor_config {
         Tcp,
     }
 }
+#[doc = "Class representing a Traffic Manager profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Profile {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Class representing the Traffic Manager profile properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProfileProperties>,
 }
@@ -242,8 +303,10 @@ impl Profile {
         Self::default()
     }
 }
+#[doc = "The list Traffic Manager profiles operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
+    #[doc = "Gets the list of Traffic manager profiles."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
 }
@@ -252,22 +315,31 @@ impl ProfileListResult {
         Self::default()
     }
 }
+#[doc = "Class representing the Traffic Manager profile properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
+    #[doc = "The status of the Traffic Manager profile."]
     #[serde(rename = "profileStatus", default, skip_serializing_if = "Option::is_none")]
     pub profile_status: Option<profile_properties::ProfileStatus>,
+    #[doc = "The traffic routing method of the Traffic Manager profile."]
     #[serde(rename = "trafficRoutingMethod", default, skip_serializing_if = "Option::is_none")]
     pub traffic_routing_method: Option<profile_properties::TrafficRoutingMethod>,
+    #[doc = "Class containing DNS settings in a Traffic Manager profile."]
     #[serde(rename = "dnsConfig", default, skip_serializing_if = "Option::is_none")]
     pub dns_config: Option<DnsConfig>,
+    #[doc = "Class containing endpoint monitoring settings in a Traffic Manager profile."]
     #[serde(rename = "monitorConfig", default, skip_serializing_if = "Option::is_none")]
     pub monitor_config: Option<MonitorConfig>,
+    #[doc = "The list of endpoints in the Traffic Manager profile."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<Endpoint>,
+    #[doc = "Indicates whether Traffic View is 'Enabled' or 'Disabled' for the Traffic Manager profile. Null, indicates 'Disabled'. Enabling this feature will increase the cost of the Traffic Manage profile."]
     #[serde(rename = "trafficViewEnrollmentStatus", default, skip_serializing_if = "Option::is_none")]
     pub traffic_view_enrollment_status: Option<profile_properties::TrafficViewEnrollmentStatus>,
+    #[doc = "The list of allowed endpoint record types."]
     #[serde(rename = "allowedEndpointRecordTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_endpoint_record_types: Vec<AllowedEndpointRecordType>,
+    #[doc = "Maximum number of endpoints to be returned for MultiValue routing type."]
     #[serde(rename = "maxReturn", default, skip_serializing_if = "Option::is_none")]
     pub max_return: Option<i64>,
 }
@@ -278,11 +350,13 @@ impl ProfileProperties {
 }
 pub mod profile_properties {
     use super::*;
+    #[doc = "The status of the Traffic Manager profile."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProfileStatus {
         Enabled,
         Disabled,
     }
+    #[doc = "The traffic routing method of the Traffic Manager profile."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TrafficRoutingMethod {
         Performance,
@@ -292,12 +366,14 @@ pub mod profile_properties {
         MultiValue,
         Subnet,
     }
+    #[doc = "Indicates whether Traffic View is 'Enabled' or 'Disabled' for the Traffic Manager profile. Null, indicates 'Disabled'. Enabling this feature will increase the cost of the Traffic Manage profile."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TrafficViewEnrollmentStatus {
         Enabled,
         Disabled,
     }
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -308,12 +384,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap query experience properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryExperience {
+    #[doc = "The id of the endpoint from the 'endpoints' array which these queries were routed to."]
     #[serde(rename = "endpointId")]
     pub endpoint_id: i64,
+    #[doc = "The number of queries originating from this location."]
     #[serde(rename = "queryCount")]
     pub query_count: i64,
+    #[doc = "The latency experienced by queries originating from this location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latency: Option<f64>,
 }
@@ -326,12 +406,16 @@ impl QueryExperience {
         }
     }
 }
+#[doc = "Class representing a region in the Geographic hierarchy used with the Geographic traffic routing method."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Region {
+    #[doc = "The code of the region"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The name of the region"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The list of Regions grouped under this Region in the Geographic Hierarchy."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<Region>,
 }
@@ -340,12 +424,16 @@ impl Region {
         Self::default()
     }
 }
+#[doc = "The core properties of ARM resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/trafficManagerProfiles/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. Ex- Microsoft.Network/trafficManagerProfiles."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -354,12 +442,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM tracked top level resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The Azure Region where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -368,14 +459,19 @@ impl TrackedResource {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap traffic flow properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficFlow {
+    #[doc = "The IP address that this query experience originated from."]
     #[serde(rename = "sourceIp", default, skip_serializing_if = "Option::is_none")]
     pub source_ip: Option<String>,
+    #[doc = "The approximate latitude that these queries originated from."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latitude: Option<f64>,
+    #[doc = "The approximate longitude that these queries originated from."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub longitude: Option<f64>,
+    #[doc = "The query experiences produced in this HeatMap calculation."]
     #[serde(rename = "queryExperiences", default, skip_serializing_if = "Vec::is_empty")]
     pub query_experiences: Vec<QueryExperience>,
 }
@@ -384,10 +480,12 @@ impl TrafficFlow {
         Self::default()
     }
 }
+#[doc = "Class representing the Geographic hierarchy used with the Geographic traffic routing method."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerGeographicHierarchy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Class representing the properties of the Geographic hierarchy used with the Geographic traffic routing method."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GeographicHierarchyProperties>,
 }
@@ -396,16 +494,22 @@ impl TrafficManagerGeographicHierarchy {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager Name Availability response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerNameAvailability {
+    #[doc = "The relative name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Traffic Manager profile resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Describes whether the relative name is available or not."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason why the name is not available, when applicable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "Descriptive message that explains why the name is not available, when applicable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -414,10 +518,12 @@ impl TrafficManagerNameAvailability {
         Self::default()
     }
 }
+#[doc = "Class representing Traffic Manager User Metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserMetricsModel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Class representing a Traffic Manager Real User Metrics key response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserMetricsProperties>,
 }
@@ -426,8 +532,10 @@ impl UserMetricsModel {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager Real User Metrics key response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserMetricsProperties {
+    #[doc = "The key returned by the User Metrics operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }

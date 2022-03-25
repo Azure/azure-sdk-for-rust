@@ -1,7 +1,7 @@
 use super::mock_response::MockResponse;
 use super::mock_transaction::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response, TransportOptions};
+use crate::{Context, Request, TransportOptions};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ impl Policy for MockTransportPlayerPolicy {
         _ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         // there must be no more policies
         assert_eq!(0, next.len());
 
@@ -57,10 +57,9 @@ impl Policy for MockTransportPlayerPolicy {
             .map(|p| p.to_string())
             .unwrap_or_else(String::new);
         if expected_uri != actual_uri {
-            return Err(Box::new(super::MockFrameworkError::MismatchedRequestUri(
-                actual_uri,
-                expected_uri,
-            )));
+            return Err(
+                super::MockFrameworkError::MismatchedRequestUri(actual_uri, expected_uri).into(),
+            );
         }
 
         // check if the passed request matches the one read from disk
@@ -84,12 +83,11 @@ impl Policy for MockTransportPlayerPolicy {
         // 1. There are no extra headers (in both the received and read request).
         // 2. Each header has the same value.
         if actual_headers.len() != expected_headers.len() {
-            return Err(Box::new(
-                super::MockFrameworkError::MismatchedRequestHeadersCount(
-                    actual_headers.len(),
-                    expected_headers.len(),
-                ),
-            ));
+            return Err(super::MockFrameworkError::MismatchedRequestHeadersCount(
+                actual_headers.len(),
+                expected_headers.len(),
+            )
+            .into());
         }
 
         for (actual_header_key, actual_header_value) in actual_headers.iter() {
@@ -101,23 +99,21 @@ impl Policy for MockTransportPlayerPolicy {
                 ))?;
 
             if actual_header_value != expected_header_value {
-                return Err(Box::new(
-                    super::MockFrameworkError::MismatchedRequestHeader(
-                        actual_header_key.as_str().to_owned(),
-                        actual_header_value.to_str().unwrap().to_owned(),
-                        expected_header_value.to_str().unwrap().to_owned(),
-                    ),
-                ));
+                return Err(super::MockFrameworkError::MismatchedRequestHeader(
+                    actual_header_key.as_str().to_owned(),
+                    actual_header_value.as_str().to_owned(),
+                    expected_header_value.as_str().to_owned(),
+                )
+                .into());
             }
         }
 
         if expected_request.method() != request.method() {
-            return Err(Box::new(
-                super::MockFrameworkError::MismatchedRequestHTTPMethod(
-                    expected_request.method(),
-                    request.method(),
-                ),
-            ));
+            return Err(super::MockFrameworkError::MismatchedRequestHTTPMethod(
+                expected_request.method(),
+                request.method(),
+            )
+            .into());
         }
 
         let actual_body = match request.body() {
@@ -131,10 +127,11 @@ impl Policy for MockTransportPlayerPolicy {
         };
 
         if actual_body != expected_body {
-            return Err(Box::new(super::MockFrameworkError::MismatchedRequestBody(
+            return Err(super::MockFrameworkError::MismatchedRequestBody(
                 actual_body.to_vec(),
                 expected_body.to_vec(),
-            )));
+            )
+            .into());
         }
 
         self.transaction.increment_number();

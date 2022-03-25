@@ -5,12 +5,14 @@
 //! * Azure CLI credentials cache
 //! * Managed identity
 //! * Client secret
+mod auto_refreshing_credentials;
 mod cli_credentials;
 mod client_secret_credentials;
 mod default_credentials;
 mod environment_credentials;
 mod imds_managed_identity_credentials;
 
+pub use auto_refreshing_credentials::*;
 pub use cli_credentials::*;
 pub use client_secret_credentials::*;
 pub use default_credentials::*;
@@ -21,6 +23,7 @@ pub use imds_managed_identity_credentials::*;
 /// Same as [azure_core::auth::TokenCredential](azure_core::auth::TokenCredential), except a more specific error is returned.
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
+    /// A more specific error.
     type Error;
     /// Gets a `TokenResponse` for the specified resource
     async fn get_token(

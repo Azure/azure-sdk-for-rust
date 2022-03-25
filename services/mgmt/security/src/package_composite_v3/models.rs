@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadConnectivityState {
     #[serde(rename = "connectivityState", default, skip_serializing_if = "Option::is_none")]
@@ -21,6 +22,7 @@ pub mod aad_connectivity_state {
         Connected,
     }
 }
+#[doc = "Represents an AAD identity protection solution which sends logs to an OMS workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadExternalSecuritySolution {
     #[serde(flatten)]
@@ -48,6 +50,7 @@ impl AadSolutionProperties {
         Self::default()
     }
 }
+#[doc = "Number of active connections is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveConnectionsNotInAllowedRange {
     #[serde(flatten)]
@@ -66,6 +69,7 @@ pub struct AdaptiveApplicationControlGroup {
     pub resource: Resource,
     #[serde(flatten)]
     pub location: Location,
+    #[doc = "Represents a machines group and set of rules to be allowed running on a machine"]
     pub properties: AdaptiveApplicationControlGroupData,
 }
 impl AdaptiveApplicationControlGroup {
@@ -77,18 +81,24 @@ impl AdaptiveApplicationControlGroup {
         }
     }
 }
+#[doc = "Represents a machines group and set of rules to be allowed running on a machine"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveApplicationControlGroupData {
+    #[doc = "The application control policy enforcement/protection mode of the machine group"]
     #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
     pub enforcement_mode: Option<EnforcementMode>,
+    #[doc = "The protection mode of the collection/file types. Exe/Msi/Script are used for Windows, Executable is used for Linux."]
     #[serde(rename = "protectionMode", default, skip_serializing_if = "Option::is_none")]
     pub protection_mode: Option<ProtectionMode>,
+    #[doc = "The configuration status of the machines group or machine or rule"]
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
     pub configuration_status: Option<ConfigurationStatus>,
+    #[doc = "The initial recommendation status of the machine group or machine"]
     #[serde(rename = "recommendationStatus", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_status: Option<RecommendationStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issues: Option<AdaptiveApplicationControlIssuesSummaries>,
+    #[doc = "The source type of the machine group"]
     #[serde(rename = "sourceSystem", default, skip_serializing_if = "Option::is_none")]
     pub source_system: Option<SourceSystem>,
     #[serde(rename = "vmRecommendations", default, skip_serializing_if = "Option::is_none")]
@@ -101,6 +111,7 @@ impl AdaptiveApplicationControlGroupData {
         Self::default()
     }
 }
+#[doc = "Represents a list of machine groups and set of rules that are recommended by Azure Security Center to be allowed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveApplicationControlGroups {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -111,6 +122,7 @@ impl AdaptiveApplicationControlGroups {
         Self::default()
     }
 }
+#[doc = "An alert that machines within a group can have"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AdaptiveApplicationControlIssue {
     ViolationsAudited,
@@ -120,10 +132,13 @@ pub enum AdaptiveApplicationControlIssue {
     ExecutableViolationsAudited,
     RulesViolatedManually,
 }
+#[doc = "Represents a summary of the alerts of the machine group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveApplicationControlIssueSummary {
+    #[doc = "An alert that machines within a group can have"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issue: Option<AdaptiveApplicationControlIssue>,
+    #[doc = "The number of machines in the group that have this alert"]
     #[serde(rename = "numberOfVms", default, skip_serializing_if = "Option::is_none")]
     pub number_of_vms: Option<f64>,
 }
@@ -133,10 +148,12 @@ impl AdaptiveApplicationControlIssueSummary {
     }
 }
 pub type AdaptiveApplicationControlIssuesSummaries = Vec<AdaptiveApplicationControlIssueSummary>;
+#[doc = "The resource whose properties describes the Adaptive Network Hardening settings for some Azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveNetworkHardening {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Adaptive Network Hardening resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdaptiveNetworkHardeningProperties>,
 }
@@ -147,7 +164,9 @@ impl AdaptiveNetworkHardening {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdaptiveNetworkHardeningEnforceRequest {
+    #[doc = "The rules to enforce"]
     pub rules: Vec<Rule>,
+    #[doc = "The Azure resource IDs of the effective network security groups that will be updated with the created security rules from the Adaptive Network Hardening rules"]
     #[serde(rename = "networkSecurityGroups")]
     pub network_security_groups: Vec<String>,
 }
@@ -159,12 +178,16 @@ impl AdaptiveNetworkHardeningEnforceRequest {
         }
     }
 }
+#[doc = "Adaptive Network Hardening resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveNetworkHardeningProperties {
+    #[doc = "The security rules which are recommended to be effective on the VM"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<Rule>,
+    #[doc = "The UTC time on which the rules were calculated"]
     #[serde(rename = "rulesCalculationTime", default, skip_serializing_if = "Option::is_none")]
     pub rules_calculation_time: Option<String>,
+    #[doc = "The Network Security Groups effective on the network interfaces of the protected resource"]
     #[serde(rename = "effectiveNetworkSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub effective_network_security_groups: Vec<EffectiveNetworkSecurityGroups>,
 }
@@ -173,10 +196,13 @@ impl AdaptiveNetworkHardeningProperties {
         Self::default()
     }
 }
+#[doc = "Response for ListAdaptiveNetworkHardenings API service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveNetworkHardeningsList {
+    #[doc = "A list of Adaptive Network Hardenings resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AdaptiveNetworkHardening>,
+    #[doc = "The URL to get the next set of results"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -185,8 +211,10 @@ impl AdaptiveNetworkHardeningsList {
         Self::default()
     }
 }
+#[doc = "Details of the sub-assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdditionalData {
+    #[doc = "Sub-assessment resource type"]
     #[serde(rename = "assessedResourceType")]
     pub assessed_resource_type: additional_data::AssessedResourceType,
 }
@@ -197,6 +225,7 @@ impl AdditionalData {
 }
 pub mod additional_data {
     use super::*;
+    #[doc = "Sub-assessment resource type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AssessedResourceType {
         SqlServerVulnerability,
@@ -204,12 +233,16 @@ pub mod additional_data {
         ServerVulnerability,
     }
 }
+#[doc = "Properties of the additional workspaces."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdditionalWorkspacesProperties {
+    #[doc = "Workspace resource id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace: Option<String>,
+    #[doc = "Workspace type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<additional_workspaces_properties::Type>,
+    #[doc = "List of data types sent to workspace"]
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub data_types: Vec<String>,
 }
@@ -220,6 +253,7 @@ impl AdditionalWorkspacesProperties {
 }
 pub mod additional_workspaces_properties {
     use super::*;
+    #[doc = "Workspace type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Sentinel,
@@ -230,8 +264,10 @@ pub mod additional_workspaces_properties {
         }
     }
 }
+#[doc = "The Advanced Threat Protection settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedThreatProtectionProperties {
+    #[doc = "Indicates whether Advanced Threat Protection is enabled."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
 }
@@ -240,10 +276,12 @@ impl AdvancedThreatProtectionProperties {
         Self::default()
     }
 }
+#[doc = "The Advanced Threat Protection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedThreatProtectionSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The Advanced Threat Protection settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdvancedThreatProtectionProperties>,
 }
@@ -252,10 +290,12 @@ impl AdvancedThreatProtectionSetting {
         Self::default()
     }
 }
+#[doc = "Security alert"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Alert {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes security alert properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProperties>,
 }
@@ -264,8 +304,10 @@ impl Alert {
         Self::default()
     }
 }
+#[doc = "Changing set of properties depending on the entity type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertEntity {
+    #[doc = "Type of entity"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -274,6 +316,7 @@ impl AlertEntity {
         Self::default()
     }
 }
+#[doc = "Links related to the alert"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertExtendedLinks {}
 impl AlertExtendedLinks {
@@ -281,6 +324,7 @@ impl AlertExtendedLinks {
         Self::default()
     }
 }
+#[doc = "Custom properties for the alert."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertExtendedProperties {}
 impl AlertExtendedProperties {
@@ -288,10 +332,13 @@ impl AlertExtendedProperties {
         Self::default()
     }
 }
+#[doc = "List of security alerts"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertList {
+    #[doc = "describes security alert properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Alert>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -300,52 +347,76 @@ impl AlertList {
         Self::default()
     }
 }
+#[doc = "describes security alert properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertProperties {
+    #[doc = "Unique identifier for the detection logic (all alert instances from the same detection logic will have the same alertType)."]
     #[serde(rename = "alertType", default, skip_serializing_if = "Option::is_none")]
     pub alert_type: Option<String>,
+    #[doc = "Unique identifier for the alert."]
     #[serde(rename = "systemAlertId", default, skip_serializing_if = "Option::is_none")]
     pub system_alert_id: Option<String>,
+    #[doc = "The name of Azure Security Center pricing tier which powering this alert. Learn more: https://docs.microsoft.com/en-us/azure/security-center/security-center-pricing"]
     #[serde(rename = "productComponentName", default, skip_serializing_if = "Option::is_none")]
     pub product_component_name: Option<String>,
+    #[doc = "The display name of the alert."]
     #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub alert_display_name: Option<String>,
+    #[doc = "Description of the suspicious activity that was detected."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The risk level of the threat that was detected. Learn more: https://docs.microsoft.com/en-us/azure/security-center/security-center-alerts-overview#how-are-alerts-classified."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<alert_properties::Severity>,
+    #[doc = "The kill chain related intent behind the alert. For list of supported values, and explanations of Azure Security Center's supported kill chain intents."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub intent: Option<alert_properties::Intent>,
+    #[doc = "The UTC time of the first event or activity included in the alert in ISO8601 format."]
     #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub start_time_utc: Option<String>,
+    #[doc = "The UTC time of the last event or activity included in the alert in ISO8601 format."]
     #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub end_time_utc: Option<String>,
+    #[doc = "The resource identifiers that can be used to direct the alert to the right product exposure group (tenant, workspace, subscription etc.). There can be multiple identifiers of different type per alert."]
     #[serde(rename = "resourceIdentifiers", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_identifiers: Vec<ResourceIdentifier>,
+    #[doc = "Manual action items to take to remediate the alert."]
     #[serde(rename = "remediationSteps", default, skip_serializing_if = "Vec::is_empty")]
     pub remediation_steps: Vec<String>,
+    #[doc = "The name of the vendor that raises the alert."]
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
+    #[doc = "The life cycle status of the alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<alert_properties::Status>,
+    #[doc = "Links related to the alert"]
     #[serde(rename = "extendedLinks", default, skip_serializing_if = "Vec::is_empty")]
     pub extended_links: Vec<AlertExtendedLinks>,
+    #[doc = "A direct link to the alert page in Azure Portal."]
     #[serde(rename = "alertUri", default, skip_serializing_if = "Option::is_none")]
     pub alert_uri: Option<String>,
+    #[doc = "The UTC time the alert was generated in ISO8601 format."]
     #[serde(rename = "timeGeneratedUtc", default, skip_serializing_if = "Option::is_none")]
     pub time_generated_utc: Option<String>,
+    #[doc = "The name of the product which published this alert (Azure Security Center, Azure ATP, Microsoft Defender ATP, O365 ATP, MCAS, and so on)."]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "The UTC processing end time of the alert in ISO8601 format."]
     #[serde(rename = "processingEndTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub processing_end_time_utc: Option<String>,
+    #[doc = "A list of entities related to the alert."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub entities: Vec<AlertEntity>,
+    #[doc = "This field determines whether the alert is an incident (a compound grouping of several alerts) or a single alert."]
     #[serde(rename = "isIncident", default, skip_serializing_if = "Option::is_none")]
     pub is_incident: Option<bool>,
+    #[doc = "Key for corelating related alerts. Alerts with the same correlation key considered to be related."]
     #[serde(rename = "correlationKey", default, skip_serializing_if = "Option::is_none")]
     pub correlation_key: Option<String>,
+    #[doc = "Custom properties for the alert."]
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<AlertExtendedProperties>,
+    #[doc = "The display name of the resource most related to this alert."]
     #[serde(rename = "compromisedEntity", default, skip_serializing_if = "Option::is_none")]
     pub compromised_entity: Option<String>,
 }
@@ -356,6 +427,7 @@ impl AlertProperties {
 }
 pub mod alert_properties {
     use super::*;
+    #[doc = "The risk level of the threat that was detected. Learn more: https://docs.microsoft.com/en-us/azure/security-center/security-center-alerts-overview#how-are-alerts-classified."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         Informational,
@@ -363,6 +435,7 @@ pub mod alert_properties {
         Medium,
         High,
     }
+    #[doc = "The kill chain related intent behind the alert. For list of supported values, and explanations of Azure Security Center's supported kill chain intents."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Intent {
         Unknown,
@@ -382,6 +455,7 @@ pub mod alert_properties {
         Probing,
         Exploitation,
     }
+    #[doc = "The life cycle status of the alert."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Active,
@@ -389,10 +463,12 @@ pub mod alert_properties {
         Dismissed,
     }
 }
+#[doc = "Simulate alerts according to this bundles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSimulatorBundlesRequestProperties {
     #[serde(flatten)]
     pub alert_simulator_request_properties: AlertSimulatorRequestProperties,
+    #[doc = "Bundles list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub bundles: Vec<BundleType>,
 }
@@ -404,8 +480,10 @@ impl AlertSimulatorBundlesRequestProperties {
         }
     }
 }
+#[doc = "Alert Simulator request body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertSimulatorRequestBody {
+    #[doc = "Describes properties of an alert simulation request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertSimulatorRequestProperties>,
 }
@@ -414,8 +492,10 @@ impl AlertSimulatorRequestBody {
         Self::default()
     }
 }
+#[doc = "Describes properties of an alert simulation request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSimulatorRequestProperties {
+    #[doc = "The kind of alert simulation."]
     pub kind: alert_simulator_request_properties::Kind,
 }
 impl AlertSimulatorRequestProperties {
@@ -425,13 +505,16 @@ impl AlertSimulatorRequestProperties {
 }
 pub mod alert_simulator_request_properties {
     use super::*;
+    #[doc = "The kind of alert simulation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Bundles,
     }
 }
+#[doc = "The alert sync setting properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSyncSettingProperties {
+    #[doc = "Is the alert sync setting enabled"]
     pub enabled: bool,
 }
 impl AlertSyncSettingProperties {
@@ -439,10 +522,12 @@ impl AlertSyncSettingProperties {
         Self { enabled }
     }
 }
+#[doc = "Represents an alert sync setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSyncSettings {
     #[serde(flatten)]
     pub setting: Setting,
+    #[doc = "The alert sync setting properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertSyncSettingProperties>,
 }
@@ -451,10 +536,12 @@ impl AlertSyncSettings {
         Self { setting, properties: None }
     }
 }
+#[doc = "Describes the suppression rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSuppressionRule {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes AlertsSuppressionRule properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsSuppressionRuleProperties>,
 }
@@ -463,16 +550,23 @@ impl AlertsSuppressionRule {
         Self::default()
     }
 }
+#[doc = "describes AlertsSuppressionRule properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSuppressionRuleProperties {
+    #[doc = "Type of the alert to automatically suppress. For all alert types, use '*'"]
     #[serde(rename = "alertType")]
     pub alert_type: String,
+    #[doc = "The last time this rule was modified"]
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
+    #[doc = "Expiration date of the rule, if value is not provided or provided as null this field will default to the maximum allowed expiration date."]
     #[serde(rename = "expirationDateUtc", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date_utc: Option<String>,
+    #[doc = "The reason for dismissing the alert"]
     pub reason: String,
+    #[doc = "Possible states of the rule"]
     pub state: alerts_suppression_rule_properties::State,
+    #[doc = "Any comment regarding the rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
     #[serde(rename = "suppressionAlertsScope", default, skip_serializing_if = "Option::is_none")]
@@ -493,6 +587,7 @@ impl AlertsSuppressionRuleProperties {
 }
 pub mod alerts_suppression_rule_properties {
     use super::*;
+    #[doc = "Possible states of the rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
@@ -500,9 +595,11 @@ pub mod alerts_suppression_rule_properties {
         Expired,
     }
 }
+#[doc = "Suppression rules list for subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSuppressionRulesList {
     pub value: Vec<AlertsSuppressionRule>,
+    #[doc = "URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -511,10 +608,12 @@ impl AlertsSuppressionRulesList {
         Self { value, next_link: None }
     }
 }
+#[doc = "List of all possible traffic between Azure resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AllowedConnectionsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AllowedConnectionsResource>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -523,12 +622,14 @@ impl AllowedConnectionsList {
         Self::default()
     }
 }
+#[doc = "The resource whose properties describes the allowed traffic between Azure resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AllowedConnectionsResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(flatten)]
     pub location: Location,
+    #[doc = "Describes the allowed traffic between Azure resources"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AllowedConnectionsResourceProperties>,
 }
@@ -537,10 +638,13 @@ impl AllowedConnectionsResource {
         Self::default()
     }
 }
+#[doc = "Describes the allowed traffic between Azure resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AllowedConnectionsResourceProperties {
+    #[doc = "The UTC time on which the allowed connections resource was calculated"]
     #[serde(rename = "calculatedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub calculated_date_time: Option<String>,
+    #[doc = "List of connectable resources"]
     #[serde(rename = "connectableResources", default, skip_serializing_if = "Vec::is_empty")]
     pub connectable_resources: Vec<ConnectableResource>,
 }
@@ -549,10 +653,12 @@ impl AllowedConnectionsResourceProperties {
         Self::default()
     }
 }
+#[doc = "A custom alert rule that checks if a value (depends on the custom alert type) is allowed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AllowlistCustomAlertRule {
     #[serde(flatten)]
     pub list_custom_alert_rule: ListCustomAlertRule,
+    #[doc = "The values to allow. The format of the values depends on the rule type."]
     #[serde(rename = "allowlistValues")]
     pub allowlist_values: Vec<String>,
 }
@@ -564,6 +670,7 @@ impl AllowlistCustomAlertRule {
         }
     }
 }
+#[doc = "Number of cloud to device messages (AMQP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmqpC2dMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -576,6 +683,7 @@ impl AmqpC2dMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of rejected cloud to device messages (AMQP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmqpC2dRejectedMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -588,6 +696,7 @@ impl AmqpC2dRejectedMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of device to cloud messages (AMQP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmqpD2cMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -600,10 +709,12 @@ impl AmqpD2cMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "The ASC location of the subscription is in the \"name\" field"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AscLocation {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An empty set of properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AscLocationProperties>,
 }
@@ -612,10 +723,12 @@ impl AscLocation {
         Self::default()
     }
 }
+#[doc = "List of locations where ASC saves your data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AscLocationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AscLocation>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -624,6 +737,7 @@ impl AscLocationList {
         Self::default()
     }
 }
+#[doc = "An empty set of properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AscLocationProperties {}
 impl AscLocationProperties {
@@ -631,8 +745,10 @@ impl AscLocationProperties {
         Self::default()
     }
 }
+#[doc = "Links relevant to the assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentLinks {
+    #[doc = "Link to assessment in Azure Portal"]
     #[serde(rename = "azurePortalUri", default, skip_serializing_if = "Option::is_none")]
     pub azure_portal_uri: Option<String>,
 }
@@ -641,11 +757,15 @@ impl AssessmentLinks {
         Self::default()
     }
 }
+#[doc = "The result of the assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentStatus {
+    #[doc = "Programmatic code for the status of the assessment"]
     pub code: assessment_status::Code,
+    #[doc = "Programmatic code for the cause of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cause: Option<String>,
+    #[doc = "Human readable description of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -660,6 +780,7 @@ impl AssessmentStatus {
 }
 pub mod assessment_status {
     use super::*;
+    #[doc = "Programmatic code for the status of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Code {
         Healthy,
@@ -667,12 +788,15 @@ pub mod assessment_status {
         NotApplicable,
     }
 }
+#[doc = "The result of the assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentStatusResponse {
     #[serde(flatten)]
     pub assessment_status: AssessmentStatus,
+    #[doc = "The time that the assessment was created and first evaluated. Returned as UTC time in ISO 8601 format"]
     #[serde(rename = "firstEvaluationDate", default, skip_serializing_if = "Option::is_none")]
     pub first_evaluation_date: Option<String>,
+    #[doc = "The time that the status of the assessment last changed. Returned as UTC time in ISO 8601 format"]
     #[serde(rename = "statusChangeDate", default, skip_serializing_if = "Option::is_none")]
     pub status_change_date: Option<String>,
 }
@@ -685,6 +809,7 @@ impl AssessmentStatusResponse {
         }
     }
 }
+#[doc = "Represents an ATA security solution which sends logs to an OMS workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AtaExternalSecuritySolution {
     #[serde(flatten)]
@@ -712,12 +837,16 @@ impl AtaSolutionProperties {
         Self::default()
     }
 }
+#[doc = "Settings for cloud authentication management"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthenticationDetailsProperties {
+    #[doc = "State of the multi-cloud connector"]
     #[serde(rename = "authenticationProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub authentication_provisioning_state: Option<authentication_details_properties::AuthenticationProvisioningState>,
+    #[doc = "The permissions detected in the cloud account."]
     #[serde(rename = "grantedPermissions", default, skip_serializing_if = "Vec::is_empty")]
     pub granted_permissions: Vec<PermissionProperty>,
+    #[doc = "Connect to your cloud account, for AWS use either account credentials or role-based authentication. For GCP use account organization credentials."]
     #[serde(rename = "authenticationType")]
     pub authentication_type: authentication_details_properties::AuthenticationType,
 }
@@ -732,6 +861,7 @@ impl AuthenticationDetailsProperties {
 }
 pub mod authentication_details_properties {
     use super::*;
+    #[doc = "State of the multi-cloud connector"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationProvisioningState {
         Valid,
@@ -739,6 +869,7 @@ pub mod authentication_details_properties {
         Expired,
         IncorrectPolicy,
     }
+    #[doc = "Connect to your cloud account, for AWS use either account credentials or role-based authentication. For GCP use account organization credentials."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
         #[serde(rename = "awsCreds")]
@@ -749,10 +880,12 @@ pub mod authentication_details_properties {
         GcpCredentials,
     }
 }
+#[doc = "Auto provisioning setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoProvisioningSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes properties of an auto provisioning setting"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutoProvisioningSettingProperties>,
 }
@@ -761,10 +894,13 @@ impl AutoProvisioningSetting {
         Self::default()
     }
 }
+#[doc = "List of all the auto provisioning settings response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoProvisioningSettingList {
+    #[doc = "List of all the auto provisioning settings"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AutoProvisioningSetting>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -773,8 +909,10 @@ impl AutoProvisioningSettingList {
         Self::default()
     }
 }
+#[doc = "describes properties of an auto provisioning setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoProvisioningSettingProperties {
+    #[doc = "Describes what kind of security agent provisioning action to take"]
     #[serde(rename = "autoProvision")]
     pub auto_provision: auto_provisioning_setting_properties::AutoProvision,
 }
@@ -785,16 +923,19 @@ impl AutoProvisioningSettingProperties {
 }
 pub mod auto_provisioning_setting_properties {
     use super::*;
+    #[doc = "Describes what kind of security agent provisioning action to take"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AutoProvision {
         On,
         Off,
     }
 }
+#[doc = "The security automation resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Automation {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "A set of properties that defines the behavior of the automation configuration. To learn more about the supported security events data models schemas - please visit https://aka.ms/ASCAutomationSchemas."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomationProperties>,
 }
@@ -803,8 +944,10 @@ impl Automation {
         Self::default()
     }
 }
+#[doc = "The action that should be triggered."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationAction {
+    #[doc = "The type of the action that will be triggered by the Automation"]
     #[serde(rename = "actionType")]
     pub action_type: automation_action::ActionType,
 }
@@ -815,6 +958,7 @@ impl AutomationAction {
 }
 pub mod automation_action {
     use super::*;
+    #[doc = "The type of the action that will be triggered by the Automation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionType {
         LogicApp,
@@ -822,14 +966,18 @@ pub mod automation_action {
         Workspace,
     }
 }
+#[doc = "The target Event Hub to which event data will be exported. To learn more about Security Center continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionEventHub {
     #[serde(flatten)]
     pub automation_action: AutomationAction,
+    #[doc = "The target Event Hub Azure Resource ID."]
     #[serde(rename = "eventHubResourceId", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_resource_id: Option<String>,
+    #[doc = "The target Event Hub SAS policy name."]
     #[serde(rename = "sasPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub sas_policy_name: Option<String>,
+    #[doc = "The target Event Hub connection string (it will not be included in any response)."]
     #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
 }
@@ -843,12 +991,15 @@ impl AutomationActionEventHub {
         }
     }
 }
+#[doc = "The logic app action that should be triggered. To learn more about Security Center's Workflow Automation capabilities, visit https://aka.ms/ASCWorkflowAutomationLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionLogicApp {
     #[serde(flatten)]
     pub automation_action: AutomationAction,
+    #[doc = "The triggered Logic App Azure Resource ID. This can also reside on other subscriptions, given that you have permissions to trigger the Logic App"]
     #[serde(rename = "logicAppResourceId", default, skip_serializing_if = "Option::is_none")]
     pub logic_app_resource_id: Option<String>,
+    #[doc = "The Logic App trigger URI endpoint (it will not be included in any response)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
@@ -861,10 +1012,12 @@ impl AutomationActionLogicApp {
         }
     }
 }
+#[doc = "The\u{a0}Log\u{a0}Analytics\u{a0}Workspace\u{a0}to\u{a0}which\u{a0}event data will be exported. Security alerts data will reside in the 'SecurityAlert' table and the assessments data will reside in the 'SecurityRecommendation' table (under the 'Security'/'SecurityCenterFree' solutions). Note that in order to view the data in the workspace, the Security Center Log Analytics free/standard solution needs to be enabled on that workspace. To learn more about Security Center continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionWorkspace {
     #[serde(flatten)]
     pub automation_action: AutomationAction,
+    #[doc = "The fully qualified Log Analytics Workspace Azure Resource ID."]
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
 }
@@ -876,9 +1029,12 @@ impl AutomationActionWorkspace {
         }
     }
 }
+#[doc = "List of security automations response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationList {
+    #[doc = "The list of security automations under the given scope."]
     pub value: Vec<Automation>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -887,16 +1043,22 @@ impl AutomationList {
         Self { value, next_link: None }
     }
 }
+#[doc = "A set of properties that defines the behavior of the automation configuration. To learn more about the supported security events data models schemas - please visit https://aka.ms/ASCAutomationSchemas."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationProperties {
+    #[doc = "The security automation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Indicates whether the security automation is enabled."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "A collection of scopes on which the security automations logic is applied. Supported scopes are the subscription itself or a resource group under that subscription. The automation will only apply on defined scopes."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<AutomationScope>,
+    #[doc = "A collection of the source event types which evaluate the security automation set of rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<AutomationSource>,
+    #[doc = "A collection of the actions which are triggered if all the configured rules evaluations, within at least one rule set, are true."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<AutomationAction>,
 }
@@ -905,6 +1067,7 @@ impl AutomationProperties {
         Self::default()
     }
 }
+#[doc = "A rule set which evaluates all its rules upon an event interception. Only when all the included rules in the rule set will be evaluated as 'true', will the event trigger the defined actions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationRuleSet {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -915,10 +1078,13 @@ impl AutomationRuleSet {
         Self::default()
     }
 }
+#[doc = "A single automation scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationScope {
+    #[doc = "The resources scope description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The resources scope path. Can be the subscription on which the automation is defined on or a resource group under that subscription (fully qualified Azure resource IDs)."]
     #[serde(rename = "scopePath", default, skip_serializing_if = "Option::is_none")]
     pub scope_path: Option<String>,
 }
@@ -927,10 +1093,13 @@ impl AutomationScope {
         Self::default()
     }
 }
+#[doc = "The source event types which evaluate the security automation set of rules. For example - security alerts and security assessments. To learn more about the supported security events data models schemas - please visit https://aka.ms/ASCAutomationSchemas."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationSource {
+    #[doc = "A valid event source type."]
     #[serde(rename = "eventSource", default, skip_serializing_if = "Option::is_none")]
     pub event_source: Option<automation_source::EventSource>,
+    #[doc = "A set of rules which evaluate upon event interception. A logical disjunction is applied between defined rule sets (logical 'or')."]
     #[serde(rename = "ruleSets", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_sets: Vec<AutomationRuleSet>,
 }
@@ -941,6 +1110,7 @@ impl AutomationSource {
 }
 pub mod automation_source {
     use super::*;
+    #[doc = "A valid event source type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventSource {
         Assessments,
@@ -956,14 +1126,19 @@ pub mod automation_source {
         RegulatoryComplianceAssessmentSnapshot,
     }
 }
+#[doc = "A rule which is evaluated upon event interception. The rule is configured by comparing a specific value from the event model to an expected value. This comparison is done by using one of the supported operators set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationTriggeringRule {
+    #[doc = "The JPath of the entity model property that should be checked."]
     #[serde(rename = "propertyJPath", default, skip_serializing_if = "Option::is_none")]
     pub property_j_path: Option<String>,
+    #[doc = "The data type of the compared operands (string, integer, floating point number or a boolean [true/false]]"]
     #[serde(rename = "propertyType", default, skip_serializing_if = "Option::is_none")]
     pub property_type: Option<automation_triggering_rule::PropertyType>,
+    #[doc = "The expected value."]
     #[serde(rename = "expectedValue", default, skip_serializing_if = "Option::is_none")]
     pub expected_value: Option<String>,
+    #[doc = "A valid comparer operator to use. A case-insensitive comparison will be applied for String PropertyType."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<automation_triggering_rule::Operator>,
 }
@@ -974,6 +1149,7 @@ impl AutomationTriggeringRule {
 }
 pub mod automation_triggering_rule {
     use super::*;
+    #[doc = "The data type of the compared operands (string, integer, floating point number or a boolean [true/false]]"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PropertyType {
         String,
@@ -981,6 +1157,7 @@ pub mod automation_triggering_rule {
         Number,
         Boolean,
     }
+    #[doc = "A valid comparer operator to use. A case-insensitive comparison will be applied for String PropertyType."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equals,
@@ -994,10 +1171,13 @@ pub mod automation_triggering_rule {
         EndsWith,
     }
 }
+#[doc = "The security automation model state property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationValidationStatus {
+    #[doc = "Indicates whether the model is valid or not."]
     #[serde(rename = "isValid", default, skip_serializing_if = "Option::is_none")]
     pub is_valid: Option<bool>,
+    #[doc = "The validation message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -1006,14 +1186,18 @@ impl AutomationValidationStatus {
         Self::default()
     }
 }
+#[doc = "AWS cloud account connector based assume role, the role enables delegating access to your AWS resources. The role is composed of role Amazon Resource Name (ARN) and external ID. For more details, refer to <a href=\"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user.html\">Creating a Role to Delegate Permissions to an IAM User (write only)</a>"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwAssumeRoleAuthenticationDetailsProperties {
     #[serde(flatten)]
     pub authentication_details_properties: AuthenticationDetailsProperties,
+    #[doc = "The ID of the cloud account"]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
+    #[doc = "Assumed role ID is an identifier that you can use to create temporary security credentials."]
     #[serde(rename = "awsAssumeRoleArn")]
     pub aws_assume_role_arn: String,
+    #[doc = "A unique identifier that is required when you assume a role in another account."]
     #[serde(rename = "awsExternalId")]
     pub aws_external_id: String,
 }
@@ -1031,14 +1215,18 @@ impl AwAssumeRoleAuthenticationDetailsProperties {
         }
     }
 }
+#[doc = "AWS cloud account connector based credentials, the credentials is composed of access key ID and secret key, for more details, refer to <a href=\"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html\">Creating an IAM User in Your AWS Account (write only)</a>"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCredsAuthenticationDetailsProperties {
     #[serde(flatten)]
     pub authentication_details_properties: AuthenticationDetailsProperties,
+    #[doc = "The ID of the cloud account"]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
+    #[doc = "Public key element of the AWS credential object (write only)"]
     #[serde(rename = "awsAccessKeyId")]
     pub aws_access_key_id: String,
+    #[doc = "Secret key element of the AWS credential object (write only)"]
     #[serde(rename = "awsSecretAccessKey")]
     pub aws_secret_access_key: String,
 }
@@ -1056,10 +1244,12 @@ impl AwsCredsAuthenticationDetailsProperties {
         }
     }
 }
+#[doc = "Azure resource identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourceIdentifier {
     #[serde(flatten)]
     pub resource_identifier: ResourceIdentifier,
+    #[doc = "ARM resource identifier for the cloud resource being alerted on"]
     #[serde(rename = "azureResourceId", default, skip_serializing_if = "Option::is_none")]
     pub azure_resource_id: Option<String>,
 }
@@ -1071,8 +1261,10 @@ impl AzureResourceIdentifier {
         }
     }
 }
+#[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceLink {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1082,8 +1274,10 @@ impl AzureResourceLink {
     }
 }
 pub type AzureResourceLinks = Vec<AzureResourceLink>;
+#[doc = "Describes an Azure resource with location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureTrackedResourceLocation {
+    #[doc = "Location where the resource is stored"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -1092,10 +1286,13 @@ impl AzureTrackedResourceLocation {
         Self::default()
     }
 }
+#[doc = "Baseline details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Baseline {
+    #[doc = "Expected results."]
     #[serde(rename = "expectedResults", default, skip_serializing_if = "Vec::is_empty")]
     pub expected_results: Vec<Vec<String>>,
+    #[doc = "Baseline update time (UTC)."]
     #[serde(rename = "updatedTime", default, skip_serializing_if = "Option::is_none")]
     pub updated_time: Option<String>,
 }
@@ -1104,14 +1301,19 @@ impl Baseline {
         Self::default()
     }
 }
+#[doc = "The rule result adjusted with baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineAdjustedResult {
+    #[doc = "Baseline details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub baseline: Option<Baseline>,
+    #[doc = "The rule result status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<RuleStatus>,
+    #[doc = "Results the are not in baseline."]
     #[serde(rename = "resultsNotInBaseline", default, skip_serializing_if = "Vec::is_empty")]
     pub results_not_in_baseline: Vec<Vec<String>>,
+    #[doc = "Results the are in baseline."]
     #[serde(rename = "resultsOnlyInBaseline", default, skip_serializing_if = "Vec::is_empty")]
     pub results_only_in_baseline: Vec<Vec<String>>,
 }
@@ -1120,10 +1322,13 @@ impl BaselineAdjustedResult {
         Self::default()
     }
 }
+#[doc = "The benchmark references."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BenchmarkReference {
+    #[doc = "The benchmark name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub benchmark: Option<String>,
+    #[doc = "The benchmark reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference: Option<String>,
 }
@@ -1132,6 +1337,7 @@ impl BenchmarkReference {
         Self::default()
     }
 }
+#[doc = "Alert Simulator supported bundles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BundleType {
     AppServices,
@@ -1144,10 +1350,13 @@ pub enum BundleType {
     StorageAccounts,
     VirtualMachines,
 }
+#[doc = "CVE details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Cve {
+    #[doc = "CVE title"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "Link url"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
 }
@@ -1156,8 +1365,10 @@ impl Cve {
         Self::default()
     }
 }
+#[doc = "CVSS details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Cvss {
+    #[doc = "CVSS base"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base: Option<f64>,
 }
@@ -1166,6 +1377,7 @@ impl Cvss {
         Self::default()
     }
 }
+#[doc = "Represents a security solution which sends CEF logs to an OMS workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CefExternalSecuritySolution {
     #[serde(flatten)]
@@ -1197,8 +1409,10 @@ impl CefSolutionProperties {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -1207,16 +1421,22 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -1225,10 +1445,12 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Compliance of a scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Compliance {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The Compliance score (percentage) of a Subscription is a sum of all Resources' Compliances under the given Subscription. A Resource Compliance is defined as the compliant ('healthy') Policy Definitions out of all Policy Definitions applicable to a given resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ComplianceProperties>,
 }
@@ -1237,10 +1459,13 @@ impl Compliance {
         Self::default()
     }
 }
+#[doc = "List of Compliance objects response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceList {
+    #[doc = "List of Compliance objects"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Compliance>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1249,12 +1474,16 @@ impl ComplianceList {
         Self::default()
     }
 }
+#[doc = "The Compliance score (percentage) of a Subscription is a sum of all Resources' Compliances under the given Subscription. A Resource Compliance is defined as the compliant ('healthy') Policy Definitions out of all Policy Definitions applicable to a given resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceProperties {
+    #[doc = "The timestamp when the Compliance calculation was conducted."]
     #[serde(rename = "assessmentTimestampUtcDate", default, skip_serializing_if = "Option::is_none")]
     pub assessment_timestamp_utc_date: Option<String>,
+    #[doc = "The resource count of the given subscription for which the Compliance calculation was conducted (needed for Management Group Compliance calculation)."]
     #[serde(rename = "resourceCount", default, skip_serializing_if = "Option::is_none")]
     pub resource_count: Option<i64>,
+    #[doc = "An array of segment, which is the actually the compliance assessment."]
     #[serde(rename = "assessmentResult", default, skip_serializing_if = "Vec::is_empty")]
     pub assessment_result: Vec<ComplianceSegment>,
 }
@@ -1263,10 +1492,12 @@ impl ComplianceProperties {
         Self::default()
     }
 }
+#[doc = "a compliance result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceResult {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Compliance result data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ComplianceResultProperties>,
 }
@@ -1275,9 +1506,12 @@ impl ComplianceResult {
         Self::default()
     }
 }
+#[doc = "List of compliance results response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComplianceResultList {
+    #[doc = "List of compliance results"]
     pub value: Vec<ComplianceResult>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1286,8 +1520,10 @@ impl ComplianceResultList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Compliance result data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceResultProperties {
+    #[doc = "The status of the resource regarding a single assessment"]
     #[serde(rename = "resourceStatus", default, skip_serializing_if = "Option::is_none")]
     pub resource_status: Option<compliance_result_properties::ResourceStatus>,
 }
@@ -1298,6 +1534,7 @@ impl ComplianceResultProperties {
 }
 pub mod compliance_result_properties {
     use super::*;
+    #[doc = "The status of the resource regarding a single assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceStatus {
         Healthy,
@@ -1306,10 +1543,13 @@ pub mod compliance_result_properties {
         NotHealthy,
     }
 }
+#[doc = "A segment of a compliance assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceSegment {
+    #[doc = "The segment type, e.g. compliant, non-compliance, insufficient coverage, N/A, etc."]
     #[serde(rename = "segmentType", default, skip_serializing_if = "Option::is_none")]
     pub segment_type: Option<String>,
+    #[doc = "The size (%) of the segment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub percentage: Option<f64>,
 }
@@ -1318,6 +1558,7 @@ impl ComplianceSegment {
         Self::default()
     }
 }
+#[doc = "The configuration status of the machines group or machine or rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConfigurationStatus {
     Configured,
@@ -1326,12 +1567,16 @@ pub enum ConfigurationStatus {
     Failed,
     NoStatus,
 }
+#[doc = "Describes the allowed inbound and outbound traffic of an Azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectableResource {
+    #[doc = "The Azure resource id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The list of Azure resources that the resource has inbound allowed connection from"]
     #[serde(rename = "inboundConnectedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_connected_resources: Vec<ConnectedResource>,
+    #[doc = "The list of Azure resources that the resource has outbound allowed connection to"]
     #[serde(rename = "outboundConnectedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub outbound_connected_resources: Vec<ConnectedResource>,
 }
@@ -1340,12 +1585,16 @@ impl ConnectableResource {
         Self::default()
     }
 }
+#[doc = "Describes properties of a connected resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedResource {
+    #[doc = "The Azure resource id of the connected resource"]
     #[serde(rename = "connectedResourceId", default, skip_serializing_if = "Option::is_none")]
     pub connected_resource_id: Option<String>,
+    #[doc = "The allowed tcp ports"]
     #[serde(rename = "tcpPorts", default, skip_serializing_if = "Option::is_none")]
     pub tcp_ports: Option<String>,
+    #[doc = "The allowed udp ports"]
     #[serde(rename = "udpPorts", default, skip_serializing_if = "Option::is_none")]
     pub udp_ports: Option<String>,
 }
@@ -1356,6 +1605,7 @@ impl ConnectedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedWorkspace {
+    #[doc = "Azure resource ID of the connected OMS workspace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1364,6 +1614,7 @@ impl ConnectedWorkspace {
         Self::default()
     }
 }
+#[doc = "Inbound connection from an ip that isn't allowed. Allow list consists of ipv4 or ipv6 range in CIDR notation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionFromIpNotAllowed {
     #[serde(flatten)]
@@ -1376,8 +1627,10 @@ impl ConnectionFromIpNotAllowed {
         }
     }
 }
+#[doc = "Connection string for ingesting security data and logs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionStrings {
+    #[doc = "Connection strings"]
     pub value: Vec<IngestionConnectionString>,
 }
 impl ConnectionStrings {
@@ -1385,6 +1638,7 @@ impl ConnectionStrings {
         Self { value }
     }
 }
+#[doc = "Outbound connection to an ip that isn't allowed. Allow list consists of ipv4 or ipv6 range in CIDR notation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionToIpNotAllowed {
     #[serde(flatten)]
@@ -1397,10 +1651,12 @@ impl ConnectionToIpNotAllowed {
         }
     }
 }
+#[doc = "The connector setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of a connector setting"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectorSettingProperties>,
 }
@@ -1409,10 +1665,13 @@ impl ConnectorSetting {
         Self::default()
     }
 }
+#[doc = "For a subscription, list of all cloud account connectors and their settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorSettingList {
+    #[doc = "List of all the cloud account connector settings"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectorSetting>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1421,10 +1680,13 @@ impl ConnectorSettingList {
         Self::default()
     }
 }
+#[doc = "Describes properties of a connector setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorSettingProperties {
+    #[doc = "Settings for hybrid compute management"]
     #[serde(rename = "hybridComputeSettings", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_compute_settings: Option<HybridComputeSettingsProperties>,
+    #[doc = "Settings for cloud authentication management"]
     #[serde(rename = "authenticationDetails", default, skip_serializing_if = "Option::is_none")]
     pub authentication_details: Option<AuthenticationDetailsProperties>,
 }
@@ -1433,24 +1695,32 @@ impl ConnectorSettingProperties {
         Self::default()
     }
 }
+#[doc = "Additional context fields for container registry Vulnerability assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryVulnerabilityProperties {
     #[serde(flatten)]
     pub additional_data: AdditionalData,
+    #[doc = "Vulnerability Type. e.g: Vulnerability, Potential Vulnerability, Information Gathered, Vulnerability"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Dictionary from cvss version to cvss details object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cvss: Option<serde_json::Value>,
+    #[doc = "Indicates whether a patch is available or not"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub patchable: Option<bool>,
+    #[doc = "List of CVEs"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cve: Vec<Cve>,
+    #[doc = "Published time"]
     #[serde(rename = "publishedTime", default, skip_serializing_if = "Option::is_none")]
     pub published_time: Option<String>,
     #[serde(rename = "vendorReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub vendor_references: Vec<VendorReference>,
+    #[doc = "Name of the repository which the vulnerable image belongs to"]
     #[serde(rename = "repositoryName", default, skip_serializing_if = "Option::is_none")]
     pub repository_name: Option<String>,
+    #[doc = "Digest of the vulnerable image"]
     #[serde(rename = "imageDigest", default, skip_serializing_if = "Option::is_none")]
     pub image_digest: Option<String>,
 }
@@ -1469,14 +1739,19 @@ impl ContainerRegistryVulnerabilityProperties {
         }
     }
 }
+#[doc = "A custom alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomAlertRule {
+    #[doc = "The display name of the custom alert."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description of the custom alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Status of the custom alert."]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+    #[doc = "The type of the custom alert rule."]
     #[serde(rename = "ruleType")]
     pub rule_type: String,
 }
@@ -1490,12 +1765,15 @@ impl CustomAlertRule {
         }
     }
 }
+#[doc = "Custom entity store assignment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "describes the custom entity store assignment properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomEntityStoreAssignmentProperties>,
 }
@@ -1504,10 +1782,13 @@ impl CustomEntityStoreAssignment {
         Self::default()
     }
 }
+#[doc = "describes the custom entity store assignment properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentProperties {
+    #[doc = "The principal assigned with entity store. Format of principal is: [AAD type]=[PrincipalObjectId];[TenantId]"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub principal: Option<String>,
+    #[doc = "The link to entity store database."]
     #[serde(rename = "entityStoreDatabaseLink", default, skip_serializing_if = "Option::is_none")]
     pub entity_store_database_link: Option<String>,
 }
@@ -1516,8 +1797,10 @@ impl CustomEntityStoreAssignmentProperties {
         Self::default()
     }
 }
+#[doc = "describes the custom entity store assignment request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentRequest {
+    #[doc = "describes properties of custom entity store assignment request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomEntityStoreAssignmentRequestProperties>,
 }
@@ -1526,8 +1809,10 @@ impl CustomEntityStoreAssignmentRequest {
         Self::default()
     }
 }
+#[doc = "describes properties of custom entity store assignment request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentRequestProperties {
+    #[doc = "The principal assigned with entity store. If not provided, will use caller principal. Format of principal is: [AAD type]=[PrincipalObjectId];[TenantId]"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub principal: Option<String>,
 }
@@ -1536,10 +1821,13 @@ impl CustomEntityStoreAssignmentRequestProperties {
         Self::default()
     }
 }
+#[doc = "A list of custom entity store assignments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentsListResult {
+    #[doc = "Collection of custom entity store assignments"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomEntityStoreAssignment>,
+    #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1548,8 +1836,10 @@ impl CustomEntityStoreAssignmentsListResult {
         Self::default()
     }
 }
+#[doc = "The data export setting properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExportSettingProperties {
+    #[doc = "Is the data export setting enabled"]
     pub enabled: bool,
 }
 impl DataExportSettingProperties {
@@ -1557,10 +1847,12 @@ impl DataExportSettingProperties {
         Self { enabled }
     }
 }
+#[doc = "Represents a data export setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExportSettings {
     #[serde(flatten)]
     pub setting: Setting,
+    #[doc = "The data export setting properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataExportSettingProperties>,
 }
@@ -1569,10 +1861,12 @@ impl DataExportSettings {
         Self { setting, properties: None }
     }
 }
+#[doc = "A custom alert rule that checks if a value (depends on the custom alert type) is denied."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DenylistCustomAlertRule {
     #[serde(flatten)]
     pub list_custom_alert_rule: ListCustomAlertRule,
+    #[doc = "The values to deny. The format of the values depends on the rule type."]
     #[serde(rename = "denylistValues")]
     pub denylist_values: Vec<String>,
 }
@@ -1584,10 +1878,12 @@ impl DenylistCustomAlertRule {
         }
     }
 }
+#[doc = "The device security group resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceSecurityGroup {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes properties of a security group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeviceSecurityGroupProperties>,
 }
@@ -1596,10 +1892,13 @@ impl DeviceSecurityGroup {
         Self::default()
     }
 }
+#[doc = "List of device security groups"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceSecurityGroupList {
+    #[doc = "List of device security group objects"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceSecurityGroup>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1608,14 +1907,19 @@ impl DeviceSecurityGroupList {
         Self::default()
     }
 }
+#[doc = "describes properties of a security group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceSecurityGroupProperties {
+    #[doc = "The list of custom alert threshold rules."]
     #[serde(rename = "thresholdRules", default, skip_serializing_if = "Vec::is_empty")]
     pub threshold_rules: Vec<ThresholdCustomAlertRule>,
+    #[doc = "The list of custom alert time-window rules."]
     #[serde(rename = "timeWindowRules", default, skip_serializing_if = "Vec::is_empty")]
     pub time_window_rules: Vec<TimeWindowCustomAlertRule>,
+    #[doc = "The allow-list custom alert rules."]
     #[serde(rename = "allowlistRules", default, skip_serializing_if = "Vec::is_empty")]
     pub allowlist_rules: Vec<AllowlistCustomAlertRule>,
+    #[doc = "The deny-list custom alert rules."]
     #[serde(rename = "denylistRules", default, skip_serializing_if = "Vec::is_empty")]
     pub denylist_rules: Vec<DenylistCustomAlertRule>,
 }
@@ -1624,6 +1928,7 @@ impl DeviceSecurityGroupProperties {
         Self::default()
     }
 }
+#[doc = "Number of direct method invokes is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectMethodInvokesNotInAllowedRange {
     #[serde(flatten)]
@@ -1657,6 +1962,7 @@ impl DiscoveredSecuritySolution {
 pub struct DiscoveredSecuritySolutionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiscoveredSecuritySolution>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1667,10 +1973,14 @@ impl DiscoveredSecuritySolutionList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiscoveredSecuritySolutionProperties {
+    #[doc = "The security family of the discovered solution"]
     #[serde(rename = "securityFamily")]
     pub security_family: discovered_security_solution_properties::SecurityFamily,
+    #[doc = "The security solutions' image offer"]
     pub offer: String,
+    #[doc = "The security solutions' image publisher"]
     pub publisher: String,
+    #[doc = "The security solutions' image sku"]
     pub sku: String,
 }
 impl DiscoveredSecuritySolutionProperties {
@@ -1690,6 +2000,7 @@ impl DiscoveredSecuritySolutionProperties {
 }
 pub mod discovered_security_solution_properties {
     use super::*;
+    #[doc = "The security family of the discovered solution"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SecurityFamily {
         Waf,
@@ -1698,8 +2009,10 @@ pub mod discovered_security_solution_properties {
         Va,
     }
 }
+#[doc = "Entity tag is used for comparing two or more entities from the same requested resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ETag {
+    #[doc = "Entity tag is used for comparing two or more entities from the same requested resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1708,10 +2021,13 @@ impl ETag {
         Self::default()
     }
 }
+#[doc = "Describes the Network Security Groups effective on a network interface"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveNetworkSecurityGroups {
+    #[doc = "The Azure resource ID of the network interface"]
     #[serde(rename = "networkInterface", default, skip_serializing_if = "Option::is_none")]
     pub network_interface: Option<String>,
+    #[doc = "The Network Security Groups effective on the network interface"]
     #[serde(rename = "networkSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub network_security_groups: Vec<String>,
 }
@@ -1720,22 +2036,27 @@ impl EffectiveNetworkSecurityGroups {
         Self::default()
     }
 }
+#[doc = "The application control policy enforcement/protection mode of the machine group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EnforcementMode {
     Audit,
     Enforce,
     None,
 }
+#[doc = "The machine supportability of Enforce feature"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EnforcementSupport {
     Supported,
     NotSupported,
     Unknown,
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -1744,6 +2065,7 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Represents a security solution external to Azure Security Center which sends information to an OMS workspace and whose data is displayed by Azure Security Center."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalSecuritySolution {
     #[serde(flatten)]
@@ -1762,8 +2084,10 @@ impl ExternalSecuritySolution {
         }
     }
 }
+#[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExternalSecuritySolutionKind {
+    #[doc = "The kind of the external solution"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<external_security_solution_kind::Kind>,
 }
@@ -1774,6 +2098,7 @@ impl ExternalSecuritySolutionKind {
 }
 pub mod external_security_solution_kind {
     use super::*;
+    #[doc = "The kind of the external solution"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "CEF")]
@@ -1788,6 +2113,7 @@ pub mod external_security_solution_kind {
 pub struct ExternalSecuritySolutionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExternalSecuritySolution>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1796,6 +2122,7 @@ impl ExternalSecuritySolutionList {
         Self::default()
     }
 }
+#[doc = "The solution properties (correspond to the solution kind)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExternalSecuritySolutionProperties {
     #[serde(rename = "deviceVendor", default, skip_serializing_if = "Option::is_none")]
@@ -1810,6 +2137,7 @@ impl ExternalSecuritySolutionProperties {
         Self::default()
     }
 }
+#[doc = "Number of failed local logins is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FailedLocalLoginsNotInAllowedRange {
     #[serde(flatten)]
@@ -1822,6 +2150,7 @@ impl FailedLocalLoginsNotInAllowedRange {
         }
     }
 }
+#[doc = "The type of the file (for Linux files - Executable is used)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FileType {
     Exe,
@@ -1831,6 +2160,7 @@ pub enum FileType {
     Executable,
     Unknown,
 }
+#[doc = "Number of file uploads is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileUploadsNotInAllowedRange {
     #[serde(flatten)]
@@ -1843,30 +2173,42 @@ impl FileUploadsNotInAllowedRange {
         }
     }
 }
+#[doc = "GCP cloud account connector based service to service credentials, the credentials are composed of the organization ID and a JSON API key (write only)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpCredentialsDetailsProperties {
     #[serde(flatten)]
     pub authentication_details_properties: AuthenticationDetailsProperties,
+    #[doc = "The organization ID of the GCP cloud account"]
     #[serde(rename = "organizationId")]
     pub organization_id: String,
+    #[doc = "Type field of the API key (write only)"]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "Project ID field of the API key (write only)"]
     #[serde(rename = "projectId")]
     pub project_id: String,
+    #[doc = "Private key ID field of the API key (write only)"]
     #[serde(rename = "privateKeyId")]
     pub private_key_id: String,
+    #[doc = "Private key field of the API key (write only)"]
     #[serde(rename = "privateKey")]
     pub private_key: String,
+    #[doc = "Client email field of the API key (write only)"]
     #[serde(rename = "clientEmail")]
     pub client_email: String,
+    #[doc = "Client ID field of the API key (write only)"]
     #[serde(rename = "clientId")]
     pub client_id: String,
+    #[doc = "Auth URI field of the API key (write only)"]
     #[serde(rename = "authUri")]
     pub auth_uri: String,
+    #[doc = "Token URI field of the API key (write only)"]
     #[serde(rename = "tokenUri")]
     pub token_uri: String,
+    #[doc = "Auth provider x509 certificate URL field of the API key (write only)"]
     #[serde(rename = "authProviderX509CertUrl")]
     pub auth_provider_x509_cert_url: String,
+    #[doc = "Client x509 certificate URL field of the API key (write only)"]
     #[serde(rename = "clientX509CertUrl")]
     pub client_x509_cert_url: String,
 }
@@ -1902,6 +2244,7 @@ impl GcpCredentialsDetailsProperties {
     }
 }
 pub type GroupResourceId = String;
+#[doc = "Number of cloud to device messages (HTTP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpC2dMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -1914,6 +2257,7 @@ impl HttpC2dMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of rejected cloud to device messages (HTTP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpC2dRejectedMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -1926,6 +2270,7 @@ impl HttpC2dRejectedMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of device to cloud messages (HTTP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpD2cMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -1938,18 +2283,25 @@ impl HttpD2cMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Settings for hybrid compute management"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridComputeSettingsProperties {
+    #[doc = "State of the service principal and its secret"]
     #[serde(rename = "hybridComputeProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_compute_provisioning_state: Option<hybrid_compute_settings_properties::HybridComputeProvisioningState>,
+    #[doc = "Whether or not to automatically install Azure Arc (hybrid compute) agents on machines"]
     #[serde(rename = "autoProvision")]
     pub auto_provision: hybrid_compute_settings_properties::AutoProvision,
+    #[doc = "The name of the resource group where Arc (Hybrid Compute) connectors are connected."]
     #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_name: Option<String>,
+    #[doc = "The location where the metadata of machines will be stored"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+    #[doc = "For a non-Azure machine that is not connected directly to the internet, specify a proxy server that the non-Azure machine can use."]
     #[serde(rename = "proxyServer", default, skip_serializing_if = "Option::is_none")]
     pub proxy_server: Option<ProxyServerProperties>,
+    #[doc = "Details of the service principal."]
     #[serde(rename = "servicePrincipal", default, skip_serializing_if = "Option::is_none")]
     pub service_principal: Option<ServicePrincipalProperties>,
 }
@@ -1967,26 +2319,33 @@ impl HybridComputeSettingsProperties {
 }
 pub mod hybrid_compute_settings_properties {
     use super::*;
+    #[doc = "State of the service principal and its secret"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HybridComputeProvisioningState {
         Valid,
         Invalid,
         Expired,
     }
+    #[doc = "Whether or not to automatically install Azure Arc (hybrid compute) agents on machines"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AutoProvision {
         On,
         Off,
     }
 }
+#[doc = "The information type keyword."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionKeyword {
+    #[doc = "The keyword pattern."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
+    #[doc = "Indicates whether the keyword is custom or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub custom: Option<bool>,
+    #[doc = "Indicates whether the keyword can be applied on numeric types or not."]
     #[serde(rename = "canBeNumeric", default, skip_serializing_if = "Option::is_none")]
     pub can_be_numeric: Option<bool>,
+    #[doc = "Indicates whether the keyword is excluded or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub excluded: Option<bool>,
 }
@@ -1995,10 +2354,12 @@ impl InformationProtectionKeyword {
         Self::default()
     }
 }
+#[doc = "Information protection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionPolicy {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes properties of an information protection policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InformationProtectionPolicyProperties>,
 }
@@ -2007,10 +2368,13 @@ impl InformationProtectionPolicy {
         Self::default()
     }
 }
+#[doc = "Information protection policies response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionPolicyList {
+    #[doc = "List of information protection policies."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<InformationProtectionPolicy>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2019,14 +2383,19 @@ impl InformationProtectionPolicyList {
         Self::default()
     }
 }
+#[doc = "describes properties of an information protection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionPolicyProperties {
+    #[doc = "Describes the last UTC time the policy was modified."]
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
+    #[doc = "Describes the version of the policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Dictionary of sensitivity labels."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub labels: Option<serde_json::Value>,
+    #[doc = "The sensitivity information types."]
     #[serde(rename = "informationTypes", default, skip_serializing_if = "Option::is_none")]
     pub information_types: Option<serde_json::Value>,
 }
@@ -2035,20 +2404,28 @@ impl InformationProtectionPolicyProperties {
         Self::default()
     }
 }
+#[doc = "The information type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationType {
+    #[doc = "The name of the information type."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description of the information type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The order of the information type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<i32>,
+    #[doc = "The recommended label id to be associated with this information type."]
     #[serde(rename = "recommendedLabelId", default, skip_serializing_if = "Option::is_none")]
     pub recommended_label_id: Option<String>,
+    #[doc = "Indicates whether the information type is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Indicates whether the information type is custom or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub custom: Option<bool>,
+    #[doc = "The information type keywords."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keywords: Vec<InformationProtectionKeyword>,
 }
@@ -2057,10 +2434,13 @@ impl InformationType {
         Self::default()
     }
 }
+#[doc = "Connection string for ingesting security data and logs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionConnectionString {
+    #[doc = "The region where ingested logs and data resides"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Connection string value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -2069,10 +2449,12 @@ impl IngestionConnectionString {
         Self::default()
     }
 }
+#[doc = "Configures how to correlate scan data and logs with resources associated with the subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Ingestion setting data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IngestionSettingProperties>,
 }
@@ -2081,10 +2463,13 @@ impl IngestionSetting {
         Self::default()
     }
 }
+#[doc = "List of ingestion settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettingList {
+    #[doc = "List of ingestion settings"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IngestionSetting>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2093,6 +2478,7 @@ impl IngestionSettingList {
         Self::default()
     }
 }
+#[doc = "Ingestion setting data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettingProperties {}
 impl IngestionSettingProperties {
@@ -2100,8 +2486,10 @@ impl IngestionSettingProperties {
         Self::default()
     }
 }
+#[doc = "Configures how to correlate scan data and logs with resources associated with the subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettingToken {
+    #[doc = "The token is used for correlating security data and logs with the resources in the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
@@ -2110,12 +2498,14 @@ impl IngestionSettingToken {
         Self::default()
     }
 }
+#[doc = "Security Solution Aggregated Alert information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedAlert {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(flatten)]
     pub tags_resource: TagsResource,
+    #[doc = "IoT Security solution aggregated alert details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTSecurityAggregatedAlertProperties>,
 }
@@ -2124,9 +2514,12 @@ impl IoTSecurityAggregatedAlert {
         Self::default()
     }
 }
+#[doc = "List of IoT Security solution aggregated alert data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecurityAggregatedAlertList {
+    #[doc = "List of aggregated alerts data."]
     pub value: Vec<IoTSecurityAggregatedAlert>,
+    #[doc = "When there is too much alert data for one page, use this URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2135,32 +2528,46 @@ impl IoTSecurityAggregatedAlertList {
         Self { value, next_link: None }
     }
 }
+#[doc = "IoT Security solution aggregated alert details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedAlertProperties {
+    #[doc = "Name of the alert type."]
     #[serde(rename = "alertType", default, skip_serializing_if = "Option::is_none")]
     pub alert_type: Option<String>,
+    #[doc = "Display name of the alert type."]
     #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub alert_display_name: Option<String>,
+    #[doc = "Date of detection."]
     #[serde(rename = "aggregatedDateUtc", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_date_utc: Option<String>,
+    #[doc = "Name of the organization that raised the alert."]
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
+    #[doc = "Assessed alert severity."]
     #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
     pub reported_severity: Option<io_t_security_aggregated_alert_properties::ReportedSeverity>,
+    #[doc = "Recommended steps for remediation."]
     #[serde(rename = "remediationSteps", default, skip_serializing_if = "Option::is_none")]
     pub remediation_steps: Option<String>,
+    #[doc = "Description of the suspected vulnerability and meaning."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Number of alerts occurrences within the aggregated time window."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+    #[doc = "Azure resource ID of the resource that received the alerts."]
     #[serde(rename = "effectedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub effected_resource_type: Option<String>,
+    #[doc = "The type of the alerted resource (Azure, Non-Azure)."]
     #[serde(rename = "systemSource", default, skip_serializing_if = "Option::is_none")]
     pub system_source: Option<String>,
+    #[doc = "IoT Security solution alert response."]
     #[serde(rename = "actionTaken", default, skip_serializing_if = "Option::is_none")]
     pub action_taken: Option<String>,
+    #[doc = "Log analytics query for getting the list of affected devices/alerts."]
     #[serde(rename = "logAnalyticsQuery", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_query: Option<String>,
+    #[doc = "10 devices with the highest number of occurrences of this alert type, on this day."]
     #[serde(rename = "topDevicesList", default, skip_serializing_if = "Vec::is_empty")]
     pub top_devices_list: Vec<serde_json::Value>,
 }
@@ -2171,6 +2578,7 @@ impl IoTSecurityAggregatedAlertProperties {
 }
 pub mod io_t_security_aggregated_alert_properties {
     use super::*;
+    #[doc = "Assessed alert severity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReportedSeverity {
         Informational,
@@ -2179,12 +2587,14 @@ pub mod io_t_security_aggregated_alert_properties {
         High,
     }
 }
+#[doc = "IoT Security solution recommendation information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedRecommendation {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(flatten)]
     pub tags_resource: TagsResource,
+    #[doc = "IoT Security solution aggregated recommendation information"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTSecurityAggregatedRecommendationProperties>,
 }
@@ -2193,9 +2603,12 @@ impl IoTSecurityAggregatedRecommendation {
         Self::default()
     }
 }
+#[doc = "List of IoT Security solution aggregated recommendations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecurityAggregatedRecommendationList {
+    #[doc = "List of aggregated recommendations data."]
     pub value: Vec<IoTSecurityAggregatedRecommendation>,
+    #[doc = "When there is too much alert data for one page, use this URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2204,26 +2617,37 @@ impl IoTSecurityAggregatedRecommendationList {
         Self { value, next_link: None }
     }
 }
+#[doc = "IoT Security solution aggregated recommendation information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedRecommendationProperties {
+    #[doc = "Name of the recommendation."]
     #[serde(rename = "recommendationName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_name: Option<String>,
+    #[doc = "Display name of the recommendation type."]
     #[serde(rename = "recommendationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_display_name: Option<String>,
+    #[doc = "Description of the suspected vulnerability and meaning."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Recommendation-type GUID."]
     #[serde(rename = "recommendationTypeId", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_type_id: Option<String>,
+    #[doc = "Name of the organization that made the recommendation."]
     #[serde(rename = "detectedBy", default, skip_serializing_if = "Option::is_none")]
     pub detected_by: Option<String>,
+    #[doc = "Recommended steps for remediation"]
     #[serde(rename = "remediationSteps", default, skip_serializing_if = "Option::is_none")]
     pub remediation_steps: Option<String>,
+    #[doc = "Assessed recommendation severity."]
     #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
     pub reported_severity: Option<io_t_security_aggregated_recommendation_properties::ReportedSeverity>,
+    #[doc = "Number of healthy devices within the IoT Security solution."]
     #[serde(rename = "healthyDevices", default, skip_serializing_if = "Option::is_none")]
     pub healthy_devices: Option<i64>,
+    #[doc = "Number of unhealthy devices within the IoT Security solution."]
     #[serde(rename = "unhealthyDeviceCount", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_device_count: Option<i64>,
+    #[doc = "Log analytics query for getting the list of affected devices/alerts."]
     #[serde(rename = "logAnalyticsQuery", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_query: Option<String>,
 }
@@ -2234,6 +2658,7 @@ impl IoTSecurityAggregatedRecommendationProperties {
 }
 pub mod io_t_security_aggregated_recommendation_properties {
     use super::*;
+    #[doc = "Assessed recommendation severity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReportedSeverity {
         Informational,
@@ -2242,10 +2667,13 @@ pub mod io_t_security_aggregated_recommendation_properties {
         High,
     }
 }
+#[doc = "Statistical information about the number of alerts per device during last set number of days."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAlertedDevice {
+    #[doc = "Device identifier."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+    #[doc = "Number of alerts raised for this device."]
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i64>,
 }
@@ -2255,12 +2683,16 @@ impl IoTSecurityAlertedDevice {
     }
 }
 pub type IoTSecurityAlertedDevicesList = Vec<IoTSecurityAlertedDevice>;
+#[doc = "Statistical information about the number of alerts per alert type during last set number of days"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityDeviceAlert {
+    #[doc = "Display name of the alert"]
     #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub alert_display_name: Option<String>,
+    #[doc = "Assessed Alert severity."]
     #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
     pub reported_severity: Option<io_t_security_device_alert::ReportedSeverity>,
+    #[doc = "Number of alerts raised for this alert type."]
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i64>,
 }
@@ -2271,6 +2703,7 @@ impl IoTSecurityDeviceAlert {
 }
 pub mod io_t_security_device_alert {
     use super::*;
+    #[doc = "Assessed Alert severity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReportedSeverity {
         Informational,
@@ -2280,12 +2713,16 @@ pub mod io_t_security_device_alert {
     }
 }
 pub type IoTSecurityDeviceAlertsList = Vec<IoTSecurityDeviceAlert>;
+#[doc = "Statistical information about the number of recommendations per device, per recommendation type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityDeviceRecommendation {
+    #[doc = "Display name of the recommendation."]
     #[serde(rename = "recommendationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_display_name: Option<String>,
+    #[doc = "Assessed recommendation severity."]
     #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
     pub reported_severity: Option<io_t_security_device_recommendation::ReportedSeverity>,
+    #[doc = "Number of devices with this recommendation."]
     #[serde(rename = "devicesCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_count: Option<i64>,
 }
@@ -2296,6 +2733,7 @@ impl IoTSecurityDeviceRecommendation {
 }
 pub mod io_t_security_device_recommendation {
     use super::*;
+    #[doc = "Assessed recommendation severity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReportedSeverity {
         Informational,
@@ -2305,10 +2743,12 @@ pub mod io_t_security_device_recommendation {
     }
 }
 pub type IoTSecurityDeviceRecommendationsList = Vec<IoTSecurityDeviceRecommendation>;
+#[doc = "Security analytics of your IoT Security solution"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecuritySolutionAnalyticsModel {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Security analytics properties of your IoT Security solution"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTSecuritySolutionAnalyticsModelProperties>,
 }
@@ -2317,9 +2757,12 @@ impl IoTSecuritySolutionAnalyticsModel {
         Self::default()
     }
 }
+#[doc = "List of Security analytics of your IoT Security solution"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecuritySolutionAnalyticsModelList {
+    #[doc = "List of Security analytics of your IoT Security solution"]
     pub value: Vec<IoTSecuritySolutionAnalyticsModel>,
+    #[doc = "When there is too much alert data for one page, use this URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2328,18 +2771,25 @@ impl IoTSecuritySolutionAnalyticsModelList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Security analytics properties of your IoT Security solution"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecuritySolutionAnalyticsModelProperties {
+    #[doc = "IoT Security solution analytics severity metrics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<IoTSeverityMetrics>,
+    #[doc = "Number of unhealthy devices within your IoT Security solution."]
     #[serde(rename = "unhealthyDeviceCount", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_device_count: Option<i64>,
+    #[doc = "List of device metrics by the aggregation date."]
     #[serde(rename = "devicesMetrics", default, skip_serializing_if = "Vec::is_empty")]
     pub devices_metrics: Vec<serde_json::Value>,
+    #[doc = "List of devices with open alerts including the count of alerts per device."]
     #[serde(rename = "topAlertedDevices", default, skip_serializing_if = "Option::is_none")]
     pub top_alerted_devices: Option<IoTSecurityAlertedDevicesList>,
+    #[doc = "List of alerts with the count of raised alerts"]
     #[serde(rename = "mostPrevalentDeviceAlerts", default, skip_serializing_if = "Option::is_none")]
     pub most_prevalent_device_alerts: Option<IoTSecurityDeviceAlertsList>,
+    #[doc = "List of aggregated recommendation data, per recommendation type, per device."]
     #[serde(rename = "mostPrevalentDeviceRecommendations", default, skip_serializing_if = "Option::is_none")]
     pub most_prevalent_device_recommendations: Option<IoTSecurityDeviceRecommendationsList>,
 }
@@ -2348,16 +2798,20 @@ impl IoTSecuritySolutionAnalyticsModelProperties {
         Self::default()
     }
 }
+#[doc = "IoT Security solution configuration and resource information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecuritySolutionModel {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(flatten)]
     pub tags_resource: TagsResource,
+    #[doc = "The resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Security Solution setting data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTSecuritySolutionProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -2366,28 +2820,40 @@ impl IoTSecuritySolutionModel {
         Self::default()
     }
 }
+#[doc = "Security Solution setting data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecuritySolutionProperties {
+    #[doc = "Workspace resource ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace: Option<String>,
+    #[doc = "Resource display name."]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Status of the IoT Security solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<io_t_security_solution_properties::Status>,
+    #[doc = "List of additional options for exporting to workspace data."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub export: Vec<String>,
+    #[doc = "Disabled data sources. Disabling these data sources compromises the system."]
     #[serde(rename = "disabledDataSources", default, skip_serializing_if = "Vec::is_empty")]
     pub disabled_data_sources: Vec<String>,
+    #[doc = "IoT Hub resource IDs"]
     #[serde(rename = "iotHubs")]
     pub iot_hubs: Vec<String>,
+    #[doc = "Properties of the IoT Security solution's user defined resources."]
     #[serde(rename = "userDefinedResources", default, skip_serializing_if = "Option::is_none")]
     pub user_defined_resources: Option<UserDefinedResourcesProperties>,
+    #[doc = "List of resources that were automatically discovered as relevant to the security solution."]
     #[serde(rename = "autoDiscoveredResources", default, skip_serializing_if = "Vec::is_empty")]
     pub auto_discovered_resources: Vec<String>,
+    #[doc = "List of the configuration status for each recommendation type."]
     #[serde(rename = "recommendationsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub recommendations_configuration: Option<RecommendationConfigurationList>,
+    #[doc = "Unmasked IP address logging status"]
     #[serde(rename = "unmaskedIpLoggingStatus", default, skip_serializing_if = "Option::is_none")]
     pub unmasked_ip_logging_status: Option<io_t_security_solution_properties::UnmaskedIpLoggingStatus>,
+    #[doc = "List of additional workspaces"]
     #[serde(rename = "additionalWorkspaces", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_workspaces: Vec<AdditionalWorkspacesProperties>,
 }
@@ -2410,6 +2876,7 @@ impl IoTSecuritySolutionProperties {
 }
 pub mod io_t_security_solution_properties {
     use super::*;
+    #[doc = "Status of the IoT Security solution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Enabled,
@@ -2420,6 +2887,7 @@ pub mod io_t_security_solution_properties {
             Self::Enabled
         }
     }
+    #[doc = "Unmasked IP address logging status"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UnmaskedIpLoggingStatus {
         Disabled,
@@ -2431,9 +2899,12 @@ pub mod io_t_security_solution_properties {
         }
     }
 }
+#[doc = "List of IoT Security solutions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecuritySolutionsList {
+    #[doc = "List of IoT Security solutions"]
     pub value: Vec<IoTSecuritySolutionModel>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2442,12 +2913,16 @@ impl IoTSecuritySolutionsList {
         Self { value, next_link: None }
     }
 }
+#[doc = "IoT Security solution analytics severity metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSeverityMetrics {
+    #[doc = "Count of high severity alerts/recommendations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub high: Option<i64>,
+    #[doc = "Count of medium severity alerts/recommendations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub medium: Option<i64>,
+    #[doc = "Count of low severity alerts/recommendations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub low: Option<i64>,
 }
@@ -2460,6 +2935,7 @@ impl IoTSeverityMetrics {
 pub struct JitNetworkAccessPoliciesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JitNetworkAccessPolicy>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2491,8 +2967,10 @@ impl JitNetworkAccessPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPolicyInitiatePort {
     pub number: PortNumber,
+    #[doc = "Source of the allowed traffic. If omitted, the request will be for the source IP address of the initiate request."]
     #[serde(rename = "allowedSourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub allowed_source_address_prefix: Option<String>,
+    #[doc = "The time to close the request in UTC"]
     #[serde(rename = "endTimeUtc")]
     pub end_time_utc: String,
 }
@@ -2507,8 +2985,10 @@ impl JitNetworkAccessPolicyInitiatePort {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPolicyInitiateRequest {
+    #[doc = "A list of virtual machines & ports to open access for"]
     #[serde(rename = "virtualMachines")]
     pub virtual_machines: Vec<JitNetworkAccessPolicyInitiateVirtualMachine>,
+    #[doc = "The justification for making the initiate request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub justification: Option<String>,
 }
@@ -2522,7 +3002,9 @@ impl JitNetworkAccessPolicyInitiateRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPolicyInitiateVirtualMachine {
+    #[doc = "Resource ID of the virtual machine that is linked to this policy"]
     pub id: String,
+    #[doc = "The ports to open for the resource with the `id`"]
     pub ports: Vec<JitNetworkAccessPolicyInitiatePort>,
 }
 impl JitNetworkAccessPolicyInitiateVirtualMachine {
@@ -2532,10 +3014,12 @@ impl JitNetworkAccessPolicyInitiateVirtualMachine {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPolicyProperties {
+    #[doc = "Configurations for Microsoft.Compute/virtualMachines resource type."]
     #[serde(rename = "virtualMachines")]
     pub virtual_machines: Vec<JitNetworkAccessPolicyVirtualMachine>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub requests: Vec<JitNetworkAccessRequest>,
+    #[doc = "Gets the provisioning state of the Just-in-Time policy."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -2550,8 +3034,11 @@ impl JitNetworkAccessPolicyProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPolicyVirtualMachine {
+    #[doc = "Resource ID of the virtual machine that is linked to this policy"]
     pub id: String,
+    #[doc = "Port configurations for the virtual machine"]
     pub ports: Vec<JitNetworkAccessPortRule>,
+    #[doc = "Public IP address of the Azure Firewall that is linked to this policy, if applicable"]
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
 }
@@ -2568,10 +3055,13 @@ impl JitNetworkAccessPolicyVirtualMachine {
 pub struct JitNetworkAccessPortRule {
     pub number: PortNumber,
     pub protocol: jit_network_access_port_rule::Protocol,
+    #[doc = "Mutually exclusive with the \"allowedSourceAddressPrefixes\" parameter. Should be an IP address or CIDR, for example \"192.168.0.3\" or \"192.168.0.0/16\"."]
     #[serde(rename = "allowedSourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub allowed_source_address_prefix: Option<String>,
+    #[doc = "Mutually exclusive with the \"allowedSourceAddressPrefix\" parameter."]
     #[serde(rename = "allowedSourceAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_source_address_prefixes: Vec<String>,
+    #[doc = "Maximum duration requests can be made for. In ISO 8601 duration format. Minimum 5 minutes, maximum 1 day"]
     #[serde(rename = "maxRequestAccessDuration")]
     pub max_request_access_duration: String,
 }
@@ -2602,9 +3092,12 @@ pub mod jit_network_access_port_rule {
 pub struct JitNetworkAccessRequest {
     #[serde(rename = "virtualMachines")]
     pub virtual_machines: Vec<JitNetworkAccessRequestVirtualMachine>,
+    #[doc = "The start time of the request in UTC"]
     #[serde(rename = "startTimeUtc")]
     pub start_time_utc: String,
+    #[doc = "The identity of the person who made the request"]
     pub requestor: String,
+    #[doc = "The justification for making the initiate request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub justification: Option<String>,
 }
@@ -2621,15 +3114,21 @@ impl JitNetworkAccessRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessRequestPort {
     pub number: PortNumber,
+    #[doc = "Mutually exclusive with the \"allowedSourceAddressPrefixes\" parameter. Should be an IP address or CIDR, for example \"192.168.0.3\" or \"192.168.0.0/16\"."]
     #[serde(rename = "allowedSourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub allowed_source_address_prefix: Option<String>,
+    #[doc = "Mutually exclusive with the \"allowedSourceAddressPrefix\" parameter."]
     #[serde(rename = "allowedSourceAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_source_address_prefixes: Vec<String>,
+    #[doc = "The date & time at which the request ends in UTC"]
     #[serde(rename = "endTimeUtc")]
     pub end_time_utc: String,
+    #[doc = "The status of the port"]
     pub status: jit_network_access_request_port::Status,
+    #[doc = "A description of why the `status` has its value"]
     #[serde(rename = "statusReason")]
     pub status_reason: jit_network_access_request_port::StatusReason,
+    #[doc = "The port which is mapped to this port's `number` in the Azure Firewall, if applicable"]
     #[serde(rename = "mappedPort", default, skip_serializing_if = "Option::is_none")]
     pub mapped_port: Option<i64>,
 }
@@ -2653,11 +3152,13 @@ impl JitNetworkAccessRequestPort {
 }
 pub mod jit_network_access_request_port {
     use super::*;
+    #[doc = "The status of the port"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Revoked,
         Initiated,
     }
+    #[doc = "A description of why the `status` has its value"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusReason {
         Expired,
@@ -2667,7 +3168,9 @@ pub mod jit_network_access_request_port {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessRequestVirtualMachine {
+    #[doc = "Resource ID of the virtual machine that is linked to this policy"]
     pub id: String,
+    #[doc = "The ports that were opened for the virtual machine"]
     pub ports: Vec<JitNetworkAccessRequestPort>,
 }
 impl JitNetworkAccessRequestVirtualMachine {
@@ -2675,8 +3178,10 @@ impl JitNetworkAccessRequestVirtualMachine {
         Self { id, ports }
     }
 }
+#[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Kind {
+    #[doc = "Kind of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -2685,10 +3190,12 @@ impl Kind {
         Self::default()
     }
 }
+#[doc = "A List custom alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListCustomAlertRule {
     #[serde(flatten)]
     pub custom_alert_rule: CustomAlertRule,
+    #[doc = "The value type of the items in the list."]
     #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
     pub value_type: Option<list_custom_alert_rule::ValueType>,
 }
@@ -2702,12 +3209,14 @@ impl ListCustomAlertRule {
 }
 pub mod list_custom_alert_rule {
     use super::*;
+    #[doc = "The value type of the items in the list."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ValueType {
         IpCidr,
         String,
     }
 }
+#[doc = "Login by a local user that isn't allowed. Allow list consists of login names to allow."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalUserNotAllowed {
     #[serde(flatten)]
@@ -2720,8 +3229,10 @@ impl LocalUserNotAllowed {
         }
     }
 }
+#[doc = "Describes an Azure resource with location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
+    #[doc = "Location where the resource is stored"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -2730,16 +3241,21 @@ impl Location {
         Self::default()
     }
 }
+#[doc = "Represents a Log Analytics workspace scope identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsIdentifier {
     #[serde(flatten)]
     pub resource_identifier: ResourceIdentifier,
+    #[doc = "The LogAnalytics workspace id that stores this alert."]
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[doc = "The azure subscription id for the LogAnalytics workspace storing this alert."]
     #[serde(rename = "workspaceSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_subscription_id: Option<String>,
+    #[doc = "The azure resource group for the LogAnalytics workspace storing this alert"]
     #[serde(rename = "workspaceResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_group: Option<String>,
+    #[doc = "(optional) The LogAnalytics agent id reporting the event that this alert is based on."]
     #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
 }
@@ -2754,10 +3270,12 @@ impl LogAnalyticsIdentifier {
         }
     }
 }
+#[doc = "The resource of the configuration or data needed to onboard the machine to MDE"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdeOnboardingData {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the MDE configuration or data parameter needed to onboard the machine to MDE"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MdeOnboardingDataProperties>,
 }
@@ -2766,8 +3284,10 @@ impl MdeOnboardingData {
         Self::default()
     }
 }
+#[doc = "List of all MDE onboarding data resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdeOnboardingDataList {
+    #[doc = "List of the resources of the configuration or data needed to onboard the machine to MDE"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MdeOnboardingData>,
 }
@@ -2776,10 +3296,13 @@ impl MdeOnboardingDataList {
         Self::default()
     }
 }
+#[doc = "Properties of the MDE configuration or data parameter needed to onboard the machine to MDE"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdeOnboardingDataProperties {
+    #[doc = "The onboarding package used to onboard Windows machines to MDE, coded in base64. This can also be used for onboarding using the dedicated VM Extension"]
     #[serde(rename = "onboardingPackageWindows", default, skip_serializing_if = "Option::is_none")]
     pub onboarding_package_windows: Option<String>,
+    #[doc = "The onboarding package used to onboard Linux machines to MDE, coded in base64. This can also be used for onboarding using the dedicated VM Extension"]
     #[serde(rename = "onboardingPackageLinux", default, skip_serializing_if = "Option::is_none")]
     pub onboarding_package_linux: Option<String>,
 }
@@ -2788,6 +3311,7 @@ impl MdeOnboardingDataProperties {
         Self::default()
     }
 }
+#[doc = "Number of cloud to device messages (MQTT protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MqttC2dMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -2800,6 +3324,7 @@ impl MqttC2dMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of rejected cloud to device messages (MQTT protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MqttC2dRejectedMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -2812,6 +3337,7 @@ impl MqttC2dRejectedMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of device to cloud messages (MQTT protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MqttD2cMessagesNotInAllowedRange {
     #[serde(flatten)]
@@ -2824,12 +3350,16 @@ impl MqttD2cMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Possible operation in the REST API of Microsoft.Security"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Where the operation is originated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Security operation display"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
 }
@@ -2838,14 +3368,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Security operation display"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "The resource provider for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The display name of the resource the operation applies to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The display name of the security operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2854,10 +3389,13 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "List of possible operations for Microsoft.Security resource provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "List of Security operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2866,24 +3404,32 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Represents a path that is recommended to be allowed and its properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PathRecommendation {
+    #[doc = "The full path of the file, or an identifier of the application"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "The recommendation action of the machine or rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<RecommendationAction>,
+    #[doc = "The type of the rule to be allowed"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<RecommendationType>,
+    #[doc = "Represents the publisher information of a process/rule"]
     #[serde(rename = "publisherInfo", default, skip_serializing_if = "Option::is_none")]
     pub publisher_info: Option<PublisherInfo>,
+    #[doc = "Whether the application is commonly run on the machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub common: Option<bool>,
     #[serde(rename = "userSids", default, skip_serializing_if = "Vec::is_empty")]
     pub user_sids: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub usernames: Vec<UserRecommendation>,
+    #[doc = "The type of the file (for Linux files - Executable is used)"]
     #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
     pub file_type: Option<FileType>,
+    #[doc = "The configuration status of the machines group or machine or rule"]
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
     pub configuration_status: Option<ConfigurationStatus>,
 }
@@ -2893,6 +3439,7 @@ impl PathRecommendation {
     }
 }
 pub type PathRecommendations = Vec<PathRecommendation>;
+#[doc = "A permission detected in the cloud account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PermissionProperty {
     #[serde(rename = "AWS::AWSSecurityHubReadOnlyAccess")]
@@ -2905,10 +3452,12 @@ pub enum PermissionProperty {
     GcpSecurityCenterAdminViewer,
 }
 pub type PortNumber = i64;
+#[doc = "Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pricing {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Pricing properties for the relevant scope"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PricingProperties>,
 }
@@ -2917,8 +3466,10 @@ impl Pricing {
         Self::default()
     }
 }
+#[doc = "List of pricing configurations response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingList {
+    #[doc = "List of pricing configurations"]
     pub value: Vec<Pricing>,
 }
 impl PricingList {
@@ -2926,10 +3477,13 @@ impl PricingList {
         Self { value }
     }
 }
+#[doc = "Pricing properties for the relevant scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingProperties {
+    #[doc = "The pricing tier value. Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[serde(rename = "pricingTier")]
     pub pricing_tier: pricing_properties::PricingTier,
+    #[doc = "The duration left for the subscriptions free trial period - in ISO 8601 format (e.g. P3Y6M4DT12H30M5S)."]
     #[serde(rename = "freeTrialRemainingTime", default, skip_serializing_if = "Option::is_none")]
     pub free_trial_remaining_time: Option<String>,
 }
@@ -2943,12 +3497,14 @@ impl PricingProperties {
 }
 pub mod pricing_properties {
     use super::*;
+    #[doc = "The pricing tier value. Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PricingTier {
         Free,
         Standard,
     }
 }
+#[doc = "Execution of a process that isn't allowed. Allow list consists of process names to allow."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProcessNotAllowed {
     #[serde(flatten)]
@@ -2961,14 +3517,19 @@ impl ProcessNotAllowed {
         }
     }
 }
+#[doc = "The protection mode of the collection/file types. Exe/Msi/Script are used for Windows, Executable is used for Linux."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionMode {
+    #[doc = "The application control policy enforcement/protection mode of the machine group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exe: Option<EnforcementMode>,
+    #[doc = "The application control policy enforcement/protection mode of the machine group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msi: Option<EnforcementMode>,
+    #[doc = "The application control policy enforcement/protection mode of the machine group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<EnforcementMode>,
+    #[doc = "The application control policy enforcement/protection mode of the machine group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub executable: Option<EnforcementMode>,
 }
@@ -2977,10 +3538,13 @@ impl ProtectionMode {
         Self::default()
     }
 }
+#[doc = "For a non-Azure machine that is not connected directly to the internet, specify a proxy server that the non-Azure machine can use."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyServerProperties {
+    #[doc = "Proxy server IP"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
+    #[doc = "Proxy server port"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<String>,
 }
@@ -2989,14 +3553,19 @@ impl ProxyServerProperties {
         Self::default()
     }
 }
+#[doc = "Represents the publisher information of a process/rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublisherInfo {
+    #[doc = "The Subject field of the x.509 certificate used to sign the code, using the following fields -  O = Organization, L = Locality, S = State or Province, and C = Country"]
     #[serde(rename = "publisherName", default, skip_serializing_if = "Option::is_none")]
     pub publisher_name: Option<String>,
+    #[doc = "The product name taken from the file's version resource"]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "The \"OriginalName\" field taken from the file's version resource"]
     #[serde(rename = "binaryName", default, skip_serializing_if = "Option::is_none")]
     pub binary_name: Option<String>,
+    #[doc = "The binary file version taken from the file's version resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -3005,12 +3574,16 @@ impl PublisherInfo {
         Self::default()
     }
 }
+#[doc = "The rule query details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryCheck {
+    #[doc = "The rule query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
+    #[doc = "Expected result."]
     #[serde(rename = "expectedResult", default, skip_serializing_if = "Vec::is_empty")]
     pub expected_result: Vec<Vec<String>>,
+    #[doc = "Column names of expected result."]
     #[serde(rename = "columnNames", default, skip_serializing_if = "Vec::is_empty")]
     pub column_names: Vec<String>,
 }
@@ -3019,6 +3592,7 @@ impl QueryCheck {
         Self::default()
     }
 }
+#[doc = "Number of device queue purges is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueuePurgesNotInAllowedRange {
     #[serde(flatten)]
@@ -3031,6 +3605,7 @@ impl QueuePurgesNotInAllowedRange {
         }
     }
 }
+#[doc = "The recommendation action of the machine or rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecommendationAction {
     Recommended,
@@ -3038,12 +3613,15 @@ pub enum RecommendationAction {
     Remove,
 }
 pub type RecommendationConfigurationList = Vec<RecommendationConfigurationProperties>;
+#[doc = "The type of IoT Security recommendation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendationConfigurationProperties {
+    #[doc = "The type of IoT Security recommendation."]
     #[serde(rename = "recommendationType")]
     pub recommendation_type: recommendation_configuration_properties::RecommendationType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Recommendation status. When the recommendation status is disabled recommendations are not generated."]
     pub status: recommendation_configuration_properties::Status,
 }
 impl RecommendationConfigurationProperties {
@@ -3060,6 +3638,7 @@ impl RecommendationConfigurationProperties {
 }
 pub mod recommendation_configuration_properties {
     use super::*;
+    #[doc = "The type of IoT Security recommendation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecommendationType {
         #[serde(rename = "IoT_ACRAuthentication")]
@@ -3095,6 +3674,7 @@ pub mod recommendation_configuration_properties {
         #[serde(rename = "IoT_VulnerableTLSCipherSuite")]
         IoTVulnerableTlsCipherSuite,
     }
+    #[doc = "Recommendation status. When the recommendation status is disabled recommendations are not generated."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -3106,6 +3686,7 @@ pub mod recommendation_configuration_properties {
         }
     }
 }
+#[doc = "The initial recommendation status of the machine group or machine"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecommendationStatus {
     Recommended,
@@ -3113,6 +3694,7 @@ pub enum RecommendationStatus {
     NotAvailable,
     NoStatus,
 }
+#[doc = "The type of the rule to be allowed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecommendationType {
     File,
@@ -3122,10 +3704,12 @@ pub enum RecommendationType {
     BinarySignature,
     VersionAndAboveSignature,
 }
+#[doc = "Regulatory compliance assessment details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceAssessment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Regulatory compliance assessment data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceAssessmentProperties>,
 }
@@ -3134,9 +3718,11 @@ impl RegulatoryComplianceAssessment {
         Self::default()
     }
 }
+#[doc = "List of regulatory compliance assessment response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceAssessmentList {
     pub value: Vec<RegulatoryComplianceAssessment>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3145,22 +3731,31 @@ impl RegulatoryComplianceAssessmentList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Regulatory compliance assessment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceAssessmentProperties {
+    #[doc = "The description of the regulatory compliance assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The expected type of assessment contained in the AssessmentDetailsLink"]
     #[serde(rename = "assessmentType", default, skip_serializing_if = "Option::is_none")]
     pub assessment_type: Option<String>,
+    #[doc = "Link to more detailed assessment results data. The response type will be according to the assessmentType field"]
     #[serde(rename = "assessmentDetailsLink", default, skip_serializing_if = "Option::is_none")]
     pub assessment_details_link: Option<String>,
+    #[doc = "Aggregative state based on the assessment's scanned resources states"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regulatory_compliance_assessment_properties::State>,
+    #[doc = "The given assessment's related resources count with passed state."]
     #[serde(rename = "passedResources", default, skip_serializing_if = "Option::is_none")]
     pub passed_resources: Option<i64>,
+    #[doc = "The given assessment's related resources count with failed state."]
     #[serde(rename = "failedResources", default, skip_serializing_if = "Option::is_none")]
     pub failed_resources: Option<i64>,
+    #[doc = "The given assessment's related resources count with skipped state."]
     #[serde(rename = "skippedResources", default, skip_serializing_if = "Option::is_none")]
     pub skipped_resources: Option<i64>,
+    #[doc = "The given assessment's related resources count with unsupported state."]
     #[serde(rename = "unsupportedResources", default, skip_serializing_if = "Option::is_none")]
     pub unsupported_resources: Option<i64>,
 }
@@ -3171,6 +3766,7 @@ impl RegulatoryComplianceAssessmentProperties {
 }
 pub mod regulatory_compliance_assessment_properties {
     use super::*;
+    #[doc = "Aggregative state based on the assessment's scanned resources states"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -3179,10 +3775,12 @@ pub mod regulatory_compliance_assessment_properties {
         Unsupported,
     }
 }
+#[doc = "Regulatory compliance control details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceControl {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Regulatory compliance control data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceControlProperties>,
 }
@@ -3191,9 +3789,12 @@ impl RegulatoryComplianceControl {
         Self::default()
     }
 }
+#[doc = "List of regulatory compliance controls response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceControlList {
+    #[doc = "List of regulatory compliance controls"]
     pub value: Vec<RegulatoryComplianceControl>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3202,16 +3803,22 @@ impl RegulatoryComplianceControlList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Regulatory compliance control data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceControlProperties {
+    #[doc = "The description of the regulatory compliance control"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Aggregative state based on the control's supported assessments states"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regulatory_compliance_control_properties::State>,
+    #[doc = "The number of supported regulatory compliance assessments of the given control with a passed state"]
     #[serde(rename = "passedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub passed_assessments: Option<i64>,
+    #[doc = "The number of supported regulatory compliance assessments of the given control with a failed state"]
     #[serde(rename = "failedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub failed_assessments: Option<i64>,
+    #[doc = "The number of supported regulatory compliance assessments of the given control with a skipped state"]
     #[serde(rename = "skippedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub skipped_assessments: Option<i64>,
 }
@@ -3222,6 +3829,7 @@ impl RegulatoryComplianceControlProperties {
 }
 pub mod regulatory_compliance_control_properties {
     use super::*;
+    #[doc = "Aggregative state based on the control's supported assessments states"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -3230,10 +3838,12 @@ pub mod regulatory_compliance_control_properties {
         Unsupported,
     }
 }
+#[doc = "Regulatory compliance standard details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceStandard {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Regulatory compliance standard data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceStandardProperties>,
 }
@@ -3242,9 +3852,11 @@ impl RegulatoryComplianceStandard {
         Self::default()
     }
 }
+#[doc = "List of regulatory compliance standards response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceStandardList {
     pub value: Vec<RegulatoryComplianceStandard>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3253,16 +3865,22 @@ impl RegulatoryComplianceStandardList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Regulatory compliance standard data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceStandardProperties {
+    #[doc = "Aggregative state based on the standard's supported controls states"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regulatory_compliance_standard_properties::State>,
+    #[doc = "The number of supported regulatory compliance controls of the given standard with a passed state"]
     #[serde(rename = "passedControls", default, skip_serializing_if = "Option::is_none")]
     pub passed_controls: Option<i64>,
+    #[doc = "The number of supported regulatory compliance controls of the given standard with a failed state"]
     #[serde(rename = "failedControls", default, skip_serializing_if = "Option::is_none")]
     pub failed_controls: Option<i64>,
+    #[doc = "The number of supported regulatory compliance controls of the given standard with a skipped state"]
     #[serde(rename = "skippedControls", default, skip_serializing_if = "Option::is_none")]
     pub skipped_controls: Option<i64>,
+    #[doc = "The number of regulatory compliance controls of the given standard which are unsupported by automated assessments"]
     #[serde(rename = "unsupportedControls", default, skip_serializing_if = "Option::is_none")]
     pub unsupported_controls: Option<i64>,
 }
@@ -3273,6 +3891,7 @@ impl RegulatoryComplianceStandardProperties {
 }
 pub mod regulatory_compliance_standard_properties {
     use super::*;
+    #[doc = "Aggregative state based on the standard's supported controls states"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -3281,14 +3900,19 @@ pub mod regulatory_compliance_standard_properties {
         Unsupported,
     }
 }
+#[doc = "Remediation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Remediation {
+    #[doc = "Remediation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Remediation script."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scripts: Vec<String>,
+    #[doc = "Is remediation automated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub automated: Option<bool>,
+    #[doc = "Optional link to remediate in Azure Portal."]
     #[serde(rename = "portalLink", default, skip_serializing_if = "Option::is_none")]
     pub portal_link: Option<String>,
 }
@@ -3297,12 +3921,16 @@ impl Remediation {
         Self::default()
     }
 }
+#[doc = "Describes an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -3311,8 +3939,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Details of the resource that was assessed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDetails {
+    #[doc = "The platform where the assessed resource resides"]
     pub source: resource_details::Source,
 }
 impl ResourceDetails {
@@ -3322,6 +3952,7 @@ impl ResourceDetails {
 }
 pub mod resource_details {
     use super::*;
+    #[doc = "The platform where the assessed resource resides"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
         Azure,
@@ -3329,8 +3960,10 @@ pub mod resource_details {
         OnPremiseSql,
     }
 }
+#[doc = "A resource identifier for an alert which can be used to direct the alert to the right product exposure group (tenant, workspace, subscription etc.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceIdentifier {
+    #[doc = "There can be multiple identifiers of different type per alert, this field specify the identifier type."]
     #[serde(rename = "type")]
     pub type_: resource_identifier::Type,
 }
@@ -3341,22 +3974,28 @@ impl ResourceIdentifier {
 }
 pub mod resource_identifier {
     use super::*;
+    #[doc = "There can be multiple identifiers of different type per alert, this field specify the identifier type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         AzureResource,
         LogAnalytics,
     }
 }
+#[doc = "Describes remote addresses that is recommended to communicate with the Azure resource on some (Protocol, Port, Direction). All other remote addresses are recommended to be blocked"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rule {
+    #[doc = "The name of the rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The rule's direction"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<rule::Direction>,
     #[serde(rename = "destinationPort", default, skip_serializing_if = "Option::is_none")]
     pub destination_port: Option<PortNumber>,
+    #[doc = "The rule's transport protocols"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocols: Vec<String>,
+    #[doc = "The remote IP addresses that should be able to communicate with the Azure resource on the rule's destination port and protocol"]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
 }
@@ -3367,16 +4006,19 @@ impl Rule {
 }
 pub mod rule {
     use super::*;
+    #[doc = "The rule's direction"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Direction {
         Inbound,
         Outbound,
     }
 }
+#[doc = "Rule results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleResults {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Rule results properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RuleResultsProperties>,
 }
@@ -3385,10 +4027,13 @@ impl RuleResults {
         Self::default()
     }
 }
+#[doc = "Rule results input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleResultsInput {
+    #[doc = "Take results from latest scan."]
     #[serde(rename = "latestScan", default, skip_serializing_if = "Option::is_none")]
     pub latest_scan: Option<bool>,
+    #[doc = "Expected results to be inserted into the baseline.\r\nLeave this field empty it LatestScan == true."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub results: Vec<Vec<String>>,
 }
@@ -3397,8 +4042,10 @@ impl RuleResultsInput {
         Self::default()
     }
 }
+#[doc = "Rule results properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleResultsProperties {
+    #[doc = "Expected results in the baseline."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub results: Vec<Vec<String>>,
 }
@@ -3407,6 +4054,7 @@ impl RuleResultsProperties {
         Self::default()
     }
 }
+#[doc = "The rule severity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RuleSeverity {
     High,
@@ -3415,12 +4063,14 @@ pub enum RuleSeverity {
     Informational,
     Obsolete,
 }
+#[doc = "The rule result status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RuleStatus {
     NonFinding,
     Finding,
     InternalError,
 }
+#[doc = "The rule type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RuleType {
     Binary,
@@ -3428,8 +4078,10 @@ pub enum RuleType {
     PositiveList,
     NegativeList,
 }
+#[doc = "A list of rules results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RulesResults {
+    #[doc = "List of rule results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuleResults>,
 }
@@ -3438,10 +4090,13 @@ impl RulesResults {
         Self::default()
     }
 }
+#[doc = "Rules results input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RulesResultsInput {
+    #[doc = "Take results from latest scan."]
     #[serde(rename = "latestScan", default, skip_serializing_if = "Option::is_none")]
     pub latest_scan: Option<bool>,
+    #[doc = "Expected results to be inserted into the baseline.\r\nLeave this field empty it LatestScan == true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<serde_json::Value>,
 }
@@ -3450,10 +4105,12 @@ impl RulesResultsInput {
         Self::default()
     }
 }
+#[doc = "A vulnerability assessment scan record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Scan {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "A vulnerability assessment scan record properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScanProperties>,
 }
@@ -3462,34 +4119,49 @@ impl Scan {
         Self::default()
     }
 }
+#[doc = "A vulnerability assessment scan record properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanProperties {
+    #[doc = "The scan trigger type."]
     #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<ScanTriggerType>,
+    #[doc = "The scan status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ScanState>,
+    #[doc = "The server name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<String>,
+    #[doc = "The database name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub database: Option<String>,
+    #[doc = "The SQL version."]
     #[serde(rename = "sqlVersion", default, skip_serializing_if = "Option::is_none")]
     pub sql_version: Option<String>,
+    #[doc = "The scan start time (UTC)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Scan results are valid until end time (UTC)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The number of failed rules with high severity."]
     #[serde(rename = "highSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub high_severity_failed_rules_count: Option<i32>,
+    #[doc = "The number of failed rules with medium severity."]
     #[serde(rename = "mediumSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub medium_severity_failed_rules_count: Option<i32>,
+    #[doc = "The number of failed rules with low severity."]
     #[serde(rename = "lowSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub low_severity_failed_rules_count: Option<i32>,
+    #[doc = "The number of total passed rules."]
     #[serde(rename = "totalPassedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub total_passed_rules_count: Option<i32>,
+    #[doc = "The number of total failed rules."]
     #[serde(rename = "totalFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub total_failed_rules_count: Option<i32>,
+    #[doc = "The number of total rules assessed."]
     #[serde(rename = "totalRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub total_rules_count: Option<i32>,
+    #[doc = "Baseline created for this database, and has one or more rules."]
     #[serde(rename = "isBaselineApplied", default, skip_serializing_if = "Option::is_none")]
     pub is_baseline_applied: Option<bool>,
 }
@@ -3498,10 +4170,12 @@ impl ScanProperties {
         Self::default()
     }
 }
+#[doc = "A vulnerability assessment scan result for a single rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanResult {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "A vulnerability assessment scan result properties for a single rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScanResultProperties>,
 }
@@ -3510,20 +4184,28 @@ impl ScanResult {
         Self::default()
     }
 }
+#[doc = "A vulnerability assessment scan result properties for a single rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanResultProperties {
+    #[doc = "The rule Id."]
     #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
+    #[doc = "The rule result status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<RuleStatus>,
+    #[doc = "Indicated whether the results specified here are trimmed."]
     #[serde(rename = "isTrimmed", default, skip_serializing_if = "Option::is_none")]
     pub is_trimmed: Option<bool>,
+    #[doc = "The results of the query that was run."]
     #[serde(rename = "queryResults", default, skip_serializing_if = "Vec::is_empty")]
     pub query_results: Vec<Vec<String>>,
+    #[doc = "Remediation details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remediation: Option<Remediation>,
+    #[doc = "The rule result adjusted with baseline."]
     #[serde(rename = "baselineAdjustedResult", default, skip_serializing_if = "Option::is_none")]
     pub baseline_adjusted_result: Option<BaselineAdjustedResult>,
+    #[doc = "vulnerability assessment rule metadata details."]
     #[serde(rename = "ruleMetadata", default, skip_serializing_if = "Option::is_none")]
     pub rule_metadata: Option<VaRule>,
 }
@@ -3532,8 +4214,10 @@ impl ScanResultProperties {
         Self::default()
     }
 }
+#[doc = "A list of vulnerability assessment scan results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanResults {
+    #[doc = "List of vulnerability assessment scan results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScanResult>,
 }
@@ -3542,6 +4226,7 @@ impl ScanResults {
         Self::default()
     }
 }
+#[doc = "The scan status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScanState {
     Failed,
@@ -3549,13 +4234,16 @@ pub enum ScanState {
     InProgress,
     Passed,
 }
+#[doc = "The scan trigger type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScanTriggerType {
     OnDemand,
     Recurring,
 }
+#[doc = "A list of vulnerability assessment scan records."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Scans {
+    #[doc = "List of vulnerability assessment scan records."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Scan>,
 }
@@ -3564,8 +4252,10 @@ impl Scans {
         Self::default()
     }
 }
+#[doc = "A more specific scope used to identify the alerts to suppress."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeElement {
+    #[doc = "The alert entity type to suppress by."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
 }
@@ -3574,12 +4264,16 @@ impl ScopeElement {
         Self::default()
     }
 }
+#[doc = "Calculation result data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScoreDetails {
+    #[doc = "Maximum score available"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<i32>,
+    #[doc = "Current score"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current: Option<f64>,
+    #[doc = "Ratio of the current score divided by the maximum. Rounded to 4 digits after the decimal point"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub percentage: Option<f64>,
 }
@@ -3588,10 +4282,12 @@ impl ScoreDetails {
         Self::default()
     }
 }
+#[doc = "Information about the security control."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlDefinitionItem {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Security Control Definition Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecureScoreControlDefinitionItemProperties>,
 }
@@ -3600,16 +4296,22 @@ impl SecureScoreControlDefinitionItem {
         Self::default()
     }
 }
+#[doc = "Security Control Definition Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlDefinitionItemProperties {
+    #[doc = "User friendly display name of the control"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "User friendly description of the control"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Maximum control score (0..10)"]
     #[serde(rename = "maxScore", default, skip_serializing_if = "Option::is_none")]
     pub max_score: Option<i32>,
+    #[doc = "The type of the security control (For example, BuiltIn)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<SecureScoreControlDefinitionSource>,
+    #[doc = "array of azure resource IDs"]
     #[serde(rename = "assessmentDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub assessment_definitions: Option<AzureResourceLinks>,
 }
@@ -3618,8 +4320,10 @@ impl SecureScoreControlDefinitionItemProperties {
         Self::default()
     }
 }
+#[doc = "The type of the security control (For example, BuiltIn)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlDefinitionSource {
+    #[doc = "The type of security control (for example, BuiltIn)"]
     #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<secure_score_control_definition_source::SourceType>,
 }
@@ -3630,16 +4334,19 @@ impl SecureScoreControlDefinitionSource {
 }
 pub mod secure_score_control_definition_source {
     use super::*;
+    #[doc = "The type of security control (for example, BuiltIn)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceType {
         BuiltIn,
         Custom,
     }
 }
+#[doc = "Details of the security control, its score, and the health status of the relevant resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlDetails {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Calculation result data in control level"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecureScoreControlScoreDetails>,
 }
@@ -3648,10 +4355,13 @@ impl SecureScoreControlDetails {
         Self::default()
     }
 }
+#[doc = "List of security controls"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlList {
+    #[doc = "Collection of security controls in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecureScoreControlDetails>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3660,12 +4370,16 @@ impl SecureScoreControlList {
         Self::default()
     }
 }
+#[doc = "Calculation result data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlScore {
+    #[doc = "Maximum control score (0..10)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<i32>,
+    #[doc = "Actual score for the control = (achieved points / total points) * max score. if total points is zeroed, the return number is 0.00"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current: Option<f64>,
+    #[doc = "Ratio of the current score divided by the maximum. Rounded to 4 digits after the decimal point"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub percentage: Option<f64>,
 }
@@ -3674,20 +4388,28 @@ impl SecureScoreControlScore {
         Self::default()
     }
 }
+#[doc = "Calculation result data in control level"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlScoreDetails {
+    #[doc = "User friendly display name of the control"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Calculation result data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub score: Option<ScoreDetails>,
+    #[doc = "Number of healthy resources in the control"]
     #[serde(rename = "healthyResourceCount", default, skip_serializing_if = "Option::is_none")]
     pub healthy_resource_count: Option<i32>,
+    #[doc = "Number of unhealthy resources in the control"]
     #[serde(rename = "unhealthyResourceCount", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_resource_count: Option<i32>,
+    #[doc = "Number of not applicable resources in the control"]
     #[serde(rename = "notApplicableResourceCount", default, skip_serializing_if = "Option::is_none")]
     pub not_applicable_resource_count: Option<i32>,
+    #[doc = "The relative weight for this specific control in each of your subscriptions. Used when calculating an aggregated score for this control across all of your subscriptions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<i64>,
+    #[doc = "Information about the security control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub definition: Option<SecureScoreControlDefinitionItem>,
 }
@@ -3696,10 +4418,12 @@ impl SecureScoreControlScoreDetails {
         Self::default()
     }
 }
+#[doc = "Secure score item data model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreItem {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of a calculated secure score."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecureScoreItemProperties>,
 }
@@ -3708,12 +4432,16 @@ impl SecureScoreItem {
         Self::default()
     }
 }
+#[doc = "Describes properties of a calculated secure score."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreItemProperties {
+    #[doc = "The initiative’s name"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Calculation result data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub score: Option<ScoreDetails>,
+    #[doc = "The relative weight for each subscription. Used when calculating an aggregated secure score for multiple subscriptions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<i64>,
 }
@@ -3722,10 +4450,13 @@ impl SecureScoreItemProperties {
         Self::default()
     }
 }
+#[doc = "List of secure scores"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoresList {
+    #[doc = "Collection of secure scores in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecureScoreItem>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3734,10 +4465,12 @@ impl SecureScoresList {
         Self::default()
     }
 }
+#[doc = "Security assessment on a resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentProperties>,
 }
@@ -3746,10 +4479,13 @@ impl SecurityAssessment {
         Self::default()
     }
 }
+#[doc = "Page of a security assessments list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentList {
+    #[doc = "Collection of security assessments in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityAssessmentResponse>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3758,10 +4494,12 @@ impl SecurityAssessmentList {
         Self::default()
     }
 }
+#[doc = "Security assessment metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadata {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an assessment metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentMetadataProperties>,
 }
@@ -3770,12 +4508,16 @@ impl SecurityAssessmentMetadata {
         Self::default()
     }
 }
+#[doc = "Describes the partner that created the assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentMetadataPartnerData {
+    #[doc = "Name of the company of the partner"]
     #[serde(rename = "partnerName")]
     pub partner_name: String,
+    #[doc = "Name of the product of the partner that created the assessment"]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "Secret to authenticate the partner and verify it created the assessment - write only"]
     pub secret: String,
 }
 impl SecurityAssessmentMetadataPartnerData {
@@ -3787,29 +4529,40 @@ impl SecurityAssessmentMetadataPartnerData {
         }
     }
 }
+#[doc = "Describes properties of an assessment metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentMetadataProperties {
+    #[doc = "User friendly display name of the assessment"]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Azure resource ID of the policy definition that turns this assessment calculation on"]
     #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_id: Option<String>,
+    #[doc = "Human readable description of the assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Human readable description of what you should do to mitigate this security issue"]
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<String>,
+    #[doc = "The severity level of the assessment"]
     pub severity: security_assessment_metadata_properties::Severity,
+    #[doc = "The user impact of the assessment"]
     #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
     pub user_impact: Option<security_assessment_metadata_properties::UserImpact>,
+    #[doc = "The implementation effort required to remediate this assessment"]
     #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
     pub implementation_effort: Option<security_assessment_metadata_properties::ImplementationEffort>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub threats: Vec<String>,
+    #[doc = "True if this assessment is in preview release status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preview: Option<bool>,
+    #[doc = "BuiltIn if the assessment based on built-in Azure Policy definition, Custom if the assessment based on custom Azure Policy definition"]
     #[serde(rename = "assessmentType")]
     pub assessment_type: security_assessment_metadata_properties::AssessmentType,
+    #[doc = "Describes the partner that created the assessment"]
     #[serde(rename = "partnerData", default, skip_serializing_if = "Option::is_none")]
     pub partner_data: Option<SecurityAssessmentMetadataPartnerData>,
 }
@@ -3837,24 +4590,28 @@ impl SecurityAssessmentMetadataProperties {
 }
 pub mod security_assessment_metadata_properties {
     use super::*;
+    #[doc = "The severity level of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         Low,
         Medium,
         High,
     }
+    #[doc = "The user impact of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserImpact {
         Low,
         Moderate,
         High,
     }
+    #[doc = "The implementation effort required to remediate this assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ImplementationEffort {
         Low,
         Moderate,
         High,
     }
+    #[doc = "BuiltIn if the assessment based on built-in Azure Policy definition, Custom if the assessment based on custom Azure Policy definition"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AssessmentType {
         BuiltIn,
@@ -3863,6 +4620,7 @@ pub mod security_assessment_metadata_properties {
         VerifiedPartner,
     }
 }
+#[doc = "Describes properties of an assessment metadata response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentMetadataPropertiesResponse {
     #[serde(flatten)]
@@ -3901,10 +4659,12 @@ pub mod security_assessment_metadata_properties_response {
         }
     }
 }
+#[doc = "Security assessment metadata response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadataResponse {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an assessment metadata response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentMetadataPropertiesResponse>,
 }
@@ -3913,10 +4673,12 @@ impl SecurityAssessmentMetadataResponse {
         Self::default()
     }
 }
+#[doc = "List of security assessment metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadataResponseList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityAssessmentMetadataResponse>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3925,10 +4687,13 @@ impl SecurityAssessmentMetadataResponseList {
         Self::default()
     }
 }
+#[doc = "Data regarding 3rd party partner integration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentPartnerData {
+    #[doc = "Name of the company of the partner"]
     #[serde(rename = "partnerName")]
     pub partner_name: String,
+    #[doc = "secret to authenticate the partner - write only"]
     pub secret: String,
 }
 impl SecurityAssessmentPartnerData {
@@ -3936,10 +4701,12 @@ impl SecurityAssessmentPartnerData {
         Self { partner_name, secret }
     }
 }
+#[doc = "Describes properties of an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentProperties {
     #[serde(flatten)]
     pub security_assessment_properties_base: SecurityAssessmentPropertiesBase,
+    #[doc = "The result of the assessment"]
     pub status: AssessmentStatus,
 }
 impl SecurityAssessmentProperties {
@@ -3950,18 +4717,25 @@ impl SecurityAssessmentProperties {
         }
     }
 }
+#[doc = "Describes properties of an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentPropertiesBase {
+    #[doc = "Details of the resource that was assessed"]
     #[serde(rename = "resourceDetails")]
     pub resource_details: ResourceDetails,
+    #[doc = "User friendly display name of the assessment"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Additional data regarding the assessment"]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<serde_json::Value>,
+    #[doc = "Links relevant to the assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub links: Option<AssessmentLinks>,
+    #[doc = "Describes properties of an assessment metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<SecurityAssessmentMetadataProperties>,
+    #[doc = "Data regarding 3rd party partner integration"]
     #[serde(rename = "partnersData", default, skip_serializing_if = "Option::is_none")]
     pub partners_data: Option<SecurityAssessmentPartnerData>,
 }
@@ -3977,10 +4751,12 @@ impl SecurityAssessmentPropertiesBase {
         }
     }
 }
+#[doc = "Describes properties of an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentPropertiesResponse {
     #[serde(flatten)]
     pub security_assessment_properties_base: SecurityAssessmentPropertiesBase,
+    #[doc = "The result of the assessment"]
     pub status: AssessmentStatusResponse,
 }
 impl SecurityAssessmentPropertiesResponse {
@@ -3991,10 +4767,12 @@ impl SecurityAssessmentPropertiesResponse {
         }
     }
 }
+#[doc = "Security assessment on a resource - response format"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentResponse {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentPropertiesResponse>,
 }
@@ -4003,12 +4781,15 @@ impl SecurityAssessmentResponse {
         Self::default()
     }
 }
+#[doc = "The security connector resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnector {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "A set of properties that defines the security connector configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityConnectorProperties>,
 }
@@ -4017,14 +4798,19 @@ impl SecurityConnector {
         Self::default()
     }
 }
+#[doc = "A set of properties that defines the security connector configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnectorProperties {
+    #[doc = "The multi cloud resource identifier (account id in case of AWS connector)."]
     #[serde(rename = "hierarchyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_identifier: Option<String>,
+    #[doc = "The multi cloud resource's cloud name."]
     #[serde(rename = "cloudName", default, skip_serializing_if = "Option::is_none")]
     pub cloud_name: Option<security_connector_properties::CloudName>,
+    #[doc = "A collection of offerings for the security connector."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub offerings: Vec<CloudOffering>,
+    #[doc = "The multi cloud account's organizational data"]
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
     pub organizational_data: Option<security_connector_properties::OrganizationalData>,
 }
@@ -4035,6 +4821,7 @@ impl SecurityConnectorProperties {
 }
 pub mod security_connector_properties {
     use super::*;
+    #[doc = "The multi cloud resource's cloud name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CloudName {
         Azure,
@@ -4043,14 +4830,19 @@ pub mod security_connector_properties {
         #[serde(rename = "GCP")]
         Gcp,
     }
+    #[doc = "The multi cloud account's organizational data"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct OrganizationalData {
+        #[doc = "The multi cloud account's membership type in the organization"]
         #[serde(rename = "organizationMembershipType", default, skip_serializing_if = "Option::is_none")]
         pub organization_membership_type: Option<organizational_data::OrganizationMembershipType>,
+        #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the account's parent"]
         #[serde(rename = "parentHierarchyId", default, skip_serializing_if = "Option::is_none")]
         pub parent_hierarchy_id: Option<String>,
+        #[doc = "If the multi cloud account is of membership type organization, this will be the name of the onboarding stackset"]
         #[serde(rename = "stacksetName", default, skip_serializing_if = "Option::is_none")]
         pub stackset_name: Option<String>,
+        #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
         #[serde(rename = "excludedAccountIds", default, skip_serializing_if = "Vec::is_empty")]
         pub excluded_account_ids: Vec<String>,
     }
@@ -4061,6 +4853,7 @@ pub mod security_connector_properties {
     }
     pub mod organizational_data {
         use super::*;
+        #[doc = "The multi cloud account's membership type in the organization"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum OrganizationMembershipType {
             Member,
@@ -4068,9 +4861,12 @@ pub mod security_connector_properties {
         }
     }
 }
+#[doc = "List of security connectors response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityConnectorsList {
+    #[doc = "The list of security connectors under the given scope."]
     pub value: Vec<SecurityConnector>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4079,10 +4875,12 @@ impl SecurityConnectorsList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Contact details for security issues"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityContact {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes security contact properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityContactProperties>,
 }
@@ -4091,10 +4889,13 @@ impl SecurityContact {
         Self::default()
     }
 }
+#[doc = "List of security contacts response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityContactList {
+    #[doc = "List of security contacts"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityContact>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4103,13 +4904,18 @@ impl SecurityContactList {
         Self::default()
     }
 }
+#[doc = "describes security contact properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityContactProperties {
+    #[doc = "The email of this security contact"]
     pub email: String,
+    #[doc = "The phone number of this security contact"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
+    #[doc = "Whether to send security alerts notifications to the security contact"]
     #[serde(rename = "alertNotifications")]
     pub alert_notifications: security_contact_properties::AlertNotifications,
+    #[doc = "Whether to send security alerts notifications to subscription admins"]
     #[serde(rename = "alertsToAdmins")]
     pub alerts_to_admins: security_contact_properties::AlertsToAdmins,
 }
@@ -4129,11 +4935,13 @@ impl SecurityContactProperties {
 }
 pub mod security_contact_properties {
     use super::*;
+    #[doc = "Whether to send security alerts notifications to the security contact"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AlertNotifications {
         On,
         Off,
     }
+    #[doc = "Whether to send security alerts notifications to subscription admins"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AlertsToAdmins {
         On,
@@ -4158,6 +4966,7 @@ impl SecuritySolution {
 pub struct SecuritySolutionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecuritySolution>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4168,11 +4977,15 @@ impl SecuritySolutionList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecuritySolutionProperties {
+    #[doc = "The security family of the security solution"]
     #[serde(rename = "securityFamily")]
     pub security_family: security_solution_properties::SecurityFamily,
+    #[doc = "The security family provisioning State"]
     #[serde(rename = "provisioningState")]
     pub provisioning_state: security_solution_properties::ProvisioningState,
+    #[doc = "The security solutions' template"]
     pub template: String,
+    #[doc = "The security solutions' status"]
     #[serde(rename = "protectionStatus")]
     pub protection_status: String,
 }
@@ -4193,6 +5006,7 @@ impl SecuritySolutionProperties {
 }
 pub mod security_solution_properties {
     use super::*;
+    #[doc = "The security family of the security solution"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SecurityFamily {
         Waf,
@@ -4200,6 +5014,7 @@ pub mod security_solution_properties {
         SaasWaf,
         Va,
     }
+    #[doc = "The security family provisioning State"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -4207,10 +5022,12 @@ pub mod security_solution_properties {
         Updating,
     }
 }
+#[doc = "Security sub-assessment on a resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecuritySubAssessment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an sub-assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecuritySubAssessmentProperties>,
 }
@@ -4219,10 +5036,12 @@ impl SecuritySubAssessment {
         Self::default()
     }
 }
+#[doc = "List of security sub-assessments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecuritySubAssessmentList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecuritySubAssessment>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4231,26 +5050,37 @@ impl SecuritySubAssessmentList {
         Self::default()
     }
 }
+#[doc = "Describes properties of an sub-assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecuritySubAssessmentProperties {
+    #[doc = "Vulnerability ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "User friendly display name of the sub-assessment"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Status of the sub-assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SubAssessmentStatus>,
+    #[doc = "Information on how to remediate this sub-assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remediation: Option<String>,
+    #[doc = "Description of the impact of this sub-assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub impact: Option<String>,
+    #[doc = "Category of the sub-assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "Human readable description of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The date and time the sub-assessment was generated"]
     #[serde(rename = "timeGenerated", default, skip_serializing_if = "Option::is_none")]
     pub time_generated: Option<String>,
+    #[doc = "Details of the resource that was assessed"]
     #[serde(rename = "resourceDetails", default, skip_serializing_if = "Option::is_none")]
     pub resource_details: Option<ResourceDetails>,
+    #[doc = "Details of the sub-assessment"]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<AdditionalData>,
 }
@@ -4259,10 +5089,12 @@ impl SecuritySubAssessmentProperties {
         Self::default()
     }
 }
+#[doc = "Security task that we recommend to do in order to strengthen security"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityTask {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of a task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityTaskProperties>,
 }
@@ -4271,10 +5103,12 @@ impl SecurityTask {
         Self::default()
     }
 }
+#[doc = "List of security task recommendations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityTaskList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityTask>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4283,8 +5117,10 @@ impl SecurityTaskList {
         Self::default()
     }
 }
+#[doc = "Changing set of properties, depending on the task type that is derived from the name field"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityTaskParameters {
+    #[doc = "Name of the task type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -4293,16 +5129,22 @@ impl SecurityTaskParameters {
         Self::default()
     }
 }
+#[doc = "Describes properties of a task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityTaskProperties {
+    #[doc = "State of the task (Active, Resolved etc.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The time this task was discovered in UTC"]
     #[serde(rename = "creationTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub creation_time_utc: Option<String>,
+    #[doc = "Changing set of properties, depending on the task type that is derived from the name field"]
     #[serde(rename = "securityTaskParameters", default, skip_serializing_if = "Option::is_none")]
     pub security_task_parameters: Option<SecurityTaskParameters>,
+    #[doc = "The time this task's details were last changed in UTC"]
     #[serde(rename = "lastStateChangeTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_state_change_time_utc: Option<String>,
+    #[doc = "Additional data on the state of the task"]
     #[serde(rename = "subState", default, skip_serializing_if = "Option::is_none")]
     pub sub_state: Option<String>,
 }
@@ -4311,16 +5153,22 @@ impl SecurityTaskProperties {
         Self::default()
     }
 }
+#[doc = "The sensitivity label."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabel {
+    #[doc = "The name of the sensitivity label."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description of the sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The rank of the sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rank: Option<sensitivity_label::Rank>,
+    #[doc = "The order of the sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<i32>,
+    #[doc = "Indicates whether the label is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -4331,6 +5179,7 @@ impl SensitivityLabel {
 }
 pub mod sensitivity_label {
     use super::*;
+    #[doc = "The rank of the sensitivity label."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Rank {
         None,
@@ -4340,10 +5189,12 @@ pub mod sensitivity_label {
         Critical,
     }
 }
+#[doc = "Describes the server vulnerability assessment details on a resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes ServerVulnerabilityAssessment properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerVulnerabilityAssessmentProperties>,
 }
@@ -4352,8 +5203,10 @@ impl ServerVulnerabilityAssessment {
         Self::default()
     }
 }
+#[doc = "describes ServerVulnerabilityAssessment properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessmentProperties {
+    #[doc = "The provisioningState of the vulnerability assessment capability on the VM"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<server_vulnerability_assessment_properties::ProvisioningState>,
 }
@@ -4364,6 +5217,7 @@ impl ServerVulnerabilityAssessmentProperties {
 }
 pub mod server_vulnerability_assessment_properties {
     use super::*;
+    #[doc = "The provisioningState of the vulnerability assessment capability on the VM"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -4373,6 +5227,7 @@ pub mod server_vulnerability_assessment_properties {
         Deprovisioning,
     }
 }
+#[doc = "List of server vulnerability assessments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessmentsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -4383,20 +5238,27 @@ impl ServerVulnerabilityAssessmentsList {
         Self::default()
     }
 }
+#[doc = "Additional context fields for server vulnerability assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerVulnerabilityProperties {
     #[serde(flatten)]
     pub additional_data: AdditionalData,
+    #[doc = "Vulnerability Type. e.g: Vulnerability, Potential Vulnerability, Information Gathered"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Dictionary from cvss version to cvss details object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cvss: Option<serde_json::Value>,
+    #[doc = "Indicates whether a patch is available or not"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub patchable: Option<bool>,
+    #[doc = "List of CVEs"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cve: Vec<Cve>,
+    #[doc = "Threat name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threat: Option<String>,
+    #[doc = "Published time"]
     #[serde(rename = "publishedTime", default, skip_serializing_if = "Option::is_none")]
     pub published_time: Option<String>,
     #[serde(rename = "vendorReferences", default, skip_serializing_if = "Vec::is_empty")]
@@ -4416,10 +5278,13 @@ impl ServerVulnerabilityProperties {
         }
     }
 }
+#[doc = "Details of the service principal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipalProperties {
+    #[doc = "Application ID of service principal."]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+    #[doc = "A secret string that the application uses to prove its identity, also can be referred to as application password (write only)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
 }
@@ -4428,10 +5293,12 @@ impl ServicePrincipalProperties {
         Self::default()
     }
 }
+#[doc = "The kind of the security setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Setting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "the kind of the settings string"]
     pub kind: setting::Kind,
 }
 impl Setting {
@@ -4444,6 +5311,7 @@ impl Setting {
 }
 pub mod setting {
     use super::*;
+    #[doc = "the kind of the settings string"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         DataExportSettings,
@@ -4451,10 +5319,13 @@ pub mod setting {
         AlertSyncSettings,
     }
 }
+#[doc = "Subscription settings list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SettingsList {
+    #[doc = "The settings list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Setting>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4463,10 +5334,12 @@ impl SettingsList {
         Self::default()
     }
 }
+#[doc = "Represents a software data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Software {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Software Inventory resource properties"]
     pub properties: SoftwareProperties,
 }
 impl Software {
@@ -4477,24 +5350,34 @@ impl Software {
         }
     }
 }
+#[doc = "Software Inventory resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoftwareProperties {
+    #[doc = "Unique identifier for the virtual machine in the service."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+    #[doc = "Platform of the operating system running on the device."]
     #[serde(rename = "osPlatform", default, skip_serializing_if = "Option::is_none")]
     pub os_platform: Option<String>,
+    #[doc = "Name of the software vendor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
+    #[doc = "Name of the software product."]
     #[serde(rename = "softwareName", default, skip_serializing_if = "Option::is_none")]
     pub software_name: Option<String>,
+    #[doc = "Version number of the software product."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "End of support status."]
     #[serde(rename = "endOfSupportStatus", default, skip_serializing_if = "Option::is_none")]
     pub end_of_support_status: Option<software_properties::EndOfSupportStatus>,
+    #[doc = "The end of support date in case the product is upcoming end of support."]
     #[serde(rename = "endOfSupportDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_support_date: Option<String>,
+    #[doc = "Number of weaknesses."]
     #[serde(rename = "numberOfKnownVulnerabilities", default, skip_serializing_if = "Option::is_none")]
     pub number_of_known_vulnerabilities: Option<i32>,
+    #[doc = "First time that the software was seen in the device."]
     #[serde(rename = "firstSeenAt", default, skip_serializing_if = "Option::is_none")]
     pub first_seen_at: Option<String>,
 }
@@ -4505,6 +5388,7 @@ impl SoftwareProperties {
 }
 pub mod software_properties {
     use super::*;
+    #[doc = "End of support status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndOfSupportStatus {
         None,
@@ -4518,10 +5402,12 @@ pub mod software_properties {
         UpcomingVersionNoLongerSupported,
     }
 }
+#[doc = "Represents the software inventory of the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoftwaresList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Software>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4530,6 +5416,7 @@ impl SoftwaresList {
         Self::default()
     }
 }
+#[doc = "The source type of the machine group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SourceSystem {
     #[serde(rename = "Azure_AppLocker")]
@@ -4542,12 +5429,15 @@ pub enum SourceSystem {
     NonAzureAuditD,
     None,
 }
+#[doc = "Details of the resource that was assessed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerVulnerabilityProperties {
     #[serde(flatten)]
     pub additional_data: AdditionalData,
+    #[doc = "The resource type the sub assessment refers to in its resource details"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The T-SQL query that runs on your SQL database to perform the particular check"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
 }
@@ -4560,14 +5450,19 @@ impl SqlServerVulnerabilityProperties {
         }
     }
 }
+#[doc = "Status of the sub-assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubAssessmentStatus {
+    #[doc = "Programmatic code for the status of the assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<sub_assessment_status::Code>,
+    #[doc = "Programmatic code for the cause of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cause: Option<String>,
+    #[doc = "Human readable description of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The sub-assessment severity level"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<sub_assessment_status::Severity>,
 }
@@ -4578,12 +5473,14 @@ impl SubAssessmentStatus {
 }
 pub mod sub_assessment_status {
     use super::*;
+    #[doc = "Programmatic code for the status of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Code {
         Healthy,
         Unhealthy,
         NotApplicable,
     }
+    #[doc = "The sub-assessment severity level"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         Low,
@@ -4593,6 +5490,7 @@ pub mod sub_assessment_status {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuppressionAlertsScope {
+    #[doc = "All the conditions inside need to be true in order to suppress the alert"]
     #[serde(rename = "allOf")]
     pub all_of: Vec<ScopeElement>,
 }
@@ -4601,8 +5499,10 @@ impl SuppressionAlertsScope {
         Self { all_of }
     }
 }
+#[doc = "A list of key value pairs that describe the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
+    #[doc = "A list of key value pairs that describe the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -4611,8 +5511,10 @@ impl Tags {
         Self::default()
     }
 }
+#[doc = "A container holding only the Tags for a resource, allowing the user to update the tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -4621,12 +5523,15 @@ impl TagsResource {
         Self::default()
     }
 }
+#[doc = "A custom alert rule that checks if a value (depends on the custom alert type) is within the given range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThresholdCustomAlertRule {
     #[serde(flatten)]
     pub custom_alert_rule: CustomAlertRule,
+    #[doc = "The minimum threshold."]
     #[serde(rename = "minThreshold")]
     pub min_threshold: i32,
+    #[doc = "The maximum threshold."]
     #[serde(rename = "maxThreshold")]
     pub max_threshold: i32,
 }
@@ -4639,10 +5544,12 @@ impl ThresholdCustomAlertRule {
         }
     }
 }
+#[doc = "A custom alert rule that checks if the number of activities (depends on the custom alert type) in a time window is within the given range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeWindowCustomAlertRule {
     #[serde(flatten)]
     pub threshold_custom_alert_rule: ThresholdCustomAlertRule,
+    #[doc = "The time window size in iso8601 format."]
     #[serde(rename = "timeWindowSize")]
     pub time_window_size: String,
 }
@@ -4658,6 +5565,7 @@ impl TimeWindowCustomAlertRule {
 pub struct TopologyList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TopologyResource>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4682,8 +5590,10 @@ impl TopologyResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologyResourceProperties {
+    #[doc = "The UTC time on which the topology was calculated"]
     #[serde(rename = "calculatedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub calculated_date_time: Option<String>,
+    #[doc = "Azure resources which are part of this topology resource"]
     #[serde(rename = "topologyResources", default, skip_serializing_if = "Vec::is_empty")]
     pub topology_resources: Vec<TopologySingleResource>,
 }
@@ -4694,20 +5604,28 @@ impl TopologyResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologySingleResource {
+    #[doc = "Azure resource id"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The security severity of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
+    #[doc = "Indicates if the resource has security recommendations"]
     #[serde(rename = "recommendationsExist", default, skip_serializing_if = "Option::is_none")]
     pub recommendations_exist: Option<bool>,
+    #[doc = "Indicates the resource connectivity level to the Internet (InternetFacing, Internal ,etc.)"]
     #[serde(rename = "networkZones", default, skip_serializing_if = "Option::is_none")]
     pub network_zones: Option<String>,
+    #[doc = "Score of the resource based on its security severity"]
     #[serde(rename = "topologyScore", default, skip_serializing_if = "Option::is_none")]
     pub topology_score: Option<i64>,
+    #[doc = "The location of this resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Azure resources connected to this resource which are in higher level in the topology view"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parents: Vec<TopologySingleResourceParent>,
+    #[doc = "Azure resources connected to this resource which are in lower level in the topology view"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<TopologySingleResourceChild>,
 }
@@ -4718,6 +5636,7 @@ impl TopologySingleResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologySingleResourceChild {
+    #[doc = "Azure resource id which serves as child resource in topology view"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -4728,6 +5647,7 @@ impl TopologySingleResourceChild {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologySingleResourceParent {
+    #[doc = "Azure resource id which serves as parent resource in topology view"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -4736,6 +5656,7 @@ impl TopologySingleResourceParent {
         Self::default()
     }
 }
+#[doc = "Describes an Azure tracked resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
@@ -4754,6 +5675,7 @@ impl TrackedResource {
         Self::default()
     }
 }
+#[doc = "Number of twin updates is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TwinUpdatesNotInAllowedRange {
     #[serde(flatten)]
@@ -4766,6 +5688,7 @@ impl TwinUpdatesNotInAllowedRange {
         }
     }
 }
+#[doc = "Number of unauthorized operations is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnauthorizedOperationsNotInAllowedRange {
     #[serde(flatten)]
@@ -4778,10 +5701,13 @@ impl UnauthorizedOperationsNotInAllowedRange {
         }
     }
 }
+#[doc = "Update Security Solution setting data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateIoTSecuritySolutionProperties {
+    #[doc = "Properties of the IoT Security solution's user defined resources."]
     #[serde(rename = "userDefinedResources", default, skip_serializing_if = "Option::is_none")]
     pub user_defined_resources: Option<UserDefinedResourcesProperties>,
+    #[doc = "List of the configuration status for each recommendation type."]
     #[serde(rename = "recommendationsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub recommendations_configuration: Option<RecommendationConfigurationList>,
 }
@@ -4794,6 +5720,7 @@ impl UpdateIoTSecuritySolutionProperties {
 pub struct UpdateIotSecuritySolutionData {
     #[serde(flatten)]
     pub tags_resource: TagsResource,
+    #[doc = "Update Security Solution setting data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateIoTSecuritySolutionProperties>,
 }
@@ -4802,9 +5729,12 @@ impl UpdateIotSecuritySolutionData {
         Self::default()
     }
 }
+#[doc = "Properties of the IoT Security solution's user defined resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDefinedResourcesProperties {
+    #[doc = "Azure Resource Graph query which represents the security solution's user defined resources. Required to start with \"where type != \"Microsoft.Devices/IotHubs\"\""]
     pub query: String,
+    #[doc = "List of Azure subscription ids on which the user defined resources query should be executed."]
     #[serde(rename = "querySubscriptions")]
     pub query_subscriptions: Vec<String>,
 }
@@ -4816,10 +5746,13 @@ impl UserDefinedResourcesProperties {
         }
     }
 }
+#[doc = "Represents a user that is recommended to be allowed for a certain rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserRecommendation {
+    #[doc = "Represents a user that is recommended to be allowed for a certain rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "The recommendation action of the machine or rule"]
     #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_action: Option<RecommendationAction>,
 }
@@ -4828,24 +5761,34 @@ impl UserRecommendation {
         Self::default()
     }
 }
+#[doc = "vulnerability assessment rule metadata details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaRule {
+    #[doc = "The rule Id."]
     #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
+    #[doc = "The rule severity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<RuleSeverity>,
+    #[doc = "The rule category."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "The rule type."]
     #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<RuleType>,
+    #[doc = "The rule title."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "The rule description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The rule rationale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
+    #[doc = "The rule query details."]
     #[serde(rename = "queryCheck", default, skip_serializing_if = "Option::is_none")]
     pub query_check: Option<QueryCheck>,
+    #[doc = "The benchmark references."]
     #[serde(rename = "benchmarkReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub benchmark_references: Vec<BenchmarkReference>,
 }
@@ -4854,10 +5797,13 @@ impl VaRule {
         Self::default()
     }
 }
+#[doc = "Vendor reference"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorReference {
+    #[doc = "Link title"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "Link url"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
 }
@@ -4866,14 +5812,19 @@ impl VendorReference {
         Self::default()
     }
 }
+#[doc = "Represents a machine that is part of a machine group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmRecommendation {
+    #[doc = "The configuration status of the machines group or machine or rule"]
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
     pub configuration_status: Option<ConfigurationStatus>,
+    #[doc = "The recommendation action of the machine or rule"]
     #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_action: Option<RecommendationAction>,
+    #[doc = "The full resource id of the machine"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<VmResourceId>,
+    #[doc = "The machine supportability of Enforce feature"]
     #[serde(rename = "enforcementSupport", default, skip_serializing_if = "Option::is_none")]
     pub enforcement_support: Option<EnforcementSupport>,
 }
@@ -4884,10 +5835,12 @@ impl VmRecommendation {
 }
 pub type VmRecommendations = Vec<VmRecommendation>;
 pub type VmResourceId = String;
+#[doc = "Configures where to store the OMS agent data for workspaces under a scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Workspace setting data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceSettingProperties>,
 }
@@ -4896,9 +5849,12 @@ impl WorkspaceSetting {
         Self::default()
     }
 }
+#[doc = "List of workspace settings response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceSettingList {
+    #[doc = "List of workspace settings"]
     pub value: Vec<WorkspaceSetting>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4907,10 +5863,13 @@ impl WorkspaceSettingList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Workspace setting data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceSettingProperties {
+    #[doc = "The full Azure ID of the workspace to save the data in"]
     #[serde(rename = "workspaceId")]
     pub workspace_id: String,
+    #[doc = "All the VMs in this scope will send their security data to the mentioned workspace unless overridden by a setting with more specific scope"]
     pub scope: String,
 }
 impl WorkspaceSettingProperties {
@@ -4918,10 +5877,13 @@ impl WorkspaceSettingProperties {
         Self { workspace_id, scope }
     }
 }
+#[doc = "The security offering details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudOffering {
+    #[doc = "The type of the security offering."]
     #[serde(rename = "offeringType")]
     pub offering_type: cloud_offering::OfferingType,
+    #[doc = "The offering description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -4935,17 +5897,21 @@ impl CloudOffering {
 }
 pub mod cloud_offering {
     use super::*;
+    #[doc = "The type of the security offering."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OfferingType {
         CspmMonitorAws,
         DefenderForContainersAws,
         DefenderForServersAws,
+        InformationProtectionAws,
     }
 }
+#[doc = "The CSPM monitoring for AWS offering configurations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CspmMonitorAwsOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
+    #[doc = "The native cloud connection configuration"]
     #[serde(rename = "nativeCloudConnection", default, skip_serializing_if = "Option::is_none")]
     pub native_cloud_connection: Option<cspm_monitor_aws_offering::NativeCloudConnection>,
 }
@@ -4959,8 +5925,10 @@ impl CspmMonitorAwsOffering {
 }
 pub mod cspm_monitor_aws_offering {
     use super::*;
+    #[doc = "The native cloud connection configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct NativeCloudConnection {
+        #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
@@ -4970,12 +5938,15 @@ pub mod cspm_monitor_aws_offering {
         }
     }
 }
+#[doc = "Custom Assessment Automation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomation {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "describes the Custom Assessment Automation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomAssessmentAutomationProperties>,
 }
@@ -4984,20 +5955,28 @@ impl CustomAssessmentAutomation {
         Self::default()
     }
 }
+#[doc = "describes the Custom Assessment Automation properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationProperties {
+    #[doc = "GZip encoded KQL query representing the assessment automation results required."]
     #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
     pub compressed_query: Option<String>,
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
     pub supported_cloud: Option<custom_assessment_automation_properties::SupportedCloud>,
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<custom_assessment_automation_properties::Severity>,
+    #[doc = "The display name of the assessments generated by this assessment automation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The remediation description to relate to the assessments generated by this assessment automation."]
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
+    #[doc = "The assessment metadata key used when an assessment is generated for this assessment automation."]
     #[serde(rename = "assessmentKey", default, skip_serializing_if = "Option::is_none")]
     pub assessment_key: Option<String>,
 }
@@ -5008,11 +5987,15 @@ impl CustomAssessmentAutomationProperties {
 }
 pub mod custom_assessment_automation_properties {
     use super::*;
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedCloud {
         #[serde(rename = "AWS")]
         Aws,
+        #[serde(rename = "GCP")]
+        Gcp,
     }
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         High,
@@ -5020,10 +6003,12 @@ pub mod custom_assessment_automation_properties {
         Low,
     }
 }
+#[doc = "Custom Assessment Automation request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationRequest {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes the Custom Assessment Automation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomAssessmentAutomationRequestProperties>,
 }
@@ -5032,18 +6017,25 @@ impl CustomAssessmentAutomationRequest {
         Self::default()
     }
 }
+#[doc = "describes the Custom Assessment Automation properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationRequestProperties {
+    #[doc = "Base 64 encoded KQL query representing the assessment automation results required."]
     #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
     pub compressed_query: Option<String>,
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
     pub supported_cloud: Option<custom_assessment_automation_request_properties::SupportedCloud>,
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<custom_assessment_automation_request_properties::Severity>,
+    #[doc = "The display name of the assessments generated by this assessment automation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The remediation description to relate to the assessments generated by this assessment automation."]
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
 }
@@ -5054,11 +6046,15 @@ impl CustomAssessmentAutomationRequestProperties {
 }
 pub mod custom_assessment_automation_request_properties {
     use super::*;
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedCloud {
         #[serde(rename = "AWS")]
         Aws,
+        #[serde(rename = "GCP")]
+        Gcp,
     }
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         High,
@@ -5066,10 +6062,13 @@ pub mod custom_assessment_automation_request_properties {
         Low,
     }
 }
+#[doc = "A list of Custom Assessment Automations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationsListResult {
+    #[doc = "Collection of Custom Assessment Automations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomAssessmentAutomation>,
+    #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5078,16 +6077,21 @@ impl CustomAssessmentAutomationsListResult {
         Self::default()
     }
 }
+#[doc = "The Defender for Containers AWS offering configurations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefenderForContainersAwsOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
+    #[doc = "The kubernetes service connection configuration"]
     #[serde(rename = "kubernetesService", default, skip_serializing_if = "Option::is_none")]
     pub kubernetes_service: Option<defender_for_containers_aws_offering::KubernetesService>,
+    #[doc = "The kubernetes to scuba connection configuration"]
     #[serde(rename = "kubernetesScubaReader", default, skip_serializing_if = "Option::is_none")]
     pub kubernetes_scuba_reader: Option<defender_for_containers_aws_offering::KubernetesScubaReader>,
+    #[doc = "The cloudwatch to kinesis connection configuration"]
     #[serde(rename = "cloudWatchToKinesis", default, skip_serializing_if = "Option::is_none")]
     pub cloud_watch_to_kinesis: Option<defender_for_containers_aws_offering::CloudWatchToKinesis>,
+    #[doc = "The kinesis to s3 connection configuration"]
     #[serde(rename = "kinesisToS3", default, skip_serializing_if = "Option::is_none")]
     pub kinesis_to_s3: Option<defender_for_containers_aws_offering::KinesisToS3>,
 }
@@ -5104,8 +6108,10 @@ impl DefenderForContainersAwsOffering {
 }
 pub mod defender_for_containers_aws_offering {
     use super::*;
+    #[doc = "The kubernetes service connection configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KubernetesService {
+        #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
@@ -5114,8 +6120,10 @@ pub mod defender_for_containers_aws_offering {
             Self::default()
         }
     }
+    #[doc = "The kubernetes to scuba connection configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KubernetesScubaReader {
+        #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
@@ -5124,8 +6132,10 @@ pub mod defender_for_containers_aws_offering {
             Self::default()
         }
     }
+    #[doc = "The cloudwatch to kinesis connection configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct CloudWatchToKinesis {
+        #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
@@ -5134,8 +6144,10 @@ pub mod defender_for_containers_aws_offering {
             Self::default()
         }
     }
+    #[doc = "The kinesis to s3 connection configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KinesisToS3 {
+        #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
@@ -5145,12 +6157,15 @@ pub mod defender_for_containers_aws_offering {
         }
     }
 }
+#[doc = "The Defender for Servers AWS offering configurations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefenderForServersAwsOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
+    #[doc = "The Defender for servers connection configuration"]
     #[serde(rename = "defenderForServers", default, skip_serializing_if = "Option::is_none")]
     pub defender_for_servers: Option<defender_for_servers_aws_offering::DefenderForServers>,
+    #[doc = "The ARC autoprovisioning configuration"]
     #[serde(rename = "arcAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
     pub arc_auto_provisioning: Option<defender_for_servers_aws_offering::ArcAutoProvisioning>,
 }
@@ -5165,8 +6180,10 @@ impl DefenderForServersAwsOffering {
 }
 pub mod defender_for_servers_aws_offering {
     use super::*;
+    #[doc = "The Defender for servers connection configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct DefenderForServers {
+        #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
@@ -5175,10 +6192,13 @@ pub mod defender_for_servers_aws_offering {
             Self::default()
         }
     }
+    #[doc = "The ARC autoprovisioning configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ArcAutoProvisioning {
+        #[doc = "Is arc auto provisioning enabled"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
+        #[doc = "Metadata of Service Principal secret for autoprovisioning"]
         #[serde(rename = "servicePrincipalSecretMetadata", default, skip_serializing_if = "Option::is_none")]
         pub service_principal_secret_metadata: Option<arc_auto_provisioning::ServicePrincipalSecretMetadata>,
     }
@@ -5189,12 +6209,16 @@ pub mod defender_for_servers_aws_offering {
     }
     pub mod arc_auto_provisioning {
         use super::*;
+        #[doc = "Metadata of Service Principal secret for autoprovisioning"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ServicePrincipalSecretMetadata {
+            #[doc = "expiration date of service principal secret"]
             #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
             pub expiry_date: Option<String>,
+            #[doc = "region of parameter store where secret is kept"]
             #[serde(rename = "parameterStoreRegion", default, skip_serializing_if = "Option::is_none")]
             pub parameter_store_region: Option<String>,
+            #[doc = "name of secret resource in parameter store"]
             #[serde(rename = "parameterNameInStore", default, skip_serializing_if = "Option::is_none")]
             pub parameter_name_in_store: Option<String>,
         }
@@ -5205,10 +6229,45 @@ pub mod defender_for_servers_aws_offering {
         }
     }
 }
+#[doc = "The information protection for AWS offering configurations"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InformationProtectionAwsOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+    #[doc = "The native cloud connection configuration"]
+    #[serde(rename = "informationProtection", default, skip_serializing_if = "Option::is_none")]
+    pub information_protection: Option<information_protection_aws_offering::InformationProtection>,
+}
+impl InformationProtectionAwsOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            information_protection: None,
+        }
+    }
+}
+pub mod information_protection_aws_offering {
+    use super::*;
+    #[doc = "The native cloud connection configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct InformationProtection {
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl InformationProtection {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "List of security controls definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlDefinitionList {
+    #[doc = "Collection of security controls definition in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecureScoreControlDefinitionItem>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5246,17 +6305,24 @@ impl SecuritySolutionsReferenceDataList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecuritySolutionsReferenceDataProperties {
+    #[doc = "The security family of the security solution"]
     #[serde(rename = "securityFamily")]
     pub security_family: security_solutions_reference_data_properties::SecurityFamily,
+    #[doc = "The security solutions' vendor name"]
     #[serde(rename = "alertVendorName")]
     pub alert_vendor_name: String,
+    #[doc = "The security solutions' package info url"]
     #[serde(rename = "packageInfoUrl")]
     pub package_info_url: String,
+    #[doc = "The security solutions' product name"]
     #[serde(rename = "productName")]
     pub product_name: String,
+    #[doc = "The security solutions' publisher"]
     pub publisher: String,
+    #[doc = "The security solutions' publisher display name"]
     #[serde(rename = "publisherDisplayName")]
     pub publisher_display_name: String,
+    #[doc = "The security solutions' template"]
     pub template: String,
 }
 impl SecuritySolutionsReferenceDataProperties {
@@ -5282,6 +6348,7 @@ impl SecuritySolutionsReferenceDataProperties {
 }
 pub mod security_solutions_reference_data_properties {
     use super::*;
+    #[doc = "The security family of the security solution"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SecurityFamily {
         Waf,
@@ -5290,18 +6357,25 @@ pub mod security_solutions_reference_data_properties {
         Va,
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -5312,6 +6386,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -5319,6 +6394,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

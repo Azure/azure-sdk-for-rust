@@ -1,6 +1,4 @@
-use crate::headers::*;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers::{self, Header};
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy)]
@@ -12,20 +10,12 @@ impl From<Duration> for LeaseBreakPeriod {
     }
 }
 
-impl AddAsHeader for LeaseBreakPeriod {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(LEASE_BREAK_PERIOD, &format!("{}", self.0.as_secs()))
+impl Header for LeaseBreakPeriod {
+    fn name(&self) -> headers::HeaderName {
+        headers::LEASE_BREAK_PERIOD.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            LEASE_BREAK_PERIOD,
-            http::HeaderValue::from(self.0.as_secs()),
-        );
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        format!("{}", self.0.as_secs()).into()
     }
 }

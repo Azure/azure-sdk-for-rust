@@ -17,6 +17,8 @@ use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Duration;
 
+/// Start the device authorization grant flow.
+/// The user has only 15 minutes to sign in (the usual value for expires_in).
 pub async fn start<'a, 'b, T>(
     client: &'a reqwest::Client,
     tenant_id: T,
@@ -45,7 +47,7 @@ where
         .body(encoded)
         .send()
         .await
-        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
+        .map_err(|e| DeviceCodeError::Request(Box::new(e)))?;
 
     if !response.status().is_success() {
         return Err(DeviceCodeError::UnsuccessfulResponse(
@@ -56,19 +58,19 @@ where
     let s = response
         .text()
         .await
-        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
+        .map_err(|e| DeviceCodeError::Request(Box::new(e)))?;
 
     serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
         // we need to capture some variables that will be useful in
         // the second phase (the client, the tenant_id and the client_id)
-        .map(|device_code_reponse| {
+        .map(|device_code_response| {
             Ok(DeviceCodePhaseOneResponse {
-                device_code: device_code_reponse.device_code,
-                user_code: device_code_reponse.user_code,
-                verification_uri: device_code_reponse.verification_uri,
-                expires_in: device_code_reponse.expires_in,
-                interval: device_code_reponse.interval,
-                message: device_code_reponse.message,
+                device_code: device_code_response.device_code,
+                user_code: device_code_response.user_code,
+                verification_uri: device_code_response.verification_uri,
+                expires_in: device_code_response.expires_in,
+                interval: device_code_response.interval,
+                message: device_code_response.message,
                 client: Some(client),
                 tenant_id,
                 client_id: client_id.as_str().to_string(),
@@ -77,6 +79,7 @@ where
         .map_err(|_| DeviceCodeError::InvalidResponseBody(s))?
 }
 
+/// Contains the required information to allow a user to sign in.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DeviceCodePhaseOneResponse<'a> {
     device_code: String,
@@ -98,10 +101,13 @@ pub struct DeviceCodePhaseOneResponse<'a> {
 }
 
 impl<'a> DeviceCodePhaseOneResponse<'a> {
+    /// The message containing human readable instructions for the user.
     pub fn message(&self) -> &str {
         &self.message
     }
 
+    /// Polls the token endpoint while the user signs in.
+    /// This will continue until either success or error is returned.
     pub fn stream(
         &self,
     ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + '_ {
@@ -139,7 +145,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                         .body(encoded)
                         .send()
                         .await
-                        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))
+                        .map_err(|e| DeviceCodeError::Request(Box::new(e)))
                     {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
@@ -148,7 +154,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     let result = match result
                         .text()
                         .await
-                        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))
+                        .map_err(|e| DeviceCodeError::Request(Box::new(e)))
                     {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
@@ -160,7 +166,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     match result.try_into() {
                         Ok(device_code_response) => {
                             let next_state = match &device_code_response {
-                                DeviceCodeResponse::AuthorizationSucceded(_) => NextState::Finish,
+                                DeviceCodeResponse::AuthorizationSucceeded(_) => NextState::Finish,
                                 DeviceCodeResponse::AuthorizationPending(_) => NextState::Continue,
                             };
 

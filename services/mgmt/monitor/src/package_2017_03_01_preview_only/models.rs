@@ -2,13 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Azure activity log alert."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlert {
+    #[doc = "A list of resourceIds that will be used as prefixes. The alert will only apply to activityLogs with resourceIds that fall under one of these prefixes. This list must include at least one item."]
     pub scopes: Vec<String>,
+    #[doc = "Indicates whether this activity log alert is enabled. If an activity log alert is not enabled, then none of its actions will be activated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "An Activity Log alert condition that is met when all its member conditions are met."]
     pub condition: ActivityLogAlertAllOfCondition,
+    #[doc = "A list of activity log alert actions."]
     pub actions: ActivityLogAlertActionList,
+    #[doc = "A description of this activity log alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -23,10 +29,13 @@ impl ActivityLogAlert {
         }
     }
 }
+#[doc = "A pointer to an Azure Action Group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertActionGroup {
+    #[doc = "The resourceId of the action group. This cannot be null or empty."]
     #[serde(rename = "actionGroupId")]
     pub action_group_id: String,
+    #[doc = "The dictionary of custom properties to include with the post operation. These data are appended to the webhook payload."]
     #[serde(rename = "webhookProperties", default, skip_serializing_if = "Option::is_none")]
     pub webhook_properties: Option<serde_json::Value>,
 }
@@ -38,8 +47,10 @@ impl ActivityLogAlertActionGroup {
         }
     }
 }
+#[doc = "A list of activity log alert actions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityLogAlertActionList {
+    #[doc = "The list of activity log alerts."]
     #[serde(rename = "actionGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub action_groups: Vec<ActivityLogAlertActionGroup>,
 }
@@ -48,8 +59,10 @@ impl ActivityLogAlertActionList {
         Self::default()
     }
 }
+#[doc = "An Activity Log alert condition that is met when all its member conditions are met."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertAllOfCondition {
+    #[doc = "The list of activity log alert conditions."]
     #[serde(rename = "allOf")]
     pub all_of: Vec<ActivityLogAlertLeafCondition>,
 }
@@ -58,9 +71,12 @@ impl ActivityLogAlertAllOfCondition {
         Self { all_of }
     }
 }
+#[doc = "An Activity Log alert condition that is met by comparing an activity log field and value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertLeafCondition {
+    #[doc = "The name of the field that this condition will examine. The possible values for this field are (case-insensitive): 'resourceId', 'category', 'caller', 'level', 'operationName', 'resourceGroup', 'resourceProvider', 'status', 'subStatus', 'resourceType', or anything beginning with 'properties.'."]
     pub field: String,
+    #[doc = "The field value will be compared to this value (case-insensitive) to determine if the condition is met."]
     pub equals: String,
 }
 impl ActivityLogAlertLeafCondition {
@@ -68,8 +84,10 @@ impl ActivityLogAlertLeafCondition {
         Self { field, equals }
     }
 }
+#[doc = "A list of activity log alerts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityLogAlertList {
+    #[doc = "The list of activity log alerts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActivityLogAlertResource>,
 }
@@ -78,8 +96,10 @@ impl ActivityLogAlertList {
         Self::default()
     }
 }
+#[doc = "An Azure activity log alert for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityLogAlertPatch {
+    #[doc = "Indicates whether this activity log alert is enabled. If an activity log alert is not enabled, then none of its actions will be activated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -88,10 +108,12 @@ impl ActivityLogAlertPatch {
         Self::default()
     }
 }
+#[doc = "An activity log alert resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An Azure activity log alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActivityLogAlert>,
 }
@@ -103,10 +125,12 @@ impl ActivityLogAlertResource {
         }
     }
 }
+#[doc = "An activity log alert resource for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertResourcePatch {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An Azure activity log alert for patch operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActivityLogAlertPatch>,
 }
@@ -118,10 +142,13 @@ impl ActivityLogAlertResourcePatch {
         }
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -130,15 +157,21 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

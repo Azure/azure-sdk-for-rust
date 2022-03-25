@@ -3,15 +3,13 @@
 // in general, we want to avoid this
 // https://github.com/Azure/azure-sdk-for-rust/issues/563
 
-use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, path, Spec, SpecReadme};
+use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, io, Result, Spec, SpecReadme};
 use std::collections::BTreeSet;
-
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
     println!("CONTROL PLANE");
     check(&get_mgmt_readmes()?)?;
-    println!("");
+    println!();
     println!("DATA PLANE");
     check(&get_svc_readmes()?)?;
     Ok(())
@@ -22,17 +20,17 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
     let mut tags = 0;
     for readme in readmes {
         let readme_path = readme.readme();
-        for config in readme.configs()? {
-            let input_files = path::join_several(readme_path, &config.input_files())?;
+        for tag in readme.config()?.tags() {
+            let input_files = io::join_several(readme_path, &tag.input_files())?;
             match Spec::read_files(&input_files) {
                 Ok(spec) => {
                     let versions = spec.api_versions();
                     if versions.len() > 1 {
-                        println!("{} {}", readme.spec(), &config.tag);
+                        println!("{} {}", readme.spec(), &tag.name());
                         for version in versions {
                             println!("  {}", version);
                         }
-                        tags = tags + 1;
+                        tags += 1;
                         services.insert(readme.spec());
                     }
                 }
@@ -41,7 +39,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
             }
         }
     }
-    println!("");
+    println!();
     println!("{} tags", tags);
     println!("{} services:", services.len());
     for service in services {

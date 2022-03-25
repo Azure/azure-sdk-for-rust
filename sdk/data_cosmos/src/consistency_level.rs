@@ -1,9 +1,6 @@
-use crate::headers;
 use crate::operations::*;
 use crate::resources::user::UserResponse;
-use crate::responses::*;
-use azure_core::AddAsHeader;
-use http::request;
+use azure_core::headers::{self, AsHeaders};
 use serde::de::DeserializeOwned;
 
 /// The consistency guarantee provided by Cosmos.
@@ -64,21 +61,20 @@ macro_rules! implement_from {
     };
 }
 
-implement_from!(CreateSlugAttachmentResponse);
+implement_from!(CreateOrReplaceSlugAttachmentResponse);
 implement_from!(GetCollectionResponse);
 implement_from!(UserResponse);
 implement_from!(DeleteAttachmentResponse);
-implement_from!(ReplaceReferenceAttachmentResponse);
-implement_from!(CreateReferenceAttachmentResponse);
+implement_from!(CreateOrReplaceAttachmentResponse);
 implement_from!(ListAttachmentsResponse);
 implement_from!(GetAttachmentResponse);
 implement_from!(CreateDocumentResponse);
 implement_from!(ReplaceDocumentResponse);
 implement_from!(DeleteDocumentResponse);
-implement_from!(CreateUserDefinedFunctionResponse);
+implement_from!(CreateOrReplaceUserDefinedFunctionResponse);
 implement_from!(DeleteUserDefinedFunctionResponse);
 implement_from!(ListUserDefinedFunctionsResponse);
-implement_from!(CreateTriggerResponse);
+implement_from!(CreateOrReplaceTriggerResponse);
 implement_from!(ListTriggersResponse);
 implement_from!(DeleteTriggerResponse);
 implement_from!(ListDocumentsResponse, T);
@@ -108,40 +104,23 @@ where
     }
 }
 
-impl AddAsHeader for ConsistencyLevel {
-    fn add_as_header(&self, builder: request::Builder) -> request::Builder {
-        let builder = builder.header(
-            headers::HEADER_CONSISTENCY_LEVEL,
-            self.to_consistency_level_header(),
-        );
+impl AsHeaders for ConsistencyLevel {
+    type Iter = std::vec::IntoIter<(headers::HeaderName, headers::HeaderValue)>;
+    fn as_headers(&self) -> Self::Iter {
+        let mut headers = vec![(
+            crate::headers::HEADER_CONSISTENCY_LEVEL.into(),
+            self.to_consistency_level_header().into(),
+        )];
 
         // if we have a Session consistency level we make sure to pass
         // the x-ms-session-token header too.
         if let ConsistencyLevel::Session(session_token) = self {
-            builder.header(headers::HEADER_SESSION_TOKEN, session_token)
-        } else {
-            builder
-        }
-    }
-
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_CONSISTENCY_LEVEL,
-            http::header::HeaderValue::from_str(self.to_consistency_level_header())?,
-        );
-
-        // if we have a Session consistency level we make sure to pass
-        // the x-ms-session-token header too.
-        if let ConsistencyLevel::Session(session_token) = self {
-            request.headers_mut().append(
-                headers::HEADER_SESSION_TOKEN,
-                http::header::HeaderValue::from_str(session_token)?,
-            );
+            headers.push((
+                crate::headers::HEADER_SESSION_TOKEN.into(),
+                session_token.into(),
+            ))
         }
 
-        Ok(())
+        headers.into_iter()
     }
 }

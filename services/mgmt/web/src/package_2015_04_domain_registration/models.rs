@@ -2,15 +2,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Address information for domain registration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Address {
+    #[doc = "First line of an Address."]
     pub address1: String,
+    #[doc = "The second line of the Address. Optional."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address2: Option<String>,
+    #[doc = "The city for the address."]
     pub city: String,
+    #[doc = "The country for the address."]
     pub country: String,
+    #[doc = "The postal code for the address."]
     #[serde(rename = "postalCode")]
     pub postal_code: String,
+    #[doc = "The state or province for the address."]
     pub state: String,
 }
 impl Address {
@@ -25,23 +32,33 @@ impl Address {
         }
     }
 }
+#[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Contact {
+    #[doc = "Address information for domain registration."]
     #[serde(rename = "addressMailing", default, skip_serializing_if = "Option::is_none")]
     pub address_mailing: Option<Address>,
+    #[doc = "Email address."]
     pub email: String,
+    #[doc = "Fax number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fax: Option<String>,
+    #[doc = "Job title."]
     #[serde(rename = "jobTitle", default, skip_serializing_if = "Option::is_none")]
     pub job_title: Option<String>,
+    #[doc = "First name."]
     #[serde(rename = "nameFirst")]
     pub name_first: String,
+    #[doc = "Last name."]
     #[serde(rename = "nameLast")]
     pub name_last: String,
+    #[doc = "Middle name."]
     #[serde(rename = "nameMiddle", default, skip_serializing_if = "Option::is_none")]
     pub name_middle: Option<String>,
+    #[doc = "Organization contact belongs to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub organization: Option<String>,
+    #[doc = "Phone number."]
     pub phone: String,
 }
 impl Contact {
@@ -59,9 +76,12 @@ impl Contact {
         }
     }
 }
+#[doc = "Collection of Azure resource manager operation metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CsmOperationCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<CsmOperationDescription>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -70,14 +90,17 @@ impl CsmOperationCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "Description of an operation available for Microsoft.Web resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Meta data about operation used for display in portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<CsmOperationDisplay>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Properties available for a Microsoft.Web resource provider operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CsmOperationDescriptionProperties>,
 }
@@ -86,8 +109,10 @@ impl CsmOperationDescription {
         Self::default()
     }
 }
+#[doc = "Properties available for a Microsoft.Web resource provider operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDescriptionProperties {
+    #[doc = "Resource metrics service provided by Microsoft.Insights resource provider."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -96,6 +121,7 @@ impl CsmOperationDescriptionProperties {
         Self::default()
     }
 }
+#[doc = "Meta data about operation used for display in portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -112,6 +138,7 @@ impl CsmOperationDisplay {
         Self::default()
     }
 }
+#[doc = "Dimension of a resource metric. For e.g. instance specific HTTP requests for a web app, \nwhere instance name is dimension of the metric HTTP request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -128,10 +155,12 @@ impl Dimension {
         Self::default()
     }
 }
+#[doc = "Information about a domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Domain {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Domain resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<domain::Properties>,
 }
@@ -145,43 +174,63 @@ impl Domain {
 }
 pub mod domain {
     use super::*;
+    #[doc = "Domain resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactAdmin")]
         pub contact_admin: Contact,
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactBilling")]
         pub contact_billing: Contact,
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactRegistrant")]
         pub contact_registrant: Contact,
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactTech")]
         pub contact_tech: Contact,
+        #[doc = "Domain registration status."]
         #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
         pub registration_status: Option<properties::RegistrationStatus>,
+        #[doc = "Domain provisioning state."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "Name servers."]
         #[serde(rename = "nameServers", default, skip_serializing_if = "Vec::is_empty")]
         pub name_servers: Vec<String>,
+        #[doc = "<code>true</code> if domain privacy is enabled for this domain; otherwise, <code>false</code>."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub privacy: Option<bool>,
+        #[doc = "Domain creation timestamp."]
         #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
         pub created_time: Option<String>,
+        #[doc = "Domain expiration timestamp."]
         #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
         pub expiration_time: Option<String>,
+        #[doc = "Timestamp when the domain was renewed last time."]
         #[serde(rename = "lastRenewedTime", default, skip_serializing_if = "Option::is_none")]
         pub last_renewed_time: Option<String>,
+        #[doc = "<code>true</code> if the domain should be automatically renewed; otherwise, <code>false</code>."]
         #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
         pub auto_renew: Option<bool>,
+        #[doc = "<code>true</code> if Azure can assign this domain to App Service apps; otherwise, <code>false</code>. This value will be <code>true</code> if domain registration status is active and \n it is hosted on name servers Azure has programmatic access to."]
         #[serde(rename = "readyForDnsRecordManagement", default, skip_serializing_if = "Option::is_none")]
         pub ready_for_dns_record_management: Option<bool>,
+        #[doc = "All hostnames derived from the domain and assigned to Azure resources."]
         #[serde(rename = "managedHostNames", default, skip_serializing_if = "Vec::is_empty")]
         pub managed_host_names: Vec<HostName>,
+        #[doc = "Domain purchase consent object, representing acceptance of applicable legal agreements."]
         pub consent: DomainPurchaseConsent,
+        #[doc = "Reasons why domain is not renewable."]
         #[serde(rename = "domainNotRenewableReasons", default, skip_serializing_if = "Vec::is_empty")]
         pub domain_not_renewable_reasons: Vec<String>,
+        #[doc = "Current DNS type"]
         #[serde(rename = "dnsType", default, skip_serializing_if = "Option::is_none")]
         pub dns_type: Option<properties::DnsType>,
+        #[doc = "Azure DNS Zone to use"]
         #[serde(rename = "dnsZoneId", default, skip_serializing_if = "Option::is_none")]
         pub dns_zone_id: Option<String>,
+        #[doc = "Target DNS type (would be used for migration)"]
         #[serde(rename = "targetDnsType", default, skip_serializing_if = "Option::is_none")]
         pub target_dns_type: Option<properties::TargetDnsType>,
         #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
@@ -221,6 +270,7 @@ pub mod domain {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Domain registration status."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum RegistrationStatus {
             Active,
@@ -245,6 +295,7 @@ pub mod domain {
             Updated,
             JsonConverterFailed,
         }
+        #[doc = "Domain provisioning state."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProvisioningState {
             Succeeded,
@@ -253,11 +304,13 @@ pub mod domain {
             InProgress,
             Deleting,
         }
+        #[doc = "Current DNS type"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum DnsType {
             AzureDns,
             DefaultDomainRegistrarDns,
         }
+        #[doc = "Target DNS type (would be used for migration)"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum TargetDnsType {
             AzureDns,
@@ -265,12 +318,16 @@ pub mod domain {
         }
     }
 }
+#[doc = "Domain availability check result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainAvailablilityCheckResult {
+    #[doc = "Name of the domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "<code>true</code> if domain can be purchased using CreateDomain API; otherwise, <code>false</code>."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
+    #[doc = "Valid values are Regular domain: Azure will charge the full price of domain registration, SoftDeleted: Purchasing this domain will simply restore it and this operation will not cost anything."]
     #[serde(rename = "domainType", default, skip_serializing_if = "Option::is_none")]
     pub domain_type: Option<domain_availablility_check_result::DomainType>,
 }
@@ -281,15 +338,19 @@ impl DomainAvailablilityCheckResult {
 }
 pub mod domain_availablility_check_result {
     use super::*;
+    #[doc = "Valid values are Regular domain: Azure will charge the full price of domain registration, SoftDeleted: Purchasing this domain will simply restore it and this operation will not cost anything."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DomainType {
         Regular,
         SoftDeleted,
     }
 }
+#[doc = "Collection of domains."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<Domain>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -298,12 +359,16 @@ impl DomainCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "Single sign-on request information for domain management."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainControlCenterSsoRequest {
+    #[doc = "URL where the single sign-on request is to be made."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "Post parameter key."]
     #[serde(rename = "postParameterKey", default, skip_serializing_if = "Option::is_none")]
     pub post_parameter_key: Option<String>,
+    #[doc = "Post parameter value. Client should use 'application/x-www-form-urlencoded' encoding for this value."]
     #[serde(rename = "postParameterValue", default, skip_serializing_if = "Option::is_none")]
     pub post_parameter_value: Option<String>,
 }
@@ -312,10 +377,12 @@ impl DomainControlCenterSsoRequest {
         Self::default()
     }
 }
+#[doc = "Domain ownership Identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainOwnershipIdentifier {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "DomainOwnershipIdentifier resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<domain_ownership_identifier::Properties>,
 }
@@ -326,8 +393,10 @@ impl DomainOwnershipIdentifier {
 }
 pub mod domain_ownership_identifier {
     use super::*;
+    #[doc = "DomainOwnershipIdentifier resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Ownership Id."]
         #[serde(rename = "ownershipId", default, skip_serializing_if = "Option::is_none")]
         pub ownership_id: Option<String>,
     }
@@ -337,9 +406,12 @@ pub mod domain_ownership_identifier {
         }
     }
 }
+#[doc = "Collection of domain ownership identifiers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainOwnershipIdentifierCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<DomainOwnershipIdentifier>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -348,10 +420,12 @@ impl DomainOwnershipIdentifierCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "ARM resource for a domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainPatchResource {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "DomainPatchResource resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<domain_patch_resource::Properties>,
 }
@@ -362,43 +436,63 @@ impl DomainPatchResource {
 }
 pub mod domain_patch_resource {
     use super::*;
+    #[doc = "DomainPatchResource resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactAdmin")]
         pub contact_admin: Contact,
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactBilling")]
         pub contact_billing: Contact,
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactRegistrant")]
         pub contact_registrant: Contact,
+        #[doc = "Contact information for domain registration. If 'Domain Privacy' option is not selected then the contact information is made publicly available through the Whois \ndirectories as per ICANN requirements."]
         #[serde(rename = "contactTech")]
         pub contact_tech: Contact,
+        #[doc = "Domain registration status."]
         #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
         pub registration_status: Option<properties::RegistrationStatus>,
+        #[doc = "Domain provisioning state."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "Name servers."]
         #[serde(rename = "nameServers", default, skip_serializing_if = "Vec::is_empty")]
         pub name_servers: Vec<String>,
+        #[doc = "<code>true</code> if domain privacy is enabled for this domain; otherwise, <code>false</code>."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub privacy: Option<bool>,
+        #[doc = "Domain creation timestamp."]
         #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
         pub created_time: Option<String>,
+        #[doc = "Domain expiration timestamp."]
         #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
         pub expiration_time: Option<String>,
+        #[doc = "Timestamp when the domain was renewed last time."]
         #[serde(rename = "lastRenewedTime", default, skip_serializing_if = "Option::is_none")]
         pub last_renewed_time: Option<String>,
+        #[doc = "<code>true</code> if the domain should be automatically renewed; otherwise, <code>false</code>."]
         #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
         pub auto_renew: Option<bool>,
+        #[doc = "<code>true</code> if Azure can assign this domain to App Service apps; otherwise, <code>false</code>. This value will be <code>true</code> if domain registration status is active and \n it is hosted on name servers Azure has programmatic access to."]
         #[serde(rename = "readyForDnsRecordManagement", default, skip_serializing_if = "Option::is_none")]
         pub ready_for_dns_record_management: Option<bool>,
+        #[doc = "All hostnames derived from the domain and assigned to Azure resources."]
         #[serde(rename = "managedHostNames", default, skip_serializing_if = "Vec::is_empty")]
         pub managed_host_names: Vec<HostName>,
+        #[doc = "Domain purchase consent object, representing acceptance of applicable legal agreements."]
         pub consent: DomainPurchaseConsent,
+        #[doc = "Reasons why domain is not renewable."]
         #[serde(rename = "domainNotRenewableReasons", default, skip_serializing_if = "Vec::is_empty")]
         pub domain_not_renewable_reasons: Vec<String>,
+        #[doc = "Current DNS type"]
         #[serde(rename = "dnsType", default, skip_serializing_if = "Option::is_none")]
         pub dns_type: Option<properties::DnsType>,
+        #[doc = "Azure DNS Zone to use"]
         #[serde(rename = "dnsZoneId", default, skip_serializing_if = "Option::is_none")]
         pub dns_zone_id: Option<String>,
+        #[doc = "Target DNS type (would be used for migration)"]
         #[serde(rename = "targetDnsType", default, skip_serializing_if = "Option::is_none")]
         pub target_dns_type: Option<properties::TargetDnsType>,
         #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
@@ -438,6 +532,7 @@ pub mod domain_patch_resource {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Domain registration status."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum RegistrationStatus {
             Active,
@@ -462,6 +557,7 @@ pub mod domain_patch_resource {
             Updated,
             JsonConverterFailed,
         }
+        #[doc = "Domain provisioning state."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProvisioningState {
             Succeeded,
@@ -470,11 +566,13 @@ pub mod domain_patch_resource {
             InProgress,
             Deleting,
         }
+        #[doc = "Current DNS type"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum DnsType {
             AzureDns,
             DefaultDomainRegistrarDns,
         }
+        #[doc = "Target DNS type (would be used for migration)"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum TargetDnsType {
             AzureDns,
@@ -482,12 +580,16 @@ pub mod domain_patch_resource {
         }
     }
 }
+#[doc = "Domain purchase consent object, representing acceptance of applicable legal agreements."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainPurchaseConsent {
+    #[doc = "List of applicable legal agreement keys. This list can be retrieved using ListLegalAgreements API under <code>TopLevelDomain</code> resource."]
     #[serde(rename = "agreementKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub agreement_keys: Vec<String>,
+    #[doc = "Client IP address."]
     #[serde(rename = "agreedBy", default, skip_serializing_if = "Option::is_none")]
     pub agreed_by: Option<String>,
+    #[doc = "Timestamp when the agreements were accepted."]
     #[serde(rename = "agreedAt", default, skip_serializing_if = "Option::is_none")]
     pub agreed_at: Option<String>,
 }
@@ -496,10 +598,13 @@ impl DomainPurchaseConsent {
         Self::default()
     }
 }
+#[doc = "Domain recommendation search parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainRecommendationSearchParameters {
+    #[doc = "Keywords to be used for generating domain recommendations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keywords: Option<String>,
+    #[doc = "Maximum number of recommendations."]
     #[serde(rename = "maxDomainRecommendations", default, skip_serializing_if = "Option::is_none")]
     pub max_domain_recommendations: Option<i32>,
 }
@@ -508,10 +613,13 @@ impl DomainRecommendationSearchParameters {
         Self::default()
     }
 }
+#[doc = "Error Response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -520,18 +628,25 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Details of a hostname derived from a domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostName {
+    #[doc = "Name of the hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "List of apps the hostname is assigned to. This list will have more than one app only if the hostname is pointing to a Traffic Manager."]
     #[serde(rename = "siteNames", default, skip_serializing_if = "Vec::is_empty")]
     pub site_names: Vec<String>,
+    #[doc = "Name of the Azure resource the hostname is assigned to. If it is assigned to a Traffic Manager then it will be the Traffic Manager name otherwise it will be the app name."]
     #[serde(rename = "azureResourceName", default, skip_serializing_if = "Option::is_none")]
     pub azure_resource_name: Option<String>,
+    #[doc = "Type of the Azure resource the hostname is assigned to."]
     #[serde(rename = "azureResourceType", default, skip_serializing_if = "Option::is_none")]
     pub azure_resource_type: Option<host_name::AzureResourceType>,
+    #[doc = "Type of the DNS record."]
     #[serde(rename = "customHostNameDnsRecordType", default, skip_serializing_if = "Option::is_none")]
     pub custom_host_name_dns_record_type: Option<host_name::CustomHostNameDnsRecordType>,
+    #[doc = "Type of the hostname."]
     #[serde(rename = "hostNameType", default, skip_serializing_if = "Option::is_none")]
     pub host_name_type: Option<host_name::HostNameType>,
 }
@@ -542,22 +657,26 @@ impl HostName {
 }
 pub mod host_name {
     use super::*;
+    #[doc = "Type of the Azure resource the hostname is assigned to."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureResourceType {
         Website,
         TrafficManager,
     }
+    #[doc = "Type of the DNS record."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CustomHostNameDnsRecordType {
         CName,
         A,
     }
+    #[doc = "Type of the hostname."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HostNameType {
         Verified,
         Managed,
     }
 }
+#[doc = "Retention policy of a resource metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
@@ -570,6 +689,7 @@ impl MetricAvailability {
         Self::default()
     }
 }
+#[doc = "Definition of a single resource metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -608,8 +728,10 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Identifies an object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NameIdentifier {
+    #[doc = "Name of the object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -618,9 +740,12 @@ impl NameIdentifier {
         Self::default()
     }
 }
+#[doc = "Collection of domain name identifiers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NameIdentifierCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<NameIdentifier>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -629,14 +754,19 @@ impl NameIdentifierCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "Azure proxy only resource. This resource is not tracked by Azure Resource Manager."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -645,17 +775,24 @@ impl ProxyOnlyResource {
         Self::default()
     }
 }
+#[doc = "Azure resource. This resource is tracked in Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource Location."]
     pub location: String,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -671,6 +808,7 @@ impl Resource {
         }
     }
 }
+#[doc = "Resource metrics service provided by Microsoft.Insights resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
@@ -681,12 +819,17 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "Legal agreement for a top level domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TldLegalAgreement {
+    #[doc = "Unique identifier for the agreement."]
     #[serde(rename = "agreementKey")]
     pub agreement_key: String,
+    #[doc = "Agreement title."]
     pub title: String,
+    #[doc = "Agreement details."]
     pub content: String,
+    #[doc = "URL where a copy of the agreement details is hosted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
@@ -700,9 +843,12 @@ impl TldLegalAgreement {
         }
     }
 }
+#[doc = "Collection of top-level domain legal agreements."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TldLegalAgreementCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<TldLegalAgreement>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -711,10 +857,12 @@ impl TldLegalAgreementCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "A top level domain object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopLevelDomain {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "TopLevelDomain resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<top_level_domain::Properties>,
 }
@@ -725,10 +873,13 @@ impl TopLevelDomain {
 }
 pub mod top_level_domain {
     use super::*;
+    #[doc = "TopLevelDomain resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Name of the top level domain."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
+        #[doc = "If <code>true</code>, then the top level domain supports domain privacy; otherwise, <code>false</code>."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub privacy: Option<bool>,
     }
@@ -738,10 +889,13 @@ pub mod top_level_domain {
         }
     }
 }
+#[doc = "Options for retrieving the list of top level domain legal agreements."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopLevelDomainAgreementOption {
+    #[doc = "If <code>true</code>, then the list of agreements will include agreements for domain privacy as well; otherwise, <code>false</code>."]
     #[serde(rename = "includePrivacy", default, skip_serializing_if = "Option::is_none")]
     pub include_privacy: Option<bool>,
+    #[doc = "If <code>true</code>, then the list of agreements will include agreements for domain transfer as well; otherwise, <code>false</code>."]
     #[serde(rename = "forTransfer", default, skip_serializing_if = "Option::is_none")]
     pub for_transfer: Option<bool>,
 }
@@ -750,9 +904,12 @@ impl TopLevelDomainAgreementOption {
         Self::default()
     }
 }
+#[doc = "Collection of Top-level domains."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopLevelDomainCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<TopLevelDomain>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

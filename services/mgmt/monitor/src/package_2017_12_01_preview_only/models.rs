@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -14,16 +17,22 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Metric namespace class specifies the metadata for a metric namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricNamespace {
+    #[doc = "The ID of the metric namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the namespace."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The escaped name of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of namespace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub classification: Option<NamespaceClassification>,
+    #[doc = "The fully qualified metric namespace name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricNamespaceName>,
 }
@@ -32,8 +41,10 @@ impl MetricNamespace {
         Self::default()
     }
 }
+#[doc = "Represents collection of metric namespaces."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricNamespaceCollection {
+    #[doc = "The values for the metric namespaces."]
     pub value: Vec<MetricNamespace>,
 }
 impl MetricNamespaceCollection {
@@ -41,8 +52,10 @@ impl MetricNamespaceCollection {
         Self { value }
     }
 }
+#[doc = "The fully qualified metric namespace name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricNamespaceName {
+    #[doc = "The metric namespace name."]
     #[serde(rename = "metricNamespaceName", default, skip_serializing_if = "Option::is_none")]
     pub metric_namespace_name: Option<String>,
 }
@@ -51,6 +64,7 @@ impl MetricNamespaceName {
         Self::default()
     }
 }
+#[doc = "Kind of namespace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NamespaceClassification {
     Platform,

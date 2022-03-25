@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "This is the base type that represents an advanced filter. To configure an advanced filter, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class such as BoolEqualsAdvancedFilter, NumberInAdvancedFilter, StringEqualsAdvancedFilter etc. depending on the type of the key based on which you want to filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdvancedFilter {
+    #[doc = "The operator type used for filtering, e.g., NumberIn, StringContains, BoolEquals and others."]
     #[serde(rename = "operatorType")]
     pub operator_type: advanced_filter::OperatorType,
+    #[doc = "The field/property in the event based on which you want to filter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
@@ -16,6 +19,7 @@ impl AdvancedFilter {
 }
 pub mod advanced_filter {
     use super::*;
+    #[doc = "The operator type used for filtering, e.g., NumberIn, StringContains, BoolEquals and others."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperatorType {
         NumberIn,
@@ -39,10 +43,12 @@ pub mod advanced_filter {
         IsNotNull,
     }
 }
+#[doc = "Information about the azure function destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "The properties that represent the Azure Function destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFunctionEventSubscriptionDestinationProperties>,
 }
@@ -54,14 +60,19 @@ impl AzureFunctionEventSubscriptionDestination {
         }
     }
 }
+#[doc = "The properties that represent the Azure Function destination of an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFunctionEventSubscriptionDestinationProperties {
+    #[doc = "The Azure Resource Id that represents the endpoint of the Azure Function destination of an event subscription."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Maximum number of events per batch."]
     #[serde(rename = "maxEventsPerBatch", default, skip_serializing_if = "Option::is_none")]
     pub max_events_per_batch: Option<i32>,
+    #[doc = "Preferred batch size in Kilobytes."]
     #[serde(rename = "preferredBatchSizeInKilobytes", default, skip_serializing_if = "Option::is_none")]
     pub preferred_batch_size_in_kilobytes: Option<i32>,
+    #[doc = "Delivery attribute details."]
     #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
@@ -70,10 +81,12 @@ impl AzureFunctionEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "BoolEquals Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BoolEqualsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The boolean filter value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<bool>,
 }
@@ -85,12 +98,16 @@ impl BoolEqualsAdvancedFilter {
         }
     }
 }
+#[doc = "ConnectionState information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionState {
+    #[doc = "Status of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<connection_state::Status>,
+    #[doc = "Description of the connection state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Actions required (if any)."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -101,6 +118,7 @@ impl ConnectionState {
 }
 pub mod connection_state {
     use super::*;
+    #[doc = "Status of the connection."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Pending,
@@ -109,8 +127,10 @@ pub mod connection_state {
         Disconnected,
     }
 }
+#[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeadLetterDestination {
+    #[doc = "Type of the endpoint for the dead letter destination"]
     #[serde(rename = "endpointType")]
     pub endpoint_type: dead_letter_destination::EndpointType,
 }
@@ -121,15 +141,19 @@ impl DeadLetterDestination {
 }
 pub mod dead_letter_destination {
     use super::*;
+    #[doc = "Type of the endpoint for the dead letter destination"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
         StorageBlob,
     }
 }
+#[doc = "Information about the deadletter destination with resource identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeadLetterWithResourceIdentity {
+    #[doc = "The identity information with the event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<EventSubscriptionIdentity>,
+    #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
 }
@@ -138,8 +162,10 @@ impl DeadLetterWithResourceIdentity {
         Self::default()
     }
 }
+#[doc = "Result of the Get delivery attributes operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeliveryAttributeListResult {
+    #[doc = "A collection of DeliveryAttributeMapping"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeliveryAttributeMapping>,
 }
@@ -148,10 +174,13 @@ impl DeliveryAttributeListResult {
         Self::default()
     }
 }
+#[doc = "Delivery attribute mapping details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryAttributeMapping {
+    #[doc = "Name of the delivery attribute or header."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the delivery attribute or header name."]
     #[serde(rename = "type")]
     pub type_: delivery_attribute_mapping::Type,
 }
@@ -162,16 +191,20 @@ impl DeliveryAttributeMapping {
 }
 pub mod delivery_attribute_mapping {
     use super::*;
+    #[doc = "Type of the delivery attribute or header name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Static,
         Dynamic,
     }
 }
+#[doc = "Information about the delivery for an event subscription with resource identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeliveryWithResourceIdentity {
+    #[doc = "The identity information with the event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<EventSubscriptionIdentity>,
+    #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<EventSubscriptionDestination>,
 }
@@ -180,14 +213,18 @@ impl DeliveryWithResourceIdentity {
         Self::default()
     }
 }
+#[doc = "EventGrid Domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Domain {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Properties of the Event Grid Domain Resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The identity information for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
 }
@@ -201,28 +238,40 @@ impl Domain {
         }
     }
 }
+#[doc = "Properties of the Event Grid Domain Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainProperties {
+    #[doc = "List of private endpoint connections."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "Provisioning state of the Event Grid Domain Resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_properties::ProvisioningState>,
+    #[doc = "Endpoint for the domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
+    #[doc = "This determines the format that Event Grid should expect for incoming events published to the domain."]
     #[serde(rename = "inputSchema", default, skip_serializing_if = "Option::is_none")]
     pub input_schema: Option<domain_properties::InputSchema>,
+    #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping: Option<InputSchemaMapping>,
+    #[doc = "Metric resource id for the domain."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.DomainProperties.InboundIpRules\" />"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<domain_properties::PublicNetworkAccess>,
+    #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
+    #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the domain."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
+    #[doc = "This Boolean is used to specify the creation mechanism for 'all' the Event Grid Domain Topics associated with this Event Grid Domain resource.\r\nIn this context, creation of domain topic can be auto-managed (when true) or self-managed (when false). The default value for this property is true.\r\nWhen this property is null or set to true, Event Grid is responsible of automatically creating the domain topic when the first event subscription is\r\ncreated at the scope of the domain topic. If this property is set to false, then creating the first event subscription will require creating a domain topic\r\nby the user. The self-management mode can be used if the user wants full control of when the domain topic is created, while auto-managed mode provides the\r\nflexibility to perform less operations and manage fewer resources by the user. Also, note that in auto-managed creation mode, user is allowed to create the\r\ndomain topic on demand if needed."]
     #[serde(rename = "autoCreateTopicWithFirstSubscription", default, skip_serializing_if = "Option::is_none")]
     pub auto_create_topic_with_first_subscription: Option<bool>,
+    #[doc = "This Boolean is used to specify the deletion mechanism for 'all' the Event Grid Domain Topics associated with this Event Grid Domain resource.\r\nIn this context, deletion of domain topic can be auto-managed (when true) or self-managed (when false). The default value for this property is true.\r\nWhen this property is set to true, Event Grid is responsible of automatically deleting the domain topic when the last event subscription at the scope\r\nof the domain topic is deleted. If this property is set to false, then the user needs to manually delete the domain topic when it is no longer needed\r\n(e.g., when last event subscription is deleted and the resource needs to be cleaned up). The self-management mode can be used if the user wants full\r\ncontrol of when the domain topic needs to be deleted, while auto-managed mode provides the flexibility to perform less operations and manage fewer\r\nresources by the user."]
     #[serde(rename = "autoDeleteTopicWithLastSubscription", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_topic_with_last_subscription: Option<bool>,
 }
@@ -233,6 +282,7 @@ impl DomainProperties {
 }
 pub mod domain_properties {
     use super::*;
+    #[doc = "Provisioning state of the Event Grid Domain Resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -242,6 +292,7 @@ pub mod domain_properties {
         Canceled,
         Failed,
     }
+    #[doc = "This determines the format that Event Grid should expect for incoming events published to the domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InputSchema {
         EventGridSchema,
@@ -254,6 +305,7 @@ pub mod domain_properties {
             Self::EventGridSchema
         }
     }
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.DomainProperties.InboundIpRules\" />"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
@@ -265,8 +317,10 @@ pub mod domain_properties {
         }
     }
 }
+#[doc = "Domain regenerate share access key request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainRegenerateKeyRequest {
+    #[doc = "Key name to regenerate key1 or key2."]
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
@@ -275,10 +329,13 @@ impl DomainRegenerateKeyRequest {
         Self { key_name }
     }
 }
+#[doc = "Shared access keys of the Domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainSharedAccessKeys {
+    #[doc = "Shared access key1 for the domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key1: Option<String>,
+    #[doc = "Shared access key2 for the domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }
@@ -287,12 +344,15 @@ impl DomainSharedAccessKeys {
         Self::default()
     }
 }
+#[doc = "Domain Topic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainTopic {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the Domain Topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainTopicProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -301,8 +361,10 @@ impl DomainTopic {
         Self::default()
     }
 }
+#[doc = "Properties of the Domain Topic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainTopicProperties {
+    #[doc = "Provisioning state of the domain topic."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_topic_properties::ProvisioningState>,
 }
@@ -313,6 +375,7 @@ impl DomainTopicProperties {
 }
 pub mod domain_topic_properties {
     use super::*;
+    #[doc = "Provisioning state of the domain topic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -323,10 +386,13 @@ pub mod domain_topic_properties {
         Failed,
     }
 }
+#[doc = "Result of the List Domain Topics operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainTopicsListResult {
+    #[doc = "A collection of Domain Topics."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DomainTopic>,
+    #[doc = "A link for the next page of domain topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -335,16 +401,22 @@ impl DomainTopicsListResult {
         Self::default()
     }
 }
+#[doc = "Information of domain update parameter properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainUpdateParameterProperties {
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.DomainUpdateParameterProperties.InboundIpRules\" />"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<domain_update_parameter_properties::PublicNetworkAccess>,
+    #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
+    #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the domain."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
+    #[doc = "This Boolean is used to specify the creation mechanism for 'all' the Event Grid Domain Topics associated with this Event Grid Domain resource.\r\nIn this context, creation of domain topic can be auto-managed (when true) or self-managed (when false). The default value for this property is true.\r\nWhen this property is null or set to true, Event Grid is responsible of automatically creating the domain topic when the first event subscription is\r\ncreated at the scope of the domain topic. If this property is set to false, then creating the first event subscription will require creating a domain topic\r\nby the user. The self-management mode can be used if the user wants full control of when the domain topic is created, while auto-managed mode provides the\r\nflexibility to perform less operations and manage fewer resources by the user. Also, note that in auto-managed creation mode, user is allowed to create the\r\ndomain topic on demand if needed."]
     #[serde(rename = "autoCreateTopicWithFirstSubscription", default, skip_serializing_if = "Option::is_none")]
     pub auto_create_topic_with_first_subscription: Option<bool>,
+    #[doc = "This Boolean is used to specify the deletion mechanism for 'all' the Event Grid Domain Topics associated with this Event Grid Domain resource.\r\nIn this context, deletion of domain topic can be auto-managed (when true) or self-managed (when false). The default value for this property is true.\r\nWhen this property is set to true, Event Grid is responsible of automatically deleting the domain topic when the last event subscription at the scope\r\nof the domain topic is deleted. If this property is set to false, then the user needs to manually delete the domain topic when it is no longer needed\r\n(e.g., when last event subscription is deleted and the resource needs to be cleaned up). The self-management mode can be used if the user wants full\r\ncontrol of when the domain topic needs to be deleted, while auto-managed mode provides the flexibility to perform less operations and manage fewer\r\nresources by the user."]
     #[serde(rename = "autoDeleteTopicWithLastSubscription", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_topic_with_last_subscription: Option<bool>,
 }
@@ -355,6 +427,7 @@ impl DomainUpdateParameterProperties {
 }
 pub mod domain_update_parameter_properties {
     use super::*;
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.DomainUpdateParameterProperties.InboundIpRules\" />"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
@@ -366,12 +439,16 @@ pub mod domain_update_parameter_properties {
         }
     }
 }
+#[doc = "Properties of the Domain update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainUpdateParameters {
+    #[doc = "Tags of the domains resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Information of domain update parameter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainUpdateParameterProperties>,
+    #[doc = "The identity information for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
 }
@@ -380,10 +457,13 @@ impl DomainUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Result of the List Domains operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainsListResult {
+    #[doc = "A collection of Domains."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Domain>,
+    #[doc = "A link for the next page of domains."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -392,10 +472,12 @@ impl DomainsListResult {
         Self::default()
     }
 }
+#[doc = "Dynamic delivery attribute mapping details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicDeliveryAttributeMapping {
     #[serde(flatten)]
     pub delivery_attribute_mapping: DeliveryAttributeMapping,
+    #[doc = "Properties of dynamic delivery attribute mapping."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DynamicDeliveryAttributeMappingProperties>,
 }
@@ -407,8 +489,10 @@ impl DynamicDeliveryAttributeMapping {
         }
     }
 }
+#[doc = "Properties of dynamic delivery attribute mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DynamicDeliveryAttributeMappingProperties {
+    #[doc = "JSON path in the event which contains attribute value."]
     #[serde(rename = "sourceField", default, skip_serializing_if = "Option::is_none")]
     pub source_field: Option<String>,
 }
@@ -417,10 +501,12 @@ impl DynamicDeliveryAttributeMappingProperties {
         Self::default()
     }
 }
+#[doc = "Information about the event hub destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "The properties for a event hub destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubEventSubscriptionDestinationProperties>,
 }
@@ -432,10 +518,13 @@ impl EventHubEventSubscriptionDestination {
         }
     }
 }
+#[doc = "The properties for a event hub destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubEventSubscriptionDestinationProperties {
+    #[doc = "The Azure Resource Id that represents the endpoint of an Event Hub destination of an event subscription."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Delivery attribute details."]
     #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
@@ -444,12 +533,15 @@ impl EventHubEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "Event Subscription"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscription {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the Event Subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventSubscriptionProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -458,8 +550,10 @@ impl EventSubscription {
         Self::default()
     }
 }
+#[doc = "Information about the destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscriptionDestination {
+    #[doc = "Type of the endpoint for the event subscription destination."]
     #[serde(rename = "endpointType")]
     pub endpoint_type: event_subscription_destination::EndpointType,
 }
@@ -470,6 +564,7 @@ impl EventSubscriptionDestination {
 }
 pub mod event_subscription_destination {
     use super::*;
+    #[doc = "Type of the endpoint for the event subscription destination."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndpointType {
         WebHook,
@@ -481,18 +576,25 @@ pub mod event_subscription_destination {
         AzureFunction,
     }
 }
+#[doc = "Filter for the Event Subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionFilter {
+    #[doc = "An optional string to filter events for an event subscription based on a resource path prefix.\r\nThe format of this depends on the publisher of the events.\r\nWildcard characters are not supported in this path."]
     #[serde(rename = "subjectBeginsWith", default, skip_serializing_if = "Option::is_none")]
     pub subject_begins_with: Option<String>,
+    #[doc = "An optional string to filter events for an event subscription based on a resource path suffix.\r\nWildcard characters are not supported in this path."]
     #[serde(rename = "subjectEndsWith", default, skip_serializing_if = "Option::is_none")]
     pub subject_ends_with: Option<String>,
+    #[doc = "A list of applicable event types that need to be part of the event subscription. If it is desired to subscribe to all default event types, set the IncludedEventTypes to null."]
     #[serde(rename = "includedEventTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub included_event_types: Vec<String>,
+    #[doc = "Specifies if the SubjectBeginsWith and SubjectEndsWith properties of the filter\r\nshould be compared in a case sensitive manner."]
     #[serde(rename = "isSubjectCaseSensitive", default, skip_serializing_if = "Option::is_none")]
     pub is_subject_case_sensitive: Option<bool>,
+    #[doc = "Allows advanced filters to be evaluated against an array of values instead of expecting a singular value."]
     #[serde(rename = "enableAdvancedFilteringOnArrays", default, skip_serializing_if = "Option::is_none")]
     pub enable_advanced_filtering_on_arrays: Option<bool>,
+    #[doc = "An array of advanced filters that are used for filtering event subscriptions."]
     #[serde(rename = "advancedFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub advanced_filters: Vec<AdvancedFilter>,
 }
@@ -501,8 +603,10 @@ impl EventSubscriptionFilter {
         Self::default()
     }
 }
+#[doc = "Full endpoint url of an event subscription"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionFullUrl {
+    #[doc = "The URL that represents the endpoint of the destination of an event subscription."]
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
 }
@@ -511,10 +615,13 @@ impl EventSubscriptionFullUrl {
         Self::default()
     }
 }
+#[doc = "The identity information with the event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionIdentity {
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identity."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<event_subscription_identity::Type>,
+    #[doc = "The user identity associated with the resource."]
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identity: Option<String>,
 }
@@ -525,34 +632,47 @@ impl EventSubscriptionIdentity {
 }
 pub mod event_subscription_identity {
     use super::*;
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
         UserAssigned,
     }
 }
+#[doc = "Properties of the Event Subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionProperties {
+    #[doc = "Name of the topic of the event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub topic: Option<String>,
+    #[doc = "Provisioning state of the event subscription."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<event_subscription_properties::ProvisioningState>,
+    #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<EventSubscriptionDestination>,
+    #[doc = "Information about the delivery for an event subscription with resource identity."]
     #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
+    #[doc = "Filter for the Event Subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<EventSubscriptionFilter>,
+    #[doc = "List of user defined labels."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
+    #[doc = "Expiration time of the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time_utc: Option<String>,
+    #[doc = "The event delivery schema for the event subscription."]
     #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_properties::EventDeliverySchema>,
+    #[doc = "Information about the retry policy for an event subscription."]
     #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retry_policy: Option<RetryPolicy>,
+    #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
+    #[doc = "Information about the deadletter destination with resource identity."]
     #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
 }
@@ -563,6 +683,7 @@ impl EventSubscriptionProperties {
 }
 pub mod event_subscription_properties {
     use super::*;
+    #[doc = "Provisioning state of the event subscription."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -573,6 +694,7 @@ pub mod event_subscription_properties {
         Failed,
         AwaitingManualAction,
     }
+    #[doc = "The event delivery schema for the event subscription."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventDeliverySchema {
         EventGridSchema,
@@ -586,24 +708,34 @@ pub mod event_subscription_properties {
         }
     }
 }
+#[doc = "Properties of the Event Subscription update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionUpdateParameters {
+    #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<EventSubscriptionDestination>,
+    #[doc = "Information about the delivery for an event subscription with resource identity."]
     #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
+    #[doc = "Filter for the Event Subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<EventSubscriptionFilter>,
+    #[doc = "List of user defined labels."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
+    #[doc = "Information about the expiration time for the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time_utc: Option<String>,
+    #[doc = "The event delivery schema for the event subscription."]
     #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_update_parameters::EventDeliverySchema>,
+    #[doc = "Information about the retry policy for an event subscription."]
     #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retry_policy: Option<RetryPolicy>,
+    #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
+    #[doc = "Information about the deadletter destination with resource identity."]
     #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
 }
@@ -614,6 +746,7 @@ impl EventSubscriptionUpdateParameters {
 }
 pub mod event_subscription_update_parameters {
     use super::*;
+    #[doc = "The event delivery schema for the event subscription."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EventDeliverySchema {
         EventGridSchema,
@@ -622,10 +755,13 @@ pub mod event_subscription_update_parameters {
         CloudEventSchemaV10,
     }
 }
+#[doc = "Result of the List EventSubscriptions operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionsListResult {
+    #[doc = "A collection of EventSubscriptions"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventSubscription>,
+    #[doc = "A link for the next page of event subscriptions"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -634,10 +770,12 @@ impl EventSubscriptionsListResult {
         Self::default()
     }
 }
+#[doc = "Event Type for a subject under a topic"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventType {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the event type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventTypeProperties>,
 }
@@ -646,14 +784,19 @@ impl EventType {
         Self::default()
     }
 }
+#[doc = "Properties of the event type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventTypeProperties {
+    #[doc = "Display name of the event type."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Description of the event type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Url of the schema for this event type."]
     #[serde(rename = "schemaUrl", default, skip_serializing_if = "Option::is_none")]
     pub schema_url: Option<String>,
+    #[doc = "IsInDefaultSet flag of the event type."]
     #[serde(rename = "isInDefaultSet", default, skip_serializing_if = "Option::is_none")]
     pub is_in_default_set: Option<bool>,
 }
@@ -662,8 +805,10 @@ impl EventTypeProperties {
         Self::default()
     }
 }
+#[doc = "Result of the List Event Types operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventTypesListResult {
+    #[doc = "A collection of event types"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventType>,
 }
@@ -672,12 +817,15 @@ impl EventTypesListResult {
         Self::default()
     }
 }
+#[doc = "Event grid Extension Topic. This is used for getting Event Grid related metrics for Azure resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionTopic {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the Extension Topic"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtensionTopicProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -686,10 +834,13 @@ impl ExtensionTopic {
         Self::default()
     }
 }
+#[doc = "Properties of the Extension Topic"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionTopicProperties {
+    #[doc = "Description of the extension topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "System topic resource id which is mapped to the source."]
     #[serde(rename = "systemTopic", default, skip_serializing_if = "Option::is_none")]
     pub system_topic: Option<String>,
 }
@@ -698,10 +849,12 @@ impl ExtensionTopicProperties {
         Self::default()
     }
 }
+#[doc = "Information about the HybridConnection destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridConnectionEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "The properties for a hybrid connection destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HybridConnectionEventSubscriptionDestinationProperties>,
 }
@@ -713,10 +866,13 @@ impl HybridConnectionEventSubscriptionDestination {
         }
     }
 }
+#[doc = "The properties for a hybrid connection destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridConnectionEventSubscriptionDestinationProperties {
+    #[doc = "The Azure Resource ID of an hybrid connection that is the destination of an event subscription."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Delivery attribute details."]
     #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
@@ -725,14 +881,19 @@ impl HybridConnectionEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "The identity information for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityInfo {
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identity."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_info::Type>,
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form:\r\n'/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.\r\nThis property is currently not used and reserved for future usage."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
@@ -743,6 +904,7 @@ impl IdentityInfo {
 }
 pub mod identity_info {
     use super::*;
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
@@ -754,8 +916,10 @@ pub mod identity_info {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundIpRule {
+    #[doc = "IP Address in CIDR notation e.g., 10.0.0.0/8."]
     #[serde(rename = "ipMask", default, skip_serializing_if = "Option::is_none")]
     pub ip_mask: Option<String>,
+    #[doc = "Action to perform based on the match or no match of the IpMask."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<inbound_ip_rule::Action>,
 }
@@ -766,13 +930,16 @@ impl InboundIpRule {
 }
 pub mod inbound_ip_rule {
     use super::*;
+    #[doc = "Action to perform based on the match or no match of the IpMask."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
     }
 }
+#[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputSchemaMapping {
+    #[doc = "Type of the custom mapping"]
     #[serde(rename = "inputSchemaMappingType")]
     pub input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType,
 }
@@ -783,11 +950,13 @@ impl InputSchemaMapping {
 }
 pub mod input_schema_mapping {
     use super::*;
+    #[doc = "Type of the custom mapping"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InputSchemaMappingType {
         Json,
     }
 }
+#[doc = "IsNotNull Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IsNotNullAdvancedFilter {
     #[serde(flatten)]
@@ -798,6 +967,7 @@ impl IsNotNullAdvancedFilter {
         Self { advanced_filter }
     }
 }
+#[doc = "IsNullOrUndefined Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IsNullOrUndefinedAdvancedFilter {
     #[serde(flatten)]
@@ -808,8 +978,10 @@ impl IsNullOrUndefinedAdvancedFilter {
         Self { advanced_filter }
     }
 }
+#[doc = "This is used to express the source of an input schema mapping for a single target field in the Event Grid Event schema. This is currently used in the mappings for the 'id', 'topic' and 'eventtime' properties. This represents a field in the input event schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonField {
+    #[doc = "Name of a field in the input event schema that's to be used as the source of a mapping."]
     #[serde(rename = "sourceField", default, skip_serializing_if = "Option::is_none")]
     pub source_field: Option<String>,
 }
@@ -818,10 +990,13 @@ impl JsonField {
         Self::default()
     }
 }
+#[doc = "This is used to express the source of an input schema mapping for a single target field\r\nin the Event Grid Event schema. This is currently used in the mappings for the 'subject',\r\n'eventtype' and 'dataversion' properties. This represents a field in the input event schema\r\nalong with a default value to be used, and at least one of these two properties should be provided."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonFieldWithDefault {
+    #[doc = "Name of a field in the input event schema that's to be used as the source of a mapping."]
     #[serde(rename = "sourceField", default, skip_serializing_if = "Option::is_none")]
     pub source_field: Option<String>,
+    #[doc = "The default value to be used for mapping when a SourceField is not provided or if there's no property with the specified name in the published JSON event payload."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
 }
@@ -830,10 +1005,12 @@ impl JsonFieldWithDefault {
         Self::default()
     }
 }
+#[doc = "This enables publishing to Event Grid using a custom input schema. This can be used to map properties from a custom input JSON schema to the Event Grid event schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonInputSchemaMapping {
     #[serde(flatten)]
     pub input_schema_mapping: InputSchemaMapping,
+    #[doc = "This can be used to map properties of a source schema (or default values, for certain supported properties) to properties of the EventGridEvent schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JsonInputSchemaMappingProperties>,
 }
@@ -845,18 +1022,25 @@ impl JsonInputSchemaMapping {
         }
     }
 }
+#[doc = "This can be used to map properties of a source schema (or default values, for certain supported properties) to properties of the EventGridEvent schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonInputSchemaMappingProperties {
+    #[doc = "This is used to express the source of an input schema mapping for a single target field in the Event Grid Event schema. This is currently used in the mappings for the 'id', 'topic' and 'eventtime' properties. This represents a field in the input event schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<JsonField>,
+    #[doc = "This is used to express the source of an input schema mapping for a single target field in the Event Grid Event schema. This is currently used in the mappings for the 'id', 'topic' and 'eventtime' properties. This represents a field in the input event schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub topic: Option<JsonField>,
+    #[doc = "This is used to express the source of an input schema mapping for a single target field in the Event Grid Event schema. This is currently used in the mappings for the 'id', 'topic' and 'eventtime' properties. This represents a field in the input event schema."]
     #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
     pub event_time: Option<JsonField>,
+    #[doc = "This is used to express the source of an input schema mapping for a single target field\r\nin the Event Grid Event schema. This is currently used in the mappings for the 'subject',\r\n'eventtype' and 'dataversion' properties. This represents a field in the input event schema\r\nalong with a default value to be used, and at least one of these two properties should be provided."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<JsonFieldWithDefault>,
+    #[doc = "This is used to express the source of an input schema mapping for a single target field\r\nin the Event Grid Event schema. This is currently used in the mappings for the 'subject',\r\n'eventtype' and 'dataversion' properties. This represents a field in the input event schema\r\nalong with a default value to be used, and at least one of these two properties should be provided."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<JsonFieldWithDefault>,
+    #[doc = "This is used to express the source of an input schema mapping for a single target field\r\nin the Event Grid Event schema. This is currently used in the mappings for the 'subject',\r\n'eventtype' and 'dataversion' properties. This represents a field in the input event schema\r\nalong with a default value to be used, and at least one of these two properties should be provided."]
     #[serde(rename = "dataVersion", default, skip_serializing_if = "Option::is_none")]
     pub data_version: Option<JsonFieldWithDefault>,
 }
@@ -865,10 +1049,12 @@ impl JsonInputSchemaMappingProperties {
         Self::default()
     }
 }
+#[doc = "NumberGreaterThan Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberGreaterThanAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The filter value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
 }
@@ -880,10 +1066,12 @@ impl NumberGreaterThanAdvancedFilter {
         }
     }
 }
+#[doc = "NumberGreaterThanOrEquals Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberGreaterThanOrEqualsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The filter value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
 }
@@ -895,10 +1083,12 @@ impl NumberGreaterThanOrEqualsAdvancedFilter {
         }
     }
 }
+#[doc = "NumberIn Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<f64>,
 }
@@ -910,10 +1100,12 @@ impl NumberInAdvancedFilter {
         }
     }
 }
+#[doc = "NumberInRange Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberInRangeAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<Vec<f64>>,
 }
@@ -925,10 +1117,12 @@ impl NumberInRangeAdvancedFilter {
         }
     }
 }
+#[doc = "NumberLessThan Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberLessThanAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The filter value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
 }
@@ -940,10 +1134,12 @@ impl NumberLessThanAdvancedFilter {
         }
     }
 }
+#[doc = "NumberLessThanOrEquals Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberLessThanOrEqualsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The filter value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
 }
@@ -955,10 +1151,12 @@ impl NumberLessThanOrEqualsAdvancedFilter {
         }
     }
 }
+#[doc = "NumberNotIn Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberNotInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<f64>,
 }
@@ -970,10 +1168,12 @@ impl NumberNotInAdvancedFilter {
         }
     }
 }
+#[doc = "NumberNotInRange Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberNotInRangeAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<Vec<f64>>,
 }
@@ -985,14 +1185,19 @@ impl NumberNotInRangeAdvancedFilter {
         }
     }
 }
+#[doc = "Represents an operation returned by the GetOperations request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Information about an operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationInfo>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -1001,14 +1206,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Information about an operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationInfo {
+    #[doc = "Name of the provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Name of the resource type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -1017,8 +1227,10 @@ impl OperationInfo {
         Self::default()
     }
 }
+#[doc = "Result of the List Operations operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
+    #[doc = "A collection of operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -1027,8 +1239,10 @@ impl OperationsListResult {
         Self::default()
     }
 }
+#[doc = "PrivateEndpoint information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1041,6 +1255,7 @@ impl PrivateEndpoint {
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the private endpoint connection resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -1049,10 +1264,13 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "Result of the list of all private endpoint connections operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "A collection of private endpoint connection resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+    #[doc = "A link for the next page of private endpoint connection resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1061,14 +1279,19 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the private endpoint connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "PrivateEndpoint information."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "GroupIds from the private link service resource."]
     #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
     pub group_ids: Vec<String>,
+    #[doc = "ConnectionState information."]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<ConnectionState>,
+    #[doc = "Provisioning state of the Private Endpoint Connection."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
@@ -1079,6 +1302,7 @@ impl PrivateEndpointConnectionProperties {
 }
 pub mod private_endpoint_connection_properties {
     use super::*;
+    #[doc = "Provisioning state of the Private Endpoint Connection."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1089,14 +1313,18 @@ pub mod private_endpoint_connection_properties {
         Failed,
     }
 }
+#[doc = "Information of the private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
+    #[doc = "Fully qualified identifier of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1121,10 +1349,13 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "Result of the List private link resources operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourcesListResult {
+    #[doc = "A collection of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+    #[doc = "A link for the next page of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1133,12 +1364,16 @@ impl PrivateLinkResourcesListResult {
         Self::default()
     }
 }
+#[doc = "Definition of a Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified identifier of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1147,10 +1382,13 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Information about the retry policy for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetryPolicy {
+    #[doc = "Maximum number of delivery retry attempts for events."]
     #[serde(rename = "maxDeliveryAttempts", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_attempts: Option<i32>,
+    #[doc = "Time To Live (in minutes) for events."]
     #[serde(rename = "eventTimeToLiveInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub event_time_to_live_in_minutes: Option<i32>,
 }
@@ -1159,10 +1397,12 @@ impl RetryPolicy {
         Self::default()
     }
 }
+#[doc = "Information about the service bus destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "The properties that represent the Service Bus destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusQueueEventSubscriptionDestinationProperties>,
 }
@@ -1174,10 +1414,13 @@ impl ServiceBusQueueEventSubscriptionDestination {
         }
     }
 }
+#[doc = "The properties that represent the Service Bus destination of an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusQueueEventSubscriptionDestinationProperties {
+    #[doc = "The Azure Resource Id that represents the endpoint of the Service Bus destination of an event subscription."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Delivery attribute details."]
     #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
@@ -1186,10 +1429,12 @@ impl ServiceBusQueueEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "Information about the service bus topic destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "The properties that represent the Service Bus Topic destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusTopicEventSubscriptionDestinationProperties>,
 }
@@ -1201,10 +1446,13 @@ impl ServiceBusTopicEventSubscriptionDestination {
         }
     }
 }
+#[doc = "The properties that represent the Service Bus Topic destination of an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusTopicEventSubscriptionDestinationProperties {
+    #[doc = "The Azure Resource Id that represents the endpoint of the Service Bus Topic destination of an event subscription."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Delivery attribute details."]
     #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
@@ -1213,10 +1461,12 @@ impl ServiceBusTopicEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "Static delivery attribute mapping details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaticDeliveryAttributeMapping {
     #[serde(flatten)]
     pub delivery_attribute_mapping: DeliveryAttributeMapping,
+    #[doc = "Properties of static delivery attribute mapping."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StaticDeliveryAttributeMappingProperties>,
 }
@@ -1228,10 +1478,13 @@ impl StaticDeliveryAttributeMapping {
         }
     }
 }
+#[doc = "Properties of static delivery attribute mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StaticDeliveryAttributeMappingProperties {
+    #[doc = "Value of the delivery attribute."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Boolean flag to tell if the attribute contains sensitive information ."]
     #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
     pub is_secret: Option<bool>,
 }
@@ -1240,10 +1493,12 @@ impl StaticDeliveryAttributeMappingProperties {
         Self::default()
     }
 }
+#[doc = "Information about the storage blob based dead letter destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobDeadLetterDestination {
     #[serde(flatten)]
     pub dead_letter_destination: DeadLetterDestination,
+    #[doc = "Properties of the storage blob based dead letter destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageBlobDeadLetterDestinationProperties>,
 }
@@ -1255,10 +1510,13 @@ impl StorageBlobDeadLetterDestination {
         }
     }
 }
+#[doc = "Properties of the storage blob based dead letter destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobDeadLetterDestinationProperties {
+    #[doc = "The Azure Resource ID of the storage account that is the destination of the deadletter events"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The name of the Storage blob container that is the destination of the deadletter events"]
     #[serde(rename = "blobContainerName", default, skip_serializing_if = "Option::is_none")]
     pub blob_container_name: Option<String>,
 }
@@ -1267,10 +1525,12 @@ impl StorageBlobDeadLetterDestinationProperties {
         Self::default()
     }
 }
+#[doc = "Information about the storage queue destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageQueueEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "The properties for a storage queue destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageQueueEventSubscriptionDestinationProperties>,
 }
@@ -1282,12 +1542,16 @@ impl StorageQueueEventSubscriptionDestination {
         }
     }
 }
+#[doc = "The properties for a storage queue destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageQueueEventSubscriptionDestinationProperties {
+    #[doc = "The Azure Resource ID of the storage account that contains the queue that is the destination of an event subscription."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The name of the Storage queue under a storage account that is the destination of an event subscription."]
     #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
     pub queue_name: Option<String>,
+    #[doc = "Storage queue message time to live in seconds."]
     #[serde(rename = "queueMessageTimeToLiveInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub queue_message_time_to_live_in_seconds: Option<i64>,
 }
@@ -1296,10 +1560,12 @@ impl StorageQueueEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "StringBeginsWith Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringBeginsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1311,10 +1577,12 @@ impl StringBeginsWithAdvancedFilter {
         }
     }
 }
+#[doc = "StringContains Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringContainsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1326,10 +1594,12 @@ impl StringContainsAdvancedFilter {
         }
     }
 }
+#[doc = "StringEndsWith Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringEndsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1341,10 +1611,12 @@ impl StringEndsWithAdvancedFilter {
         }
     }
 }
+#[doc = "StringIn Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1356,10 +1628,12 @@ impl StringInAdvancedFilter {
         }
     }
 }
+#[doc = "StringNotBeginsWith Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringNotBeginsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1371,10 +1645,12 @@ impl StringNotBeginsWithAdvancedFilter {
         }
     }
 }
+#[doc = "StringNotContains Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringNotContainsAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1386,10 +1662,12 @@ impl StringNotContainsAdvancedFilter {
         }
     }
 }
+#[doc = "StringNotEndsWith Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringNotEndsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1401,10 +1679,12 @@ impl StringNotEndsWithAdvancedFilter {
         }
     }
 }
+#[doc = "StringNotIn Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringNotInAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
+    #[doc = "The set of filter values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -1416,14 +1696,18 @@ impl StringNotInAdvancedFilter {
         }
     }
 }
+#[doc = "EventGrid System Topic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemTopic {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Properties of the System Topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SystemTopicProperties>,
+    #[doc = "The identity information for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1437,14 +1721,19 @@ impl SystemTopic {
         }
     }
 }
+#[doc = "Properties of the System Topic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemTopicProperties {
+    #[doc = "Provisioning state of the system topic."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<system_topic_properties::ProvisioningState>,
+    #[doc = "Source for the system topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[doc = "TopicType for the system topic."]
     #[serde(rename = "topicType", default, skip_serializing_if = "Option::is_none")]
     pub topic_type: Option<String>,
+    #[doc = "Metric resource id for the system topic."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
 }
@@ -1455,6 +1744,7 @@ impl SystemTopicProperties {
 }
 pub mod system_topic_properties {
     use super::*;
+    #[doc = "Provisioning state of the system topic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1465,10 +1755,13 @@ pub mod system_topic_properties {
         Failed,
     }
 }
+#[doc = "Properties of the System Topic update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemTopicUpdateParameters {
+    #[doc = "Tags of the system topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The identity information for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
 }
@@ -1477,10 +1770,13 @@ impl SystemTopicUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Result of the List System topics operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemTopicsListResult {
+    #[doc = "A collection of system Topics."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SystemTopic>,
+    #[doc = "A link for the next page of topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1489,14 +1785,18 @@ impl SystemTopicsListResult {
         Self::default()
     }
 }
+#[doc = "EventGrid Topic"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Topic {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Properties of the Topic"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicProperties>,
+    #[doc = "The identity information for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1510,24 +1810,33 @@ impl Topic {
         }
     }
 }
+#[doc = "Properties of the Topic"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicProperties {
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "Provisioning state of the topic."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<topic_properties::ProvisioningState>,
+    #[doc = "Endpoint for the topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
+    #[doc = "This determines the format that Event Grid should expect for incoming events published to the topic."]
     #[serde(rename = "inputSchema", default, skip_serializing_if = "Option::is_none")]
     pub input_schema: Option<topic_properties::InputSchema>,
+    #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping: Option<InputSchemaMapping>,
+    #[doc = "Metric resource id for the topic."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.TopicProperties.InboundIpRules\" />"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<topic_properties::PublicNetworkAccess>,
+    #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
+    #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the topic."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
 }
@@ -1538,6 +1847,7 @@ impl TopicProperties {
 }
 pub mod topic_properties {
     use super::*;
+    #[doc = "Provisioning state of the topic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1547,6 +1857,7 @@ pub mod topic_properties {
         Canceled,
         Failed,
     }
+    #[doc = "This determines the format that Event Grid should expect for incoming events published to the topic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InputSchema {
         EventGridSchema,
@@ -1559,6 +1870,7 @@ pub mod topic_properties {
             Self::EventGridSchema
         }
     }
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.TopicProperties.InboundIpRules\" />"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
@@ -1570,8 +1882,10 @@ pub mod topic_properties {
         }
     }
 }
+#[doc = "Topic regenerate share access key request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicRegenerateKeyRequest {
+    #[doc = "Key name to regenerate key1 or key2"]
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
@@ -1580,10 +1894,13 @@ impl TopicRegenerateKeyRequest {
         Self { key_name }
     }
 }
+#[doc = "Shared access keys of the Topic"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicSharedAccessKeys {
+    #[doc = "Shared access key1 for the topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key1: Option<String>,
+    #[doc = "Shared access key2 for the topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }
@@ -1592,10 +1909,12 @@ impl TopicSharedAccessKeys {
         Self::default()
     }
 }
+#[doc = "Properties of a topic type info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicTypeInfo {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of a topic type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicTypeProperties>,
 }
@@ -1604,22 +1923,31 @@ impl TopicTypeInfo {
         Self::default()
     }
 }
+#[doc = "Properties of a topic type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicTypeProperties {
+    #[doc = "Namespace of the provider of the topic type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Display Name for the topic type."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Description of the topic type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Region type of the resource."]
     #[serde(rename = "resourceRegionType", default, skip_serializing_if = "Option::is_none")]
     pub resource_region_type: Option<topic_type_properties::ResourceRegionType>,
+    #[doc = "Provisioning state of the topic type"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<topic_type_properties::ProvisioningState>,
+    #[doc = "List of locations supported by this topic type."]
     #[serde(rename = "supportedLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_locations: Vec<String>,
+    #[doc = "Source resource format."]
     #[serde(rename = "sourceResourceFormat", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_format: Option<String>,
+    #[doc = "Supported source scopes."]
     #[serde(rename = "supportedScopesForSource", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_scopes_for_source: Vec<String>,
 }
@@ -1630,11 +1958,13 @@ impl TopicTypeProperties {
 }
 pub mod topic_type_properties {
     use super::*;
+    #[doc = "Region type of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceRegionType {
         RegionalResource,
         GlobalResource,
     }
+    #[doc = "Provisioning state of the topic type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1645,8 +1975,10 @@ pub mod topic_type_properties {
         Failed,
     }
 }
+#[doc = "Result of the List Topic Types operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicTypesListResult {
+    #[doc = "A collection of topic types"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TopicTypeInfo>,
 }
@@ -1655,12 +1987,16 @@ impl TopicTypesListResult {
         Self::default()
     }
 }
+#[doc = "Information of topic update parameter properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicUpdateParameterProperties {
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.TopicUpdateParameterProperties.InboundIpRules\" />"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<topic_update_parameter_properties::PublicNetworkAccess>,
+    #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(rename = "inboundIpRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_ip_rules: Vec<InboundIpRule>,
+    #[doc = "This boolean is used to enable or disable local auth. Default value is false. When the property is set to true, only AAD token will be used to authenticate if user is allowed to publish to the topic."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
 }
@@ -1671,6 +2007,7 @@ impl TopicUpdateParameterProperties {
 }
 pub mod topic_update_parameter_properties {
     use super::*;
+    #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.TopicUpdateParameterProperties.InboundIpRules\" />"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
@@ -1682,12 +2019,16 @@ pub mod topic_update_parameter_properties {
         }
     }
 }
+#[doc = "Properties of the Topic update"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicUpdateParameters {
+    #[doc = "Tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The identity information for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
+    #[doc = "Information of topic update parameter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicUpdateParameterProperties>,
 }
@@ -1696,10 +2037,13 @@ impl TopicUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Result of the List Topics operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicsListResult {
+    #[doc = "A collection of Topics"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Topic>,
+    #[doc = "A link for the next page of topics"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1708,11 +2052,14 @@ impl TopicsListResult {
         Self::default()
     }
 }
+#[doc = "Definition of a Tracked Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Location of the resource."]
     pub location: String,
+    #[doc = "Tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1725,10 +2072,13 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "The information about the user identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityProperties {
+    #[doc = "The principal id of user assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The client id of user assigned identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
@@ -1737,10 +2087,12 @@ impl UserIdentityProperties {
         Self::default()
     }
 }
+#[doc = "Information about the webhook destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
+    #[doc = "Information about the webhook destination properties for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebHookEventSubscriptionDestinationProperties>,
 }
@@ -1752,24 +2104,32 @@ impl WebHookEventSubscriptionDestination {
         }
     }
 }
+#[doc = "Information about the webhook destination properties for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebHookEventSubscriptionDestinationProperties {
+    #[doc = "The URL that represents the endpoint of the destination of an event subscription."]
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
+    #[doc = "The base URL that represents the endpoint of the destination of an event subscription."]
     #[serde(rename = "endpointBaseUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_base_url: Option<String>,
+    #[doc = "Maximum number of events per batch."]
     #[serde(rename = "maxEventsPerBatch", default, skip_serializing_if = "Option::is_none")]
     pub max_events_per_batch: Option<i32>,
+    #[doc = "Preferred batch size in Kilobytes."]
     #[serde(rename = "preferredBatchSizeInKilobytes", default, skip_serializing_if = "Option::is_none")]
     pub preferred_batch_size_in_kilobytes: Option<i32>,
+    #[doc = "The Azure Active Directory Tenant ID to get the access token that will be included as the bearer token in delivery requests."]
     #[serde(rename = "azureActiveDirectoryTenantId", default, skip_serializing_if = "Option::is_none")]
     pub azure_active_directory_tenant_id: Option<String>,
+    #[doc = "The Azure Active Directory Application ID or URI to get the access token that will be included as the bearer token in delivery requests."]
     #[serde(
         rename = "azureActiveDirectoryApplicationIdOrUri",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub azure_active_directory_application_id_or_uri: Option<String>,
+    #[doc = "Delivery attribute details."]
     #[serde(rename = "deliveryAttributeMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
 }
@@ -1778,18 +2138,25 @@ impl WebHookEventSubscriptionDestinationProperties {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1800,6 +2167,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1807,6 +2175,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

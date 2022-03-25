@@ -2,9 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Input of CheckNameAvailability API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityInput {
+    #[doc = "The resource name to validate."]
     pub name: String,
+    #[doc = "Type of CDN resource used in CheckNameAvailability."]
     #[serde(rename = "type")]
     pub type_: ResourceType,
 }
@@ -13,12 +16,16 @@ impl CheckNameAvailabilityInput {
         Self { name, type_ }
     }
 }
+#[doc = "Output of check name availability API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityOutput {
+    #[doc = "Indicates whether the name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason why the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "The detailed error message describing why the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -27,10 +34,12 @@ impl CheckNameAvailabilityOutput {
         Self::default()
     }
 }
+#[doc = "Customer provided domain for branding purposes, e.g. www.contoso.com."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomain {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The JSON object that contains the properties of the custom domain to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomDomainProperties>,
 }
@@ -42,10 +51,13 @@ impl CustomDomain {
         }
     }
 }
+#[doc = "Result of the request to list custom domains. It contains a list of custom domain objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainListResult {
+    #[doc = "List of CDN CustomDomains within an endpoint."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomDomain>,
+    #[doc = "URL to get the next set of custom domain objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -54,8 +66,10 @@ impl CustomDomainListResult {
         Self::default()
     }
 }
+#[doc = "The customDomain JSON object required for custom domain creation or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainParameters {
+    #[doc = "The JSON object that contains the properties of the custom domain to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomDomainPropertiesParameters>,
 }
@@ -64,16 +78,22 @@ impl CustomDomainParameters {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties of the custom domain to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainProperties {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
     #[serde(rename = "hostName")]
     pub host_name: String,
+    #[doc = "Resource status of the custom domain."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<custom_domain_properties::ResourceState>,
+    #[doc = "Provisioning state of Custom Https of the custom domain."]
     #[serde(rename = "customHttpsProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_state: Option<custom_domain_properties::CustomHttpsProvisioningState>,
+    #[doc = "Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China."]
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
+    #[doc = "Provisioning status of the custom domain."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -90,12 +110,14 @@ impl CustomDomainProperties {
 }
 pub mod custom_domain_properties {
     use super::*;
+    #[doc = "Resource status of the custom domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
         Active,
         Deleting,
     }
+    #[doc = "Provisioning state of Custom Https of the custom domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CustomHttpsProvisioningState {
         Enabling,
@@ -105,8 +127,10 @@ pub mod custom_domain_properties {
         Failed,
     }
 }
+#[doc = "The JSON object that contains the properties of the custom domain to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainPropertiesParameters {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
     #[serde(rename = "hostName")]
     pub host_name: String,
 }
@@ -115,9 +139,12 @@ impl CustomDomainPropertiesParameters {
         Self { host_name }
     }
 }
+#[doc = "Origin to be added when creating a CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeepCreatedOrigin {
+    #[doc = "Origin name"]
     pub name: String,
+    #[doc = "Properties of origin Properties of the origin created on the CDN endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeepCreatedOriginProperties>,
 }
@@ -126,12 +153,16 @@ impl DeepCreatedOrigin {
         Self { name, properties: None }
     }
 }
+#[doc = "Properties of origin Properties of the origin created on the CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeepCreatedOriginProperties {
+    #[doc = "The address of the origin. It can be a domain names, IPv4 address, or IPv6 address."]
     #[serde(rename = "hostName")]
     pub host_name: String,
+    #[doc = "The value of the HTTP port. Must be between 1 and 65535"]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
+    #[doc = "The value of the HTTPS port. Must be between 1 and 65535"]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
 }
@@ -144,10 +175,12 @@ impl DeepCreatedOriginProperties {
         }
     }
 }
+#[doc = "Edge node of CDN service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdgeNode {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The JSON object that contains the properties required to create an edgenode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeNodeProperties>,
 }
@@ -159,8 +192,10 @@ impl EdgeNode {
         }
     }
 }
+#[doc = "The JSON object that contains the properties required to create an edgenode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdgeNodeProperties {
+    #[doc = "List of ip address groups."]
     #[serde(rename = "ipAddressGroups")]
     pub ip_address_groups: Vec<IpAddressGroup>,
 }
@@ -169,10 +204,13 @@ impl EdgeNodeProperties {
         Self { ip_address_groups }
     }
 }
+#[doc = "Result of the request to list CDN edgenodes. It contains a list of ip address group and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgenodeResult {
+    #[doc = "Edge node of CDN service."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EdgeNode>,
+    #[doc = "URL to get the next set of edgenode list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -181,10 +219,12 @@ impl EdgenodeResult {
         Self::default()
     }
 }
+#[doc = "CDN endpoint is the entity within a CDN profile containing configuration information such as origin, protocol, content caching and delivery behavior. The CDN endpoint uses the URL format <endpointname>.azureedge.net."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Endpoint {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The JSON object that contains the properties required to create an endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointProperties>,
 }
@@ -196,10 +236,13 @@ impl Endpoint {
         }
     }
 }
+#[doc = "Result of the request to list endpoints. It contains a list of endpoint objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointListResult {
+    #[doc = "List of CDN endpoints within a profile"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Endpoint>,
+    #[doc = "URL to get the next set of endpoint objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -208,15 +251,20 @@ impl EndpointListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties required to create an endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointProperties {
     #[serde(flatten)]
     pub endpoint_properties_update_parameters: EndpointPropertiesUpdateParameters,
+    #[doc = "The host name of the endpoint structured as {endpointName}.{DNSZone}, e.g. contoso.azureedge.net"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The source of the content being delivered via CDN."]
     pub origins: Vec<DeepCreatedOrigin>,
+    #[doc = "Resource status of the endpoint."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<endpoint_properties::ResourceState>,
+    #[doc = "Provisioning status of the endpoint."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -233,6 +281,7 @@ impl EndpointProperties {
 }
 pub mod endpoint_properties {
     use super::*;
+    #[doc = "Resource status of the endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -243,24 +292,34 @@ pub mod endpoint_properties {
         Stopping,
     }
 }
+#[doc = "Result of the request to list endpoints. It contains a list of endpoints and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointPropertiesUpdateParameters {
+    #[doc = "The host header CDN sends along with content requests to origin. The default value is the host name of the origin."]
     #[serde(rename = "originHostHeader", default, skip_serializing_if = "Option::is_none")]
     pub origin_host_header: Option<String>,
+    #[doc = "The path used when CDN sends request to origin."]
     #[serde(rename = "originPath", default, skip_serializing_if = "Option::is_none")]
     pub origin_path: Option<String>,
+    #[doc = "List of content types on which compression applies. The value should be a valid MIME type."]
     #[serde(rename = "contentTypesToCompress", default, skip_serializing_if = "Vec::is_empty")]
     pub content_types_to_compress: Vec<String>,
+    #[doc = "Indicates whether content compression is enabled on CDN. Default value is false. If compression is enabled, content will be served as compressed if user requests for a compressed version. Content won't be compressed on CDN when requested content is smaller than 1 byte or larger than 1 MB."]
     #[serde(rename = "isCompressionEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_compression_enabled: Option<bool>,
+    #[doc = "Indicates whether HTTP traffic is allowed on the endpoint. Default value is true. At least one protocol (HTTP or HTTPS) must be allowed."]
     #[serde(rename = "isHttpAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_http_allowed: Option<bool>,
+    #[doc = "Indicates whether HTTPS traffic is allowed on the endpoint. Default value is true. At least one protocol (HTTP or HTTPS) must be allowed."]
     #[serde(rename = "isHttpsAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_https_allowed: Option<bool>,
+    #[doc = "Defines the query string caching behavior."]
     #[serde(rename = "queryStringCachingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub query_string_caching_behavior: Option<QueryStringCachingBehavior>,
+    #[doc = "Customer can specify what scenario they want this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization."]
     #[serde(rename = "optimizationType", default, skip_serializing_if = "Option::is_none")]
     pub optimization_type: Option<OptimizationType>,
+    #[doc = "List of rules defining user geo access within a CDN endpoint. Each geo filter defines an access rule to a specified path or content, e.g. block APAC for path /pictures/"]
     #[serde(rename = "geoFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub geo_filters: Vec<GeoFilter>,
 }
@@ -269,10 +328,13 @@ impl EndpointPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Properties required to create a new endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointUpdateParameters {
+    #[doc = "Endpoint tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Result of the request to list endpoints. It contains a list of endpoints and a URL link to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointPropertiesUpdateParameters>,
 }
@@ -281,10 +343,13 @@ impl EndpointUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Error response indicates CDN service is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -293,11 +358,15 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Rules defining user geo access within a CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoFilter {
+    #[doc = "Relative path applicable to geo filter. (e.g. '/mypictures', '/mypicture/kitty.jpg', and etc.)"]
     #[serde(rename = "relativePath")]
     pub relative_path: String,
+    #[doc = "Action of the geo filter, i.e. allow or block access."]
     pub action: geo_filter::Action,
+    #[doc = "Two letter country codes defining user country access in a geo filter, e.g. AU, MX, US."]
     #[serde(rename = "countryCodes")]
     pub country_codes: Vec<String>,
 }
@@ -312,18 +381,23 @@ impl GeoFilter {
 }
 pub mod geo_filter {
     use super::*;
+    #[doc = "Action of the geo filter, i.e. allow or block access."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Block,
         Allow,
     }
 }
+#[doc = "CDN Ip address group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddressGroup {
+    #[doc = "The delivery region of the ip address group"]
     #[serde(rename = "deliveryRegion", default, skip_serializing_if = "Option::is_none")]
     pub delivery_region: Option<String>,
+    #[doc = "The list of ip v4 addresses."]
     #[serde(rename = "ipv4Addresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ipv4_addresses: Vec<CidrIpAddress>,
+    #[doc = "The list of ip v6 addresses."]
     #[serde(rename = "ipv6Addresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ipv6_addresses: Vec<CidrIpAddress>,
 }
@@ -332,8 +406,10 @@ impl IpAddressGroup {
         Self::default()
     }
 }
+#[doc = "Parameters required for content load."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoadParameters {
+    #[doc = "The path to the content to be loaded. Path should be a relative file URL of the origin."]
     #[serde(rename = "contentPaths")]
     pub content_paths: Vec<String>,
 }
@@ -342,10 +418,13 @@ impl LoadParameters {
         Self { content_paths }
     }
 }
+#[doc = "CDN REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -356,12 +435,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Cdn"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Profile, endpoint, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -371,10 +454,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list CDN operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of CDN operations supported by the CDN resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -383,6 +469,7 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Customer can specify what scenario they want this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OptimizationType {
     GeneralWebDelivery,
@@ -391,10 +478,12 @@ pub enum OptimizationType {
     LargeFileDownload,
     DynamicSiteAcceleration,
 }
+#[doc = "CDN origin is the source of the content being delivered via CDN. When the edge nodes represented by an endpoint do not have the requested content cached, they attempt to fetch it from one or more of the configured origins."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Origin {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The JSON object that contains the properties of the origin to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OriginProperties>,
 }
@@ -406,10 +495,13 @@ impl Origin {
         }
     }
 }
+#[doc = "Result of the request to list origins. It contains a list of origin objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginListResult {
+    #[doc = "List of CDN origins within an endpoint"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Origin>,
+    #[doc = "URL to get the next set of origin objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -418,16 +510,22 @@ impl OriginListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties of the origin to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OriginProperties {
+    #[doc = "The address of the origin. Domain names, IPv4 addresses, and IPv6 addresses are supported."]
     #[serde(rename = "hostName")]
     pub host_name: String,
+    #[doc = "The value of the HTTP port. Must be between 1 and 65535."]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
+    #[doc = "The value of the https port. Must be between 1 and 65535."]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
+    #[doc = "Resource status of the origin."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<origin_properties::ResourceState>,
+    #[doc = "Provisioning status of the origin."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -444,6 +542,7 @@ impl OriginProperties {
 }
 pub mod origin_properties {
     use super::*;
+    #[doc = "Resource status of the origin."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -451,12 +550,16 @@ pub mod origin_properties {
         Deleting,
     }
 }
+#[doc = "The JSON object that contains the properties of the origin to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginPropertiesParameters {
+    #[doc = "The address of the origin. Domain names, IPv4 addresses, and IPv6 addresses are supported."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The value of the HTTP port. Must be between 1 and 65535."]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
+    #[doc = "The value of the HTTPS port. Must be between 1 and 65535."]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
 }
@@ -465,8 +568,10 @@ impl OriginPropertiesParameters {
         Self::default()
     }
 }
+#[doc = "Origin properties needed for origin creation or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginUpdateParameters {
+    #[doc = "The JSON object that contains the properties of the origin to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OriginPropertiesParameters>,
 }
@@ -475,11 +580,14 @@ impl OriginUpdateParameters {
         Self::default()
     }
 }
+#[doc = "CDN profile represents the top level resource and the entry point into the CDN API. This allows users to set up a logical grouping of endpoints in addition to creating shared configuration settings and selecting pricing tiers and providers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The pricing tier (defines a CDN provider, feature list and rate) of the CDN profile."]
     pub sku: Sku,
+    #[doc = "The JSON object that contains the properties required to create a profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProfileProperties>,
 }
@@ -492,10 +600,13 @@ impl Profile {
         }
     }
 }
+#[doc = "Result of the request to list profiles. It contains a list of profile objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
+    #[doc = "List of CDN profiles within a resource group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
+    #[doc = "URL to get the next set of profile objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -504,10 +615,13 @@ impl ProfileListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties required to create a profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
+    #[doc = "Resource status of the profile."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
+    #[doc = "Provisioning status of the profile."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -518,6 +632,7 @@ impl ProfileProperties {
 }
 pub mod profile_properties {
     use super::*;
+    #[doc = "Resource status of the profile."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -526,8 +641,10 @@ pub mod profile_properties {
         Disabled,
     }
 }
+#[doc = "Properties required to update a profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProfileUpdateParameters {
+    #[doc = "Profile tags"]
     pub tags: serde_json::Value,
 }
 impl ProfileUpdateParameters {
@@ -535,8 +652,10 @@ impl ProfileUpdateParameters {
         Self { tags }
     }
 }
+#[doc = "Parameters required for content purge."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PurgeParameters {
+    #[doc = "The path to the content to be purged. Can describe a file path or a wild card directory."]
     #[serde(rename = "contentPaths")]
     pub content_paths: Vec<String>,
 }
@@ -545,6 +664,7 @@ impl PurgeParameters {
         Self { content_paths }
     }
 }
+#[doc = "Defines the query string caching behavior."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryStringCachingBehavior {
     IgnoreQueryString,
@@ -552,15 +672,21 @@ pub enum QueryStringCachingBehavior {
     UseQueryString,
     NotSet,
 }
+#[doc = "The Resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -575,19 +701,25 @@ impl Resource {
         }
     }
 }
+#[doc = "Type of CDN resource used in CheckNameAvailability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
     MicrosoftCdnProfilesEndpoints,
 }
+#[doc = "Output of check resource usage API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceUsage {
+    #[doc = "Resource type of the usages."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Unit of the usage. e.g. Count."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Actual value of the resource type."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
+    #[doc = "Quota of the resource type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
 }
@@ -596,10 +728,13 @@ impl ResourceUsage {
         Self::default()
     }
 }
+#[doc = "Output of check resource usage API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceUsageListResult {
+    #[doc = "List of resource usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceUsage>,
+    #[doc = "URL to get the next set of custom domain objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -608,8 +743,10 @@ impl ResourceUsageListResult {
         Self::default()
     }
 }
+#[doc = "The pricing tier (defines a CDN provider, feature list and rate) of the CDN profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
+    #[doc = "Name of the pricing tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
@@ -620,6 +757,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Name of the pricing tier."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "Standard_Verizon")]
@@ -634,8 +772,10 @@ pub mod sku {
         StandardChinaCdn,
     }
 }
+#[doc = "SSO URI required to login to the supplemental portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsoUri {
+    #[doc = "The URI used to login to the supplemental portal."]
     #[serde(rename = "ssoUriValue", default, skip_serializing_if = "Option::is_none")]
     pub sso_uri_value: Option<String>,
 }
@@ -644,8 +784,10 @@ impl SsoUri {
         Self::default()
     }
 }
+#[doc = "The result of the GetSupportedOptimizationTypes API"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedOptimizationTypesResult {
+    #[doc = "Supported optimization types for a profile."]
     #[serde(rename = "supportedOptimizationTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_optimization_types: Vec<OptimizationType>,
 }
@@ -654,8 +796,10 @@ impl SupportedOptimizationTypesResult {
         Self::default()
     }
 }
+#[doc = "Input of the custom domain to be validated for DNS mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateCustomDomainInput {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
     #[serde(rename = "hostName")]
     pub host_name: String,
 }
@@ -664,12 +808,16 @@ impl ValidateCustomDomainInput {
         Self { host_name }
     }
 }
+#[doc = "Output of custom domain validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateCustomDomainOutput {
+    #[doc = "Indicates whether the custom domain is validated or not."]
     #[serde(rename = "customDomainValidated", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain_validated: Option<bool>,
+    #[doc = "The reason why the custom domain is not valid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "Error message describing why the custom domain is not valid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -678,10 +826,13 @@ impl ValidateCustomDomainOutput {
         Self::default()
     }
 }
+#[doc = "CIDR Ip address"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CidrIpAddress {
+    #[doc = "IP address itself."]
     #[serde(rename = "baseIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub base_ip_address: Option<String>,
+    #[doc = "The length of the prefix of the ip address."]
     #[serde(rename = "prefixLength", default, skip_serializing_if = "Option::is_none")]
     pub prefix_length: Option<i64>,
 }

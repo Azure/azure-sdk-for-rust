@@ -1,7 +1,12 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
-use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
-use std::{collections::HashSet, fs, path::PathBuf};
+use autorust_codegen::{
+    self, cargo_toml, get_svc_readmes, io, lib_rs,
+    readme_md::{self, ReadmeMd},
+    Config, Error, PropertyName, Result, SpecReadme,
+};
+use camino::Utf8PathBuf;
+use std::{collections::HashSet, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
@@ -162,24 +167,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ),
 ];
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    CodegenError(#[from] autorust_codegen::Error),
-    #[error("file name was not utf-8")]
-    FileNameNotUtf8Error {},
-    #[error("IoError")]
-    IoError { source: std::io::Error },
-    #[error("PathError")]
-    PathError { source: path::Error },
-    #[error("CargoTomlError")]
-    CargoTomlError { source: cargo_toml::Error },
-    #[error("LibRsError")]
-    LibRsError { source: lib_rs::Error },
-}
-
 fn main() -> Result<()> {
     for (i, spec) in get_svc_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
@@ -197,25 +184,23 @@ fn main() -> Result<()> {
 
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
-    let has_no_configs = spec
-        .configs()?
-        .iter()
-        .all(|x| skip_service_tags.contains(&(spec.spec(), x.tag.as_str())));
-    if has_no_configs {
+    let config = spec.config()?;
+    let has_no_tags = config.tags().iter().all(|x| skip_service_tags.contains(&(spec.spec(), x.name())));
+    if has_no_tags {
         println!("not generating {}", spec.spec());
         return Ok(());
     }
 
     let service_name = &spec.service_name();
     let crate_name = &format!("azure_svc_{}", service_name);
-    let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
+    let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
 
-    let src_folder = path::join(output_folder, "src").map_err(|source| Error::PathError { source })?;
+    let src_folder = io::join(output_folder, "src")?;
     if src_folder.exists() {
-        fs::remove_dir_all(&src_folder).map_err(|source| Error::IoError { source })?;
+        fs::remove_dir_all(&src_folder)?;
     }
 
-    let mut feature_mod_names = Vec::new();
+    let mut tags = Vec::new();
 
     let mut fix_case_properties = HashSet::new();
     for spec_title in FIX_CASE_PROPERTIES {
@@ -225,7 +210,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut box_properties = HashSet::new();
     for (file_path, schema_name, property_name) in BOX_PROPERTIES {
         box_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -234,36 +219,28 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut invalid_types = HashSet::new();
     for (file_path, schema_name, property_name) in INVALID_TYPE_WORKAROUND {
         invalid_types.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
     }
 
-    for config in spec.configs()? {
-        let tag = config.tag.as_str();
-        if skip_service_tags.contains(&(spec.spec(), tag)) {
+    for tag in config.tags() {
+        let tag_name = tag.name();
+        if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
             // println!("  skipping {}", tag);
             continue;
         }
-        println!("  {}", tag);
-        let mod_name = &to_mod_name(tag);
-        feature_mod_names.push((tag.to_string(), mod_name.clone()));
-        // println!("  {}", mod_name);
-        let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
-        // println!("  {:?}", mod_output_folder);
-        // for input_file in &config.input_files {
-        //     println!("  {}", input_file);
-        // }
-        let input_files: Result<Vec<_>> = config
-            .input_files
+        println!("  {}", tag_name);
+        let mod_name = tag.rust_mod_name();
+        let mod_output_folder = io::join(&src_folder, &mod_name)?;
+        tags.push(tag);
+        let input_files: Result<Vec<_>> = tag
+            .input_files()
             .iter()
-            .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
+            .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
             .collect();
         let input_files = input_files?;
-        // for input_file in &input_files {
-        //     println!("  {:?}", input_file);
-        // }
         autorust_codegen::run(Config {
             output_folder: mod_output_folder,
             input_files,
@@ -274,21 +251,17 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             ..Config::default()
         })?;
     }
-    if feature_mod_names.is_empty() {
+    if tags.is_empty() {
         return Ok(());
     }
-    cargo_toml::create(
+    cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
+    lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
+
+    let readme = ReadmeMd {
         crate_name,
-        &feature_mod_names,
-        &path::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
-    )
-    .map_err(|source| Error::CargoTomlError { source })?;
-    lib_rs::create(
-        &feature_mod_names,
-        &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
-        false,
-    )
-    .map_err(|source| Error::LibRsError { source })?;
+        readme_url: readme_md::url(spec.readme().as_str()),
+    };
+    readme.create(&io::join(output_folder, "README.md")?)?;
 
     Ok(())
 }

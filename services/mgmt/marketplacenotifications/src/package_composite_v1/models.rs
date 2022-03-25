@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Available operations of the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperations {
+    #[doc = "Collection of available operation details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDetail>,
+    #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -14,10 +17,13 @@ impl AvailableOperations {
         Self::default()
     }
 }
+#[doc = "Diagnostics Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticsInfoDto {
+    #[doc = "MS CV"]
     #[serde(rename = "ms-cv", default, skip_serializing_if = "Option::is_none")]
     pub ms_cv: Option<String>,
+    #[doc = "build number"]
     #[serde(rename = "buildNumber", default, skip_serializing_if = "Option::is_none")]
     pub build_number: Option<String>,
 }
@@ -26,8 +32,10 @@ impl DiagnosticsInfoDto {
         Self::default()
     }
 }
+#[doc = "Error response indicates Microsoft.MarketplaceNotifications service is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The details of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
@@ -38,10 +46,13 @@ impl ErrorResponse {
 }
 pub mod error_response {
     use super::*;
+    #[doc = "The details of the error."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
+        #[doc = "Error code."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "Error message indicating why the operation failed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
@@ -51,10 +62,12 @@ pub mod error_response {
         }
     }
 }
+#[doc = "Review notification"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Notification {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -65,10 +78,12 @@ impl Notification {
         Self::default()
     }
 }
+#[doc = "Notifications List"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Notification>,
+    #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -79,12 +94,16 @@ impl NotificationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfferProperties {
+    #[doc = "legacy offer id of the notification (publisher.offer)"]
     #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
     pub offer_id: Option<String>,
+    #[doc = "date for creating the notification"]
     #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
+    #[doc = "offer display name"]
     #[serde(rename = "offerDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub offer_display_name: Option<String>,
+    #[doc = "user's principal id"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
 }
@@ -93,16 +112,22 @@ impl OfferProperties {
         Self::default()
     }
 }
+#[doc = "Operation detail payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDetail {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Operation display payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "operation origin"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "operation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -111,14 +136,19 @@ impl OperationDetail {
         Self::default()
     }
 }
+#[doc = "Operation display payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Resource of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Name of the provider for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Name of the operation for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Localized friendly description for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -127,12 +157,16 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -141,18 +175,25 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -163,6 +204,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -170,6 +212,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

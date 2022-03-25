@@ -28,7 +28,7 @@ impl Policy for TransportPolicy {
         _ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         // there must be no more policies
         assert_eq!(0, next.len());
 

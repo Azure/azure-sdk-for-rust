@@ -3,12 +3,8 @@ use crate::util::*;
 use crate::Properties;
 use azure_core::prelude::*;
 use azure_core::{
-    headers::{add_mandatory_header2, add_optional_header2},
-    AppendToUrlQuery, Response as HttpResponse,
-};
-use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
-    Etag,
+    AppendToUrlQuery, Etag, Response as HttpResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
@@ -47,17 +43,15 @@ impl CreateFileSystemBuilder {
         let ctx = self.client.context.clone();
 
         Box::pin(async move {
-            let mut url = this.client.url().clone();
+            let mut url = this.client.url()?;
             url.query_pairs_mut().append_pair("resource", "filesystem");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this
-                .client
-                .prepare_request_pipeline(url.as_str(), http::Method::PUT);
+            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_optional_header2(&this.properties, &mut request)?;
-            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&this.properties);
+            request.insert_headers(&ContentLength::new(0));
 
             let response = self
                 .client

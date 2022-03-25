@@ -4,22 +4,21 @@ use serde::{Deserialize, Serialize};
 // DB.
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
-use std::borrow::Cow;
 use std::error::Error;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -57,7 +56,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // an error (for example, the given key is not valid) you will receive a
     // specific azure_data_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
-    let db = Box::pin(client.list_databases().into_stream())
+    let db = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()?
@@ -82,15 +83,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = Box::pin(
-            client
-                .clone()
-                .into_database_client(database.id.clone())
-                .list_collections(Context::new(), ListCollectionsOptions::new()),
-        )
-        .next()
-        .await
-        .unwrap()?;
+        let collections = client
+            .database_client(database.id.clone())
+            .list_collections()
+            .into_stream()
+            .next()
+            .await
+            .unwrap()?;
 
         if let Some(collection) = collections
             .collections
@@ -101,12 +100,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         } else {
             client
                 .clone()
-                .into_database_client(database.id.clone())
-                .create_collection(
-                    Context::new(),
-                    COLLECTION,
-                    CreateCollectionOptions::new("/id"),
-                )
+                .database_client(database.id.clone())
+                .create_collection(COLLECTION, "/id")
+                .into_future()
                 .await?
                 .collection
         }
@@ -118,8 +114,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // data in them. Let's create a Document. The only constraint
     // is that we need an id and an arbitrary, Serializable type.
     let doc = MySampleStruct {
-        id: Cow::Owned("unique_id100".to_owned()),
-        a_string: Cow::Borrowed("Something here"),
+        id: "unique_id100".into(),
+        a_string: "Something here".into(),
         a_number: 100,
         a_timestamp: chrono::Utc::now().timestamp(),
     };
@@ -128,14 +124,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Notice how easy it is! :)
     // First we construct a "collection" specific client so we
     // do not need to specify it over and over.
-    let database_client = client.clone().into_database_client(database.id.clone());
-    let collection_client = database_client.into_collection_client(collection.id);
+    let collection = client
+        .database_client(database.id.clone())
+        .collection_client(collection.id);
 
     // The method create_document will return, upon success,
     // the document attributes.
 
-    let create_document_response = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+    let create_document_response = collection
+        .create_document(doc.clone())
+        .into_future()
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -145,10 +143,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Now we list all the documents in our collection. It
     // should show we have 1 document.
     println!("Listing documents...");
-    let list_documents_response = collection_client
+    let list_documents_response = collection
         .list_documents()
-        .execute::<MySampleStruct>()
-        .await?;
+        .into_stream::<MySampleStruct>()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "list_documents_response contains {} documents",
         list_documents_response.documents.len()
@@ -156,10 +156,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // Now we get the same document by id.
     println!("getting document by id {}", &doc.id);
-    let get_document_response = collection_client
+    let get_document_response = collection
         .clone()
-        .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
+        .document_client(doc.id.clone(), &doc.id)?
+        .get_document()
+        .into_future::<MySampleStruct>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
@@ -173,12 +174,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // the etag received in the previous get_document. The etag is an opaque value that
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
-        let options = ReplaceDocumentOptions::new()
-            .if_match_condition(IfMatchCondition::Match(document.etag));
-        let replace_document_response = collection_client
+        let replace_document_response = collection
             .clone()
-            .into_document_client(doc.id.clone(), &doc.id)?
-            .replace_document(Context::new(), &doc, options)
+            .document_client(doc.id.clone(), &doc.id)?
+            .replace_document(doc)
+            .if_match_condition(IfMatchCondition::Match(document.etag))
+            .into_future()
             .await?;
         println!(
             "replace_document_response == {:#?}",
@@ -188,17 +189,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // We will perform some cleanup. First we delete the collection...
     client
-        .clone()
-        .into_database_client(DATABASE.to_owned())
-        .into_collection_client(COLLECTION.to_owned())
-        .delete_collection(Context::new(), DeleteCollectionOptions::new())
+        .database_client(DATABASE.to_owned())
+        .collection_client(COLLECTION.to_owned())
+        .delete_collection()
+        .into_future()
         .await?;
     println!("collection deleted");
 
     // And then we delete the database.
     client
-        .into_database_client(database.id)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .database_client(database.id)
+        .delete_database()
+        .into_future()
         .await?;
     println!("database deleted");
 

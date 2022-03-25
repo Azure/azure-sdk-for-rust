@@ -2,24 +2,33 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Cognitive Services Account is an Azure resource representing the provisioned account, its type, location and SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccount {
+    #[doc = "Entity Tag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The id of the created account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Type of cognitive service account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "The location of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The name of the created account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CognitiveServicesAccountProperties>,
+    #[doc = "The SKU of the cognitive services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -28,13 +37,19 @@ impl CognitiveServicesAccount {
         Self::default()
     }
 }
+#[doc = "The parameters to provide for the account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CognitiveServicesAccountCreateParameters {
+    #[doc = "The SKU of the cognitive services account."]
     pub sku: Sku,
+    #[doc = "Required. Indicates the type of cognitive service account."]
     pub kind: cognitive_services_account_create_parameters::Kind,
+    #[doc = "Required. Gets or sets the location of the resource. This will be one of the supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.). The geo region of a resource cannot be changed once it is created, but if an identical geo region is specified on update the request will succeed."]
     pub location: String,
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "required empty properties object. Must be an empty object, and must exist in the request."]
     pub properties: CognitiveServicesAccountPropertiesCreateParameters,
 }
 impl CognitiveServicesAccountCreateParameters {
@@ -55,6 +70,7 @@ impl CognitiveServicesAccountCreateParameters {
 }
 pub mod cognitive_services_account_create_parameters {
     use super::*;
+    #[doc = "Required. Indicates the type of cognitive service account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Academic,
@@ -82,8 +98,10 @@ pub mod cognitive_services_account_create_parameters {
         WebLm,
     }
 }
+#[doc = "The list of cognitive services accounts operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountEnumerateSkusResult {
+    #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesResourceAndSku>,
 }
@@ -92,10 +110,13 @@ impl CognitiveServicesAccountEnumerateSkusResult {
         Self::default()
     }
 }
+#[doc = "The access keys for the cognitive services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountKeys {
+    #[doc = "Gets the value of key 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key1: Option<String>,
+    #[doc = "Gets the value of key 2."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }
@@ -104,8 +125,10 @@ impl CognitiveServicesAccountKeys {
         Self::default()
     }
 }
+#[doc = "The list of cognitive services accounts operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountListResult {
+    #[doc = "Gets the list of Cognitive Services accounts and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesAccount>,
 }
@@ -116,8 +139,10 @@ impl CognitiveServicesAccountListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountProperties {
+    #[doc = "Gets the status of the cognitive services account at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cognitive_services_account_properties::ProvisioningState>,
+    #[doc = "Endpoint of the created account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
@@ -128,6 +153,7 @@ impl CognitiveServicesAccountProperties {
 }
 pub mod cognitive_services_account_properties {
     use super::*;
+    #[doc = "Gets the status of the cognitive services account at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -137,6 +163,7 @@ pub mod cognitive_services_account_properties {
         Failed,
     }
 }
+#[doc = "required empty properties object. Must be an empty object, and must exist in the request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountPropertiesCreateParameters {}
 impl CognitiveServicesAccountPropertiesCreateParameters {
@@ -144,10 +171,13 @@ impl CognitiveServicesAccountPropertiesCreateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters to provide for the account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesAccountUpdateParameters {
+    #[doc = "The SKU of the cognitive services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -158,8 +188,10 @@ impl CognitiveServicesAccountUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CognitiveServicesResourceAndSku {
+    #[doc = "Resource Namespace and Type"]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "The SKU of the cognitive services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -180,7 +212,9 @@ impl Error {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorBody {
+    #[doc = "error code"]
     pub code: String,
+    #[doc = "error message"]
     pub message: String,
 }
 impl ErrorBody {
@@ -188,8 +222,10 @@ impl ErrorBody {
         Self { code, message }
     }
 }
+#[doc = "Regenerate key parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeyParameters {
+    #[doc = "key name to generate (Key1|Key2)"]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<regenerate_key_parameters::KeyName>,
 }
@@ -200,15 +236,19 @@ impl RegenerateKeyParameters {
 }
 pub mod regenerate_key_parameters {
     use super::*;
+    #[doc = "key name to generate (Key1|Key2)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         Key1,
         Key2,
     }
 }
+#[doc = "The SKU of the cognitive services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Gets or sets the sku name. Required for account creation, optional for update."]
     pub name: sku::Name,
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
@@ -219,6 +259,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Gets or sets the sku name. Required for account creation, optional for update."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         F0,
@@ -233,6 +274,7 @@ pub mod sku {
         S5,
         S6,
     }
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Free,

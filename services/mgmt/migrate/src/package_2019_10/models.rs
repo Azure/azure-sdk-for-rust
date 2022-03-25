@@ -2,34 +2,49 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A disk assessed for an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessedDisk {
+    #[doc = "Name of the assessed disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "User friendly name of the assessed disk."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Gigabytes of storage provisioned for this disk."]
     #[serde(rename = "gigabytesProvisioned", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_provisioned: Option<f64>,
+    #[doc = "Disk throughput in MegaBytes per second."]
     #[serde(rename = "megabytesPerSecondOfRead", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_of_read: Option<f64>,
+    #[doc = "Disk throughput in MegaBytes per second."]
     #[serde(rename = "megabytesPerSecondOfWrite", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_of_write: Option<f64>,
+    #[doc = "Number of read operations per second for the disk."]
     #[serde(rename = "numberOfReadOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
     pub number_of_read_operations_per_second: Option<f64>,
+    #[doc = "Number of read and write operations per second for the disk."]
     #[serde(rename = "numberOfWriteOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
     pub number_of_write_operations_per_second: Option<f64>,
+    #[doc = "Estimated aggregate storage cost for a 31-day month for this disk."]
     #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
+    #[doc = "Storage type selected for this disk."]
     #[serde(rename = "recommendedDiskType", default, skip_serializing_if = "Option::is_none")]
     pub recommended_disk_type: Option<assessed_disk::RecommendedDiskType>,
+    #[doc = "Recommended Azure size for the disk, given utilization data and preferences set on Assessment."]
     #[serde(rename = "recommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
     pub recommended_disk_size: Option<assessed_disk::RecommendedDiskSize>,
+    #[doc = "Gigabytes of storage provided by the recommended Azure disk size."]
     #[serde(rename = "gigabytesForRecommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_for_recommended_disk_size: Option<i32>,
+    #[doc = "Whether this disk is suitable for Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<assessed_disk::Suitability>,
+    #[doc = "If disk is not suitable to be migrated, this explains the reasons and mitigation steps."]
     #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
     pub suitability_explanation: Option<assessed_disk::SuitabilityExplanation>,
+    #[doc = "If disk is suitable to be migrate but some conditions/checks were not considered while calculating suitability, this explains the details."]
     #[serde(rename = "suitabilityDetail", default, skip_serializing_if = "Option::is_none")]
     pub suitability_detail: Option<assessed_disk::SuitabilityDetail>,
 }
@@ -40,6 +55,7 @@ impl AssessedDisk {
 }
 pub mod assessed_disk {
     use super::*;
+    #[doc = "Storage type selected for this disk."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecommendedDiskType {
         Unknown,
@@ -49,6 +65,7 @@ pub mod assessed_disk {
         StandardSsd,
         StandardOrPremium,
     }
+    #[doc = "Recommended Azure size for the disk, given utilization data and preferences set on Assessment."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecommendedDiskSize {
         Unknown,
@@ -119,6 +136,7 @@ pub mod assessed_disk {
         #[serde(rename = "StandardSSD_E6")]
         StandardSsdE6,
     }
+    #[doc = "Whether this disk is suitable for Azure."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Suitability {
         Unknown,
@@ -127,6 +145,7 @@ pub mod assessed_disk {
         ConditionallySuitable,
         ReadinessUnknown,
     }
+    #[doc = "If disk is not suitable to be migrated, this explains the reasons and mitigation steps."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SuitabilityExplanation {
         Unknown,
@@ -139,6 +158,7 @@ pub mod assessed_disk {
         InternalErrorOccurredForDiskEvaluation,
         NoEaPriceFoundForDiskSize,
     }
+    #[doc = "If disk is suitable to be migrate but some conditions/checks were not considered while calculating suitability, this explains the details."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SuitabilityDetail {
         None,
@@ -156,16 +176,22 @@ pub mod assessed_disk {
         DiskGigabytesProvisionedOutOfRange,
     }
 }
+#[doc = "A machine evaluated as part of an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessedMachine {
+    #[doc = "Path reference to this assessed machine. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}/groups/{groupName}/assessments/{assessmentName}/assessedMachines/{assessedMachineName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects/groups/assessments/assessedMachines]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of an assessed machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssessedMachineProperties>,
 }
@@ -174,64 +200,94 @@ impl AssessedMachine {
         Self::default()
     }
 }
+#[doc = "Properties of an assessed machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessedMachineProperties {
+    #[doc = "Boot type of the machine."]
     #[serde(rename = "bootType", default, skip_serializing_if = "Option::is_none")]
     pub boot_type: Option<assessed_machine_properties::BootType>,
+    #[doc = "ARM ID of the discovered machine."]
     #[serde(rename = "datacenterMachineArmId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_machine_arm_id: Option<String>,
+    #[doc = "ARM ID of the discovered datacenter."]
     #[serde(rename = "datacenterManagementServerArmId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server_arm_id: Option<String>,
+    #[doc = "Name of the server hosting the datacenter management solution."]
     #[serde(rename = "datacenterManagementServerName", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server_name: Option<String>,
+    #[doc = "Description of the machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "User readable name of the machine as defined by the user in their private datacenter."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Memory in Megabytes."]
     #[serde(rename = "megabytesOfMemory", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_of_memory: Option<f64>,
+    #[doc = "Processor count."]
     #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores: Option<i32>,
+    #[doc = "Operating System type of the machine."]
     #[serde(rename = "operatingSystemType", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_type: Option<String>,
+    #[doc = "Operating System name of the machine."]
     #[serde(rename = "operatingSystemName", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_name: Option<String>,
+    #[doc = "Operating System version of the machine."]
     #[serde(rename = "operatingSystemVersion", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_version: Option<String>,
+    #[doc = "Monthly network cost estimate for the network adapters that are attached to this machine as a group, for a 31-day month."]
     #[serde(rename = "monthlyBandwidthCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_bandwidth_cost: Option<f64>,
+    #[doc = "Monthly storage cost estimate for the disks that are attached to this machine as a group, for a 31-day month."]
     #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
+    #[doc = "Monthly premium storage cost estimate for the disks that are attached to this machine as a group, for a 31-day month."]
     #[serde(rename = "monthlyPremiumStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_premium_storage_cost: Option<f64>,
+    #[doc = "Monthly standard SSD storage cost estimate for the disks that are attached to this machine as a group, for a 31-day month."]
     #[serde(rename = "monthlyStandardSSDStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_standard_ssd_storage_cost: Option<f64>,
+    #[doc = "Confidence rating of assessed machine."]
     #[serde(rename = "confidenceRatingInPercentage", default, skip_serializing_if = "Option::is_none")]
     pub confidence_rating_in_percentage: Option<f64>,
+    #[doc = "Dictionary of disks attached to the machine. Key is ID of disk. Value is a disk object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disks: Option<serde_json::Value>,
+    #[doc = "Dictionary of network adapters attached to the machine. Key is name of the adapter. Value is a network adapter object."]
     #[serde(rename = "networkAdapters", default, skip_serializing_if = "Option::is_none")]
     pub network_adapters: Option<serde_json::Value>,
+    #[doc = "Recommended Azure size for this machine."]
     #[serde(rename = "recommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub recommended_size: Option<assessed_machine_properties::RecommendedSize>,
+    #[doc = "Number of CPU cores in the Recommended Azure VM Size."]
     #[serde(rename = "numberOfCoresForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores_for_recommended_size: Option<i32>,
+    #[doc = "Megabytes of memory in the Recommended Azure VM Size."]
     #[serde(rename = "megabytesOfMemoryForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_of_memory_for_recommended_size: Option<f64>,
+    #[doc = "Compute Cost for a 31-day month, if the machine is migrated to Azure with the Recommended Size."]
     #[serde(rename = "monthlyComputeCostForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub monthly_compute_cost_for_recommended_size: Option<f64>,
+    #[doc = "Utilization percentage of the processor core as observed in the private data center, in the Time Range selected on Assessment, reported as the Percentile value based on the percentile number selected in assessment."]
     #[serde(rename = "percentageCoresUtilization", default, skip_serializing_if = "Option::is_none")]
     pub percentage_cores_utilization: Option<f64>,
+    #[doc = "Utilization percentage of the memory as observed in the private data center, in the Time Range selected on Assessment, reported as the Percentile value based on the percentile number selected in assessment."]
     #[serde(rename = "percentageMemoryUtilization", default, skip_serializing_if = "Option::is_none")]
     pub percentage_memory_utilization: Option<f64>,
+    #[doc = "Whether machine is suitable for migration to Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<assessed_machine_properties::Suitability>,
+    #[doc = "If machine is not ready to be migrated, this explains the reasons and mitigation steps."]
     #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
     pub suitability_explanation: Option<assessed_machine_properties::SuitabilityExplanation>,
+    #[doc = "If machine is not suitable for cloud, this explains the reasons."]
     #[serde(rename = "suitabilityDetail", default, skip_serializing_if = "Option::is_none")]
     pub suitability_detail: Option<assessed_machine_properties::SuitabilityDetail>,
+    #[doc = "Time when this machine was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Time when this machine was last updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
 }
@@ -242,6 +298,7 @@ impl AssessedMachineProperties {
 }
 pub mod assessed_machine_properties {
     use super::*;
+    #[doc = "Boot type of the machine."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BootType {
         Unknown,
@@ -250,6 +307,7 @@ pub mod assessed_machine_properties {
         #[serde(rename = "BIOS")]
         Bios,
     }
+    #[doc = "Recommended Azure size for this machine."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecommendedSize {
         Unknown,
@@ -504,6 +562,7 @@ pub mod assessed_machine_properties {
         #[serde(rename = "Standard_M128ms")]
         StandardM128ms,
     }
+    #[doc = "Whether machine is suitable for migration to Azure."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Suitability {
         Unknown,
@@ -512,6 +571,7 @@ pub mod assessed_machine_properties {
         ConditionallySuitable,
         ReadinessUnknown,
     }
+    #[doc = "If machine is not ready to be migrated, this explains the reasons and mitigation steps."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SuitabilityExplanation {
         Unknown,
@@ -552,6 +612,7 @@ pub mod assessed_machine_properties {
         NoVmSizeForStandardPricingTier,
         NoVmSizeForBasicPricingTier,
     }
+    #[doc = "If machine is not suitable for cloud, this explains the reasons."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SuitabilityDetail {
         None,
@@ -565,8 +626,10 @@ pub mod assessed_machine_properties {
         PercentageOfMemoryUtilizedOutOfRange,
     }
 }
+#[doc = "List of assessed machines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessedMachineResultList {
+    #[doc = "List of assessed machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssessedMachine>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -577,26 +640,37 @@ impl AssessedMachineResultList {
         Self::default()
     }
 }
+#[doc = "A network adapter assessed for an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessedNetworkAdapter {
+    #[doc = "MAC Address of the network adapter."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
+    #[doc = "List of IP Addresses on the network adapter."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "User friendly name of the assessed network adapter."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Monthly cost estimate for network bandwidth used by this network adapter."]
     #[serde(rename = "monthlyBandwidthCosts", default, skip_serializing_if = "Option::is_none")]
     pub monthly_bandwidth_costs: Option<f64>,
+    #[doc = "Adapter throughput for incoming traffic in MegaBytes per second."]
     #[serde(rename = "megabytesPerSecondReceived", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_received: Option<f64>,
+    #[doc = "Adapter throughput for outgoing traffic in MegaBytes per second."]
     #[serde(rename = "megabytesPerSecondTransmitted", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_transmitted: Option<f64>,
+    #[doc = "Gigabytes transmitted through this adapter each month."]
     #[serde(rename = "netGigabytesTransmittedPerMonth", default, skip_serializing_if = "Option::is_none")]
     pub net_gigabytes_transmitted_per_month: Option<f64>,
+    #[doc = "Whether this adapter is suitable for Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<assessed_network_adapter::Suitability>,
+    #[doc = "If network adapter is suitable, this explains the reasons and mitigation steps."]
     #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
     pub suitability_explanation: Option<assessed_network_adapter::SuitabilityExplanation>,
+    #[doc = "If network adapter is not suitable for cloud, this explains the reasons."]
     #[serde(rename = "suitabilityDetail", default, skip_serializing_if = "Option::is_none")]
     pub suitability_detail: Option<assessed_network_adapter::SuitabilityDetail>,
 }
@@ -607,6 +681,7 @@ impl AssessedNetworkAdapter {
 }
 pub mod assessed_network_adapter {
     use super::*;
+    #[doc = "Whether this adapter is suitable for Azure."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Suitability {
         Unknown,
@@ -615,12 +690,14 @@ pub mod assessed_network_adapter {
         ConditionallySuitable,
         ReadinessUnknown,
     }
+    #[doc = "If network adapter is suitable, this explains the reasons and mitigation steps."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SuitabilityExplanation {
         Unknown,
         NotApplicable,
         InternalErrorOccurred,
     }
+    #[doc = "If network adapter is not suitable for cloud, this explains the reasons."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SuitabilityDetail {
         None,
@@ -628,16 +705,22 @@ pub mod assessed_network_adapter {
         MegabytesOfDataTransmittedOutOfRange,
     }
 }
+#[doc = "An assessment created for a group in the Migration project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Assessment {
+    #[doc = "Path reference to this assessment. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}/groups/{groupName}/assessment/{assessmentName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Unique name of an assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects/groups/assessments]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of an assessment."]
     pub properties: AssessmentProperties,
 }
 impl Assessment {
@@ -651,12 +734,16 @@ impl Assessment {
         }
     }
 }
+#[doc = "Assessment options."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentOptions {
+    #[doc = "Unique name of an assessment options."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Unique identifier of an assessment options."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Assessment options properties."]
     pub properties: AssessmentOptionsProperties,
 }
 impl AssessmentOptions {
@@ -668,16 +755,22 @@ impl AssessmentOptions {
         }
     }
 }
+#[doc = "Assessment options properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentOptionsProperties {
+    #[doc = "Dictionary of VM families grouped by vm family name describing the targeted azure locations of VM family and the category of the family."]
     #[serde(rename = "vmFamilies", default, skip_serializing_if = "Vec::is_empty")]
     pub vm_families: Vec<VmFamily>,
+    #[doc = "List of supported VM Families."]
     #[serde(rename = "reservedInstanceVmFamilies", default, skip_serializing_if = "Vec::is_empty")]
     pub reserved_instance_vm_families: Vec<String>,
+    #[doc = "List of supported Azure regions for reserved instances."]
     #[serde(rename = "reservedInstanceSupportedLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub reserved_instance_supported_locations: Vec<String>,
+    #[doc = "List of supported currencies for reserved instances."]
     #[serde(rename = "reservedInstanceSupportedCurrencies", default, skip_serializing_if = "Vec::is_empty")]
     pub reserved_instance_supported_currencies: Vec<String>,
+    #[doc = "List of supported Azure offer codes for reserved instances."]
     #[serde(rename = "reservedInstanceSupportedOffers", default, skip_serializing_if = "Vec::is_empty")]
     pub reserved_instance_supported_offers: Vec<String>,
 }
@@ -686,8 +779,10 @@ impl AssessmentOptionsProperties {
         Self::default()
     }
 }
+#[doc = "List of API operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentOptionsResultList {
+    #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssessmentOptions>,
 }
@@ -696,63 +791,93 @@ impl AssessmentOptionsResultList {
         Self::default()
     }
 }
+#[doc = "Properties of an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentProperties {
+    #[doc = "Target Azure location for which the machines should be assessed. These enums are the same as used by Compute API."]
     #[serde(rename = "azureLocation")]
     pub azure_location: assessment_properties::AzureLocation,
+    #[doc = "Offer code according to which cost estimation is done."]
     #[serde(rename = "azureOfferCode")]
     pub azure_offer_code: assessment_properties::AzureOfferCode,
+    #[doc = "Enterprise agreement subscription arm id."]
     #[serde(rename = "eaSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub ea_subscription_id: Option<String>,
+    #[doc = "Pricing tier for Size evaluation."]
     #[serde(rename = "azurePricingTier")]
     pub azure_pricing_tier: assessment_properties::AzurePricingTier,
+    #[doc = "Storage Redundancy type offered by Azure."]
     #[serde(rename = "azureStorageRedundancy")]
     pub azure_storage_redundancy: assessment_properties::AzureStorageRedundancy,
+    #[doc = "Scaling factor used over utilization data to add a performance buffer for new machines to be created in Azure. Min Value = 1.0, Max value = 1.9, Default = 1.3."]
     #[serde(rename = "scalingFactor")]
     pub scaling_factor: f64,
+    #[doc = "Percentile of performance data used to recommend Azure size."]
     pub percentile: assessment_properties::Percentile,
+    #[doc = "Time range of performance data used to recommend a size."]
     #[serde(rename = "timeRange")]
     pub time_range: assessment_properties::TimeRange,
+    #[doc = "Start time to consider performance data for assessment"]
     #[serde(rename = "perfDataStartTime", default, skip_serializing_if = "Option::is_none")]
     pub perf_data_start_time: Option<String>,
+    #[doc = "End time to consider performance data for assessment"]
     #[serde(rename = "perfDataEndTime", default, skip_serializing_if = "Option::is_none")]
     pub perf_data_end_time: Option<String>,
+    #[doc = "User configurable setting that describes the status of the assessment."]
     pub stage: assessment_properties::Stage,
+    #[doc = "Currency to report prices in."]
     pub currency: assessment_properties::Currency,
+    #[doc = "AHUB discount on windows virtual machines."]
     #[serde(rename = "azureHybridUseBenefit")]
     pub azure_hybrid_use_benefit: assessment_properties::AzureHybridUseBenefit,
+    #[doc = "Custom discount percentage to be applied on final costs. Can be in the range [0, 100]."]
     #[serde(rename = "discountPercentage")]
     pub discount_percentage: f64,
+    #[doc = "Confidence rating percentage for assessment. Can be in the range [0, 100]."]
     #[serde(rename = "confidenceRatingInPercentage", default, skip_serializing_if = "Option::is_none")]
     pub confidence_rating_in_percentage: Option<f64>,
+    #[doc = "Assessment sizing criterion."]
     #[serde(rename = "sizingCriterion")]
     pub sizing_criterion: assessment_properties::SizingCriterion,
+    #[doc = "Azure reserved instance."]
     #[serde(rename = "reservedInstance")]
     pub reserved_instance: assessment_properties::ReservedInstance,
+    #[doc = "List of azure VM families."]
     #[serde(rename = "azureVmFamilies")]
     pub azure_vm_families: Vec<String>,
+    #[doc = "Storage type selected for this disk."]
     #[serde(rename = "azureDiskType")]
     pub azure_disk_type: assessment_properties::AzureDiskType,
     #[serde(rename = "vmUptime")]
     pub vm_uptime: VmUptime,
+    #[doc = "Time when the Azure Prices were queried. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "pricesTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub prices_timestamp: Option<String>,
+    #[doc = "Time when this project was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Time when this project was last updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "Monthly compute cost estimate for the machines that are part of this assessment as a group, for a 31-day month."]
     #[serde(rename = "monthlyComputeCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_compute_cost: Option<f64>,
+    #[doc = "Monthly network cost estimate for the machines that are part of this assessment as a group, for a 31-day month."]
     #[serde(rename = "monthlyBandwidthCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_bandwidth_cost: Option<f64>,
+    #[doc = "Monthly storage cost estimate for the machines that are part of this assessment as a group, for a 31-day month."]
     #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
+    #[doc = "Monthly premium storage cost estimate for the machines that are part of this assessment as a group, for a 31-day month."]
     #[serde(rename = "monthlyPremiumStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_premium_storage_cost: Option<f64>,
+    #[doc = "Monthly standard SSD storage cost estimate for the machines that are part of this assessment as a group, for a 31-day month."]
     #[serde(rename = "monthlyStandardSSDStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_standard_ssd_storage_cost: Option<f64>,
+    #[doc = "Whether the assessment has been created and is valid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<assessment_properties::Status>,
+    #[doc = "Number of assessed machines part of this assessment."]
     #[serde(rename = "numberOfMachines", default, skip_serializing_if = "Option::is_none")]
     pub number_of_machines: Option<i32>,
 }
@@ -811,6 +936,7 @@ impl AssessmentProperties {
 }
 pub mod assessment_properties {
     use super::*;
+    #[doc = "Target Azure location for which the machines should be assessed. These enums are the same as used by Compute API."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureLocation {
         Unknown,
@@ -857,6 +983,7 @@ pub mod assessment_properties {
         #[serde(rename = "USDoDEast")]
         UsDoDEast,
     }
+    #[doc = "Offer code according to which cost estimation is done."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureOfferCode {
         Unknown,
@@ -939,11 +1066,13 @@ pub mod assessment_properties {
         #[serde(rename = "EA")]
         Ea,
     }
+    #[doc = "Pricing tier for Size evaluation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzurePricingTier {
         Standard,
         Basic,
     }
+    #[doc = "Storage Redundancy type offered by Azure."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureStorageRedundancy {
         Unknown,
@@ -952,6 +1081,7 @@ pub mod assessment_properties {
         GeoRedundant,
         ReadAccessGeoRedundant,
     }
+    #[doc = "Percentile of performance data used to recommend Azure size."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Percentile {
         Percentile50,
@@ -959,6 +1089,7 @@ pub mod assessment_properties {
         Percentile95,
         Percentile99,
     }
+    #[doc = "Time range of performance data used to recommend a size."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TimeRange {
         Day,
@@ -966,12 +1097,14 @@ pub mod assessment_properties {
         Month,
         Custom,
     }
+    #[doc = "User configurable setting that describes the status of the assessment."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Stage {
         InProgress,
         UnderReview,
         Approved,
     }
+    #[doc = "Currency to report prices in."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Currency {
         Unknown,
@@ -1026,17 +1159,20 @@ pub mod assessment_properties {
         #[serde(rename = "CNY")]
         Cny,
     }
+    #[doc = "AHUB discount on windows virtual machines."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureHybridUseBenefit {
         Unknown,
         Yes,
         No,
     }
+    #[doc = "Assessment sizing criterion."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SizingCriterion {
         PerformanceBased,
         AsOnPremises,
     }
+    #[doc = "Azure reserved instance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReservedInstance {
         None,
@@ -1045,6 +1181,7 @@ pub mod assessment_properties {
         #[serde(rename = "RI3Year")]
         Ri3Year,
     }
+    #[doc = "Storage type selected for this disk."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureDiskType {
         Unknown,
@@ -1054,6 +1191,7 @@ pub mod assessment_properties {
         StandardSsd,
         StandardOrPremium,
     }
+    #[doc = "Whether the assessment has been created and is valid."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Created,
@@ -1065,8 +1203,10 @@ pub mod assessment_properties {
         OutDated,
     }
 }
+#[doc = "List of assessments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentResultList {
+    #[doc = "List of assessments."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Assessment>,
 }
@@ -1075,8 +1215,10 @@ impl AssessmentResultList {
         Self::default()
     }
 }
+#[doc = "An error response from the Azure Migrate service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the Azure Migrate service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -1085,14 +1227,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the Azure Migrate service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -1119,14 +1266,19 @@ impl CollectorAgentProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectorBodyAgentSpnProperties {
+    #[doc = "AAD Authority URL which was used to request the token for the service principal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authority: Option<String>,
+    #[doc = "Application/client Id for the service principal with which the on-premise management/data plane components would communicate with our Azure services."]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+    #[doc = "Intended audience for the service principal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audience: Option<String>,
+    #[doc = "Object Id of the service principal with which the on-premise management/data plane components would communicate with our Azure services."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
+    #[doc = "Tenant Id for the service principal with which the on-premise management/data plane components would communicate with our Azure services."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -1137,10 +1289,13 @@ impl CollectorBodyAgentSpnProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectorProperties {
+    #[doc = "The ARM id of the discovery service site."]
     #[serde(rename = "discoverySiteId", default, skip_serializing_if = "Option::is_none")]
     pub discovery_site_id: Option<String>,
+    #[doc = "Time when this collector was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Time when this collector was updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
     #[serde(rename = "agentProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1151,10 +1306,13 @@ impl CollectorProperties {
         Self::default()
     }
 }
+#[doc = "A disk discovered on a machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Disk {
+    #[doc = "Gigabytes of storage provisioned for this disk."]
     #[serde(rename = "gigabytesAllocated", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_allocated: Option<f64>,
+    #[doc = "User friendly name of the disk."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -1163,10 +1321,13 @@ impl Disk {
         Self::default()
     }
 }
+#[doc = "Download URL for assessment report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DownloadUrl {
+    #[doc = "Hyperlink to download report."]
     #[serde(rename = "assessmentReportUrl", default, skip_serializing_if = "Option::is_none")]
     pub assessment_report_url: Option<String>,
+    #[doc = "Expiry date of download url."]
     #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time: Option<String>,
 }
@@ -1175,16 +1336,22 @@ impl DownloadUrl {
         Self::default()
     }
 }
+#[doc = "A group created in a Migration project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Group {
+    #[doc = "Path reference to this group. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}/groups/{groupName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects/groups]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of group resource."]
     pub properties: GroupProperties,
 }
 impl Group {
@@ -1198,10 +1365,13 @@ impl Group {
         }
     }
 }
+#[doc = "Body properties of group update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupBodyProperties {
+    #[doc = "Whether to add or remove the machines."]
     #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<group_body_properties::OperationType>,
+    #[doc = "List of machine names that are part of this group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub machines: Vec<String>,
 }
@@ -1212,26 +1382,35 @@ impl GroupBodyProperties {
 }
 pub mod group_body_properties {
     use super::*;
+    #[doc = "Whether to add or remove the machines."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationType {
         Add,
         Remove,
     }
 }
+#[doc = "Properties of group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupProperties {
+    #[doc = "Whether the group has been created and is valid."]
     #[serde(rename = "groupStatus", default, skip_serializing_if = "Option::is_none")]
     pub group_status: Option<group_properties::GroupStatus>,
+    #[doc = "Number of machines part of this group."]
     #[serde(rename = "machineCount", default, skip_serializing_if = "Option::is_none")]
     pub machine_count: Option<i32>,
+    #[doc = "List of References to Assessments created on this group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub assessments: Vec<String>,
+    #[doc = "If the assessments are in running state."]
     #[serde(rename = "areAssessmentsRunning", default, skip_serializing_if = "Option::is_none")]
     pub are_assessments_running: Option<bool>,
+    #[doc = "Time when this group was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Time when this group was last updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "The type of group."]
     #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
     pub group_type: Option<String>,
 }
@@ -1242,6 +1421,7 @@ impl GroupProperties {
 }
 pub mod group_properties {
     use super::*;
+    #[doc = "Whether the group has been created and is valid."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GroupStatus {
         Created,
@@ -1251,8 +1431,10 @@ pub mod group_properties {
         Invalid,
     }
 }
+#[doc = "List of groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupResultList {
+    #[doc = "List of groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Group>,
 }
@@ -1279,8 +1461,10 @@ impl HyperVCollector {
         Self::default()
     }
 }
+#[doc = "List of Hyper-V collectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVCollectorList {
+    #[doc = "List of Hyper-V collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVCollector>,
 }
@@ -1307,8 +1491,10 @@ impl ImportCollector {
         Self::default()
     }
 }
+#[doc = "List of Import collectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportCollectorList {
+    #[doc = "List of Import collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ImportCollector>,
 }
@@ -1331,16 +1517,22 @@ impl ImportCollectorProperties {
         Self::default()
     }
 }
+#[doc = "A machine in a migration project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Machine {
+    #[doc = "Path reference to this machine. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}/machines/{machineName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the machine. It is a GUID which is unique identifier of machine in private data center. For user-readable name, we have a displayName property on this machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects/machines]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of a machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineProperties>,
 }
@@ -1349,38 +1541,55 @@ impl Machine {
         Self::default()
     }
 }
+#[doc = "Properties of a machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineProperties {
+    #[doc = "Boot type of the machine."]
     #[serde(rename = "bootType", default, skip_serializing_if = "Option::is_none")]
     pub boot_type: Option<machine_properties::BootType>,
+    #[doc = "ARM ID of the data center as tracked by the Microsoft.OffAzure."]
     #[serde(rename = "datacenterManagementServerArmId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server_arm_id: Option<String>,
+    #[doc = "ARM ID of the machine as tracked by the Microsoft.OffAzure."]
     #[serde(rename = "discoveryMachineArmId", default, skip_serializing_if = "Option::is_none")]
     pub discovery_machine_arm_id: Option<String>,
+    #[doc = "Name of the server hosting the datacenter management solution."]
     #[serde(rename = "datacenterManagementServerName", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server_name: Option<String>,
+    #[doc = "User readable name of the machine as defined by the user in their private datacenter."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Memory in Megabytes."]
     #[serde(rename = "megabytesOfMemory", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_of_memory: Option<f64>,
+    #[doc = "Processor count."]
     #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores: Option<i64>,
+    #[doc = "Operating System type of the machine."]
     #[serde(rename = "operatingSystemType", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_type: Option<String>,
+    #[doc = "Operating System name of the machine."]
     #[serde(rename = "operatingSystemName", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_name: Option<String>,
+    #[doc = "Operating System version of the machine."]
     #[serde(rename = "operatingSystemVersion", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_version: Option<String>,
+    #[doc = "Description of the machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "List of references to the groups that the machine is member of."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
+    #[doc = "Time when this machine was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Time when this machine was last updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "Dictionary of disks attached to the machine. Key is ID of disk. Value is a disk object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disks: Option<serde_json::Value>,
+    #[doc = "Dictionary of network adapters attached to the machine. Key is ID of network adapter. Value is a network adapter object"]
     #[serde(rename = "networkAdapters", default, skip_serializing_if = "Option::is_none")]
     pub network_adapters: Option<serde_json::Value>,
 }
@@ -1391,6 +1600,7 @@ impl MachineProperties {
 }
 pub mod machine_properties {
     use super::*;
+    #[doc = "Boot type of the machine."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BootType {
         Unknown,
@@ -1400,8 +1610,10 @@ pub mod machine_properties {
         Bios,
     }
 }
+#[doc = "List of machines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineResultList {
+    #[doc = "List of machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Machine>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1412,12 +1624,16 @@ impl MachineResultList {
         Self::default()
     }
 }
+#[doc = "A network adapter discovered on a machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkAdapter {
+    #[doc = "MAC Address of the network adapter."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
+    #[doc = "List of IP Addresses on the network adapter."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "User friendly name of the network adapter."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -1426,12 +1642,16 @@ impl NetworkAdapter {
         Self::default()
     }
 }
+#[doc = "A REST API operation supported by the provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Displayable properties of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -1440,14 +1660,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Displayable properties of the operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Provider of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource operated on by the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Operation Type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -1456,8 +1681,10 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "List of API operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultList {
+    #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -1466,16 +1693,22 @@ impl OperationResultList {
         Self::default()
     }
 }
+#[doc = "A private endpoint connection for a project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnection {
+    #[doc = "Name of the private endpoint endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects/privateEndpointConnections]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Path reference to this private endpoint endpoint connection. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}/privateEndpointConnections/{privateEndpointConnectionName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Private endpoint connection properties."]
     pub properties: PrivateEndpointConnectionProperties,
 }
 impl PrivateEndpointConnection {
@@ -1489,8 +1722,10 @@ impl PrivateEndpointConnection {
         }
     }
 }
+#[doc = "A collection of private endpoint connections for a project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionCollection {
+    #[doc = "A list of private endpoint connections for a project."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1501,12 +1736,16 @@ impl PrivateEndpointConnectionCollection {
         Self::default()
     }
 }
+#[doc = "Private endpoint connection properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "Indicates whether there is an ongoing operation on the private endpoint."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
+    #[doc = "ARM id for a resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<ResourceId>,
+    #[doc = "State of a private endpoint connection."]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
 }
@@ -1517,6 +1756,7 @@ impl PrivateEndpointConnectionProperties {
 }
 pub mod private_endpoint_connection_properties {
     use super::*;
+    #[doc = "Indicates whether there is an ongoing operation on the private endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Accepted,
@@ -1525,14 +1765,19 @@ pub mod private_endpoint_connection_properties {
         Failed,
     }
 }
+#[doc = "A private link resource for a project for which a private endpoint can be created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
+    #[doc = "Name of the private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects/privateLinkResources]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Path reference to this private link resource. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}/privateLinkResources/{privateLinkResourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -1541,10 +1786,13 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceCollection {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1553,12 +1801,16 @@ impl PrivateLinkResourceCollection {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "Required DNS zone names of the the private link resource."]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
 }
@@ -1567,12 +1819,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "State of a private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "Connection status of the private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<private_link_service_connection_state::Status>,
+    #[doc = "Description of the private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Actions required on the private endpoint connection."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -1583,6 +1839,7 @@ impl PrivateLinkServiceConnectionState {
 }
 pub mod private_link_service_connection_state {
     use super::*;
+    #[doc = "Connection status of the private endpoint connection."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Approved,
@@ -1591,20 +1848,28 @@ pub mod private_link_service_connection_state {
         Disconnected,
     }
 }
+#[doc = "Azure Migrate Project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Project {
+    #[doc = "Path reference to this project /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/assessmentProjects/{projectName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the object = [Microsoft.Migrate/assessmentProjects]."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Azure location in which project is created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Tags provided by Azure Tagging service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of a project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProjectProperties>,
 }
@@ -1613,36 +1878,52 @@ impl Project {
         Self::default()
     }
 }
+#[doc = "Properties of a project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectProperties {
+    #[doc = "Time when this project was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Time when this project was last updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "Endpoint at which the collector agent can call agent REST API."]
     #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
+    #[doc = "Assessment solution ARM id tracked by Microsoft.Migrate/migrateProjects."]
     #[serde(rename = "assessmentSolutionId", default, skip_serializing_if = "Option::is_none")]
     pub assessment_solution_id: Option<String>,
+    #[doc = "Assessment project status."]
     #[serde(rename = "projectStatus", default, skip_serializing_if = "Option::is_none")]
     pub project_status: Option<project_properties::ProjectStatus>,
+    #[doc = "The ARM id of service map workspace created by customer."]
     #[serde(rename = "customerWorkspaceId", default, skip_serializing_if = "Option::is_none")]
     pub customer_workspace_id: Option<String>,
+    #[doc = "Location of service map workspace created by customer."]
     #[serde(rename = "customerWorkspaceLocation", default, skip_serializing_if = "Option::is_none")]
     pub customer_workspace_location: Option<String>,
+    #[doc = "Number of groups created in the project."]
     #[serde(rename = "numberOfGroups", default, skip_serializing_if = "Option::is_none")]
     pub number_of_groups: Option<i32>,
+    #[doc = "Number of machines in the project."]
     #[serde(rename = "numberOfMachines", default, skip_serializing_if = "Option::is_none")]
     pub number_of_machines: Option<i32>,
+    #[doc = "Number of assessments created in the project."]
     #[serde(rename = "numberOfAssessments", default, skip_serializing_if = "Option::is_none")]
     pub number_of_assessments: Option<i32>,
+    #[doc = "Time when last assessment was created. Date-Time represented in ISO-8601 format. This value will be null until assessment is created."]
     #[serde(rename = "lastAssessmentTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub last_assessment_timestamp: Option<String>,
+    #[doc = "This value can be set to 'enabled' to avoid breaking changes on existing customer resources and templates. If set to 'disabled', traffic over public interface is not allowed, and private endpoint connections would be the exclusive access method."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<String>,
+    #[doc = "The list of private endpoint connections to the project."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "The ARM id of the storage account used for interactions when public access is disabled."]
     #[serde(rename = "customerStorageAccountArmId", default, skip_serializing_if = "Option::is_none")]
     pub customer_storage_account_arm_id: Option<String>,
+    #[doc = "Provisioning state of the project."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
@@ -1653,11 +1934,13 @@ impl ProjectProperties {
 }
 pub mod project_properties {
     use super::*;
+    #[doc = "Assessment project status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProjectStatus {
         Active,
         Inactive,
     }
+    #[doc = "Provisioning state of the project."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Accepted,
@@ -1668,8 +1951,10 @@ pub mod project_properties {
         Succeeded,
     }
 }
+#[doc = "List of projects."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectResultList {
+    #[doc = "List of projects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Project>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1680,6 +1965,7 @@ impl ProjectResultList {
         Self::default()
     }
 }
+#[doc = "ARM id for a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1708,8 +1994,10 @@ impl ServerCollector {
         Self::default()
     }
 }
+#[doc = "List of Server collectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerCollectorList {
+    #[doc = "List of Server collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerCollector>,
 }
@@ -1718,10 +2006,13 @@ impl ServerCollectorList {
         Self::default()
     }
 }
+#[doc = "Properties of group update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateGroupBody {
+    #[doc = "For optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Body properties of group update."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GroupBodyProperties>,
 }
@@ -1748,8 +2039,10 @@ impl VMwareCollector {
         Self::default()
     }
 }
+#[doc = "List of VMware collectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareCollectorList {
+    #[doc = "List of VMware collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareCollector>,
 }
@@ -1758,12 +2051,16 @@ impl VMwareCollectorList {
         Self::default()
     }
 }
+#[doc = "VM family name, the list of targeted azure locations and the category of the family."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmFamily {
+    #[doc = "Name of the VM family."]
     #[serde(rename = "familyName", default, skip_serializing_if = "Option::is_none")]
     pub family_name: Option<String>,
+    #[doc = "List of Azure regions."]
     #[serde(rename = "targetLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub target_locations: Vec<String>,
+    #[doc = "Category of the VM family."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub category: Vec<String>,
 }
@@ -1774,8 +2071,10 @@ impl VmFamily {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmUptime {
+    #[doc = "Number of days in a month for VM uptime."]
     #[serde(rename = "daysPerMonth", default, skip_serializing_if = "Option::is_none")]
     pub days_per_month: Option<f64>,
+    #[doc = "Number of hours per day for VM uptime."]
     #[serde(rename = "hoursPerDay", default, skip_serializing_if = "Option::is_none")]
     pub hours_per_day: Option<f64>,
 }

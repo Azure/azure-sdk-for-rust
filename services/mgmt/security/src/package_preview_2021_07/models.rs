@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -12,16 +14,22 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -30,12 +38,15 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Custom entity store assignment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "describes the custom entity store assignment properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomEntityStoreAssignmentProperties>,
 }
@@ -44,10 +55,13 @@ impl CustomEntityStoreAssignment {
         Self::default()
     }
 }
+#[doc = "describes the custom entity store assignment properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentProperties {
+    #[doc = "The principal assigned with entity store. Format of principal is: [AAD type]=[PrincipalObjectId];[TenantId]"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub principal: Option<String>,
+    #[doc = "The link to entity store database."]
     #[serde(rename = "entityStoreDatabaseLink", default, skip_serializing_if = "Option::is_none")]
     pub entity_store_database_link: Option<String>,
 }
@@ -56,8 +70,10 @@ impl CustomEntityStoreAssignmentProperties {
         Self::default()
     }
 }
+#[doc = "describes the custom entity store assignment request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentRequest {
+    #[doc = "describes properties of custom entity store assignment request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomEntityStoreAssignmentRequestProperties>,
 }
@@ -66,8 +82,10 @@ impl CustomEntityStoreAssignmentRequest {
         Self::default()
     }
 }
+#[doc = "describes properties of custom entity store assignment request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentRequestProperties {
+    #[doc = "The principal assigned with entity store. If not provided, will use caller principal. Format of principal is: [AAD type]=[PrincipalObjectId];[TenantId]"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub principal: Option<String>,
 }
@@ -76,10 +94,13 @@ impl CustomEntityStoreAssignmentRequestProperties {
         Self::default()
     }
 }
+#[doc = "A list of custom entity store assignments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignmentsListResult {
+    #[doc = "Collection of custom entity store assignments"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomEntityStoreAssignment>,
+    #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -88,10 +109,13 @@ impl CustomEntityStoreAssignmentsListResult {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -100,12 +124,16 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Describes an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -114,12 +142,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Custom Assessment Automation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomation {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "describes the Custom Assessment Automation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomAssessmentAutomationProperties>,
 }
@@ -128,20 +159,28 @@ impl CustomAssessmentAutomation {
         Self::default()
     }
 }
+#[doc = "describes the Custom Assessment Automation properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationProperties {
+    #[doc = "GZip encoded KQL query representing the assessment automation results required."]
     #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
     pub compressed_query: Option<String>,
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
     pub supported_cloud: Option<custom_assessment_automation_properties::SupportedCloud>,
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<custom_assessment_automation_properties::Severity>,
+    #[doc = "The display name of the assessments generated by this assessment automation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The remediation description to relate to the assessments generated by this assessment automation."]
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
+    #[doc = "The assessment metadata key used when an assessment is generated for this assessment automation."]
     #[serde(rename = "assessmentKey", default, skip_serializing_if = "Option::is_none")]
     pub assessment_key: Option<String>,
 }
@@ -152,11 +191,15 @@ impl CustomAssessmentAutomationProperties {
 }
 pub mod custom_assessment_automation_properties {
     use super::*;
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedCloud {
         #[serde(rename = "AWS")]
         Aws,
+        #[serde(rename = "GCP")]
+        Gcp,
     }
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         High,
@@ -164,10 +207,12 @@ pub mod custom_assessment_automation_properties {
         Low,
     }
 }
+#[doc = "Custom Assessment Automation request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationRequest {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes the Custom Assessment Automation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomAssessmentAutomationRequestProperties>,
 }
@@ -176,18 +221,25 @@ impl CustomAssessmentAutomationRequest {
         Self::default()
     }
 }
+#[doc = "describes the Custom Assessment Automation properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationRequestProperties {
+    #[doc = "Base 64 encoded KQL query representing the assessment automation results required."]
     #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
     pub compressed_query: Option<String>,
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
     pub supported_cloud: Option<custom_assessment_automation_request_properties::SupportedCloud>,
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<custom_assessment_automation_request_properties::Severity>,
+    #[doc = "The display name of the assessments generated by this assessment automation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description to relate to the assessments generated by this assessment automation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The remediation description to relate to the assessments generated by this assessment automation."]
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
 }
@@ -198,11 +250,15 @@ impl CustomAssessmentAutomationRequestProperties {
 }
 pub mod custom_assessment_automation_request_properties {
     use super::*;
+    #[doc = "Relevant cloud for the custom assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedCloud {
         #[serde(rename = "AWS")]
         Aws,
+        #[serde(rename = "GCP")]
+        Gcp,
     }
+    #[doc = "The severity to relate to the assessments generated by this assessment automation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         High,
@@ -210,10 +266,13 @@ pub mod custom_assessment_automation_request_properties {
         Low,
     }
 }
+#[doc = "A list of Custom Assessment Automations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomAssessmentAutomationsListResult {
+    #[doc = "Collection of Custom Assessment Automations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomAssessmentAutomation>,
+    #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -222,18 +281,25 @@ impl CustomAssessmentAutomationsListResult {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -244,6 +310,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -251,6 +318,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

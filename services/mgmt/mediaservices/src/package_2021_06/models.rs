@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Describes Advanced Audio Codec (AAC) audio encoding settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AacAudio {
     #[serde(flatten)]
     pub audio: Audio,
+    #[doc = "The encoding profile to be used when encoding audio with AAC."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<aac_audio::Profile>,
 }
@@ -16,6 +18,7 @@ impl AacAudio {
 }
 pub mod aac_audio {
     use super::*;
+    #[doc = "The encoding profile to be used when encoding audio with AAC."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Profile {
         AacLc,
@@ -23,10 +26,12 @@ pub mod aac_audio {
         HeAacV2,
     }
 }
+#[doc = "Specifies the clip time as an absolute time position in the media file.  The absolute time can point to a different position depending on whether the media file starts from a timestamp of zero or not."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AbsoluteClipTime {
     #[serde(flatten)]
     pub clip_time: ClipTime,
+    #[doc = "The time position on the timeline of the input media. It is usually specified as an ISO8601 period. e.g PT30S for 30 seconds."]
     pub time: String,
 }
 impl AbsoluteClipTime {
@@ -36,8 +41,10 @@ impl AbsoluteClipTime {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessControl {
+    #[doc = "The behavior for IP access control in Key Delivery."]
     #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<access_control::DefaultAction>,
+    #[doc = "The IP allow list for access control in Key Delivery. If the default action is set to 'Allow', the IP allow list must be empty."]
     #[serde(rename = "ipAllowList", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_allow_list: Vec<String>,
 }
@@ -48,6 +55,7 @@ impl AccessControl {
 }
 pub mod access_control {
     use super::*;
+    #[doc = "The behavior for IP access control in Key Delivery."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
         Allow,
@@ -56,12 +64,14 @@ pub mod access_control {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEncryption {
+    #[doc = "The type of key used to encrypt the Account Key."]
     #[serde(rename = "type")]
     pub type_: account_encryption::Type,
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "The current status of the Key Vault mapping."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
@@ -77,18 +87,22 @@ impl AccountEncryption {
 }
 pub mod account_encryption {
     use super::*;
+    #[doc = "The type of key used to encrypt the Account Key."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemKey,
         CustomerKey,
     }
 }
+#[doc = "An Account Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilter {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The Media Filter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaFilterProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -97,10 +111,13 @@ impl AccountFilter {
         Self::default()
     }
 }
+#[doc = "A collection of AccountFilter items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilterCollection {
+    #[doc = "A collection of AccountFilter items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccountFilter>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -109,8 +126,10 @@ impl AccountFilterCollection {
         Self::default()
     }
 }
+#[doc = "Akamai access control"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AkamaiAccessControl {
+    #[doc = "authentication key list"]
     #[serde(
         rename = "akamaiSignatureHeaderAuthenticationKeyList",
         default,
@@ -123,12 +142,16 @@ impl AkamaiAccessControl {
         Self::default()
     }
 }
+#[doc = "Akamai Signature Header authentication key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AkamaiSignatureHeaderAuthenticationKey {
+    #[doc = "identifier of the key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
+    #[doc = "authentication key"]
     #[serde(rename = "base64Key", default, skip_serializing_if = "Option::is_none")]
     pub base64_key: Option<String>,
+    #[doc = "The expiration time of the authentication key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiration: Option<String>,
 }
@@ -137,12 +160,15 @@ impl AkamaiSignatureHeaderAuthenticationKey {
         Self::default()
     }
 }
+#[doc = "An Asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Asset {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The Asset properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssetProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -151,10 +177,13 @@ impl Asset {
         Self::default()
     }
 }
+#[doc = "A collection of Asset items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetCollection {
+    #[doc = "A collection of Asset items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Asset>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -163,8 +192,10 @@ impl AssetCollection {
         Self::default()
     }
 }
+#[doc = "The Asset Storage container SAS URLs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetContainerSas {
+    #[doc = "The list of Asset container SAS URLs."]
     #[serde(rename = "assetContainerSasUrls", default, skip_serializing_if = "Vec::is_empty")]
     pub asset_container_sas_urls: Vec<String>,
 }
@@ -173,12 +204,16 @@ impl AssetContainerSas {
         Self::default()
     }
 }
+#[doc = "The Asset File Storage encryption metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetFileEncryptionMetadata {
+    #[doc = "The Asset File initialization vector."]
     #[serde(rename = "initializationVector", default, skip_serializing_if = "Option::is_none")]
     pub initialization_vector: Option<String>,
+    #[doc = "The Asset File name."]
     #[serde(rename = "assetFileName", default, skip_serializing_if = "Option::is_none")]
     pub asset_file_name: Option<String>,
+    #[doc = "The Asset File Id."]
     #[serde(rename = "assetFileId")]
     pub asset_file_id: String,
 }
@@ -191,12 +226,15 @@ impl AssetFileEncryptionMetadata {
         }
     }
 }
+#[doc = "An Asset Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilter {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The Media Filter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaFilterProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -205,10 +243,13 @@ impl AssetFilter {
         Self::default()
     }
 }
+#[doc = "A collection of AssetFilter items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilterCollection {
+    #[doc = "A collection of AssetFilter items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssetFilter>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -217,22 +258,31 @@ impl AssetFilterCollection {
         Self::default()
     }
 }
+#[doc = "The Asset properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetProperties {
+    #[doc = "The Asset ID."]
     #[serde(rename = "assetId", default, skip_serializing_if = "Option::is_none")]
     pub asset_id: Option<String>,
+    #[doc = "The creation date of the Asset."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The last modified date of the Asset."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "The alternate ID of the Asset."]
     #[serde(rename = "alternateId", default, skip_serializing_if = "Option::is_none")]
     pub alternate_id: Option<String>,
+    #[doc = "The Asset description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The name of the asset blob container."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub container: Option<String>,
+    #[doc = "The name of the storage account."]
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
+    #[doc = "The Asset encryption format. One of None or MediaStorageEncryption."]
     #[serde(rename = "storageEncryptionFormat", default, skip_serializing_if = "Option::is_none")]
     pub storage_encryption_format: Option<asset_properties::StorageEncryptionFormat>,
 }
@@ -243,28 +293,38 @@ impl AssetProperties {
 }
 pub mod asset_properties {
     use super::*;
+    #[doc = "The Asset encryption format. One of None or MediaStorageEncryption."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageEncryptionFormat {
         None,
         MediaStorageClientEncryption,
     }
 }
+#[doc = "Properties of the Streaming Locator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetStreamingLocator {
+    #[doc = "Streaming Locator name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Asset Name."]
     #[serde(rename = "assetName", default, skip_serializing_if = "Option::is_none")]
     pub asset_name: Option<String>,
+    #[doc = "The creation time of the Streaming Locator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The start time of the Streaming Locator."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The end time of the Streaming Locator."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "StreamingLocatorId of the Streaming Locator."]
     #[serde(rename = "streamingLocatorId", default, skip_serializing_if = "Option::is_none")]
     pub streaming_locator_id: Option<String>,
+    #[doc = "Name of the Streaming Policy used by this Streaming Locator."]
     #[serde(rename = "streamingPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub streaming_policy_name: Option<String>,
+    #[doc = "Name of the default ContentKeyPolicy used by this Streaming Locator."]
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
 }
@@ -273,14 +333,18 @@ impl AssetStreamingLocator {
         Self::default()
     }
 }
+#[doc = "Defines the common properties for all audio codecs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Audio {
     #[serde(flatten)]
     pub codec: Codec,
+    #[doc = "The number of channels in the audio."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub channels: Option<i32>,
+    #[doc = "The sampling rate to use for encoding in hertz."]
     #[serde(rename = "samplingRate", default, skip_serializing_if = "Option::is_none")]
     pub sampling_rate: Option<i32>,
+    #[doc = "The bitrate, in bits per second, of the output encoded audio."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<i32>,
 }
@@ -294,14 +358,18 @@ impl Audio {
         }
     }
 }
+#[doc = "The Audio Analyzer preset applies a pre-defined set of AI-based analysis operations, including speech transcription. Currently, the preset supports processing of content with a single audio track."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioAnalyzerPreset {
     #[serde(flatten)]
     pub preset: Preset,
+    #[doc = "The language for the audio payload in the input using the BCP-47 format of 'language tag-region' (e.g: 'en-US').  If you know the language of your content, it is recommended that you specify it. The language must be specified explicitly for AudioAnalysisMode::Basic, since automatic language detection is not included in basic mode. If the language isn't specified or set to null, automatic language detection will choose the first language detected and process with the selected language for the duration of the file. It does not currently support dynamically switching between languages after the first language is detected. The automatic detection works best with audio recordings with clearly discernable speech. If automatic detection fails to find the language, transcription would fallback to 'en-US'.\" The list of supported languages is available here: https://go.microsoft.com/fwlink/?linkid=2109463"]
     #[serde(rename = "audioLanguage", default, skip_serializing_if = "Option::is_none")]
     pub audio_language: Option<String>,
+    #[doc = "Determines the set of audio analysis operations to be performed. If unspecified, the Standard AudioAnalysisMode would be chosen."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<audio_analyzer_preset::Mode>,
+    #[doc = "Dictionary containing key value pairs for parameters not exposed in the preset itself"]
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
     pub experimental_options: Option<serde_json::Value>,
 }
@@ -317,12 +385,14 @@ impl AudioAnalyzerPreset {
 }
 pub mod audio_analyzer_preset {
     use super::*;
+    #[doc = "Determines the set of audio analysis operations to be performed. If unspecified, the Standard AudioAnalysisMode would be chosen."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         Standard,
         Basic,
     }
 }
+#[doc = "Describes the properties of an audio overlay."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioOverlay {
     #[serde(flatten)]
@@ -333,10 +403,12 @@ impl AudioOverlay {
         Self { overlay }
     }
 }
+#[doc = "A TrackSelection to select audio tracks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioTrackDescriptor {
     #[serde(flatten)]
     pub track_descriptor: TrackDescriptor,
+    #[doc = "Optional designation for single channel audio tracks.  Can be used to combine the tracks into stereo or multi-channel audio tracks."]
     #[serde(rename = "channelMapping", default, skip_serializing_if = "Option::is_none")]
     pub channel_mapping: Option<audio_track_descriptor::ChannelMapping>,
 }
@@ -350,6 +422,7 @@ impl AudioTrackDescriptor {
 }
 pub mod audio_track_descriptor {
     use super::*;
+    #[doc = "Optional designation for single channel audio tracks.  Can be used to combine the tracks into stereo or multi-channel audio tracks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ChannelMapping {
         FrontLeft,
@@ -362,12 +435,15 @@ pub mod audio_track_descriptor {
         StereoRight,
     }
 }
+#[doc = "Describes a built-in preset for encoding the input video with the Standard Encoder."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuiltInStandardEncoderPreset {
     #[serde(flatten)]
     pub preset: Preset,
+    #[doc = "An object of optional configuration settings for encoder."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configurations: Option<PresetConfigurations>,
+    #[doc = "The built-in preset to be used for encoding videos."]
     #[serde(rename = "presetName")]
     pub preset_name: built_in_standard_encoder_preset::PresetName,
 }
@@ -382,6 +458,7 @@ impl BuiltInStandardEncoderPreset {
 }
 pub mod built_in_standard_encoder_preset {
     use super::*;
+    #[doc = "The built-in preset to be used for encoding videos."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PresetName {
         #[serde(rename = "H264SingleBitrateSD")]
@@ -405,12 +482,16 @@ pub mod built_in_standard_encoder_preset {
         H265SingleBitrate4K,
     }
 }
+#[doc = "Class to specify DRM configurations of CommonEncryptionCbcs scheme in Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CbcsDrmConfiguration {
+    #[doc = "Class to specify configurations of FairPlay in Streaming Policy"]
     #[serde(rename = "fairPlay", default, skip_serializing_if = "Option::is_none")]
     pub fair_play: Option<StreamingPolicyFairPlayConfiguration>,
+    #[doc = "Class to specify configurations of PlayReady in Streaming Policy"]
     #[serde(rename = "playReady", default, skip_serializing_if = "Option::is_none")]
     pub play_ready: Option<StreamingPolicyPlayReadyConfiguration>,
+    #[doc = "Class to specify configurations of Widevine in Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub widevine: Option<StreamingPolicyWidevineConfiguration>,
 }
@@ -419,10 +500,13 @@ impl CbcsDrmConfiguration {
         Self::default()
     }
 }
+#[doc = "Class to specify DRM configurations of CommonEncryptionCenc scheme in Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CencDrmConfiguration {
+    #[doc = "Class to specify configurations of PlayReady in Streaming Policy"]
     #[serde(rename = "playReady", default, skip_serializing_if = "Option::is_none")]
     pub play_ready: Option<StreamingPolicyPlayReadyConfiguration>,
+    #[doc = "Class to specify configurations of Widevine in Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub widevine: Option<StreamingPolicyWidevineConfiguration>,
 }
@@ -431,10 +515,13 @@ impl CencDrmConfiguration {
         Self::default()
     }
 }
+#[doc = "The input to the check name availability request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityInput {
+    #[doc = "The account name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The account type. For a Media Services account, this should be 'MediaServices'."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -443,8 +530,10 @@ impl CheckNameAvailabilityInput {
         Self::default()
     }
 }
+#[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClipTime {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -453,10 +542,13 @@ impl ClipTime {
         Self { odata_type }
     }
 }
+#[doc = "Describes the basic properties of all codecs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Codec {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+    #[doc = "An optional label for the codec. The label can be used to control muxing behavior."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -465,14 +557,19 @@ impl Codec {
         Self { odata_type, label: None }
     }
 }
+#[doc = "Class for CommonEncryptionCbcs encryption scheme"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommonEncryptionCbcs {
+    #[doc = "Class to specify which protocols are enabled"]
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
+    #[doc = "Representing which tracks should not be encrypted"]
     #[serde(rename = "clearTracks", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_tracks: Vec<TrackSelection>,
+    #[doc = "Class to specify properties of all content keys in Streaming Policy"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Option::is_none")]
     pub content_keys: Option<StreamingPolicyContentKeys>,
+    #[doc = "Class to specify DRM configurations of CommonEncryptionCbcs scheme in Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CbcsDrmConfiguration>,
 }
@@ -481,14 +578,19 @@ impl CommonEncryptionCbcs {
         Self::default()
     }
 }
+#[doc = "Class for envelope encryption scheme"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommonEncryptionCenc {
+    #[doc = "Class to specify which protocols are enabled"]
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
+    #[doc = "Representing which tracks should not be encrypted"]
     #[serde(rename = "clearTracks", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_tracks: Vec<TrackSelection>,
+    #[doc = "Class to specify properties of all content keys in Streaming Policy"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Option::is_none")]
     pub content_keys: Option<StreamingPolicyContentKeys>,
+    #[doc = "Class to specify DRM configurations of CommonEncryptionCenc scheme in Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CencDrmConfiguration>,
 }
@@ -497,12 +599,15 @@ impl CommonEncryptionCenc {
         Self::default()
     }
 }
+#[doc = "A Content Key Policy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of the Content Key Policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentKeyPolicyProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -511,6 +616,7 @@ impl ContentKeyPolicy {
         Self::default()
     }
 }
+#[doc = "Represents a configuration for non-DRM keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyClearKeyConfiguration {
     #[serde(flatten)]
@@ -523,10 +629,13 @@ impl ContentKeyPolicyClearKeyConfiguration {
         }
     }
 }
+#[doc = "A collection of ContentKeyPolicy items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyCollection {
+    #[doc = "A collection of ContentKeyPolicy items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContentKeyPolicy>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -535,8 +644,10 @@ impl ContentKeyPolicyCollection {
         Self::default()
     }
 }
+#[doc = "Base class for Content Key Policy configuration. A derived class must be used to create a configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyConfiguration {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -545,17 +656,23 @@ impl ContentKeyPolicyConfiguration {
         Self { odata_type }
     }
 }
+#[doc = "Specifies a configuration for FairPlay licenses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyFairPlayConfiguration {
     #[serde(flatten)]
     pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
+    #[doc = "The key that must be used as FairPlay Application Secret key."]
     pub ask: String,
+    #[doc = "The password encrypting FairPlay certificate in PKCS 12 (pfx) format."]
     #[serde(rename = "fairPlayPfxPassword")]
     pub fair_play_pfx_password: String,
+    #[doc = "The Base64 representation of FairPlay certificate in PKCS 12 (pfx) format (including private key)."]
     #[serde(rename = "fairPlayPfx")]
     pub fair_play_pfx: String,
+    #[doc = "The rental and lease key type."]
     #[serde(rename = "rentalAndLeaseKeyType")]
     pub rental_and_lease_key_type: content_key_policy_fair_play_configuration::RentalAndLeaseKeyType,
+    #[doc = "The rental duration. Must be greater than or equal to 0."]
     #[serde(rename = "rentalDuration")]
     pub rental_duration: i64,
     #[serde(rename = "offlineRentalConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -583,6 +700,7 @@ impl ContentKeyPolicyFairPlayConfiguration {
 }
 pub mod content_key_policy_fair_play_configuration {
     use super::*;
+    #[doc = "The rental and lease key type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RentalAndLeaseKeyType {
         Unknown,
@@ -594,8 +712,10 @@ pub mod content_key_policy_fair_play_configuration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyFairPlayOfflineRentalConfiguration {
+    #[doc = "Playback duration"]
     #[serde(rename = "playbackDurationSeconds")]
     pub playback_duration_seconds: i64,
+    #[doc = "Storage duration"]
     #[serde(rename = "storageDurationSeconds")]
     pub storage_duration_seconds: i64,
 }
@@ -607,6 +727,7 @@ impl ContentKeyPolicyFairPlayOfflineRentalConfiguration {
         }
     }
 }
+#[doc = "Represents an open restriction. License or key will be delivered on every request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyOpenRestriction {
     #[serde(flatten)]
@@ -619,13 +740,18 @@ impl ContentKeyPolicyOpenRestriction {
         }
     }
 }
+#[doc = "Represents a policy option."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyOption {
+    #[doc = "The legacy Policy Option ID."]
     #[serde(rename = "policyOptionId", default, skip_serializing_if = "Option::is_none")]
     pub policy_option_id: Option<String>,
+    #[doc = "The Policy Option description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Base class for Content Key Policy configuration. A derived class must be used to create a configuration."]
     pub configuration: ContentKeyPolicyConfiguration,
+    #[doc = "Base class for Content Key Policy restrictions. A derived class must be used to create a restriction."]
     pub restriction: ContentKeyPolicyRestriction,
 }
 impl ContentKeyPolicyOption {
@@ -638,11 +764,14 @@ impl ContentKeyPolicyOption {
         }
     }
 }
+#[doc = "Specifies a configuration for PlayReady licenses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyConfiguration {
     #[serde(flatten)]
     pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
+    #[doc = "The PlayReady licenses."]
     pub licenses: Vec<ContentKeyPolicyPlayReadyLicense>,
+    #[doc = "The custom response data."]
     #[serde(rename = "responseCustomData", default, skip_serializing_if = "Option::is_none")]
     pub response_custom_data: Option<String>,
 }
@@ -655,6 +784,7 @@ impl ContentKeyPolicyPlayReadyConfiguration {
         }
     }
 }
+#[doc = "Specifies that the content key ID is in the PlayReady header."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
     #[serde(flatten)]
@@ -667,10 +797,12 @@ impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
         }
     }
 }
+#[doc = "Specifies that the content key ID is specified in the PlayReady configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
     #[serde(flatten)]
     pub content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
+    #[doc = "The content key ID."]
     #[serde(rename = "keyId")]
     pub key_id: String,
 }
@@ -682,8 +814,10 @@ impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
         }
     }
 }
+#[doc = "Base class for content key ID location. A derived class must be used to represent the location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentKeyLocation {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -692,10 +826,13 @@ impl ContentKeyPolicyPlayReadyContentKeyLocation {
         Self { odata_type }
     }
 }
+#[doc = "Configures the Explicit Analog Television Output Restriction control bits. For further details see the PlayReady Compliance Rules."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction {
+    #[doc = "Indicates whether this restriction is enforced on a Best Effort basis."]
     #[serde(rename = "bestEffort")]
     pub best_effort: bool,
+    #[doc = "Configures the restriction control bits. Must be between 0 and 3 inclusive."]
     #[serde(rename = "configurationData")]
     pub configuration_data: i32,
 }
@@ -707,26 +844,37 @@ impl ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction {
         }
     }
 }
+#[doc = "The PlayReady license"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyLicense {
+    #[doc = "A flag indicating whether test devices can use the license."]
     #[serde(rename = "allowTestDevices")]
     pub allow_test_devices: bool,
+    #[doc = "The begin date of license"]
     #[serde(rename = "beginDate", default, skip_serializing_if = "Option::is_none")]
     pub begin_date: Option<String>,
+    #[doc = "The expiration date of license."]
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
+    #[doc = "The relative begin date of license."]
     #[serde(rename = "relativeBeginDate", default, skip_serializing_if = "Option::is_none")]
     pub relative_begin_date: Option<String>,
+    #[doc = "The relative expiration date of license."]
     #[serde(rename = "relativeExpirationDate", default, skip_serializing_if = "Option::is_none")]
     pub relative_expiration_date: Option<String>,
+    #[doc = "The grace period of license."]
     #[serde(rename = "gracePeriod", default, skip_serializing_if = "Option::is_none")]
     pub grace_period: Option<String>,
+    #[doc = "Configures the Play Right in the PlayReady license."]
     #[serde(rename = "playRight", default, skip_serializing_if = "Option::is_none")]
     pub play_right: Option<ContentKeyPolicyPlayReadyPlayRight>,
+    #[doc = "The license type."]
     #[serde(rename = "licenseType")]
     pub license_type: content_key_policy_play_ready_license::LicenseType,
+    #[doc = "Base class for content key ID location. A derived class must be used to represent the location."]
     #[serde(rename = "contentKeyLocation")]
     pub content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
+    #[doc = "The PlayReady content type."]
     #[serde(rename = "contentType")]
     pub content_type: content_key_policy_play_ready_license::ContentType,
 }
@@ -753,12 +901,14 @@ impl ContentKeyPolicyPlayReadyLicense {
 }
 pub mod content_key_policy_play_ready_license {
     use super::*;
+    #[doc = "The license type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LicenseType {
         Unknown,
         NonPersistent,
         Persistent,
     }
+    #[doc = "The PlayReady content type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ContentType {
         Unknown,
@@ -767,36 +917,50 @@ pub mod content_key_policy_play_ready_license {
         UltraVioletStreaming,
     }
 }
+#[doc = "Configures the Play Right in the PlayReady license."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyPlayRight {
+    #[doc = "The amount of time that the license is valid after the license is first used to play content."]
     #[serde(rename = "firstPlayExpiration", default, skip_serializing_if = "Option::is_none")]
     pub first_play_expiration: Option<String>,
+    #[doc = "Configures the Serial Copy Management System (SCMS) in the license. Must be between 0 and 3 inclusive."]
     #[serde(rename = "scmsRestriction", default, skip_serializing_if = "Option::is_none")]
     pub scms_restriction: Option<i32>,
+    #[doc = "Configures Automatic Gain Control (AGC) and Color Stripe in the license. Must be between 0 and 3 inclusive."]
     #[serde(rename = "agcAndColorStripeRestriction", default, skip_serializing_if = "Option::is_none")]
     pub agc_and_color_stripe_restriction: Option<i32>,
+    #[doc = "Configures the Explicit Analog Television Output Restriction control bits. For further details see the PlayReady Compliance Rules."]
     #[serde(
         rename = "explicitAnalogTelevisionOutputRestriction",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub explicit_analog_television_output_restriction: Option<ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction>,
+    #[doc = "Enables the Image Constraint For Analog Component Video Restriction in the license."]
     #[serde(rename = "digitalVideoOnlyContentRestriction")]
     pub digital_video_only_content_restriction: bool,
+    #[doc = "Enables the Image Constraint For Analog Component Video Restriction in the license."]
     #[serde(rename = "imageConstraintForAnalogComponentVideoRestriction")]
     pub image_constraint_for_analog_component_video_restriction: bool,
+    #[doc = "Enables the Image Constraint For Analog Component Video Restriction in the license."]
     #[serde(rename = "imageConstraintForAnalogComputerMonitorRestriction")]
     pub image_constraint_for_analog_computer_monitor_restriction: bool,
+    #[doc = "Configures Unknown output handling settings of the license."]
     #[serde(rename = "allowPassingVideoContentToUnknownOutput")]
     pub allow_passing_video_content_to_unknown_output: content_key_policy_play_ready_play_right::AllowPassingVideoContentToUnknownOutput,
+    #[doc = "Specifies the output protection level for uncompressed digital video."]
     #[serde(rename = "uncompressedDigitalVideoOpl", default, skip_serializing_if = "Option::is_none")]
     pub uncompressed_digital_video_opl: Option<i32>,
+    #[doc = "Specifies the output protection level for compressed digital video."]
     #[serde(rename = "compressedDigitalVideoOpl", default, skip_serializing_if = "Option::is_none")]
     pub compressed_digital_video_opl: Option<i32>,
+    #[doc = "Specifies the output protection level for compressed digital audio."]
     #[serde(rename = "analogVideoOpl", default, skip_serializing_if = "Option::is_none")]
     pub analog_video_opl: Option<i32>,
+    #[doc = "Specifies the output protection level for compressed digital audio."]
     #[serde(rename = "compressedDigitalAudioOpl", default, skip_serializing_if = "Option::is_none")]
     pub compressed_digital_audio_opl: Option<i32>,
+    #[doc = "Specifies the output protection level for uncompressed digital audio."]
     #[serde(rename = "uncompressedDigitalAudioOpl", default, skip_serializing_if = "Option::is_none")]
     pub uncompressed_digital_audio_opl: Option<i32>,
 }
@@ -826,6 +990,7 @@ impl ContentKeyPolicyPlayReadyPlayRight {
 }
 pub mod content_key_policy_play_ready_play_right {
     use super::*;
+    #[doc = "Configures Unknown output handling settings of the license."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllowPassingVideoContentToUnknownOutput {
         Unknown,
@@ -834,16 +999,22 @@ pub mod content_key_policy_play_ready_play_right {
         AllowedWithVideoConstriction,
     }
 }
+#[doc = "The properties of the Content Key Policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyProperties {
+    #[doc = "The legacy Policy ID."]
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
+    #[doc = "The creation date of the Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The last modified date of the Policy"]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "A description for the Policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The Key Policy options."]
     pub options: Vec<ContentKeyPolicyOption>,
 }
 impl ContentKeyPolicyProperties {
@@ -857,8 +1028,10 @@ impl ContentKeyPolicyProperties {
         }
     }
 }
+#[doc = "Base class for Content Key Policy restrictions. A derived class must be used to create a restriction."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRestriction {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -867,8 +1040,10 @@ impl ContentKeyPolicyRestriction {
         Self { odata_type }
     }
 }
+#[doc = "Base class for Content Key Policy key for token validation. A derived class must be used to create a token key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRestrictionTokenKey {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -877,11 +1052,14 @@ impl ContentKeyPolicyRestrictionTokenKey {
         Self { odata_type }
     }
 }
+#[doc = "Specifies a RSA key for token validation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRsaTokenKey {
     #[serde(flatten)]
     pub content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey,
+    #[doc = "The RSA Parameter exponent"]
     pub exponent: String,
+    #[doc = "The RSA Parameter modulus"]
     pub modulus: String,
 }
 impl ContentKeyPolicyRsaTokenKey {
@@ -893,10 +1071,12 @@ impl ContentKeyPolicyRsaTokenKey {
         }
     }
 }
+#[doc = "Specifies a symmetric key for token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicySymmetricTokenKey {
     #[serde(flatten)]
     pub content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey,
+    #[doc = "The key value of the key"]
     #[serde(rename = "keyValue")]
     pub key_value: String,
 }
@@ -908,10 +1088,13 @@ impl ContentKeyPolicySymmetricTokenKey {
         }
     }
 }
+#[doc = "Represents a token claim."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyTokenClaim {
+    #[doc = "Token claim type."]
     #[serde(rename = "claimType", default, skip_serializing_if = "Option::is_none")]
     pub claim_type: Option<String>,
+    #[doc = "Token claim value."]
     #[serde(rename = "claimValue", default, skip_serializing_if = "Option::is_none")]
     pub claim_value: Option<String>,
 }
@@ -920,20 +1103,28 @@ impl ContentKeyPolicyTokenClaim {
         Self::default()
     }
 }
+#[doc = "Represents a token restriction. Provided token must match these requirements for successful license or key delivery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyTokenRestriction {
     #[serde(flatten)]
     pub content_key_policy_restriction: ContentKeyPolicyRestriction,
+    #[doc = "The token issuer."]
     pub issuer: String,
+    #[doc = "The audience for the token."]
     pub audience: String,
+    #[doc = "Base class for Content Key Policy key for token validation. A derived class must be used to create a token key."]
     #[serde(rename = "primaryVerificationKey")]
     pub primary_verification_key: ContentKeyPolicyRestrictionTokenKey,
+    #[doc = "A list of alternative verification keys."]
     #[serde(rename = "alternateVerificationKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub alternate_verification_keys: Vec<ContentKeyPolicyRestrictionTokenKey>,
+    #[doc = "A list of required token claims."]
     #[serde(rename = "requiredClaims", default, skip_serializing_if = "Vec::is_empty")]
     pub required_claims: Vec<ContentKeyPolicyTokenClaim>,
+    #[doc = "The type of token."]
     #[serde(rename = "restrictionTokenType")]
     pub restriction_token_type: content_key_policy_token_restriction::RestrictionTokenType,
+    #[doc = "The OpenID connect discovery document."]
     #[serde(rename = "openIdConnectDiscoveryDocument", default, skip_serializing_if = "Option::is_none")]
     pub open_id_connect_discovery_document: Option<String>,
 }
@@ -959,6 +1150,7 @@ impl ContentKeyPolicyTokenRestriction {
 }
 pub mod content_key_policy_token_restriction {
     use super::*;
+    #[doc = "The type of token."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RestrictionTokenType {
         Unknown,
@@ -966,6 +1158,7 @@ pub mod content_key_policy_token_restriction {
         Jwt,
     }
 }
+#[doc = "Represents a ContentKeyPolicyConfiguration that is unavailable in the current API version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyUnknownConfiguration {
     #[serde(flatten)]
@@ -978,6 +1171,7 @@ impl ContentKeyPolicyUnknownConfiguration {
         }
     }
 }
+#[doc = "Represents a ContentKeyPolicyRestriction that is unavailable in the current API version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyUnknownRestriction {
     #[serde(flatten)]
@@ -990,10 +1184,12 @@ impl ContentKeyPolicyUnknownRestriction {
         }
     }
 }
+#[doc = "Specifies a configuration for Widevine licenses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyWidevineConfiguration {
     #[serde(flatten)]
     pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
+    #[doc = "The Widevine template."]
     #[serde(rename = "widevineTemplate")]
     pub widevine_template: String,
 }
@@ -1005,10 +1201,12 @@ impl ContentKeyPolicyWidevineConfiguration {
         }
     }
 }
+#[doc = "Specifies a certificate for token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyX509CertificateTokenKey {
     #[serde(flatten)]
     pub content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey,
+    #[doc = "The raw data field of a certificate in PKCS 12 format (X509Certificate2 in .NET)"]
     #[serde(rename = "rawBody")]
     pub raw_body: String,
 }
@@ -1020,6 +1218,7 @@ impl ContentKeyPolicyX509CertificateTokenKey {
         }
     }
 }
+#[doc = "A codec flag, which tells the encoder to copy the input audio bitstream."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyAudio {
     #[serde(flatten)]
@@ -1030,6 +1229,7 @@ impl CopyAudio {
         Self { codec }
     }
 }
+#[doc = "A codec flag, which tells the encoder to copy the input video bitstream without re-encoding."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyVideo {
     #[serde(flatten)]
@@ -1040,10 +1240,13 @@ impl CopyVideo {
         Self { codec }
     }
 }
+#[doc = "The client access policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CrossSiteAccessPolicies {
+    #[doc = "The content of clientaccesspolicy.xml used by Silverlight."]
     #[serde(rename = "clientAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub client_access_policy: Option<String>,
+    #[doc = "The content of crossdomain.xml used by Silverlight."]
     #[serde(rename = "crossDomainPolicy", default, skip_serializing_if = "Option::is_none")]
     pub cross_domain_policy: Option<String>,
 }
@@ -1052,10 +1255,13 @@ impl CrossSiteAccessPolicies {
         Self::default()
     }
 }
+#[doc = "Class to specify properties of default content key for each encryption scheme"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultKey {
+    #[doc = "Label can be used to specify Content Key when creating a Streaming Locator"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "Policy used by Default Key"]
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
 }
@@ -1064,10 +1270,13 @@ impl DefaultKey {
         Self::default()
     }
 }
+#[doc = "Describes the de-interlacing settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deinterlace {
+    #[doc = "The field parity for de-interlacing, defaults to Auto."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parity: Option<deinterlace::Parity>,
+    #[doc = "The deinterlacing mode. Defaults to AutoPixelAdaptive."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<deinterlace::Mode>,
 }
@@ -1078,12 +1287,14 @@ impl Deinterlace {
 }
 pub mod deinterlace {
     use super::*;
+    #[doc = "The field parity for de-interlacing, defaults to Auto."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Parity {
         Auto,
         TopFieldFirst,
         BottomFieldFirst,
     }
+    #[doc = "The deinterlacing mode. Defaults to AutoPixelAdaptive."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         Off,
@@ -1102,10 +1313,13 @@ impl EdgePolicies {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeUsageDataCollectionPolicy {
+    #[doc = "Usage data collection frequency in ISO 8601 duration format e.g. PT10M , PT5H."]
     #[serde(rename = "dataCollectionFrequency", default, skip_serializing_if = "Option::is_none")]
     pub data_collection_frequency: Option<String>,
+    #[doc = "Usage data reporting frequency in ISO 8601 duration format e.g. PT10M , PT5H."]
     #[serde(rename = "dataReportingFrequency", default, skip_serializing_if = "Option::is_none")]
     pub data_reporting_frequency: Option<String>,
+    #[doc = "Maximum time for which the functionality of the device will not be hampered for not reporting the usage data."]
     #[serde(rename = "maxAllowedUnreportedUsageDuration", default, skip_serializing_if = "Option::is_none")]
     pub max_allowed_unreported_usage_duration: Option<String>,
     #[serde(rename = "eventHubDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1118,10 +1332,13 @@ impl EdgeUsageDataCollectionPolicy {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeUsageDataEventHub {
+    #[doc = "Name of the Event Hub where usage will be reported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Namespace of the Event Hub where usage will be reported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    #[doc = "SAS token needed to interact with Event Hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
@@ -1130,11 +1347,16 @@ impl EdgeUsageDataEventHub {
         Self::default()
     }
 }
+#[doc = "Class to specify which protocols are enabled"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnabledProtocols {
+    #[doc = "Enable Download protocol or not"]
     pub download: bool,
+    #[doc = "Enable DASH protocol or not"]
     pub dash: bool,
+    #[doc = "Enable HLS protocol or not"]
     pub hls: bool,
+    #[doc = "Enable SmoothStreaming protocol or not"]
     #[serde(rename = "smoothStreaming")]
     pub smooth_streaming: bool,
 }
@@ -1148,12 +1370,16 @@ impl EnabledProtocols {
         }
     }
 }
+#[doc = "The response from the check name availability request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityNameAvailabilityCheckOutput {
+    #[doc = "Specifies if the name is available."]
     #[serde(rename = "nameAvailable")]
     pub name_available: bool,
+    #[doc = "Specifies the reason if the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "Specifies the detailed reason if the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -1166,14 +1392,19 @@ impl EntityNameAvailabilityCheckOutput {
         }
     }
 }
+#[doc = "Class for EnvelopeEncryption encryption scheme"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvelopeEncryption {
+    #[doc = "Class to specify which protocols are enabled"]
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
+    #[doc = "Representing which tracks should not be encrypted"]
     #[serde(rename = "clearTracks", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_tracks: Vec<TrackSelection>,
+    #[doc = "Class to specify properties of all content keys in Streaming Policy"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Option::is_none")]
     pub content_keys: Option<StreamingPolicyContentKeys>,
+    #[doc = "Template for the URL of the custom service delivering keys to end user players.  Not required when using Azure Media Services for issuing keys.  The template supports replaceable tokens that the service will update at runtime with the value specific to the request.  The currently supported token values are {AlternativeMediaId}, which is replaced with the value of StreamingLocatorId.AlternativeMediaId, and {ContentKeyId}, which is replaced with the value of identifier of the key being requested."]
     #[serde(rename = "customKeyAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_key_acquisition_url_template: Option<String>,
 }
@@ -1182,10 +1413,13 @@ impl EnvelopeEncryption {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -1194,16 +1428,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -1212,8 +1452,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -1222,16 +1464,21 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Describes all the settings to be used when analyzing a video in order to detect (and optionally redact) all the faces present."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FaceDetectorPreset {
     #[serde(flatten)]
     pub preset: Preset,
+    #[doc = "Specifies the maximum resolution at which your video is analyzed. The default behavior is \"SourceResolution,\" which will keep the input video at its original resolution when analyzed. Using \"StandardDefinition\" will resize input videos to standard definition while preserving the appropriate aspect ratio. It will only resize if the video is of higher resolution. For example, a 1920x1080 input would be scaled to 640x360 before processing. Switching to \"StandardDefinition\" will reduce the time it takes to process high resolution video. It may also reduce the cost of using this component (see https://azure.microsoft.com/en-us/pricing/details/media-services/#analytics for details). However, faces that end up being too small in the resized video may not be detected."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resolution: Option<face_detector_preset::Resolution>,
+    #[doc = "This mode provides the ability to choose between the following settings: 1) Analyze - For detection only.This mode generates a metadata JSON file marking appearances of faces throughout the video.Where possible, appearances of the same person are assigned the same ID. 2) Combined - Additionally redacts(blurs) detected faces. 3) Redact - This enables a 2-pass process, allowing for selective redaction of a subset of detected faces.It takes in the metadata file from a prior analyze pass, along with the source video, and a user-selected subset of IDs that require redaction."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<face_detector_preset::Mode>,
+    #[doc = "Blur type"]
     #[serde(rename = "blurType", default, skip_serializing_if = "Option::is_none")]
     pub blur_type: Option<face_detector_preset::BlurType>,
+    #[doc = "Dictionary containing key value pairs for parameters not exposed in the preset itself"]
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
     pub experimental_options: Option<serde_json::Value>,
 }
@@ -1248,17 +1495,20 @@ impl FaceDetectorPreset {
 }
 pub mod face_detector_preset {
     use super::*;
+    #[doc = "Specifies the maximum resolution at which your video is analyzed. The default behavior is \"SourceResolution,\" which will keep the input video at its original resolution when analyzed. Using \"StandardDefinition\" will resize input videos to standard definition while preserving the appropriate aspect ratio. It will only resize if the video is of higher resolution. For example, a 1920x1080 input would be scaled to 640x360 before processing. Switching to \"StandardDefinition\" will reduce the time it takes to process high resolution video. It may also reduce the cost of using this component (see https://azure.microsoft.com/en-us/pricing/details/media-services/#analytics for details). However, faces that end up being too small in the resized video may not be detected."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Resolution {
         SourceResolution,
         StandardDefinition,
     }
+    #[doc = "This mode provides the ability to choose between the following settings: 1) Analyze - For detection only.This mode generates a metadata JSON file marking appearances of faces throughout the video.Where possible, appearances of the same person are assigned the same ID. 2) Combined - Additionally redacts(blurs) detected faces. 3) Redact - This enables a 2-pass process, allowing for selective redaction of a subset of detected faces.It takes in the metadata file from a prior analyze pass, along with the source video, and a user-selected subset of IDs that require redaction."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         Analyze,
         Redact,
         Combined,
     }
+    #[doc = "Blur type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BlurType {
         Box,
@@ -1268,10 +1518,14 @@ pub mod face_detector_preset {
         Black,
     }
 }
+#[doc = "The class to specify one track property condition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterTrackPropertyCondition {
+    #[doc = "The track property type."]
     pub property: filter_track_property_condition::Property,
+    #[doc = "The track property value."]
     pub value: String,
+    #[doc = "The track property condition operation."]
     pub operation: filter_track_property_condition::Operation,
 }
 impl FilterTrackPropertyCondition {
@@ -1289,6 +1543,7 @@ impl FilterTrackPropertyCondition {
 }
 pub mod filter_track_property_condition {
     use super::*;
+    #[doc = "The track property type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Property {
         Unknown,
@@ -1299,14 +1554,17 @@ pub mod filter_track_property_condition {
         FourCc,
         Bitrate,
     }
+    #[doc = "The track property condition operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operation {
         Equal,
         NotEqual,
     }
 }
+#[doc = "Representing a list of FilterTrackPropertyConditions to select a track.  The filters are combined using a logical AND operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterTrackSelection {
+    #[doc = "The track selections."]
     #[serde(rename = "trackSelections")]
     pub track_selections: Vec<FilterTrackPropertyCondition>,
 }
@@ -1315,14 +1573,19 @@ impl FilterTrackSelection {
         Self { track_selections }
     }
 }
+#[doc = "Describes all the filtering operations, such as de-interlacing, rotation etc. that are to be applied to the input media before encoding."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
+    #[doc = "Describes the de-interlacing settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deinterlace: Option<Deinterlace>,
+    #[doc = "The rotation, if any, to be applied to the input video, before it is encoded. Default is Auto"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rotation: Option<filters::Rotation>,
+    #[doc = "Describes the properties of a rectangular window applied to the input media before processing it."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crop: Option<Rectangle>,
+    #[doc = "The properties of overlays to be applied to the input video. These could be audio, image or video overlays."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub overlays: Vec<Overlay>,
 }
@@ -1333,6 +1596,7 @@ impl Filters {
 }
 pub mod filters {
     use super::*;
+    #[doc = "The rotation, if any, to be applied to the input video, before it is encoded. Default is Auto"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Rotation {
         Auto,
@@ -1343,8 +1607,10 @@ pub mod filters {
         Rotate270,
     }
 }
+#[doc = "Filter First Quality"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirstQuality {
+    #[doc = "The first quality bitrate."]
     pub bitrate: i32,
 }
 impl FirstQuality {
@@ -1352,10 +1618,13 @@ impl FirstQuality {
         Self { bitrate }
     }
 }
+#[doc = "Base class for output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Format {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+    #[doc = "The pattern of the file names for the generated output files. The following macros are supported in the file name: {Basename} - An expansion macro that will use the name of the input video file. If the base name(the file suffix is not included) of the input video file is less than 32 characters long, the base name of input video files will be used. If the length of base name of the input video file exceeds 32 characters, the base name is truncated to the first 32 characters in total length. {Extension} - The appropriate extension for this format. {Label} - The label assigned to the codec/layer. {Index} - A unique index for thumbnails. Only applicable to thumbnails. {Bitrate} - The audio/video bitrate. Not applicable to thumbnails. {Codec} - The type of the audio/video codec. {Resolution} - The video resolution. Any unsubstituted macros will be collapsed and removed from the filename."]
     #[serde(rename = "filenamePattern")]
     pub filename_pattern: String,
 }
@@ -1367,6 +1636,7 @@ impl Format {
         }
     }
 }
+#[doc = "An InputDefinition that looks across all of the files provided to select tracks specified by the IncludedTracks property. Generally used with the AudioTrackByAttribute and VideoTrackByAttribute to allow selection of a single track across a set of input files."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FromAllInputFile {
     #[serde(flatten)]
@@ -1377,6 +1647,7 @@ impl FromAllInputFile {
         Self { input_definition }
     }
 }
+#[doc = "An InputDefinition that looks at each input file provided to select tracks specified by the IncludedTracks property. Generally used with the AudioTrackByAttribute and VideoTrackByAttribute to select tracks from each file given."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FromEachInputFile {
     #[serde(flatten)]
@@ -1387,18 +1658,24 @@ impl FromEachInputFile {
         Self { input_definition }
     }
 }
+#[doc = "Describes the settings to be used when encoding the input video into a desired output bitrate layer with the H.264 video codec."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct H264Layer {
     #[serde(flatten)]
     pub video_layer: VideoLayer,
+    #[doc = "We currently support Baseline, Main, High, High422, High444. Default is Auto."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<h264_layer::Profile>,
+    #[doc = "We currently support Level up to 6.2. The value can be Auto, or a number that matches the H.264 profile. If not specified, the default is Auto, which lets the encoder choose the Level that is appropriate for this layer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
+    #[doc = "The VBV buffer window length. The value should be in ISO 8601 format. The value should be in the range [0.1-100] seconds. The default is 5 seconds (for example, PT5S)."]
     #[serde(rename = "bufferWindow", default, skip_serializing_if = "Option::is_none")]
     pub buffer_window: Option<String>,
+    #[doc = "The number of reference frames to be used when encoding this layer. If not specified, the encoder determines an appropriate number based on the encoder complexity setting."]
     #[serde(rename = "referenceFrames", default, skip_serializing_if = "Option::is_none")]
     pub reference_frames: Option<i32>,
+    #[doc = "The entropy mode to be used for this layer. If not specified, the encoder chooses the mode that is appropriate for the profile and level."]
     #[serde(rename = "entropyMode", default, skip_serializing_if = "Option::is_none")]
     pub entropy_mode: Option<h264_layer::EntropyMode>,
 }
@@ -1416,6 +1693,7 @@ impl H264Layer {
 }
 pub mod h264_layer {
     use super::*;
+    #[doc = "We currently support Baseline, Main, High, High422, High444. Default is Auto."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Profile {
         Auto,
@@ -1425,20 +1703,25 @@ pub mod h264_layer {
         High422,
         High444,
     }
+    #[doc = "The entropy mode to be used for this layer. If not specified, the encoder chooses the mode that is appropriate for the profile and level."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EntropyMode {
         Cabac,
         Cavlc,
     }
 }
+#[doc = "Describes all the properties for encoding a video with the H.264 codec."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct H264Video {
     #[serde(flatten)]
     pub video: Video,
+    #[doc = "Whether or not the encoder should insert key frames at scene changes. If not specified, the default is false. This flag should be set to true only when the encoder is being configured to produce a single output video."]
     #[serde(rename = "sceneChangeDetection", default, skip_serializing_if = "Option::is_none")]
     pub scene_change_detection: Option<bool>,
+    #[doc = "Tells the encoder how to choose its encoding settings. The default value is Balanced."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub complexity: Option<h264_video::Complexity>,
+    #[doc = "The collection of output H.264 layers to be produced by the encoder."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<H264Layer>,
 }
@@ -1454,6 +1737,7 @@ impl H264Video {
 }
 pub mod h264_video {
     use super::*;
+    #[doc = "Tells the encoder how to choose its encoding settings. The default value is Balanced."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Complexity {
         Speed,
@@ -1461,16 +1745,21 @@ pub mod h264_video {
         Quality,
     }
 }
+#[doc = "Describes the settings to be used when encoding the input video into a desired output bitrate layer with the H.265 video codec."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct H265Layer {
     #[serde(flatten)]
     pub h265_video_layer: H265VideoLayer,
+    #[doc = "We currently support Main. Default is Auto."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<h265_layer::Profile>,
+    #[doc = "We currently support Level up to 6.2. The value can be Auto, or a number that matches the H.265 profile. If not specified, the default is Auto, which lets the encoder choose the Level that is appropriate for this layer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
+    #[doc = "The VBV buffer window length. The value should be in ISO 8601 format. The value should be in the range [0.1-100] seconds. The default is 5 seconds (for example, PT5S)."]
     #[serde(rename = "bufferWindow", default, skip_serializing_if = "Option::is_none")]
     pub buffer_window: Option<String>,
+    #[doc = "The number of reference frames to be used when encoding this layer. If not specified, the encoder determines an appropriate number based on the encoder complexity setting."]
     #[serde(rename = "referenceFrames", default, skip_serializing_if = "Option::is_none")]
     pub reference_frames: Option<i32>,
 }
@@ -1487,20 +1776,25 @@ impl H265Layer {
 }
 pub mod h265_layer {
     use super::*;
+    #[doc = "We currently support Main. Default is Auto."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Profile {
         Auto,
         Main,
     }
 }
+#[doc = "Describes all the properties for encoding a video with the H.265 codec."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct H265Video {
     #[serde(flatten)]
     pub video: Video,
+    #[doc = "Specifies whether or not the encoder should insert key frames at scene changes. If not specified, the default is false. This flag should be set to true only when the encoder is being configured to produce a single output video."]
     #[serde(rename = "sceneChangeDetection", default, skip_serializing_if = "Option::is_none")]
     pub scene_change_detection: Option<bool>,
+    #[doc = "Tells the encoder how to choose its encoding settings.  Quality will provide for a higher compression ratio but at a higher cost and longer compute time.  Speed will produce a relatively larger file but is faster and more economical. The default value is Balanced."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub complexity: Option<h265_video::Complexity>,
+    #[doc = "The collection of output H.265 layers to be produced by the encoder."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<H265Layer>,
 }
@@ -1516,6 +1810,7 @@ impl H265Video {
 }
 pub mod h265_video {
     use super::*;
+    #[doc = "Tells the encoder how to choose its encoding settings.  Quality will provide for a higher compression ratio but at a higher cost and longer compute time.  Speed will produce a relatively larger file but is faster and more economical. The default value is Balanced."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Complexity {
         Speed,
@@ -1523,19 +1818,26 @@ pub mod h265_video {
         Quality,
     }
 }
+#[doc = "Describes the settings to be used when encoding the input video into a desired output bitrate layer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct H265VideoLayer {
     #[serde(flatten)]
     pub layer: Layer,
+    #[doc = "The average bitrate in bits per second at which to encode the input video when generating this layer. For example: a target bitrate of 3000Kbps or 3Mbps means this value should be 3000000 This is a required field."]
     pub bitrate: i32,
+    #[doc = "The maximum bitrate (in bits per second), at which the VBV buffer should be assumed to refill. If not specified, defaults to the same value as bitrate."]
     #[serde(rename = "maxBitrate", default, skip_serializing_if = "Option::is_none")]
     pub max_bitrate: Option<i32>,
+    #[doc = "The number of B-frames to be used when encoding this layer.  If not specified, the encoder chooses an appropriate number based on the video profile and level."]
     #[serde(rename = "bFrames", default, skip_serializing_if = "Option::is_none")]
     pub b_frames: Option<i32>,
+    #[doc = "The frame rate (in frames per second) at which to encode this layer. The value can be in the form of M/N where M and N are integers (For example, 30000/1001), or in the form of a number (For example, 30, or 29.97). The encoder enforces constraints on allowed frame rates based on the profile and level. If it is not specified, the encoder will use the same frame rate as the input video."]
     #[serde(rename = "frameRate", default, skip_serializing_if = "Option::is_none")]
     pub frame_rate: Option<String>,
+    #[doc = "The number of slices to be used when encoding this layer. If not specified, default is zero, which means that encoder will use a single slice for each frame."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub slices: Option<i32>,
+    #[doc = "Specifies whether or not adaptive B-frames are to be used when encoding this layer. If not specified, the encoder will turn it on whenever the video profile permits its use."]
     #[serde(rename = "adaptiveBFrame", default, skip_serializing_if = "Option::is_none")]
     pub adaptive_b_frame: Option<bool>,
 }
@@ -1552,8 +1854,10 @@ impl H265VideoLayer {
         }
     }
 }
+#[doc = "HTTP Live Streaming (HLS) packing setting for the live output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Hls {
+    #[doc = "The number of fragments in an HTTP Live Streaming (HLS) TS segment in the output of the live event. This value does not affect the packing ratio for HLS CMAF output."]
     #[serde(rename = "fragmentsPerTsSegment", default, skip_serializing_if = "Option::is_none")]
     pub fragments_per_ts_segment: Option<i32>,
 }
@@ -1562,8 +1866,10 @@ impl Hls {
         Self::default()
     }
 }
+#[doc = "The IP access control."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAccessControl {
+    #[doc = "The IP allow list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub allow: Vec<IpRange>,
 }
@@ -1572,12 +1878,16 @@ impl IpAccessControl {
         Self::default()
     }
 }
+#[doc = "The IP address range in the CIDR scheme."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpRange {
+    #[doc = "The friendly name for the IP address range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The IP address."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
+    #[doc = "The subnet mask prefix length (see CIDR notation)."]
     #[serde(rename = "subnetPrefixLength", default, skip_serializing_if = "Option::is_none")]
     pub subnet_prefix_length: Option<i32>,
 }
@@ -1586,13 +1896,17 @@ impl IpRange {
         Self::default()
     }
 }
+#[doc = "Describes the basic properties for generating thumbnails from the input video"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Image {
     #[serde(flatten)]
     pub video: Video,
+    #[doc = "The position in the input video from where to start generating thumbnails. The value can be in ISO 8601 format (For example, PT05S to start at 5 seconds), or a frame count (For example, 10 to start at the 10th frame), or a relative value to stream duration (For example, 10% to start at 10% of stream duration). Also supports a macro {Best}, which tells the encoder to select the best thumbnail from the first few seconds of the video and will only produce one thumbnail, no matter what other settings are for Step and Range. The default value is macro {Best}."]
     pub start: String,
+    #[doc = "The intervals at which thumbnails are generated. The value can be in ISO 8601 format (For example, PT05S for one image every 5 seconds), or a frame count (For example, 30 for one image every 30 frames), or a relative value to stream duration (For example, 10% for one image every 10% of stream duration). Note: Step value will affect the first generated thumbnail, which may not be exactly the one specified at transform preset start time. This is due to the encoder, which tries to select the best thumbnail between start time and Step position from start time as the first output. As the default value is 10%, it means if stream has long duration, the first generated thumbnail might be far away from the one specified at start time. Try to select reasonable value for Step if the first thumbnail is expected close to start time, or set Range value at 1 if only one thumbnail is needed at start time."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub step: Option<String>,
+    #[doc = "The position relative to transform preset start time in the input video at which to stop generating thumbnails. The value can be in ISO 8601 format (For example, PT5M30S to stop at 5 minutes and 30 seconds from start time), or a frame count (For example, 300 to stop at the 300th frame from the frame at start time. If this value is 1, it means only producing one thumbnail at start time), or a relative value to the stream duration (For example, 50% to stop at half of stream duration from start time). The default value is 100%, which means to stop at the end of the stream."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<String>,
 }
@@ -1606,6 +1920,7 @@ impl Image {
         }
     }
 }
+#[doc = "Describes the properties for an output image file."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageFormat {
     #[serde(flatten)]
@@ -1616,10 +1931,13 @@ impl ImageFormat {
         Self { format }
     }
 }
+#[doc = "Base class for defining an input. Use sub classes of this class to specify tracks selections and related metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputDefinition {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+    #[doc = "The list of TrackDescriptors which define the metadata and selection of tracks in the input."]
     #[serde(rename = "includedTracks", default, skip_serializing_if = "Vec::is_empty")]
     pub included_tracks: Vec<TrackDescriptor>,
 }
@@ -1631,10 +1949,12 @@ impl InputDefinition {
         }
     }
 }
+#[doc = "An InputDefinition for a single file.  TrackSelections are scoped to the file specified."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputFile {
     #[serde(flatten)]
     pub input_definition: InputDefinition,
+    #[doc = "Name of the file that this input definition applies to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
 }
@@ -1646,12 +1966,15 @@ impl InputFile {
         }
     }
 }
+#[doc = "A Job resource type. The progress and state can be obtained by polling a Job or subscribing to events using EventGrid."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the Job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1660,10 +1983,13 @@ impl Job {
         Self::default()
     }
 }
+#[doc = "A collection of Job items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollection {
+    #[doc = "A collection of Job items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -1672,16 +1998,22 @@ impl JobCollection {
         Self::default()
     }
 }
+#[doc = "Details of JobOutput errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobError {
+    #[doc = "Error code describing the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<job_error::Code>,
+    #[doc = "A human-readable language-dependent representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Helps with categorization of errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<job_error::Category>,
+    #[doc = "Indicates that it may be possible to retry the Job. If retry is unsuccessful, please contact Azure support via Azure Portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retry: Option<job_error::Retry>,
+    #[doc = "An array of details about specific errors that led to this reported error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<JobErrorDetail>,
 }
@@ -1692,6 +2024,7 @@ impl JobError {
 }
 pub mod job_error {
     use super::*;
+    #[doc = "Error code describing the error."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Code {
         ServiceError,
@@ -1704,6 +2037,7 @@ pub mod job_error {
         ContentMalformed,
         ContentUnsupported,
     }
+    #[doc = "Helps with categorization of errors."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {
         Service,
@@ -1712,16 +2046,20 @@ pub mod job_error {
         Configuration,
         Content,
     }
+    #[doc = "Indicates that it may be possible to retry the Job. If retry is unsuccessful, please contact Azure support via Azure Portal."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Retry {
         DoNotRetry,
         MayRetry,
     }
 }
+#[doc = "Details of JobOutput errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorDetail {
+    #[doc = "Code describing the error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -1730,8 +2068,10 @@ impl JobErrorDetail {
         Self::default()
     }
 }
+#[doc = "Base class for inputs to a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInput {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -1740,10 +2080,12 @@ impl JobInput {
         Self { odata_type }
     }
 }
+#[doc = "Represents an Asset for input into a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputAsset {
     #[serde(flatten)]
     pub job_input_clip: JobInputClip,
+    #[doc = "The name of the input Asset."]
     #[serde(rename = "assetName")]
     pub asset_name: String,
 }
@@ -1755,18 +2097,24 @@ impl JobInputAsset {
         }
     }
 }
+#[doc = "Represents input files for a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputClip {
     #[serde(flatten)]
     pub job_input: JobInput,
+    #[doc = "List of files. Required for JobInputHttp. Maximum of 4000 characters each. Query strings will not be returned in service responses to prevent sensitive data exposure."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<String>,
+    #[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<ClipTime>,
+    #[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<ClipTime>,
+    #[doc = "A label that is assigned to a JobInputClip, that is used to satisfy a reference used in the Transform. For example, a Transform can be authored so as to take an image file with the label 'xyz' and apply it as an overlay onto the input video before it is encoded. When submitting a Job, exactly one of the JobInputs should be the image file, and it should have the label 'xyz'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "Defines a list of InputDefinitions. For each InputDefinition, it defines a list of track selections and related metadata."]
     #[serde(rename = "inputDefinitions", default, skip_serializing_if = "Vec::is_empty")]
     pub input_definitions: Vec<InputDefinition>,
 }
@@ -1782,10 +2130,12 @@ impl JobInputClip {
         }
     }
 }
+#[doc = "Represents HTTPS job input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputHttp {
     #[serde(flatten)]
     pub job_input_clip: JobInputClip,
+    #[doc = "Base URI for HTTPS job input. It will be concatenated with provided file names. If no base uri is given, then the provided file list is assumed to be fully qualified uris. Maximum length of 4000 characters. The query strings will not be returned in service responses to prevent sensitive data exposure."]
     #[serde(rename = "baseUri", default, skip_serializing_if = "Option::is_none")]
     pub base_uri: Option<String>,
 }
@@ -1797,10 +2147,12 @@ impl JobInputHttp {
         }
     }
 }
+#[doc = "A Sequence contains an ordered list of Clips where each clip is a JobInput.  The Sequence will be treated as a single input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputSequence {
     #[serde(flatten)]
     pub job_input: JobInput,
+    #[doc = "JobInputs that make up the timeline."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<JobInputClip>,
 }
@@ -1812,10 +2164,12 @@ impl JobInputSequence {
         }
     }
 }
+#[doc = "Describes a list of inputs to a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputs {
     #[serde(flatten)]
     pub job_input: JobInput,
+    #[doc = "List of inputs to a Job."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<JobInput>,
 }
@@ -1827,22 +2181,31 @@ impl JobInputs {
         }
     }
 }
+#[doc = "Describes all the properties of a JobOutput."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobOutput {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+    #[doc = "Details of JobOutput errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<JobError>,
+    #[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
     #[serde(rename = "presetOverride", default, skip_serializing_if = "Option::is_none")]
     pub preset_override: Option<Preset>,
+    #[doc = "Describes the state of the JobOutput."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_output::State>,
+    #[doc = "If the JobOutput is in a Processing state, this contains the Job completion percentage. The value is an estimate and not intended to be used to predict Job completion times. To determine if the JobOutput is complete, use the State property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<i32>,
+    #[doc = "A label that is assigned to a JobOutput in order to help uniquely identify it. This is useful when your Transform has more than one TransformOutput, whereby your Job has more than one JobOutput. In such cases, when you submit the Job, you will add two or more JobOutputs, in the same order as TransformOutputs in the Transform. Subsequently, when you retrieve the Job, either through events or on a GET request, you can use the label to easily identify the JobOutput. If a label is not provided, a default value of '{presetName}_{outputIndex}' will be used, where the preset name is the name of the preset in the corresponding TransformOutput and the output index is the relative index of the this JobOutput within the Job. Note that this index is the same as the relative index of the corresponding TransformOutput within its Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "The UTC date and time at which this Job Output began processing."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The UTC date and time at which this Job Output finished processing."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
@@ -1862,6 +2225,7 @@ impl JobOutput {
 }
 pub mod job_output {
     use super::*;
+    #[doc = "Describes the state of the JobOutput."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Canceled,
@@ -1873,10 +2237,12 @@ pub mod job_output {
         Scheduled,
     }
 }
+#[doc = "Represents an Asset used as a JobOutput."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobOutputAsset {
     #[serde(flatten)]
     pub job_output: JobOutput,
+    #[doc = "The name of the output Asset."]
     #[serde(rename = "assetName")]
     pub asset_name: String,
 }
@@ -1885,24 +2251,35 @@ impl JobOutputAsset {
         Self { job_output, asset_name }
     }
 }
+#[doc = "Properties of the Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
+    #[doc = "The UTC date and time when the customer has created the Job, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The current state of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_properties::State>,
+    #[doc = "Optional customer supplied description of the Job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Base class for inputs to a Job."]
     pub input: JobInput,
+    #[doc = "The UTC date and time when the customer has last updated the Job, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "The outputs for the Job."]
     pub outputs: Vec<JobOutput>,
+    #[doc = "Priority with which the job should be processed. Higher priority jobs are processed before lower priority jobs. If not set, the default is normal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<job_properties::Priority>,
+    #[doc = "Customer provided key, value pairs that will be returned in Job and JobOutput state events."]
     #[serde(rename = "correlationData", default, skip_serializing_if = "Option::is_none")]
     pub correlation_data: Option<serde_json::Value>,
+    #[doc = "The UTC date and time at which this Job began processing."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The UTC date and time at which this Job finished processing."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
@@ -1924,6 +2301,7 @@ impl JobProperties {
 }
 pub mod job_properties {
     use super::*;
+    #[doc = "The current state of the job."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Canceled,
@@ -1934,6 +2312,7 @@ pub mod job_properties {
         Queued,
         Scheduled,
     }
+    #[doc = "Priority with which the job should be processed. Higher priority jobs are processed before lower priority jobs. If not set, the default is normal."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Priority {
         Low,
@@ -1941,6 +2320,7 @@ pub mod job_properties {
         High,
     }
 }
+#[doc = "Describes the settings for producing JPEG thumbnails."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JpgFormat {
     #[serde(flatten)]
@@ -1951,12 +2331,15 @@ impl JpgFormat {
         Self { image_format }
     }
 }
+#[doc = "Describes the properties for producing a series of JPEG images from the input video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JpgImage {
     #[serde(flatten)]
     pub image: Image,
+    #[doc = "A collection of output JPEG image layers to be produced by the encoder."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<JpgLayer>,
+    #[doc = "Sets the number of columns used in thumbnail sprite image.  The number of rows are automatically calculated and a VTT file is generated with the coordinate mappings for each thumbnail in the sprite. Note: this value should be a positive integer and a proper value is recommended so that the output image resolution will not go beyond JPEG maximum pixel resolution limit 65535x65535."]
     #[serde(rename = "spriteColumn", default, skip_serializing_if = "Option::is_none")]
     pub sprite_column: Option<i32>,
 }
@@ -1969,10 +2352,12 @@ impl JpgImage {
         }
     }
 }
+#[doc = "Describes the settings to produce a JPEG image from the input video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JpgLayer {
     #[serde(flatten)]
     pub layer: Layer,
+    #[doc = "The compression quality of the JPEG output. Range is from 0-100 and the default is 70."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality: Option<i32>,
 }
@@ -1993,8 +2378,10 @@ impl KeyDelivery {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
+    #[doc = "The URL of the Key Vault key used to encrypt the account. The key may either be versioned (for example https://vault/keys/mykey/version1) or reference a key without a version (for example https://vault/keys/mykey)."]
     #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub key_identifier: Option<String>,
+    #[doc = "The current key used to encrypt the Media Services account, including the key version."]
     #[serde(rename = "currentKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub current_key_identifier: Option<String>,
 }
@@ -2003,14 +2390,19 @@ impl KeyVaultProperties {
         Self::default()
     }
 }
+#[doc = "The encoder can be configured to produce video and/or images (thumbnails) at different resolutions, by specifying a layer for each desired resolution. A layer represents the properties for the video or image at a resolution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Layer {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+    #[doc = "The width of the output video for this layer. The value can be absolute (in pixels) or relative (in percentage). For example 50% means the output video has half as many pixels in width as the input."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<String>,
+    #[doc = "The height of the output video for this layer. The value can be absolute (in pixels) or relative (in percentage). For example 50% means the output video has half as many pixels in height as the input."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<String>,
+    #[doc = "The alphanumeric label for this layer, which can be used in multiplexing different video and audio layers, or in naming the output file."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -2024,10 +2416,13 @@ impl Layer {
         }
     }
 }
+#[doc = "The parameters to the list SAS request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerSasInput {
+    #[doc = "The permissions to set on the SAS URL."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<list_container_sas_input::Permissions>,
+    #[doc = "The SAS URL expiration time.  This must be less than 24 hours from the current time."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
 }
@@ -2038,6 +2433,7 @@ impl ListContainerSasInput {
 }
 pub mod list_container_sas_input {
     use super::*;
+    #[doc = "The permissions to set on the SAS URL."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
         Read,
@@ -2045,8 +2441,10 @@ pub mod list_container_sas_input {
         ReadWriteDelete,
     }
 }
+#[doc = "Class of response for listContentKeys action"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContentKeysResponse {
+    #[doc = "ContentKeys used by current Streaming Locator"]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub content_keys: Vec<StreamingLocatorContentKey>,
 }
@@ -2057,6 +2455,7 @@ impl ListContentKeysResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListEdgePoliciesInput {
+    #[doc = "Unique identifier of the edge device."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
 }
@@ -2065,10 +2464,13 @@ impl ListEdgePoliciesInput {
         Self::default()
     }
 }
+#[doc = "Class of response for listPaths action"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPathsResponse {
+    #[doc = "Streaming Paths supported by current Streaming Locator"]
     #[serde(rename = "streamingPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub streaming_paths: Vec<StreamingPath>,
+    #[doc = "Download Paths supported by current Streaming Locator"]
     #[serde(rename = "downloadPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub download_paths: Vec<String>,
 }
@@ -2077,8 +2479,10 @@ impl ListPathsResponse {
         Self::default()
     }
 }
+#[doc = "The Streaming Locators associated with this Asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListStreamingLocatorsResponse {
+    #[doc = "The list of Streaming Locators."]
     #[serde(rename = "streamingLocators", default, skip_serializing_if = "Vec::is_empty")]
     pub streaming_locators: Vec<AssetStreamingLocator>,
 }
@@ -2087,12 +2491,15 @@ impl ListStreamingLocatorsResponse {
         Self::default()
     }
 }
+#[doc = "The live event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEvent {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The live event properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveEventProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -2105,8 +2512,10 @@ impl LiveEvent {
         }
     }
 }
+#[doc = "The LiveEvent action input parameter definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventActionInput {
+    #[doc = "The flag indicates whether live outputs are automatically deleted when live event is being stopped. Deleting live outputs do not delete the underlying assets."]
     #[serde(rename = "removeOutputsOnStop", default, skip_serializing_if = "Option::is_none")]
     pub remove_outputs_on_stop: Option<bool>,
 }
@@ -2115,14 +2524,19 @@ impl LiveEventActionInput {
         Self::default()
     }
 }
+#[doc = "Specifies the live event type and optional encoding settings for encoding live events."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEncoding {
+    #[doc = "Live event type. When encodingType is set to PassthroughBasic or PassthroughStandard, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
     #[serde(rename = "encodingType", default, skip_serializing_if = "Option::is_none")]
     pub encoding_type: Option<live_event_encoding::EncodingType>,
+    #[doc = "The optional encoding preset name, used when encodingType is not None. This value is specified at creation time and cannot be updated. If the encodingType is set to Standard, then the default preset name is ‘Default720p’. Else if the encodingType is set to Premium1080p, the default preset is ‘Default1080p’."]
     #[serde(rename = "presetName", default, skip_serializing_if = "Option::is_none")]
     pub preset_name: Option<String>,
+    #[doc = "Specifies how the input video will be resized to fit the desired output resolution(s). Default is None"]
     #[serde(rename = "stretchMode", default, skip_serializing_if = "Option::is_none")]
     pub stretch_mode: Option<live_event_encoding::StretchMode>,
+    #[doc = "Use an ISO 8601 time value between 0.5 to 20 seconds to specify the output fragment length for the video and audio tracks of an encoding live event. For example, use PT2S to indicate 2 seconds. For the video track it also defines the key frame interval, or the length of a GoP (group of pictures).   If this value is not set for an encoding live event, the fragment duration defaults to 2 seconds. The value cannot be set for pass-through live events."]
     #[serde(rename = "keyFrameInterval", default, skip_serializing_if = "Option::is_none")]
     pub key_frame_interval: Option<String>,
 }
@@ -2133,6 +2547,7 @@ impl LiveEventEncoding {
 }
 pub mod live_event_encoding {
     use super::*;
+    #[doc = "Live event type. When encodingType is set to PassthroughBasic or PassthroughStandard, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncodingType {
         None,
@@ -2141,6 +2556,7 @@ pub mod live_event_encoding {
         PassthroughBasic,
         PassthroughStandard,
     }
+    #[doc = "Specifies how the input video will be resized to fit the desired output resolution(s). Default is None"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StretchMode {
         None,
@@ -2148,10 +2564,13 @@ pub mod live_event_encoding {
         AutoFit,
     }
 }
+#[doc = "The live event endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEndpoint {
+    #[doc = "The endpoint protocol."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
+    #[doc = "The endpoint URL."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
@@ -2160,16 +2579,22 @@ impl LiveEventEndpoint {
         Self::default()
     }
 }
+#[doc = "The live event input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventInput {
+    #[doc = "The input protocol for the live event. This is specified at creation time and cannot be updated."]
     #[serde(rename = "streamingProtocol")]
     pub streaming_protocol: live_event_input::StreamingProtocol,
+    #[doc = "The IP access control for live event input."]
     #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
     pub access_control: Option<LiveEventInputAccessControl>,
+    #[doc = "ISO 8601 time duration of the key frame interval duration of the input. This value sets the EXT-X-TARGETDURATION property in the HLS output. For example, use PT2S to indicate 2 seconds. Leave the value empty for encoding live events."]
     #[serde(rename = "keyFrameIntervalDuration", default, skip_serializing_if = "Option::is_none")]
     pub key_frame_interval_duration: Option<String>,
+    #[doc = "A UUID in string form to uniquely identify the stream. This can be specified at creation time but cannot be updated. If omitted, the service will generate a unique value."]
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
+    #[doc = "The input endpoints for the live event."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<LiveEventEndpoint>,
 }
@@ -2186,6 +2611,7 @@ impl LiveEventInput {
 }
 pub mod live_event_input {
     use super::*;
+    #[doc = "The input protocol for the live event. This is specified at creation time and cannot be updated."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StreamingProtocol {
         #[serde(rename = "FragmentedMP4")]
@@ -2194,8 +2620,10 @@ pub mod live_event_input {
         Rtmp,
     }
 }
+#[doc = "The IP access control for live event input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventInputAccessControl {
+    #[doc = "The IP access control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
@@ -2204,12 +2632,16 @@ impl LiveEventInputAccessControl {
         Self::default()
     }
 }
+#[doc = "A track selection condition. This property is reserved for future use, any value set on this property will be ignored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventInputTrackSelection {
+    #[doc = "Property name to select. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub property: Option<String>,
+    #[doc = "Comparing operation. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Property value to select. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -2218,12 +2650,16 @@ impl LiveEventInputTrackSelection {
         Self::default()
     }
 }
+#[doc = "The LiveEvent list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventListResult {
+    #[doc = "The result of the List Live Event operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LiveEvent>,
+    #[doc = "The number of result."]
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
     pub odata_count: Option<i32>,
+    #[doc = "The link to the next set of results. Not empty if value contains incomplete list of live outputs."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -2232,8 +2668,10 @@ impl LiveEventListResult {
         Self::default()
     }
 }
+#[doc = "Describes a transcription track in the output of a live event, generated using speech-to-text transcription. This property is reserved for future use, any value set on this property will be ignored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventOutputTranscriptionTrack {
+    #[doc = "The output track name. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(rename = "trackName")]
     pub track_name: String,
 }
@@ -2242,16 +2680,22 @@ impl LiveEventOutputTranscriptionTrack {
         Self { track_name }
     }
 }
+#[doc = "Live event preview settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreview {
+    #[doc = "The endpoints for preview. Do not share the preview URL with the live event audience."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<LiveEventEndpoint>,
+    #[doc = "The IP access control for the live event preview endpoint."]
     #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
     pub access_control: Option<LiveEventPreviewAccessControl>,
+    #[doc = "The identifier of the preview locator in Guid format. Specifying this at creation time allows the caller to know the preview locator url before the event is created. If omitted, the service will generate a random identifier. This value cannot be updated once the live event is created."]
     #[serde(rename = "previewLocator", default, skip_serializing_if = "Option::is_none")]
     pub preview_locator: Option<String>,
+    #[doc = "The name of streaming policy used for the live event preview. This value is specified at creation time and cannot be updated."]
     #[serde(rename = "streamingPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub streaming_policy_name: Option<String>,
+    #[doc = "An alternative media identifier associated with the streaming locator created for the preview. This value is specified at creation time and cannot be updated. The identifier can be used in the CustomLicenseAcquisitionUrlTemplate or the CustomKeyAcquisitionUrlTemplate of the StreamingPolicy specified in the StreamingPolicyName field."]
     #[serde(rename = "alternativeMediaId", default, skip_serializing_if = "Option::is_none")]
     pub alternative_media_id: Option<String>,
 }
@@ -2260,8 +2704,10 @@ impl LiveEventPreview {
         Self::default()
     }
 }
+#[doc = "The IP access control for the live event preview endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreviewAccessControl {
+    #[doc = "The IP access control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
@@ -2270,31 +2716,45 @@ impl LiveEventPreviewAccessControl {
         Self::default()
     }
 }
+#[doc = "The live event properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventProperties {
+    #[doc = "A description for the live event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The live event input."]
     pub input: LiveEventInput,
+    #[doc = "Live event preview settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preview: Option<LiveEventPreview>,
+    #[doc = "Specifies the live event type and optional encoding settings for encoding live events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<LiveEventEncoding>,
+    #[doc = "Live transcription settings for the live event. See https://go.microsoft.com/fwlink/?linkid=2133742 for more information about the live transcription feature."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transcriptions: Vec<LiveEventTranscription>,
+    #[doc = "The provisioning state of the live event."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The resource state of the live event. See https://go.microsoft.com/fwlink/?linkid=2139012 for more information."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<live_event_properties::ResourceState>,
+    #[doc = "The client access policy."]
     #[serde(rename = "crossSiteAccessPolicies", default, skip_serializing_if = "Option::is_none")]
     pub cross_site_access_policies: Option<CrossSiteAccessPolicies>,
+    #[doc = "Specifies whether a static hostname would be assigned to the live event preview and ingest endpoints. This value can only be updated if the live event is in Standby state"]
     #[serde(rename = "useStaticHostname", default, skip_serializing_if = "Option::is_none")]
     pub use_static_hostname: Option<bool>,
+    #[doc = "When useStaticHostname is set to true, the hostnamePrefix specifies the first part of the hostname assigned to the live event preview and ingest endpoints. The final hostname would be a combination of this prefix, the media service account name and a short code for the Azure Media Services data center."]
     #[serde(rename = "hostnamePrefix", default, skip_serializing_if = "Option::is_none")]
     pub hostname_prefix: Option<String>,
+    #[doc = "The options to use for the LiveEvent. This value is specified at creation time and cannot be updated. The valid values for the array entry values are 'Default' and 'LowLatency'."]
     #[serde(rename = "streamOptions", default, skip_serializing_if = "Vec::is_empty")]
     pub stream_options: Vec<String>,
+    #[doc = "The creation time for the live event"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The last modified time of the live event."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
 }
@@ -2319,6 +2779,7 @@ impl LiveEventProperties {
 }
 pub mod live_event_properties {
     use super::*;
+    #[doc = "The resource state of the live event. See https://go.microsoft.com/fwlink/?linkid=2139012 for more information."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Stopped,
@@ -2330,12 +2791,16 @@ pub mod live_event_properties {
         Deleting,
     }
 }
+#[doc = "Describes the transcription tracks in the output of a live event, generated using speech-to-text transcription. This property is reserved for future use, any value set on this property will be ignored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventTranscription {
+    #[doc = "Specifies the language (locale) to be used for speech-to-text transcription – it should match the spoken language in the audio track. The value should be in BCP-47 format (e.g: 'en-US'). See https://go.microsoft.com/fwlink/?linkid=2133742 for more information about the live transcription feature and the list of supported languages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
+    #[doc = "Provides a mechanism to select the audio track in the input live feed, to which speech-to-text transcription is applied. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(rename = "inputTrackSelection", default, skip_serializing_if = "Vec::is_empty")]
     pub input_track_selection: Vec<LiveEventInputTrackSelection>,
+    #[doc = "Describes a transcription track in the output of a live event, generated using speech-to-text transcription. This property is reserved for future use, any value set on this property will be ignored."]
     #[serde(rename = "outputTranscriptionTrack", default, skip_serializing_if = "Option::is_none")]
     pub output_transcription_track: Option<LiveEventOutputTranscriptionTrack>,
 }
@@ -2344,12 +2809,15 @@ impl LiveEventTranscription {
         Self::default()
     }
 }
+#[doc = "The Live Output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutput {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The JSON object that contains the properties required to create a live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveOutputProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -2358,12 +2826,16 @@ impl LiveOutput {
         Self::default()
     }
 }
+#[doc = "The LiveOutput list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutputListResult {
+    #[doc = "The result of the List LiveOutput operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LiveOutput>,
+    #[doc = "The number of result."]
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
     pub odata_count: Option<i32>,
+    #[doc = "The link to the next set of results. Not empty if value contains incomplete list of live outputs."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -2372,26 +2844,37 @@ impl LiveOutputListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties required to create a live output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveOutputProperties {
+    #[doc = "The description of the live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The asset that the live output will write to."]
     #[serde(rename = "assetName")]
     pub asset_name: String,
+    #[doc = "ISO 8601 time between 1 minute to 25 hours to indicate the maximum content length that can be archived in the asset for this live output. This also sets the maximum content length for the rewind window. For example, use PT1H30M to indicate 1 hour and 30 minutes of archive window."]
     #[serde(rename = "archiveWindowLength")]
     pub archive_window_length: String,
+    #[doc = "The manifest file name. If not provided, the service will generate one automatically."]
     #[serde(rename = "manifestName", default, skip_serializing_if = "Option::is_none")]
     pub manifest_name: Option<String>,
+    #[doc = "HTTP Live Streaming (HLS) packing setting for the live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hls: Option<Hls>,
+    #[doc = "The initial timestamp that the live output will start at, any content before this value will not be archived."]
     #[serde(rename = "outputSnapTime", default, skip_serializing_if = "Option::is_none")]
     pub output_snap_time: Option<i64>,
+    #[doc = "The creation time the live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The time the live output was last modified."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "The provisioning state of the live output."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The resource state of the live output."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<live_output_properties::ResourceState>,
 }
@@ -2413,6 +2896,7 @@ impl LiveOutputProperties {
 }
 pub mod live_output_properties {
     use super::*;
+    #[doc = "The resource state of the live output."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -2420,12 +2904,16 @@ pub mod live_output_properties {
         Deleting,
     }
 }
+#[doc = "A diagnostic log emitted by service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
+    #[doc = "The diagnostic log category name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The diagnostic log category display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The time range for requests in each blob."]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
@@ -2434,12 +2922,16 @@ impl LogSpecification {
         Self::default()
     }
 }
+#[doc = "The Media Filter properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaFilterProperties {
+    #[doc = "The presentation time range, this is asset related and not recommended for Account Filter."]
     #[serde(rename = "presentationTimeRange", default, skip_serializing_if = "Option::is_none")]
     pub presentation_time_range: Option<PresentationTimeRange>,
+    #[doc = "Filter First Quality"]
     #[serde(rename = "firstQuality", default, skip_serializing_if = "Option::is_none")]
     pub first_quality: Option<FirstQuality>,
+    #[doc = "The tracks selection conditions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<FilterTrackSelection>,
 }
@@ -2448,14 +2940,17 @@ impl MediaFilterProperties {
         Self::default()
     }
 }
+#[doc = "A Media Services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaService {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Properties of the Media Services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaServiceProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<MediaServiceIdentity>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -2469,10 +2964,13 @@ impl MediaService {
         }
     }
 }
+#[doc = "A collection of MediaService items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceCollection {
+    #[doc = "A collection of MediaService items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MediaService>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -2483,12 +2981,16 @@ impl MediaServiceCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaServiceIdentity {
+    #[doc = "The identity type."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The Principal ID of the identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The Tenant ID of the identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The User Assigned Managed Identities."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedManagedIdentities>,
 }
@@ -2502,10 +3004,13 @@ impl MediaServiceIdentity {
         }
     }
 }
+#[doc = "Properties of the Media Services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceProperties {
+    #[doc = "The Media Services account ID."]
     #[serde(rename = "mediaServiceId", default, skip_serializing_if = "Option::is_none")]
     pub media_service_id: Option<String>,
+    #[doc = "The storage accounts for this resource."]
     #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub storage_accounts: Vec<StorageAccount>,
     #[serde(rename = "storageAuthentication", default, skip_serializing_if = "Option::is_none")]
@@ -2514,6 +3019,7 @@ pub struct MediaServiceProperties {
     pub encryption: Option<AccountEncryption>,
     #[serde(rename = "keyDelivery", default, skip_serializing_if = "Option::is_none")]
     pub key_delivery: Option<KeyDelivery>,
+    #[doc = "Whether or not public network access is allowed for resources under the Media Services account."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<media_service_properties::PublicNetworkAccess>,
 }
@@ -2529,16 +3035,20 @@ pub mod media_service_properties {
         System,
         ManagedIdentity,
     }
+    #[doc = "Whether or not public network access is allowed for resources under the Media Services account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
     }
 }
+#[doc = "A Media Services account update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceUpdate {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of the Media Services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaServiceProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2549,12 +3059,16 @@ impl MediaServiceUpdate {
         Self::default()
     }
 }
+#[doc = "A metric dimension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDimension {
+    #[doc = "The metric dimension name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The display name for the dimension."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Whether to export metric to shoebox."]
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
 }
@@ -2563,30 +3077,43 @@ impl MetricDimension {
         Self::default()
     }
 }
+#[doc = "A metric emitted by service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
+    #[doc = "The metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The metric display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The metric display description."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "The metric unit"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<metric_specification::Unit>,
+    #[doc = "The metric aggregation type"]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<metric_specification::AggregationType>,
+    #[doc = "The metric lock aggregation type"]
     #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub lock_aggregation_type: Option<metric_specification::LockAggregationType>,
+    #[doc = "Supported aggregation types."]
     #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_aggregation_types: Vec<String>,
+    #[doc = "The metric dimensions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<MetricDimension>,
+    #[doc = "Indicates whether regional MDM account is enabled."]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
     pub enable_regional_mdm_account: Option<bool>,
+    #[doc = "The source MDM account."]
     #[serde(rename = "sourceMdmAccount", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_account: Option<String>,
+    #[doc = "The source MDM namespace."]
     #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_namespace: Option<String>,
+    #[doc = "The supported time grain types."]
     #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_time_grain_types: Vec<String>,
 }
@@ -2597,18 +3124,21 @@ impl MetricSpecification {
 }
 pub mod metric_specification {
     use super::*;
+    #[doc = "The metric unit"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Bytes,
         Count,
         Milliseconds,
     }
+    #[doc = "The metric aggregation type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AggregationType {
         Average,
         Count,
         Total,
     }
+    #[doc = "The metric lock aggregation type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LockAggregationType {
         Average,
@@ -2616,6 +3146,7 @@ pub mod metric_specification {
         Total,
     }
 }
+#[doc = "Describes the properties for an output ISO MP4 file."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Mp4Format {
     #[serde(flatten)]
@@ -2626,10 +3157,12 @@ impl Mp4Format {
         Self { multi_bitrate_format }
     }
 }
+#[doc = "Describes the properties for producing a collection of GOP aligned multi-bitrate files. The default behavior is to produce one output file for each video layer which is muxed together with all the audios. The exact output files produced can be controlled by specifying the outputFiles collection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiBitrateFormat {
     #[serde(flatten)]
     pub format: Format,
+    #[doc = "The list of output files to produce.  Each entry in the list is a set of audio and video layer labels to be muxed together ."]
     #[serde(rename = "outputFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub output_files: Vec<OutputFile>,
 }
@@ -2641,8 +3174,10 @@ impl MultiBitrateFormat {
         }
     }
 }
+#[doc = "Class for NoEncryption scheme"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NoEncryption {
+    #[doc = "Class to specify which protocols are enabled"]
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
 }
@@ -2651,17 +3186,24 @@ impl NoEncryption {
         Self::default()
     }
 }
+#[doc = "An operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
+    #[doc = "The operation name."]
     pub name: String,
+    #[doc = "Operation details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "The service specification property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Properties>,
+    #[doc = "Whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Indicates the action type."]
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
@@ -2679,13 +3221,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Indicates the action type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionType {
         Internal,
     }
 }
+#[doc = "A collection of Operation items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationCollection {
+    #[doc = "A collection of Operation items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -2694,14 +3239,19 @@ impl OperationCollection {
         Self::default()
     }
 }
+#[doc = "Operation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "The service provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The operation type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2710,8 +3260,10 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Represents an output file produced."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputFile {
+    #[doc = "The list of labels that describe how the encoder should multiplex video and audio into an output file. For example, if the encoder is producing two video layers with labels v1 and v2, and one audio layer with label a1, then an array like '[v1, a1]' tells the encoder to produce an output file with the video track represented by v1 and the audio track represented by a1."]
     pub labels: Vec<String>,
 }
 impl OutputFile {
@@ -2719,20 +3271,28 @@ impl OutputFile {
         Self { labels }
     }
 }
+#[doc = "Base type for all overlays - image, audio or video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Overlay {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+    #[doc = "The label of the job input which is to be used as an overlay. The Input must specify exactly one file. You can specify an image file in JPG, PNG, GIF or BMP format, or an audio file (such as a WAV, MP3, WMA or M4A file), or a video file. See https://aka.ms/mesformats for the complete list of supported audio and video file formats."]
     #[serde(rename = "inputLabel")]
     pub input_label: String,
+    #[doc = "The start position, with reference to the input video, at which the overlay starts. The value should be in ISO 8601 format. For example, PT05S to start the overlay at 5 seconds into the input video. If not specified the overlay starts from the beginning of the input video."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
+    #[doc = "The end position, with reference to the input video, at which the overlay ends. The value should be in ISO 8601 format. For example, PT30S to end the overlay at 30 seconds into the input video. If not specified or the value is greater than the input video duration, the overlay will be applied until the end of the input video if the overlay media duration is greater than the input video duration, else the overlay will last as long as the overlay media duration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<String>,
+    #[doc = "The duration over which the overlay fades in onto the input video. The value should be in ISO 8601 duration format. If not specified the default behavior is to have no fade in (same as PT0S)."]
     #[serde(rename = "fadeInDuration", default, skip_serializing_if = "Option::is_none")]
     pub fade_in_duration: Option<String>,
+    #[doc = "The duration over which the overlay fades out of the input video. The value should be in ISO 8601 duration format. If not specified the default behavior is to have no fade out (same as PT0S)."]
     #[serde(rename = "fadeOutDuration", default, skip_serializing_if = "Option::is_none")]
     pub fade_out_duration: Option<String>,
+    #[doc = "The gain level of audio in the overlay. The value should be in the range [0, 1.0]. The default is 1.0."]
     #[serde(rename = "audioGainLevel", default, skip_serializing_if = "Option::is_none")]
     pub audio_gain_level: Option<f64>,
 }
@@ -2749,6 +3309,7 @@ impl Overlay {
         }
     }
 }
+#[doc = "Describes the settings for producing PNG thumbnails."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngFormat {
     #[serde(flatten)]
@@ -2759,10 +3320,12 @@ impl PngFormat {
         Self { image_format }
     }
 }
+#[doc = "Describes the properties for producing a series of PNG images from the input video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngImage {
     #[serde(flatten)]
     pub image: Image,
+    #[doc = "A collection of output PNG image layers to be produced by the encoder."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<PngLayer>,
 }
@@ -2771,6 +3334,7 @@ impl PngImage {
         Self { image, layers: Vec::new() }
     }
 }
+#[doc = "Describes the settings to produce a PNG image from the input video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngLayer {
     #[serde(flatten)]
@@ -2781,18 +3345,25 @@ impl PngLayer {
         Self { layer }
     }
 }
+#[doc = "The presentation time range, this is asset related and not recommended for Account Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PresentationTimeRange {
+    #[doc = "The absolute start time boundary."]
     #[serde(rename = "startTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub start_timestamp: Option<i64>,
+    #[doc = "The absolute end time boundary."]
     #[serde(rename = "endTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub end_timestamp: Option<i64>,
+    #[doc = "The relative to end sliding window."]
     #[serde(rename = "presentationWindowDuration", default, skip_serializing_if = "Option::is_none")]
     pub presentation_window_duration: Option<i64>,
+    #[doc = "The relative to end right edge."]
     #[serde(rename = "liveBackoffDuration", default, skip_serializing_if = "Option::is_none")]
     pub live_backoff_duration: Option<i64>,
+    #[doc = "The time scale of time stamps."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timescale: Option<i64>,
+    #[doc = "The indicator of forcing existing of end time stamp."]
     #[serde(rename = "forceEndTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub force_end_timestamp: Option<bool>,
 }
@@ -2801,8 +3372,10 @@ impl PresentationTimeRange {
         Self::default()
     }
 }
+#[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Preset {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -2811,22 +3384,31 @@ impl Preset {
         Self { odata_type }
     }
 }
+#[doc = "An object of optional configuration settings for encoder."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PresetConfigurations {
+    #[doc = "Allows you to configure the encoder settings to control the balance between speed and quality. Example: set Complexity as Speed for faster encoding but less compression efficiency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub complexity: Option<preset_configurations::Complexity>,
+    #[doc = "Sets the interleave mode of the output to control how audio and video are stored in the container format. Example: set InterleavedOutput as NonInterleavedOutput to produce audio-only and video-only outputs in separate MP4 files."]
     #[serde(rename = "interleaveOutput", default, skip_serializing_if = "Option::is_none")]
     pub interleave_output: Option<preset_configurations::InterleaveOutput>,
+    #[doc = "The key frame interval in seconds. Example: set KeyFrameIntervalInSeconds as 2 to reduce the playback buffering for some players."]
     #[serde(rename = "keyFrameIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub key_frame_interval_in_seconds: Option<f32>,
+    #[doc = "The maximum bitrate in bits per second (threshold for the top video layer). Example: set MaxBitrateBps as 6000000 to avoid producing very high bitrate outputs for contents with high complexity."]
     #[serde(rename = "maxBitrateBps", default, skip_serializing_if = "Option::is_none")]
     pub max_bitrate_bps: Option<i32>,
+    #[doc = "The maximum height of output video layers. Example: set MaxHeight as 720 to produce output layers up to 720P even if the input is 4K."]
     #[serde(rename = "maxHeight", default, skip_serializing_if = "Option::is_none")]
     pub max_height: Option<i32>,
+    #[doc = "The maximum number of output video layers. Example: set MaxLayers as 4 to make sure at most 4 output layers are produced to control the overall cost of the encoding job."]
     #[serde(rename = "maxLayers", default, skip_serializing_if = "Option::is_none")]
     pub max_layers: Option<i32>,
+    #[doc = "The minimum bitrate in bits per second (threshold for the bottom video layer). Example: set MinBitrateBps as 200000 to have a bottom layer that covers users with low network bandwidth."]
     #[serde(rename = "minBitrateBps", default, skip_serializing_if = "Option::is_none")]
     pub min_bitrate_bps: Option<i32>,
+    #[doc = "The minimum height of output video layers. Example: set MinHeight as 360 to avoid output layers of smaller resolutions like 180P."]
     #[serde(rename = "minHeight", default, skip_serializing_if = "Option::is_none")]
     pub min_height: Option<i32>,
 }
@@ -2837,20 +3419,24 @@ impl PresetConfigurations {
 }
 pub mod preset_configurations {
     use super::*;
+    #[doc = "Allows you to configure the encoder settings to control the balance between speed and quality. Example: set Complexity as Speed for faster encoding but less compression efficiency."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Complexity {
         Speed,
         Balanced,
         Quality,
     }
+    #[doc = "Sets the interleave mode of the output to control how audio and video are stored in the container format. Example: set InterleavedOutput as NonInterleavedOutput to produce audio-only and video-only outputs in separate MP4 files."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InterleaveOutput {
         NonInterleavedOutput,
         InterleavedOutput,
     }
 }
+#[doc = "The Private Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -2859,10 +3445,12 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint Connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the PrivateEndpointConnectProperties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -2871,8 +3459,10 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "List of private endpoint connection associated with the specified storage account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
@@ -2881,12 +3471,16 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the PrivateEndpointConnectProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The Private Endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
@@ -2899,6 +3493,7 @@ impl PrivateEndpointConnectionProperties {
         }
     }
 }
+#[doc = "The current provisioning state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
     Succeeded,
@@ -2906,16 +3501,19 @@ pub enum PrivateEndpointConnectionProvisioningState {
     Deleting,
     Failed,
 }
+#[doc = "The private endpoint connection status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
     Pending,
     Approved,
     Rejected,
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -2924,8 +3522,10 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
@@ -2934,12 +3534,16 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "The private link resource Private link DNS zone name."]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
@@ -2948,12 +3552,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -2962,8 +3570,10 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "The service specification property."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Properties {
+    #[doc = "The service metric specifications."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -2972,6 +3582,7 @@ impl Properties {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -2982,14 +3593,19 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a rectangular window applied to the input media before processing it."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rectangle {
+    #[doc = "The number of pixels from the left-margin. This can be absolute pixel value (e.g 100), or relative to the size of the video (For example, 50%)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<String>,
+    #[doc = "The number of pixels from the top-margin. This can be absolute pixel value (e.g 100), or relative to the size of the video (For example, 50%)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub top: Option<String>,
+    #[doc = "The width of the rectangular region in pixels. This can be absolute pixel value (e.g 100), or relative to the size of the video (For example, 50%)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<String>,
+    #[doc = "The height of the rectangular region in pixels. This can be absolute pixel value (e.g 100), or relative to the size of the video (For example, 50%)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<String>,
 }
@@ -2998,12 +3614,16 @@ impl Rectangle {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -3014,8 +3634,10 @@ impl Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceIdentity {
+    #[doc = "The user assigned managed identity's ARM ID to use when accessing a resource."]
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identity: Option<String>,
+    #[doc = "Indicates whether to use System Assigned Managed Identity. Mutual exclusive with User Assigned Managed Identity."]
     #[serde(rename = "useSystemAssignedIdentity")]
     pub use_system_assigned_identity: bool,
 }
@@ -3027,12 +3649,16 @@ impl ResourceIdentity {
         }
     }
 }
+#[doc = "Select audio tracks from the input by specifying an attribute and an attribute filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectAudioTrackByAttribute {
     #[serde(flatten)]
     pub audio_track_descriptor: AudioTrackDescriptor,
+    #[doc = "The TrackAttribute to filter the tracks by."]
     pub attribute: select_audio_track_by_attribute::Attribute,
+    #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
     pub filter: select_audio_track_by_attribute::Filter,
+    #[doc = "The value to filter the tracks by.  Only used when AttributeFilter.ValueEquals is specified for the Filter property."]
     #[serde(rename = "filterValue", default, skip_serializing_if = "Option::is_none")]
     pub filter_value: Option<String>,
 }
@@ -3052,11 +3678,13 @@ impl SelectAudioTrackByAttribute {
 }
 pub mod select_audio_track_by_attribute {
     use super::*;
+    #[doc = "The TrackAttribute to filter the tracks by."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Attribute {
         Bitrate,
         Language,
     }
+    #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Filter {
         All,
@@ -3065,10 +3693,12 @@ pub mod select_audio_track_by_attribute {
         ValueEquals,
     }
 }
+#[doc = "Select audio tracks from the input by specifying a track identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectAudioTrackById {
     #[serde(flatten)]
     pub audio_track_descriptor: AudioTrackDescriptor,
+    #[doc = "Track identifier to select"]
     #[serde(rename = "trackId")]
     pub track_id: i64,
 }
@@ -3080,12 +3710,16 @@ impl SelectAudioTrackById {
         }
     }
 }
+#[doc = "Select video tracks from the input by specifying an attribute and an attribute filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackByAttribute {
     #[serde(flatten)]
     pub video_track_descriptor: VideoTrackDescriptor,
+    #[doc = "The TrackAttribute to filter the tracks by."]
     pub attribute: select_video_track_by_attribute::Attribute,
+    #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
     pub filter: select_video_track_by_attribute::Filter,
+    #[doc = "The value to filter the tracks by.  Only used when AttributeFilter.ValueEquals is specified for the Filter property. For TrackAttribute.Bitrate, this should be an integer value in bits per second (e.g: '1500000').  The TrackAttribute.Language is not supported for video tracks."]
     #[serde(rename = "filterValue", default, skip_serializing_if = "Option::is_none")]
     pub filter_value: Option<String>,
 }
@@ -3105,11 +3739,13 @@ impl SelectVideoTrackByAttribute {
 }
 pub mod select_video_track_by_attribute {
     use super::*;
+    #[doc = "The TrackAttribute to filter the tracks by."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Attribute {
         Bitrate,
         Language,
     }
+    #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Filter {
         All,
@@ -3118,10 +3754,12 @@ pub mod select_video_track_by_attribute {
         ValueEquals,
     }
 }
+#[doc = "Select video tracks from the input by specifying a track identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackById {
     #[serde(flatten)]
     pub video_track_descriptor: VideoTrackDescriptor,
+    #[doc = "Track identifier to select"]
     #[serde(rename = "trackId")]
     pub track_id: i64,
 }
@@ -3133,10 +3771,13 @@ impl SelectVideoTrackById {
         }
     }
 }
+#[doc = "The service metric specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
+    #[doc = "List of log specifications."]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
+    #[doc = "List of metric specifications."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
 }
@@ -3145,13 +3786,17 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "Describes all the settings to be used when encoding the input video with the Standard Encoder."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StandardEncoderPreset {
     #[serde(flatten)]
     pub preset: Preset,
+    #[doc = "Describes all the filtering operations, such as de-interlacing, rotation etc. that are to be applied to the input media before encoding."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<Filters>,
+    #[doc = "The list of codecs to be used when encoding the input video."]
     pub codecs: Vec<Codec>,
+    #[doc = "The list of outputs to be produced by the encoder."]
     pub formats: Vec<Format>,
 }
 impl StandardEncoderPreset {
@@ -3164,14 +3809,18 @@ impl StandardEncoderPreset {
         }
     }
 }
+#[doc = "The storage account details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
+    #[doc = "The ID of the storage account resource. Media Services relies on tables and queues as well as blobs, so the primary storage account must be a Standard Storage account (either Microsoft.ClassicStorage or Microsoft.Storage). Blob only storage accounts can be added as secondary storage accounts."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the storage account."]
     #[serde(rename = "type")]
     pub type_: storage_account::Type,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "The current status of the storage account mapping."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
@@ -3187,16 +3836,20 @@ impl StorageAccount {
 }
 pub mod storage_account {
     use super::*;
+    #[doc = "The type of the storage account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Primary,
         Secondary,
     }
 }
+#[doc = "Data needed to decrypt asset files encrypted with legacy storage encryption."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageEncryptedAssetDecryptionData {
+    #[doc = "The Asset File storage encryption key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "Asset File encryption metadata."]
     #[serde(rename = "assetFileEncryptionMetadata", default, skip_serializing_if = "Vec::is_empty")]
     pub asset_file_encryption_metadata: Vec<AssetFileEncryptionMetadata>,
 }
@@ -3205,12 +3858,15 @@ impl StorageEncryptedAssetDecryptionData {
         Self::default()
     }
 }
+#[doc = "The streaming endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingEndpoint {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The streaming endpoint properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingEndpointProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -3223,10 +3879,13 @@ impl StreamingEndpoint {
         }
     }
 }
+#[doc = "Streaming endpoint access control definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointAccessControl {
+    #[doc = "Akamai access control"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub akamai: Option<AkamaiAccessControl>,
+    #[doc = "The IP access control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
@@ -3235,12 +3894,16 @@ impl StreamingEndpointAccessControl {
         Self::default()
     }
 }
+#[doc = "The streaming endpoint list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointListResult {
+    #[doc = "The result of the List StreamingEndpoint operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingEndpoint>,
+    #[doc = "The number of result."]
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
     pub odata_count: Option<i32>,
+    #[doc = "The link to the next set of results. Not empty if value contains incomplete list of streaming endpoints."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -3249,38 +3912,55 @@ impl StreamingEndpointListResult {
         Self::default()
     }
 }
+#[doc = "The streaming endpoint properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingEndpointProperties {
+    #[doc = "The streaming endpoint description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The number of scale units. Use the Scale operation to adjust this value."]
     #[serde(rename = "scaleUnits")]
     pub scale_units: i32,
+    #[doc = "This feature is deprecated, do not set a value for this property."]
     #[serde(rename = "availabilitySetName", default, skip_serializing_if = "Option::is_none")]
     pub availability_set_name: Option<String>,
+    #[doc = "Streaming endpoint access control definition."]
     #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
     pub access_control: Option<StreamingEndpointAccessControl>,
+    #[doc = "Max cache age"]
     #[serde(rename = "maxCacheAge", default, skip_serializing_if = "Option::is_none")]
     pub max_cache_age: Option<i64>,
+    #[doc = "The custom host names of the streaming endpoint"]
     #[serde(rename = "customHostNames", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_host_names: Vec<String>,
+    #[doc = "The streaming endpoint host name."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The CDN enabled flag."]
     #[serde(rename = "cdnEnabled", default, skip_serializing_if = "Option::is_none")]
     pub cdn_enabled: Option<bool>,
+    #[doc = "The CDN provider name."]
     #[serde(rename = "cdnProvider", default, skip_serializing_if = "Option::is_none")]
     pub cdn_provider: Option<String>,
+    #[doc = "The CDN profile name."]
     #[serde(rename = "cdnProfile", default, skip_serializing_if = "Option::is_none")]
     pub cdn_profile: Option<String>,
+    #[doc = "The provisioning state of the streaming endpoint."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The resource state of the streaming endpoint."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<streaming_endpoint_properties::ResourceState>,
+    #[doc = "The client access policy."]
     #[serde(rename = "crossSiteAccessPolicies", default, skip_serializing_if = "Option::is_none")]
     pub cross_site_access_policies: Option<CrossSiteAccessPolicies>,
+    #[doc = "The free trial expiration time."]
     #[serde(rename = "freeTrialEndTime", default, skip_serializing_if = "Option::is_none")]
     pub free_trial_end_time: Option<String>,
+    #[doc = "The exact time the streaming endpoint was created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The exact time the streaming endpoint was last modified."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
 }
@@ -3308,6 +3988,7 @@ impl StreamingEndpointProperties {
 }
 pub mod streaming_endpoint_properties {
     use super::*;
+    #[doc = "The resource state of the streaming endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Stopped,
@@ -3318,8 +3999,10 @@ pub mod streaming_endpoint_properties {
         Scaling,
     }
 }
+#[doc = "scale units definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEntityScaleUnit {
+    #[doc = "The scale unit number of the streaming endpoint."]
     #[serde(rename = "scaleUnit", default, skip_serializing_if = "Option::is_none")]
     pub scale_unit: Option<i32>,
 }
@@ -3328,12 +4011,15 @@ impl StreamingEntityScaleUnit {
         Self::default()
     }
 }
+#[doc = "A Streaming Locator resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocator {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the Streaming Locator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingLocatorProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -3342,10 +4028,13 @@ impl StreamingLocator {
         Self::default()
     }
 }
+#[doc = "A collection of StreamingLocator items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocatorCollection {
+    #[doc = "A collection of StreamingLocator items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingLocator>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -3354,17 +4043,24 @@ impl StreamingLocatorCollection {
         Self::default()
     }
 }
+#[doc = "Class for content key in Streaming Locator"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingLocatorContentKey {
+    #[doc = "ID of Content Key"]
     pub id: String,
+    #[doc = "Encryption type of Content Key"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<streaming_locator_content_key::Type>,
+    #[doc = "Label of Content Key as specified in the Streaming Policy"]
     #[serde(rename = "labelReferenceInStreamingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub label_reference_in_streaming_policy: Option<String>,
+    #[doc = "Value of Content Key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "ContentKeyPolicy used by Content Key"]
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
+    #[doc = "Tracks which use this Content Key"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<TrackSelection>,
 }
@@ -3382,6 +4078,7 @@ impl StreamingLocatorContentKey {
 }
 pub mod streaming_locator_content_key {
     use super::*;
+    #[doc = "Encryption type of Content Key"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         CommonEncryptionCenc,
@@ -3389,26 +4086,37 @@ pub mod streaming_locator_content_key {
         EnvelopeEncryption,
     }
 }
+#[doc = "Properties of the Streaming Locator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingLocatorProperties {
+    #[doc = "Asset Name"]
     #[serde(rename = "assetName")]
     pub asset_name: String,
+    #[doc = "The creation time of the Streaming Locator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The start time of the Streaming Locator."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The end time of the Streaming Locator."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The StreamingLocatorId of the Streaming Locator."]
     #[serde(rename = "streamingLocatorId", default, skip_serializing_if = "Option::is_none")]
     pub streaming_locator_id: Option<String>,
+    #[doc = "Name of the Streaming Policy used by this Streaming Locator. Either specify the name of Streaming Policy you created or use one of the predefined Streaming Policies. The predefined Streaming Policies available are: 'Predefined_DownloadOnly', 'Predefined_ClearStreamingOnly', 'Predefined_DownloadAndClearStreaming', 'Predefined_ClearKey', 'Predefined_MultiDrmCencStreaming' and 'Predefined_MultiDrmStreaming'"]
     #[serde(rename = "streamingPolicyName")]
     pub streaming_policy_name: String,
+    #[doc = "Name of the default ContentKeyPolicy used by this Streaming Locator."]
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
+    #[doc = "The ContentKeys used by this Streaming Locator."]
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub content_keys: Vec<StreamingLocatorContentKey>,
+    #[doc = "Alternative Media ID of this Streaming Locator"]
     #[serde(rename = "alternativeMediaId", default, skip_serializing_if = "Option::is_none")]
     pub alternative_media_id: Option<String>,
+    #[doc = "A list of asset or account filters which apply to this streaming locator"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: Vec<String>,
 }
@@ -3428,12 +4136,16 @@ impl StreamingLocatorProperties {
         }
     }
 }
+#[doc = "Class of paths for streaming"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingPath {
+    #[doc = "Streaming protocol"]
     #[serde(rename = "streamingProtocol")]
     pub streaming_protocol: streaming_path::StreamingProtocol,
+    #[doc = "Encryption scheme"]
     #[serde(rename = "encryptionScheme")]
     pub encryption_scheme: streaming_path::EncryptionScheme,
+    #[doc = "Streaming paths for each protocol and encryptionScheme pair"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<String>,
 }
@@ -3448,6 +4160,7 @@ impl StreamingPath {
 }
 pub mod streaming_path {
     use super::*;
+    #[doc = "Streaming protocol"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StreamingProtocol {
         Hls,
@@ -3455,6 +4168,7 @@ pub mod streaming_path {
         SmoothStreaming,
         Download,
     }
+    #[doc = "Encryption scheme"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionScheme {
         NoEncryption,
@@ -3463,12 +4177,15 @@ pub mod streaming_path {
         CommonEncryptionCbcs,
     }
 }
+#[doc = "A Streaming Policy resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Class to specify properties of Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingPolicyProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -3477,10 +4194,13 @@ impl StreamingPolicy {
         Self::default()
     }
 }
+#[doc = "A collection of StreamingPolicy items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyCollection {
+    #[doc = "A collection of StreamingPolicy items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingPolicy>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -3489,12 +4209,16 @@ impl StreamingPolicyCollection {
         Self::default()
     }
 }
+#[doc = "Class to specify properties of content key"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyContentKey {
+    #[doc = "Label can be used to specify Content Key when creating a Streaming Locator"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "Policy used by Content Key"]
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
+    #[doc = "Tracks which use this content key"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<TrackSelection>,
 }
@@ -3503,10 +4227,13 @@ impl StreamingPolicyContentKey {
         Self::default()
     }
 }
+#[doc = "Class to specify properties of all content keys in Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyContentKeys {
+    #[doc = "Class to specify properties of default content key for each encryption scheme"]
     #[serde(rename = "defaultKey", default, skip_serializing_if = "Option::is_none")]
     pub default_key: Option<DefaultKey>,
+    #[doc = "Representing tracks needs separate content key"]
     #[serde(rename = "keyToTrackMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub key_to_track_mappings: Vec<StreamingPolicyContentKey>,
 }
@@ -3515,10 +4242,13 @@ impl StreamingPolicyContentKeys {
         Self::default()
     }
 }
+#[doc = "Class to specify configurations of FairPlay in Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingPolicyFairPlayConfiguration {
+    #[doc = "Template for the URL of the custom service delivering licenses to end user players.  Not required when using Azure Media Services for issuing licenses.  The template supports replaceable tokens that the service will update at runtime with the value specific to the request.  The currently supported token values are {AlternativeMediaId}, which is replaced with the value of StreamingLocatorId.AlternativeMediaId, and {ContentKeyId}, which is replaced with the value of identifier of the key being requested."]
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
+    #[doc = "All license to be persistent or not"]
     #[serde(rename = "allowPersistentLicense")]
     pub allow_persistent_license: bool,
 }
@@ -3530,10 +4260,13 @@ impl StreamingPolicyFairPlayConfiguration {
         }
     }
 }
+#[doc = "Class to specify configurations of PlayReady in Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyPlayReadyConfiguration {
+    #[doc = "Template for the URL of the custom service delivering licenses to end user players.  Not required when using Azure Media Services for issuing licenses.  The template supports replaceable tokens that the service will update at runtime with the value specific to the request.  The currently supported token values are {AlternativeMediaId}, which is replaced with the value of StreamingLocatorId.AlternativeMediaId, and {ContentKeyId}, which is replaced with the value of identifier of the key being requested."]
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
+    #[doc = "Custom attributes for PlayReady"]
     #[serde(rename = "playReadyCustomAttributes", default, skip_serializing_if = "Option::is_none")]
     pub play_ready_custom_attributes: Option<String>,
 }
@@ -3542,18 +4275,25 @@ impl StreamingPolicyPlayReadyConfiguration {
         Self::default()
     }
 }
+#[doc = "Class to specify properties of Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyProperties {
+    #[doc = "Creation time of Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "Default ContentKey used by current Streaming Policy"]
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
+    #[doc = "Class for EnvelopeEncryption encryption scheme"]
     #[serde(rename = "envelopeEncryption", default, skip_serializing_if = "Option::is_none")]
     pub envelope_encryption: Option<EnvelopeEncryption>,
+    #[doc = "Class for envelope encryption scheme"]
     #[serde(rename = "commonEncryptionCenc", default, skip_serializing_if = "Option::is_none")]
     pub common_encryption_cenc: Option<CommonEncryptionCenc>,
+    #[doc = "Class for CommonEncryptionCbcs encryption scheme"]
     #[serde(rename = "commonEncryptionCbcs", default, skip_serializing_if = "Option::is_none")]
     pub common_encryption_cbcs: Option<CommonEncryptionCbcs>,
+    #[doc = "Class for NoEncryption scheme"]
     #[serde(rename = "noEncryption", default, skip_serializing_if = "Option::is_none")]
     pub no_encryption: Option<NoEncryption>,
 }
@@ -3562,8 +4302,10 @@ impl StreamingPolicyProperties {
         Self::default()
     }
 }
+#[doc = "Class to specify configurations of Widevine in Streaming Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyWidevineConfiguration {
+    #[doc = "Template for the URL of the custom service delivering licenses to end user players.  Not required when using Azure Media Services for issuing licenses.  The template supports replaceable tokens that the service will update at runtime with the value specific to the request.  The currently supported token values are {AlternativeMediaId}, which is replaced with the value of StreamingLocatorId.AlternativeMediaId, and {ContentKeyId}, which is replaced with the value of identifier of the key being requested."]
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
 }
@@ -3572,8 +4314,10 @@ impl StreamingPolicyWidevineConfiguration {
         Self::default()
     }
 }
+#[doc = "The input to the sync storage keys request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncStorageKeysInput {
+    #[doc = "The ID of the storage account resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -3582,8 +4326,10 @@ impl SyncStorageKeysInput {
         Self::default()
     }
 }
+#[doc = "Base type for all TrackDescriptor types, which define the metadata and selection for tracks that should be processed by a Job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackDescriptor {
+    #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
@@ -3592,10 +4338,14 @@ impl TrackDescriptor {
         Self { odata_type }
     }
 }
+#[doc = "Class to specify one track property condition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackPropertyCondition {
+    #[doc = "Track property type"]
     pub property: track_property_condition::Property,
+    #[doc = "Track property condition operation"]
     pub operation: track_property_condition::Operation,
+    #[doc = "Track property value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -3610,20 +4360,24 @@ impl TrackPropertyCondition {
 }
 pub mod track_property_condition {
     use super::*;
+    #[doc = "Track property type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Property {
         Unknown,
         #[serde(rename = "FourCC")]
         FourCc,
     }
+    #[doc = "Track property condition operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operation {
         Unknown,
         Equal,
     }
 }
+#[doc = "Class to select a track"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackSelection {
+    #[doc = "TrackSelections is a track property condition list which can specify track(s)"]
     #[serde(rename = "trackSelections", default, skip_serializing_if = "Vec::is_empty")]
     pub track_selections: Vec<TrackPropertyCondition>,
 }
@@ -3632,12 +4386,15 @@ impl TrackSelection {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {
@@ -3649,12 +4406,15 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "A Transform encapsulates the rules or instructions for generating desired outputs from input media, such as by transcoding or by extracting insights. After the Transform is created, it can be applied to input media by creating Jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Transform {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "A Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransformProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -3663,10 +4423,13 @@ impl Transform {
         Self::default()
     }
 }
+#[doc = "A collection of Transform items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransformCollection {
+    #[doc = "A collection of Transform items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Transform>,
+    #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
@@ -3675,12 +4438,16 @@ impl TransformCollection {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a TransformOutput, which are the rules to be applied while generating the desired output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformOutput {
+    #[doc = "A Transform can define more than one outputs. This property defines what the service should do when one output fails - either continue to produce other outputs, or, stop the other outputs. The overall Job state will not reflect failures of outputs that are specified with 'ContinueJob'. The default is 'StopProcessingJob'."]
     #[serde(rename = "onError", default, skip_serializing_if = "Option::is_none")]
     pub on_error: Option<transform_output::OnError>,
+    #[doc = "Sets the relative priority of the TransformOutputs within a Transform. This sets the priority that the service uses for processing TransformOutputs. The default priority is Normal."]
     #[serde(rename = "relativePriority", default, skip_serializing_if = "Option::is_none")]
     pub relative_priority: Option<transform_output::RelativePriority>,
+    #[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
     pub preset: Preset,
 }
 impl TransformOutput {
@@ -3694,11 +4461,13 @@ impl TransformOutput {
 }
 pub mod transform_output {
     use super::*;
+    #[doc = "A Transform can define more than one outputs. This property defines what the service should do when one output fails - either continue to produce other outputs, or, stop the other outputs. The overall Job state will not reflect failures of outputs that are specified with 'ContinueJob'. The default is 'StopProcessingJob'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OnError {
         StopProcessingJob,
         ContinueJob,
     }
+    #[doc = "Sets the relative priority of the TransformOutputs within a Transform. This sets the priority that the service uses for processing TransformOutputs. The default priority is Normal."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RelativePriority {
         Low,
@@ -3706,14 +4475,19 @@ pub mod transform_output {
         High,
     }
 }
+#[doc = "A Transform."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformProperties {
+    #[doc = "The UTC date and time when the Transform was created, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "An optional verbose description of the Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The UTC date and time when the Transform was last updated, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "An array of one or more TransformOutputs that the Transform should generate."]
     pub outputs: Vec<TransformOutput>,
 }
 impl TransformProperties {
@@ -3726,6 +4500,7 @@ impl TransformProperties {
         }
     }
 }
+#[doc = "Describes the properties for generating an MPEG-2 Transport Stream (ISO/IEC 13818-1) output video file(s)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportStreamFormat {
     #[serde(flatten)]
@@ -3736,6 +4511,7 @@ impl TransportStreamFormat {
         Self { multi_bitrate_format }
     }
 }
+#[doc = "The User Assigned Managed Identities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedManagedIdentities {}
 impl UserAssignedManagedIdentities {
@@ -3745,8 +4521,10 @@ impl UserAssignedManagedIdentities {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedManagedIdentity {
+    #[doc = "The client ID."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "The principal ID."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
 }
@@ -3755,10 +4533,12 @@ impl UserAssignedManagedIdentity {
         Self::default()
     }
 }
+#[doc = "Specifies the clip time as a Utc time position in the media file.  The Utc time can point to a different position depending on whether the media file starts from a timestamp of zero or not."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UtcClipTime {
     #[serde(flatten)]
     pub clip_time: ClipTime,
+    #[doc = "The time position on the timeline of the input media based on Utc time."]
     pub time: String,
 }
 impl UtcClipTime {
@@ -3766,14 +4546,18 @@ impl UtcClipTime {
         Self { clip_time, time }
     }
 }
+#[doc = "Describes the basic properties for encoding the input video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Video {
     #[serde(flatten)]
     pub codec: Codec,
+    #[doc = "The distance between two key frames. The value should be non-zero in the range [0.5, 20] seconds, specified in ISO 8601 format. The default is 2 seconds(PT2S). Note that this setting is ignored if VideoSyncMode.Passthrough is set, where the KeyFrameInterval value will follow the input source setting."]
     #[serde(rename = "keyFrameInterval", default, skip_serializing_if = "Option::is_none")]
     pub key_frame_interval: Option<String>,
+    #[doc = "The resizing mode - how the input video will be resized to fit the desired output resolution(s). Default is AutoSize"]
     #[serde(rename = "stretchMode", default, skip_serializing_if = "Option::is_none")]
     pub stretch_mode: Option<video::StretchMode>,
+    #[doc = "The Video Sync Mode"]
     #[serde(rename = "syncMode", default, skip_serializing_if = "Option::is_none")]
     pub sync_mode: Option<video::SyncMode>,
 }
@@ -3789,12 +4573,14 @@ impl Video {
 }
 pub mod video {
     use super::*;
+    #[doc = "The resizing mode - how the input video will be resized to fit the desired output resolution(s). Default is AutoSize"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StretchMode {
         None,
         AutoSize,
         AutoFit,
     }
+    #[doc = "The Video Sync Mode"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncMode {
         Auto,
@@ -3803,10 +4589,12 @@ pub mod video {
         Vfr,
     }
 }
+#[doc = "A video analyzer preset that extracts insights (rich metadata) from both audio and video, and outputs a JSON format file."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoAnalyzerPreset {
     #[serde(flatten)]
     pub audio_analyzer_preset: AudioAnalyzerPreset,
+    #[doc = "Defines the type of insights that you want the service to generate. The allowed values are 'AudioInsightsOnly', 'VideoInsightsOnly', and 'AllInsights'. The default is AllInsights. If you set this to AllInsights and the input is audio only, then only audio insights are generated. Similarly if the input is video only, then only video insights are generated. It is recommended that you not use AudioInsightsOnly if you expect some of your inputs to be video only; or use VideoInsightsOnly if you expect some of your inputs to be audio only. Your Jobs in such conditions would error out."]
     #[serde(rename = "insightsToExtract", default, skip_serializing_if = "Option::is_none")]
     pub insights_to_extract: Option<video_analyzer_preset::InsightsToExtract>,
 }
@@ -3820,6 +4608,7 @@ impl VideoAnalyzerPreset {
 }
 pub mod video_analyzer_preset {
     use super::*;
+    #[doc = "Defines the type of insights that you want the service to generate. The allowed values are 'AudioInsightsOnly', 'VideoInsightsOnly', and 'AllInsights'. The default is AllInsights. If you set this to AllInsights and the input is audio only, then only audio insights are generated. Similarly if the input is video only, then only video insights are generated. It is recommended that you not use AudioInsightsOnly if you expect some of your inputs to be video only; or use VideoInsightsOnly if you expect some of your inputs to be audio only. Your Jobs in such conditions would error out."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InsightsToExtract {
         AudioInsightsOnly,
@@ -3827,19 +4616,26 @@ pub mod video_analyzer_preset {
         AllInsights,
     }
 }
+#[doc = "Describes the settings to be used when encoding the input video into a desired output bitrate layer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoLayer {
     #[serde(flatten)]
     pub layer: Layer,
+    #[doc = "The average bitrate in bits per second at which to encode the input video when generating this layer. This is a required field."]
     pub bitrate: i32,
+    #[doc = "The maximum bitrate (in bits per second), at which the VBV buffer should be assumed to refill. If not specified, defaults to the same value as bitrate."]
     #[serde(rename = "maxBitrate", default, skip_serializing_if = "Option::is_none")]
     pub max_bitrate: Option<i32>,
+    #[doc = "The number of B-frames to be used when encoding this layer.  If not specified, the encoder chooses an appropriate number based on the video profile and level."]
     #[serde(rename = "bFrames", default, skip_serializing_if = "Option::is_none")]
     pub b_frames: Option<i32>,
+    #[doc = "The frame rate (in frames per second) at which to encode this layer. The value can be in the form of M/N where M and N are integers (For example, 30000/1001), or in the form of a number (For example, 30, or 29.97). The encoder enforces constraints on allowed frame rates based on the profile and level. If it is not specified, the encoder will use the same frame rate as the input video."]
     #[serde(rename = "frameRate", default, skip_serializing_if = "Option::is_none")]
     pub frame_rate: Option<String>,
+    #[doc = "The number of slices to be used when encoding this layer. If not specified, default is zero, which means that encoder will use a single slice for each frame."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub slices: Option<i32>,
+    #[doc = "Whether or not adaptive B-frames are to be used when encoding this layer. If not specified, the encoder will turn it on whenever the video profile permits its use."]
     #[serde(rename = "adaptiveBFrame", default, skip_serializing_if = "Option::is_none")]
     pub adaptive_b_frame: Option<bool>,
 }
@@ -3856,14 +4652,18 @@ impl VideoLayer {
         }
     }
 }
+#[doc = "Describes the properties of a video overlay."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoOverlay {
     #[serde(flatten)]
     pub overlay: Overlay,
+    #[doc = "Describes the properties of a rectangular window applied to the input media before processing it."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub position: Option<Rectangle>,
+    #[doc = "The opacity of the overlay. This is a value in the range [0 - 1.0]. Default is 1.0 which mean the overlay is opaque."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub opacity: Option<f64>,
+    #[doc = "Describes the properties of a rectangular window applied to the input media before processing it."]
     #[serde(rename = "cropRectangle", default, skip_serializing_if = "Option::is_none")]
     pub crop_rectangle: Option<Rectangle>,
 }
@@ -3877,6 +4677,7 @@ impl VideoOverlay {
         }
     }
 }
+#[doc = "A TrackSelection to select video tracks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoTrackDescriptor {
     #[serde(flatten)]
@@ -3887,18 +4688,25 @@ impl VideoTrackDescriptor {
         Self { track_descriptor }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -3909,6 +4717,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -3916,6 +4725,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

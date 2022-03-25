@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Definition of the activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Activity {
+    #[doc = "Gets or sets the id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of the activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties of the activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActivityProperties>,
 }
@@ -16,10 +20,13 @@ impl Activity {
         Self::default()
     }
 }
+#[doc = "The response model for the list activity operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityListResult {
+    #[doc = "Gets or sets a list of activities."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Activity>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -28,10 +35,13 @@ impl ActivityListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the activity output type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityOutputType {
+    #[doc = "Gets or sets the name of the activity output type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the type of the activity output type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -40,26 +50,37 @@ impl ActivityOutputType {
         Self::default()
     }
 }
+#[doc = "Definition of the activity parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityParameter {
+    #[doc = "Gets or sets the name of the activity parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the type of the activity parameter."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets or sets a Boolean value that indicates true if the parameter is required. If the value is false, the parameter is optional."]
     #[serde(rename = "isMandatory", default, skip_serializing_if = "Option::is_none")]
     pub is_mandatory: Option<bool>,
+    #[doc = "Gets or sets a Boolean value that indicates true if the parameter is dynamic."]
     #[serde(rename = "isDynamic", default, skip_serializing_if = "Option::is_none")]
     pub is_dynamic: Option<bool>,
+    #[doc = "Gets or sets the position of the activity parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub position: Option<i64>,
+    #[doc = "Gets or sets a Boolean value that indicates true if the parameter can take values from the incoming pipeline objects. This setting is used if the cmdlet must access the complete input object. false indicates that the parameter cannot take values from the complete input object."]
     #[serde(rename = "valueFromPipeline", default, skip_serializing_if = "Option::is_none")]
     pub value_from_pipeline: Option<bool>,
+    #[doc = "Gets or sets a Boolean value that indicates true if the parameter can be filled from a property of the incoming pipeline object that has the same name as this parameter. false indicates that the parameter cannot be filled from the incoming pipeline object property with the same name. "]
     #[serde(rename = "valueFromPipelineByPropertyName", default, skip_serializing_if = "Option::is_none")]
     pub value_from_pipeline_by_property_name: Option<bool>,
+    #[doc = "Gets or sets a Boolean value that indicates true if the cmdlet parameter accepts all the remaining command-line arguments that are associated with this parameter in the form of an array. false if the cmdlet parameter does not accept all the remaining argument values."]
     #[serde(rename = "valueFromRemainingArguments", default, skip_serializing_if = "Option::is_none")]
     pub value_from_remaining_arguments: Option<bool>,
+    #[doc = "Gets or sets the description of the activity parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the validation set of activity parameter."]
     #[serde(rename = "validationSet", default, skip_serializing_if = "Vec::is_empty")]
     pub validation_set: Vec<ActivityParameterValidationSet>,
 }
@@ -68,10 +89,13 @@ impl ActivityParameter {
         Self::default()
     }
 }
+#[doc = "Definition of the activity parameter set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityParameterSet {
+    #[doc = "Gets or sets the name of the activity parameter set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the parameters of the activity parameter set."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ActivityParameter>,
 }
@@ -80,8 +104,10 @@ impl ActivityParameterSet {
         Self::default()
     }
 }
+#[doc = "Definition of the activity parameter validation set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityParameterValidationSet {
+    #[doc = "Gets or sets the name of the activity parameter validation set member."]
     #[serde(rename = "memberValue", default, skip_serializing_if = "Option::is_none")]
     pub member_value: Option<String>,
 }
@@ -90,18 +116,25 @@ impl ActivityParameterValidationSet {
         Self::default()
     }
 }
+#[doc = "Properties of the activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityProperties {
+    #[doc = "Gets or sets the user name of the activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub definition: Option<String>,
+    #[doc = "Gets or sets the parameter sets of the activity."]
     #[serde(rename = "parameterSets", default, skip_serializing_if = "Vec::is_empty")]
     pub parameter_sets: Vec<ActivityParameterSet>,
+    #[doc = "Gets or sets the output types of the activity."]
     #[serde(rename = "outputTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub output_types: Vec<ActivityOutputType>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -110,12 +143,16 @@ impl ActivityProperties {
         Self::default()
     }
 }
+#[doc = "The properties of the create Advanced Schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedSchedule {
+    #[doc = "Days of the week that the job should execute on."]
     #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
     pub week_days: Vec<String>,
+    #[doc = "Days of the month that the job should execute on. Must be between 1 and 31."]
     #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
     pub month_days: Vec<i32>,
+    #[doc = "Occurrences of days within a month."]
     #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
     pub monthly_occurrences: Vec<AdvancedScheduleMonthlyOccurrence>,
 }
@@ -124,10 +161,13 @@ impl AdvancedSchedule {
         Self::default()
     }
 }
+#[doc = "The properties of the create advanced schedule monthly occurrence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedScheduleMonthlyOccurrence {
+    #[doc = "Occurrence of the week within the month. Must be between 1 and 5"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub occurrence: Option<i32>,
+    #[doc = "Day of the occurrence. Must be one of monday, tuesday, wednesday, thursday, friday, saturday, sunday."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<advanced_schedule_monthly_occurrence::Day>,
 }
@@ -138,6 +178,7 @@ impl AdvancedScheduleMonthlyOccurrence {
 }
 pub mod advanced_schedule_monthly_occurrence {
     use super::*;
+    #[doc = "Day of the occurrence. Must be one of monday, tuesday, wednesday, thursday, friday, saturday, sunday."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Day {
         Monday,
@@ -149,14 +190,19 @@ pub mod advanced_schedule_monthly_occurrence {
         Sunday,
     }
 }
+#[doc = "Definition of the agent registration information type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentRegistration {
+    #[doc = "Gets or sets the dsc meta configuration."]
     #[serde(rename = "dscMetaConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub dsc_meta_configuration: Option<String>,
+    #[doc = "Gets or sets the dsc server endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
+    #[doc = "Definition of the agent registration keys."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keys: Option<AgentRegistrationKeys>,
+    #[doc = "Gets or sets the id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -165,10 +211,13 @@ impl AgentRegistration {
         Self::default()
     }
 }
+#[doc = "Definition of the agent registration keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentRegistrationKeys {
+    #[doc = "Gets or sets the primary key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
+    #[doc = "Gets or sets the secondary key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
 }
@@ -177,14 +226,19 @@ impl AgentRegistrationKeys {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the regenerate keys operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentRegistrationRegenerateKeyParameter {
+    #[doc = "Gets or sets the agent registration key name - primary or secondary."]
     #[serde(rename = "keyName")]
     pub key_name: agent_registration_regenerate_key_parameter::KeyName,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -200,6 +254,7 @@ impl AgentRegistrationRegenerateKeyParameter {
 }
 pub mod agent_registration_regenerate_key_parameter {
     use super::*;
+    #[doc = "Gets or sets the agent registration key name - primary or secondary."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         #[serde(rename = "primary")]
@@ -208,12 +263,15 @@ pub mod agent_registration_regenerate_key_parameter {
         Secondary,
     }
 }
+#[doc = "Definition of the automation account type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccount {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Definition of the account property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomationAccountProperties>,
+    #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -222,14 +280,19 @@ impl AutomationAccount {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update automation account operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccountCreateOrUpdateParameters {
+    #[doc = "The parameters supplied to the create or update account properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomationAccountCreateOrUpdateProperties>,
+    #[doc = "Gets or sets name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -238,8 +301,10 @@ impl AutomationAccountCreateOrUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update account properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccountCreateOrUpdateProperties {
+    #[doc = "The account SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -248,10 +313,13 @@ impl AutomationAccountCreateOrUpdateProperties {
         Self::default()
     }
 }
+#[doc = "The response model for the list account operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccountListResult {
+    #[doc = "Gets or sets list of accounts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AutomationAccount>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -260,18 +328,25 @@ impl AutomationAccountListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the account property."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccountProperties {
+    #[doc = "The account SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Gets or sets the last modified by."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "Gets status of account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<automation_account_properties::State>,
+    #[doc = "Gets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -282,6 +357,7 @@ impl AutomationAccountProperties {
 }
 pub mod automation_account_properties {
     use super::*;
+    #[doc = "Gets status of account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Ok,
@@ -289,14 +365,19 @@ pub mod automation_account_properties {
         Suspended,
     }
 }
+#[doc = "The parameters supplied to the update automation account operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccountUpdateParameters {
+    #[doc = "The parameters supplied to the update account properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomationAccountUpdateProperties>,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -305,8 +386,10 @@ impl AutomationAccountUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update account properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationAccountUpdateProperties {
+    #[doc = "The account SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -315,10 +398,12 @@ impl AutomationAccountUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateProperties>,
 }
@@ -327,9 +412,12 @@ impl Certificate {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update or replace certificate operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the certificate."]
     pub name: String,
+    #[doc = "The properties of the create certificate operation."]
     pub properties: CertificateCreateOrUpdateProperties,
 }
 impl CertificateCreateOrUpdateParameters {
@@ -337,14 +425,19 @@ impl CertificateCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The properties of the create certificate operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateCreateOrUpdateProperties {
+    #[doc = "Gets or sets the base64 encoded value of the certificate."]
     #[serde(rename = "base64Value")]
     pub base64_value: String,
+    #[doc = "Gets or sets the description of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the thumbprint of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "Gets or sets the is exportable flag of the certificate."]
     #[serde(rename = "isExportable", default, skip_serializing_if = "Option::is_none")]
     pub is_exportable: Option<bool>,
 }
@@ -358,10 +451,13 @@ impl CertificateCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "The response model for the list certificate operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateListResult {
+    #[doc = "Gets or sets a list of certificates."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Certificate>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -370,18 +466,25 @@ impl CertificateListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateProperties {
+    #[doc = "Gets the thumbprint of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "Gets the expiry time of the certificate."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "Gets the is exportable flag of the certificate."]
     #[serde(rename = "isExportable", default, skip_serializing_if = "Option::is_none")]
     pub is_exportable: Option<bool>,
+    #[doc = "Gets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -390,10 +493,13 @@ impl CertificateProperties {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update certificate operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateUpdateParameters {
+    #[doc = "Gets or sets the name of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The properties of the update certificate operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateUpdateProperties>,
 }
@@ -402,8 +508,10 @@ impl CertificateUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of the update certificate operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateUpdateProperties {
+    #[doc = "Gets or sets the description of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -412,10 +520,12 @@ impl CertificateUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Connection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Definition of the connection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionProperties>,
 }
@@ -424,9 +534,12 @@ impl Connection {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update connection operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the connection."]
     pub name: String,
+    #[doc = "The properties of the create connection properties"]
     pub properties: ConnectionCreateOrUpdateProperties,
 }
 impl ConnectionCreateOrUpdateParameters {
@@ -434,12 +547,16 @@ impl ConnectionCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The properties of the create connection properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionCreateOrUpdateProperties {
+    #[doc = "Gets or sets the description of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The connection type property associated with the entity."]
     #[serde(rename = "connectionType")]
     pub connection_type: ConnectionTypeAssociationProperty,
+    #[doc = "Gets or sets the field definition properties of the connection."]
     #[serde(rename = "fieldDefinitionValues", default, skip_serializing_if = "Option::is_none")]
     pub field_definition_values: Option<serde_json::Value>,
 }
@@ -452,10 +569,13 @@ impl ConnectionCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "The response model for the list connection operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionListResult {
+    #[doc = "Gets or sets a list of connection."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Connection>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -464,16 +584,22 @@ impl ConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the connection properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionProperties {
+    #[doc = "The connection type property associated with the entity."]
     #[serde(rename = "connectionType", default, skip_serializing_if = "Option::is_none")]
     pub connection_type: Option<ConnectionTypeAssociationProperty>,
+    #[doc = "Gets the field definition values of the connection."]
     #[serde(rename = "fieldDefinitionValues", default, skip_serializing_if = "Option::is_none")]
     pub field_definition_values: Option<serde_json::Value>,
+    #[doc = "Gets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -482,14 +608,19 @@ impl ConnectionProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the connection type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionType {
+    #[doc = "Gets the id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of the connection type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of the connection type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionTypeProperties>,
 }
@@ -498,8 +629,10 @@ impl ConnectionType {
         Self::default()
     }
 }
+#[doc = "The connection type property associated with the entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionTypeAssociationProperty {
+    #[doc = "Gets or sets the name of the connection type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -508,9 +641,12 @@ impl ConnectionTypeAssociationProperty {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update connection type operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionTypeCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the connection type."]
     pub name: String,
+    #[doc = "The properties of the create connection type."]
     pub properties: ConnectionTypeCreateOrUpdateProperties,
 }
 impl ConnectionTypeCreateOrUpdateParameters {
@@ -518,10 +654,13 @@ impl ConnectionTypeCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The properties of the create connection type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionTypeCreateOrUpdateProperties {
+    #[doc = "Gets or sets a Boolean value to indicate if the connection type is global."]
     #[serde(rename = "isGlobal", default, skip_serializing_if = "Option::is_none")]
     pub is_global: Option<bool>,
+    #[doc = "Gets or sets the field definitions of the connection type."]
     #[serde(rename = "fieldDefinitions")]
     pub field_definitions: serde_json::Value,
 }
@@ -533,10 +672,13 @@ impl ConnectionTypeCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "The response model for the list connection type operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionTypeListResult {
+    #[doc = "Gets or sets a list of connection types."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionType>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -545,16 +687,22 @@ impl ConnectionTypeListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the connection type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionTypeProperties {
+    #[doc = "Gets or sets a Boolean value to indicate if the connection type is global."]
     #[serde(rename = "isGlobal", default, skip_serializing_if = "Option::is_none")]
     pub is_global: Option<bool>,
+    #[doc = "Gets the field definitions of the connection type."]
     #[serde(rename = "fieldDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub field_definitions: Option<serde_json::Value>,
+    #[doc = "Gets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -563,10 +711,13 @@ impl ConnectionTypeProperties {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update connection operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionUpdateParameters {
+    #[doc = "Gets or sets the name of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The properties of the update connection operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionUpdateProperties>,
 }
@@ -575,10 +726,13 @@ impl ConnectionUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of the update connection operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionUpdateProperties {
+    #[doc = "Gets or sets the description of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the field definition values of the connection."]
     #[serde(rename = "fieldDefinitionValues", default, skip_serializing_if = "Option::is_none")]
     pub field_definition_values: Option<serde_json::Value>,
 }
@@ -587,9 +741,12 @@ impl ConnectionUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the runbook property type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentHash {
+    #[doc = "Gets or sets the content hash algorithm used to hash the content."]
     pub algorithm: String,
+    #[doc = "Gets or sets expected hash value of the content."]
     pub value: String,
 }
 impl ContentHash {
@@ -597,12 +754,16 @@ impl ContentHash {
         Self { algorithm, value }
     }
 }
+#[doc = "Definition of the content link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentLink {
+    #[doc = "Gets or sets the uri of the runbook content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Definition of the runbook property type."]
     #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
     pub content_hash: Option<ContentHash>,
+    #[doc = "Gets or sets the version of the content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -611,14 +772,19 @@ impl ContentLink {
         Self::default()
     }
 }
+#[doc = "Definition of the content source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentSource {
+    #[doc = "Definition of the runbook property type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hash: Option<ContentHash>,
+    #[doc = "Gets or sets the content source type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<content_source::Type>,
+    #[doc = "Gets or sets the value of the content. This is based on the content source type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets or sets the version of the content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -629,6 +795,7 @@ impl ContentSource {
 }
 pub mod content_source {
     use super::*;
+    #[doc = "Gets or sets the content source type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "embeddedContent")]
@@ -637,10 +804,12 @@ pub mod content_source {
         Uri,
     }
 }
+#[doc = "Definition of the credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Credential {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Definition of the credential properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CredentialProperties>,
 }
@@ -649,9 +818,12 @@ impl Credential {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update credential operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the credential."]
     pub name: String,
+    #[doc = "The properties of the create credential operation."]
     pub properties: CredentialCreateOrUpdateProperties,
 }
 impl CredentialCreateOrUpdateParameters {
@@ -659,11 +831,15 @@ impl CredentialCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The properties of the create credential operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialCreateOrUpdateProperties {
+    #[doc = "Gets or sets the user name of the credential."]
     #[serde(rename = "userName")]
     pub user_name: String,
+    #[doc = "Gets or sets the password of the credential."]
     pub password: String,
+    #[doc = "Gets or sets the description of the credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -676,10 +852,13 @@ impl CredentialCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "The response model for the list credential operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialListResult {
+    #[doc = "Gets or sets a list of credentials."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Credential>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -688,14 +867,19 @@ impl CredentialListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the credential properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialProperties {
+    #[doc = "Gets the user name of the credential."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
+    #[doc = "Gets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -704,10 +888,13 @@ impl CredentialProperties {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the Update credential operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialUpdateParameters {
+    #[doc = "Gets or sets the name of the credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The properties of the Update credential"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CredentialUpdateProperties>,
 }
@@ -716,12 +903,16 @@ impl CredentialUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of the Update credential"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialUpdateProperties {
+    #[doc = "Gets or sets the user name of the credential."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
+    #[doc = "Gets or sets the password of the credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "Gets or sets the description of the credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -730,10 +921,12 @@ impl CredentialUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the Dsc Compilation job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscCompilationJob {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Definition of Dsc Compilation job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DscCompilationJobProperties>,
 }
@@ -742,13 +935,18 @@ impl DscCompilationJob {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create compilation job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscCompilationJobCreateParameters {
+    #[doc = "The parameters supplied to the create compilation job operation."]
     pub properties: DscCompilationJobCreateProperties,
+    #[doc = "Gets or sets name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -762,11 +960,15 @@ impl DscCompilationJobCreateParameters {
         }
     }
 }
+#[doc = "The parameters supplied to the create compilation job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscCompilationJobCreateProperties {
+    #[doc = "The Dsc configuration property associated with the entity."]
     pub configuration: DscConfigurationAssociationProperty,
+    #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "If a new build version of NodeConfiguration is required."]
     #[serde(rename = "incrementNodeConfigurationBuild", default, skip_serializing_if = "Option::is_none")]
     pub increment_node_configuration_build: Option<bool>,
 }
@@ -779,10 +981,13 @@ impl DscCompilationJobCreateProperties {
         }
     }
 }
+#[doc = "The response model for the list job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscCompilationJobListResult {
+    #[doc = "Gets or sets a list of Dsc Compilation jobs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DscCompilationJob>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -791,34 +996,49 @@ impl DscCompilationJobListResult {
         Self::default()
     }
 }
+#[doc = "Definition of Dsc Compilation job properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscCompilationJobProperties {
+    #[doc = "The Dsc configuration property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<DscConfigurationAssociationProperty>,
+    #[doc = "Gets the compilation job started by."]
     #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
     pub started_by: Option<String>,
+    #[doc = "Gets the id of the job."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
+    #[doc = "Gets the creation time of the job."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<JobProvisioningStateProperty>,
+    #[doc = "Gets or sets the runOn which specifies the group name where the job is to be executed."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets the status of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<dsc_compilation_job_properties::Status>,
+    #[doc = "Gets or sets the status details of the job."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+    #[doc = "Gets the start time of the job."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Gets the end time of the job."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Gets the exception of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<String>,
+    #[doc = "Gets the last modified time of the job."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets the last status modified time of the job."]
     #[serde(rename = "lastStatusModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_status_modified_time: Option<String>,
+    #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
@@ -829,6 +1049,7 @@ impl DscCompilationJobProperties {
 }
 pub mod dsc_compilation_job_properties {
     use super::*;
+    #[doc = "Gets or sets the status of the job."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         New,
@@ -846,12 +1067,15 @@ pub mod dsc_compilation_job_properties {
         Removing,
     }
 }
+#[doc = "Definition of the configuration type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfiguration {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Definition of the configuration property type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DscConfigurationProperties>,
+    #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -860,8 +1084,10 @@ impl DscConfiguration {
         Self::default()
     }
 }
+#[doc = "The Dsc configuration property associated with the entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfigurationAssociationProperty {
+    #[doc = "Gets or sets the name of the Dsc configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -870,13 +1096,18 @@ impl DscConfigurationAssociationProperty {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update configuration operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscConfigurationCreateOrUpdateParameters {
+    #[doc = "The properties to create or update configuration."]
     pub properties: DscConfigurationCreateOrUpdateProperties,
+    #[doc = "Gets or sets name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -890,15 +1121,21 @@ impl DscConfigurationCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The properties to create or update configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscConfigurationCreateOrUpdateProperties {
+    #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
+    #[doc = "Gets or sets progress log option."]
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
+    #[doc = "Definition of the content source."]
     pub source: ContentSource,
+    #[doc = "Gets or sets the configuration parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the description of the configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -913,12 +1150,16 @@ impl DscConfigurationCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "The response model for the list configuration operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfigurationListResult {
+    #[doc = "Gets or sets a list of configurations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DscConfiguration>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Gets the total number of configurations matching filter criteria."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
 }
@@ -927,14 +1168,19 @@ impl DscConfigurationListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the configuration parameter type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfigurationParameter {
+    #[doc = "Gets or sets the type of the parameter."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets or sets a Boolean value to indicate whether the parameter is mandatory or not."]
     #[serde(rename = "isMandatory", default, skip_serializing_if = "Option::is_none")]
     pub is_mandatory: Option<bool>,
+    #[doc = "Get or sets the position of the parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub position: Option<i32>,
+    #[doc = "Gets or sets the default value of parameter."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
 }
@@ -943,26 +1189,37 @@ impl DscConfigurationParameter {
         Self::default()
     }
 }
+#[doc = "Definition of the configuration property type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfigurationProperties {
+    #[doc = "Gets or sets the provisioning state of the configuration."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dsc_configuration_properties::ProvisioningState>,
+    #[doc = "Gets or sets the job count of the configuration."]
     #[serde(rename = "jobCount", default, skip_serializing_if = "Option::is_none")]
     pub job_count: Option<i32>,
+    #[doc = "Gets or sets the configuration parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Definition of the content source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<ContentSource>,
+    #[doc = "Gets or sets the state of the configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<dsc_configuration_properties::State>,
+    #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets the number of compiled node configurations."]
     #[serde(rename = "nodeConfigurationCount", default, skip_serializing_if = "Option::is_none")]
     pub node_configuration_count: Option<i64>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -973,10 +1230,12 @@ impl DscConfigurationProperties {
 }
 pub mod dsc_configuration_properties {
     use super::*;
+    #[doc = "Gets or sets the provisioning state of the configuration."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
     }
+    #[doc = "Gets or sets the state of the configuration."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         New,
@@ -984,12 +1243,16 @@ pub mod dsc_configuration_properties {
         Published,
     }
 }
+#[doc = "The parameters supplied to the create or update configuration operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfigurationUpdateParameters {
+    #[doc = "The properties to create or update configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DscConfigurationCreateOrUpdateProperties>,
+    #[doc = "Gets or sets name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -998,20 +1261,28 @@ impl DscConfigurationUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Definition of the DSC Meta Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscMetaConfiguration {
+    #[doc = "Gets or sets the ConfigurationModeFrequencyMins value of the meta configuration."]
     #[serde(rename = "configurationModeFrequencyMins", default, skip_serializing_if = "Option::is_none")]
     pub configuration_mode_frequency_mins: Option<i32>,
+    #[doc = "Gets or sets the RebootNodeIfNeeded value of the meta configuration."]
     #[serde(rename = "rebootNodeIfNeeded", default, skip_serializing_if = "Option::is_none")]
     pub reboot_node_if_needed: Option<bool>,
+    #[doc = "Gets or sets the ConfigurationMode value of the meta configuration."]
     #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
     pub configuration_mode: Option<String>,
+    #[doc = "Gets or sets the ActionAfterReboot value of the meta configuration."]
     #[serde(rename = "actionAfterReboot", default, skip_serializing_if = "Option::is_none")]
     pub action_after_reboot: Option<String>,
+    #[doc = "Gets or sets the CertificateId value of the meta configuration."]
     #[serde(rename = "certificateId", default, skip_serializing_if = "Option::is_none")]
     pub certificate_id: Option<String>,
+    #[doc = "Gets or sets the RefreshFrequencyMins value of the meta configuration."]
     #[serde(rename = "refreshFrequencyMins", default, skip_serializing_if = "Option::is_none")]
     pub refresh_frequency_mins: Option<i32>,
+    #[doc = "Gets or sets the AllowModuleOverwrite value of the meta configuration."]
     #[serde(rename = "allowModuleOverwrite", default, skip_serializing_if = "Option::is_none")]
     pub allow_module_overwrite: Option<bool>,
 }
@@ -1020,26 +1291,36 @@ impl DscMetaConfiguration {
         Self::default()
     }
 }
+#[doc = "Definition of the dsc node type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNode {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Gets or sets the last seen time of the node."]
     #[serde(rename = "lastSeen", default, skip_serializing_if = "Option::is_none")]
     pub last_seen: Option<String>,
+    #[doc = "Gets or sets the registration time of the node."]
     #[serde(rename = "registrationTime", default, skip_serializing_if = "Option::is_none")]
     pub registration_time: Option<String>,
+    #[doc = "Gets or sets the ip of the node."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
+    #[doc = "Gets or sets the account id of the node."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
+    #[doc = "The dsc node configuration property associated with the entity."]
     #[serde(rename = "nodeConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub node_configuration: Option<DscNodeConfigurationAssociationProperty>,
+    #[doc = "Gets or sets the status of the node."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Gets or sets the node id."]
     #[serde(rename = "nodeId", default, skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
+    #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Gets or sets the list of extensionHandler properties for a Node."]
     #[serde(rename = "extensionHandler", default, skip_serializing_if = "Vec::is_empty")]
     pub extension_handler: Vec<DscNodeExtensionHandlerAssociationProperty>,
 }
@@ -1048,14 +1329,18 @@ impl DscNode {
         Self::default()
     }
 }
+#[doc = "Definition of the dsc node configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "The Dsc configuration property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<DscConfigurationAssociationProperty>,
 }
@@ -1064,8 +1349,10 @@ impl DscNodeConfiguration {
         Self::default()
     }
 }
+#[doc = "The dsc node configuration property associated with the entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeConfigurationAssociationProperty {
+    #[doc = "Gets or sets the name of the dsc node configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -1074,11 +1361,16 @@ impl DscNodeConfigurationAssociationProperty {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update node configuration operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscNodeConfigurationCreateOrUpdateParameters {
+    #[doc = "Definition of the content source."]
     pub source: ContentSource,
+    #[doc = "Name of the node configuration."]
     pub name: String,
+    #[doc = "The Dsc configuration property associated with the entity."]
     pub configuration: DscConfigurationAssociationProperty,
+    #[doc = "If a new build version of NodeConfiguration is required."]
     #[serde(rename = "incrementNodeConfigurationBuild", default, skip_serializing_if = "Option::is_none")]
     pub increment_node_configuration_build: Option<bool>,
 }
@@ -1092,10 +1384,13 @@ impl DscNodeConfigurationCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The response model for the list job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeConfigurationListResult {
+    #[doc = "Gets or sets a list of Dsc node configurations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DscNodeConfiguration>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1104,10 +1399,13 @@ impl DscNodeConfigurationListResult {
         Self::default()
     }
 }
+#[doc = "The dsc extensionHandler property associated with the node"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeExtensionHandlerAssociationProperty {
+    #[doc = "Gets or sets the name of the extension handler."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the version of the extension handler."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -1116,10 +1414,13 @@ impl DscNodeExtensionHandlerAssociationProperty {
         Self::default()
     }
 }
+#[doc = "The response model for the list dsc nodes operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeListResult {
+    #[doc = "Gets or sets a list of dsc nodes."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DscNode>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1128,44 +1429,64 @@ impl DscNodeListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the dsc node report type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeReport {
+    #[doc = "Gets or sets the end time of the node report."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Gets or sets the lastModifiedTime of the node report."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the start time of the node report."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Gets or sets the type of the node report."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets or sets the id of the node report."]
     #[serde(rename = "reportId", default, skip_serializing_if = "Option::is_none")]
     pub report_id: Option<String>,
+    #[doc = "Gets or sets the status of the node report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Gets or sets the refreshMode of the node report."]
     #[serde(rename = "refreshMode", default, skip_serializing_if = "Option::is_none")]
     pub refresh_mode: Option<String>,
+    #[doc = "Gets or sets the rebootRequested of the node report."]
     #[serde(rename = "rebootRequested", default, skip_serializing_if = "Option::is_none")]
     pub reboot_requested: Option<String>,
+    #[doc = "Gets or sets the reportFormatVersion of the node report."]
     #[serde(rename = "reportFormatVersion", default, skip_serializing_if = "Option::is_none")]
     pub report_format_version: Option<String>,
+    #[doc = "Gets or sets the configurationVersion of the node report."]
     #[serde(rename = "configurationVersion", default, skip_serializing_if = "Option::is_none")]
     pub configuration_version: Option<String>,
+    #[doc = "Gets or sets the id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the errors for the node report."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<DscReportError>,
+    #[doc = "Gets or sets the resource for the node report."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<DscReportResource>,
+    #[doc = "Definition of the DSC Meta Configuration."]
     #[serde(rename = "metaConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub meta_configuration: Option<DscMetaConfiguration>,
+    #[doc = "Gets or sets the hostname of the node that sent the report."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "Gets or sets the IPv4 address of the node that sent the report."]
     #[serde(rename = "iPV4Addresses", default, skip_serializing_if = "Vec::is_empty")]
     pub i_pv4_addresses: Vec<String>,
+    #[doc = "Gets or sets the IPv6 address of the node that sent the report."]
     #[serde(rename = "iPV6Addresses", default, skip_serializing_if = "Vec::is_empty")]
     pub i_pv6_addresses: Vec<String>,
+    #[doc = "Gets or sets the number of resource in the node report."]
     #[serde(rename = "numberOfResources", default, skip_serializing_if = "Option::is_none")]
     pub number_of_resources: Option<i32>,
+    #[doc = "Gets or sets the unparsed errors for the node report."]
     #[serde(rename = "rawErrors", default, skip_serializing_if = "Option::is_none")]
     pub raw_errors: Option<String>,
 }
@@ -1174,10 +1495,13 @@ impl DscNodeReport {
         Self::default()
     }
 }
+#[doc = "The response model for the list dsc nodes operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeReportListResult {
+    #[doc = "Gets or sets a list of dsc node reports."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DscNodeReport>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1186,10 +1510,13 @@ impl DscNodeReportListResult {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update dsc node operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeUpdateParameters {
+    #[doc = "Gets or sets the id of the dsc node."]
     #[serde(rename = "nodeId", default, skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
+    #[doc = "The dsc node configuration property associated with the entity."]
     #[serde(rename = "nodeConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub node_configuration: Option<DscNodeConfigurationAssociationProperty>,
 }
@@ -1198,18 +1525,25 @@ impl DscNodeUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Definition of the dsc node report error type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscReportError {
+    #[doc = "Gets or sets the source of the error."]
     #[serde(rename = "errorSource", default, skip_serializing_if = "Option::is_none")]
     pub error_source: Option<String>,
+    #[doc = "Gets or sets the resource ID which generated the error."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Gets or sets the error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "Gets or sets the error message."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "Gets or sets the locale of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
+    #[doc = "Gets or sets the error details."]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<String>,
 }
@@ -1218,26 +1552,37 @@ impl DscReportError {
         Self::default()
     }
 }
+#[doc = "Definition of the DSC Report Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscReportResource {
+    #[doc = "Gets or sets the ID of the resource."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Gets or sets the source info of the resource."]
     #[serde(rename = "sourceInfo", default, skip_serializing_if = "Option::is_none")]
     pub source_info: Option<String>,
+    #[doc = "Gets or sets the Resource Navigation values for resources the resource depends on."]
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<DscReportResourceNavigation>,
+    #[doc = "Gets or sets the module name of the resource."]
     #[serde(rename = "moduleName", default, skip_serializing_if = "Option::is_none")]
     pub module_name: Option<String>,
+    #[doc = "Gets or sets the module version of the resource."]
     #[serde(rename = "moduleVersion", default, skip_serializing_if = "Option::is_none")]
     pub module_version: Option<String>,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
+    #[doc = "Gets or sets the error of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    #[doc = "Gets or sets the status of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Gets or sets the duration in seconds for the resource."]
     #[serde(rename = "durationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_seconds: Option<f64>,
+    #[doc = "Gets or sets the start date of the resource."]
     #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
     pub start_date: Option<String>,
 }
@@ -1246,8 +1591,10 @@ impl DscReportResource {
         Self::default()
     }
 }
+#[doc = "Navigation for DSC Report Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscReportResourceNavigation {
+    #[doc = "Gets or sets the ID of the resource to navigate to."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -1256,10 +1603,13 @@ impl DscReportResourceNavigation {
         Self::default()
     }
 }
+#[doc = "Error response of an operation failure"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -1268,12 +1618,16 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Definition of the connection fields."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FieldDefinition {
+    #[doc = "Gets or sets the isEncrypted flag of the connection field definition."]
     #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
     pub is_encrypted: Option<bool>,
+    #[doc = "Gets or sets the isOptional flag of the connection field definition."]
     #[serde(rename = "isOptional", default, skip_serializing_if = "Option::is_none")]
     pub is_optional: Option<bool>,
+    #[doc = "Gets or sets the type of the connection field definition."]
     #[serde(rename = "type")]
     pub type_: String,
 }
@@ -1286,14 +1640,19 @@ impl FieldDefinition {
         }
     }
 }
+#[doc = "Definition of hybrid runbook worker."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorker {
+    #[doc = "Gets or sets the worker machine name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the assigned machine IP address."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
+    #[doc = "Gets or sets the registration time of the worker machine."]
     #[serde(rename = "registrationTime", default, skip_serializing_if = "Option::is_none")]
     pub registration_time: Option<String>,
+    #[doc = "Last Heartbeat from the Worker"]
     #[serde(rename = "lastSeenDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_seen_date_time: Option<String>,
 }
@@ -1302,16 +1661,22 @@ impl HybridRunbookWorker {
         Self::default()
     }
 }
+#[doc = "Definition of hybrid runbook worker group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorkerGroup {
+    #[doc = "Gets or sets the id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the name of the group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the list of hybrid runbook workers."]
     #[serde(rename = "hybridRunbookWorkers", default, skip_serializing_if = "Vec::is_empty")]
     pub hybrid_runbook_workers: Vec<HybridRunbookWorker>,
+    #[doc = "Definition of RunAs credential to use for hybrid worker."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<RunAsCredentialAssociationProperty>,
+    #[doc = "Type of the HybridWorkerGroup."]
     #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
     pub group_type: Option<hybrid_runbook_worker_group::GroupType>,
 }
@@ -1322,14 +1687,17 @@ impl HybridRunbookWorkerGroup {
 }
 pub mod hybrid_runbook_worker_group {
     use super::*;
+    #[doc = "Type of the HybridWorkerGroup."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GroupType {
         User,
         System,
     }
 }
+#[doc = "Parameters supplied to the update operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorkerGroupUpdateParameters {
+    #[doc = "Definition of RunAs credential to use for hybrid worker."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<RunAsCredentialAssociationProperty>,
 }
@@ -1338,10 +1706,13 @@ impl HybridRunbookWorkerGroupUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The response model for the list hybrid runbook worker groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorkerGroupsListResult {
+    #[doc = "Gets or sets a list of hybrid runbook worker groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HybridRunbookWorkerGroup>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1350,10 +1721,13 @@ impl HybridRunbookWorkerGroupsListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
+    #[doc = "Id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Definition of job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
@@ -1362,8 +1736,10 @@ impl Job {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCreateParameters {
+    #[doc = "The parameters supplied to the create job operation."]
     pub properties: JobCreateProperties,
 }
 impl JobCreateParameters {
@@ -1371,11 +1747,15 @@ impl JobCreateParameters {
         Self { properties }
     }
 }
+#[doc = "The parameters supplied to the create job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCreateProperties {
+    #[doc = "The runbook property associated with the entity."]
     pub runbook: RunbookAssociationProperty,
+    #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the runOn which specifies the group name where the job is to be executed."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
 }
@@ -1388,10 +1768,13 @@ impl JobCreateProperties {
         }
     }
 }
+#[doc = "The response model for the list job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobListResult {
+    #[doc = "Gets or sets a list of jobs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1400,38 +1783,55 @@ impl JobListResult {
         Self::default()
     }
 }
+#[doc = "Definition of job properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobProperties {
+    #[doc = "The runbook property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runbook: Option<RunbookAssociationProperty>,
+    #[doc = "Gets or sets the job started by."]
     #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
     pub started_by: Option<String>,
+    #[doc = "Gets or sets the runOn which specifies the group name where the job is to be executed."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets the id of the job."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
+    #[doc = "Gets or sets the creation time of the job."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the status of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_properties::Status>,
+    #[doc = "Gets or sets the status details of the job."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+    #[doc = "Gets or sets the start time of the job."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Gets or sets the end time of the job."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Gets or sets the exception of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<String>,
+    #[doc = "Gets or sets the last modified time of the job."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the last status modified time of the job."]
     #[serde(rename = "lastStatusModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_status_modified_time: Option<String>,
+    #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<JobProvisioningStateProperty>,
+    #[doc = "Gets or sets the id of job schedule."]
     #[serde(rename = "jobScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub job_schedule_id: Option<String>,
+    #[doc = "The schedule property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<ScheduleAssociationProperty>,
 }
@@ -1442,6 +1842,7 @@ impl JobProperties {
 }
 pub mod job_properties {
     use super::*;
+    #[doc = "Gets or sets the status of the job."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         New,
@@ -1459,6 +1860,7 @@ pub mod job_properties {
         Removing,
     }
 }
+#[doc = "The provisioning state of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum JobProvisioningStateProperty {
     Failed,
@@ -1466,14 +1868,19 @@ pub enum JobProvisioningStateProperty {
     Suspended,
     Processing,
 }
+#[doc = "Definition of the job schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobSchedule {
+    #[doc = "Gets the id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Definition of job schedule parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobScheduleProperties>,
 }
@@ -1482,8 +1889,10 @@ impl JobSchedule {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create job schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobScheduleCreateParameters {
+    #[doc = "The parameters supplied to the create job schedule operation."]
     pub properties: JobScheduleCreateProperties,
 }
 impl JobScheduleCreateParameters {
@@ -1491,12 +1900,17 @@ impl JobScheduleCreateParameters {
         Self { properties }
     }
 }
+#[doc = "The parameters supplied to the create job schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobScheduleCreateProperties {
+    #[doc = "The schedule property associated with the entity."]
     pub schedule: ScheduleAssociationProperty,
+    #[doc = "The runbook property associated with the entity."]
     pub runbook: RunbookAssociationProperty,
+    #[doc = "Gets or sets the hybrid worker group that the scheduled job should run on."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets a list of job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
@@ -1510,10 +1924,13 @@ impl JobScheduleCreateProperties {
         }
     }
 }
+#[doc = "The response model for the list job schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobScheduleListResult {
+    #[doc = "Gets or sets a list of job schedules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobSchedule>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1522,16 +1939,22 @@ impl JobScheduleListResult {
         Self::default()
     }
 }
+#[doc = "Definition of job schedule parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobScheduleProperties {
+    #[doc = "Gets or sets the id of job schedule."]
     #[serde(rename = "jobScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub job_schedule_id: Option<String>,
+    #[doc = "The schedule property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<ScheduleAssociationProperty>,
+    #[doc = "The runbook property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runbook: Option<RunbookAssociationProperty>,
+    #[doc = "Gets or sets the hybrid worker group that the scheduled job should run on."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets the parameters of the job schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
@@ -1540,10 +1963,13 @@ impl JobScheduleProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the job stream."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStream {
+    #[doc = "Gets or sets the id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Definition of the job stream."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobStreamProperties>,
 }
@@ -1552,10 +1978,13 @@ impl JobStream {
         Self::default()
     }
 }
+#[doc = "The response model for the list job stream operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStreamListResult {
+    #[doc = "A list of job streams."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobStream>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1564,18 +1993,25 @@ impl JobStreamListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the job stream."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStreamProperties {
+    #[doc = "Gets or sets the id of the job stream."]
     #[serde(rename = "jobStreamId", default, skip_serializing_if = "Option::is_none")]
     pub job_stream_id: Option<String>,
+    #[doc = "Gets or sets the creation time of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
+    #[doc = "Gets or sets the stream type."]
     #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
     pub stream_type: Option<job_stream_properties::StreamType>,
+    #[doc = "Gets or sets the stream text."]
     #[serde(rename = "streamText", default, skip_serializing_if = "Option::is_none")]
     pub stream_text: Option<String>,
+    #[doc = "Gets or sets the summary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
+    #[doc = "Gets or sets the values of the job stream."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
 }
@@ -1586,6 +2022,7 @@ impl JobStreamProperties {
 }
 pub mod job_stream_properties {
     use super::*;
+    #[doc = "Gets or sets the stream type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StreamType {
         Progress,
@@ -1597,12 +2034,16 @@ pub mod job_stream_properties {
         Any,
     }
 }
+#[doc = "Automation key which is used to register a DSC Node"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Key {
+    #[doc = "Automation key name."]
     #[serde(rename = "KeyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<key::KeyName>,
+    #[doc = "Automation key permissions."]
     #[serde(rename = "Permissions", default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<key::Permissions>,
+    #[doc = "Value of the Automation Key used for registration."]
     #[serde(rename = "Value", default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -1613,11 +2054,13 @@ impl Key {
 }
 pub mod key {
     use super::*;
+    #[doc = "Automation key name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         Primary,
         Secondary,
     }
+    #[doc = "Automation key permissions."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
         Read,
@@ -1626,6 +2069,7 @@ pub mod key {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyListResult {
+    #[doc = "Lists the automation keys."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<Key>,
 }
@@ -1634,8 +2078,10 @@ impl KeyListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the linked workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedWorkspace {
+    #[doc = "Gets the id of the linked workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1644,12 +2090,15 @@ impl LinkedWorkspace {
         Self::default()
     }
 }
+#[doc = "Definition of the module type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Module {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Definition of the module property type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ModuleProperties>,
+    #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1658,13 +2107,18 @@ impl Module {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update module operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModuleCreateOrUpdateParameters {
+    #[doc = "The parameters supplied to the create or update module properties."]
     pub properties: ModuleCreateOrUpdateProperties,
+    #[doc = "Gets or sets name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1678,8 +2132,10 @@ impl ModuleCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The parameters supplied to the create or update module properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModuleCreateOrUpdateProperties {
+    #[doc = "Definition of the content link."]
     #[serde(rename = "contentLink")]
     pub content_link: ContentLink,
 }
@@ -1688,10 +2144,13 @@ impl ModuleCreateOrUpdateProperties {
         Self { content_link }
     }
 }
+#[doc = "Definition of the module error info type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleErrorInfo {
+    #[doc = "Gets or sets the error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Gets or sets the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -1700,10 +2159,13 @@ impl ModuleErrorInfo {
         Self::default()
     }
 }
+#[doc = "The response model for the list module operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleListResult {
+    #[doc = "Gets or sets a list of modules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Module>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1712,28 +2174,40 @@ impl ModuleListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the module property type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleProperties {
+    #[doc = "Gets or sets the isGlobal flag of the module."]
     #[serde(rename = "isGlobal", default, skip_serializing_if = "Option::is_none")]
     pub is_global: Option<bool>,
+    #[doc = "Gets or sets the version of the module."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Gets or sets the size in bytes of the module."]
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
+    #[doc = "Gets or sets the activity count of the module."]
     #[serde(rename = "activityCount", default, skip_serializing_if = "Option::is_none")]
     pub activity_count: Option<i32>,
+    #[doc = "Gets or sets the provisioning state of the module."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<module_properties::ProvisioningState>,
+    #[doc = "Definition of the content link."]
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<ContentLink>,
+    #[doc = "Definition of the module error info type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ModuleErrorInfo>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets type of module, if its composite or not."]
     #[serde(rename = "isComposite", default, skip_serializing_if = "Option::is_none")]
     pub is_composite: Option<bool>,
 }
@@ -1744,6 +2218,7 @@ impl ModuleProperties {
 }
 pub mod module_properties {
     use super::*;
+    #[doc = "Gets or sets the provisioning state of the module."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Created,
@@ -1764,14 +2239,19 @@ pub mod module_properties {
         Updating,
     }
 }
+#[doc = "The parameters supplied to the update module operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleUpdateParameters {
+    #[doc = "The parameters supplied to the update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ModuleUpdateProperties>,
+    #[doc = "Gets or sets name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1780,8 +2260,10 @@ impl ModuleUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleUpdateProperties {
+    #[doc = "Definition of the content link."]
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<ContentLink>,
 }
@@ -1790,10 +2272,13 @@ impl ModuleUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Automation REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Provider, Resource and Operation values"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -1804,12 +2289,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Provider, Resource and Operation values"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Automation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Runbooks, Jobs etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -1819,8 +2308,10 @@ pub mod operation {
         }
     }
 }
+#[doc = "The response model for the list of Automation operations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Automation operations supported by the Automation resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -1829,6 +2320,7 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "ARM proxy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -1839,12 +2331,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "The core properties of ARM resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource Id for the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1853,8 +2349,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Definition of RunAs credential to use for hybrid worker."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunAsCredentialAssociationProperty {
+    #[doc = "Gets or sets the name of the credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -1863,12 +2361,15 @@ impl RunAsCredentialAssociationProperty {
         Self::default()
     }
 }
+#[doc = "Definition of the runbook type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Runbook {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Definition of the runbook property type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunbookProperties>,
+    #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1877,8 +2378,10 @@ impl Runbook {
         Self::default()
     }
 }
+#[doc = "The runbook property associated with the entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookAssociationProperty {
+    #[doc = "Gets or sets the name of the runbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -1887,8 +2390,10 @@ impl RunbookAssociationProperty {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update runbook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunbookCreateOrUpdateDraftParameters {
+    #[doc = "Content of the Runbook."]
     #[serde(rename = "runbookContent")]
     pub runbook_content: String,
 }
@@ -1897,17 +2402,23 @@ impl RunbookCreateOrUpdateDraftParameters {
         Self { runbook_content }
     }
 }
+#[doc = "The parameters supplied to the create or update draft runbook properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunbookCreateOrUpdateDraftProperties {
+    #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
+    #[doc = "Gets or sets progress log option."]
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
+    #[doc = "Gets or sets the type of the runbook."]
     #[serde(rename = "runbookType")]
     pub runbook_type: runbook_create_or_update_draft_properties::RunbookType,
     pub draft: RunbookDraft,
+    #[doc = "Gets or sets the description of the runbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the activity-level tracing options of the runbook."]
     #[serde(rename = "logActivityTrace", default, skip_serializing_if = "Option::is_none")]
     pub log_activity_trace: Option<i32>,
 }
@@ -1925,6 +2436,7 @@ impl RunbookCreateOrUpdateDraftProperties {
 }
 pub mod runbook_create_or_update_draft_properties {
     use super::*;
+    #[doc = "Gets or sets the type of the runbook."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunbookType {
         Script,
@@ -1935,13 +2447,18 @@ pub mod runbook_create_or_update_draft_properties {
         GraphPowerShell,
     }
 }
+#[doc = "The parameters supplied to the create or update runbook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunbookCreateOrUpdateParameters {
+    #[doc = "The parameters supplied to the create or update runbook properties."]
     pub properties: RunbookCreateOrUpdateProperties,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1955,20 +2472,27 @@ impl RunbookCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The parameters supplied to the create or update runbook properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunbookCreateOrUpdateProperties {
+    #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
+    #[doc = "Gets or sets progress log option."]
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
+    #[doc = "Gets or sets the type of the runbook."]
     #[serde(rename = "runbookType")]
     pub runbook_type: runbook_create_or_update_properties::RunbookType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub draft: Option<RunbookDraft>,
+    #[doc = "Definition of the content link."]
     #[serde(rename = "publishContentLink", default, skip_serializing_if = "Option::is_none")]
     pub publish_content_link: Option<ContentLink>,
+    #[doc = "Gets or sets the description of the runbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the activity-level tracing options of the runbook."]
     #[serde(rename = "logActivityTrace", default, skip_serializing_if = "Option::is_none")]
     pub log_activity_trace: Option<i32>,
 }
@@ -1987,6 +2511,7 @@ impl RunbookCreateOrUpdateProperties {
 }
 pub mod runbook_create_or_update_properties {
     use super::*;
+    #[doc = "Gets or sets the type of the runbook."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunbookType {
         Script,
@@ -1999,16 +2524,22 @@ pub mod runbook_create_or_update_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookDraft {
+    #[doc = "Gets or sets whether runbook is in edit mode."]
     #[serde(rename = "inEdit", default, skip_serializing_if = "Option::is_none")]
     pub in_edit: Option<bool>,
+    #[doc = "Definition of the content link."]
     #[serde(rename = "draftContentLink", default, skip_serializing_if = "Option::is_none")]
     pub draft_content_link: Option<ContentLink>,
+    #[doc = "Gets or sets the creation time of the runbook draft."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time of the runbook draft."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the runbook draft parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the runbook output types."]
     #[serde(rename = "outputTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub output_types: Vec<String>,
 }
@@ -2017,6 +2548,7 @@ impl RunbookDraft {
         Self::default()
     }
 }
+#[doc = "The response model for the undo edit runbook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookDraftUndoEditResult {
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
@@ -2083,10 +2615,13 @@ pub mod runbook_draft_undo_edit_result {
         HttpVersionNotSupported,
     }
 }
+#[doc = "The response model for the list runbook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookListResult {
+    #[doc = "Gets or sets a list of runbooks."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Runbook>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2095,14 +2630,19 @@ impl RunbookListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the runbook parameter type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookParameter {
+    #[doc = "Gets or sets the type of the parameter."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets or sets a Boolean value to indicate whether the parameter is mandatory or not."]
     #[serde(rename = "isMandatory", default, skip_serializing_if = "Option::is_none")]
     pub is_mandatory: Option<bool>,
+    #[doc = "Get or sets the position of the parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub position: Option<i32>,
+    #[doc = "Gets or sets the default value of parameter."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
 }
@@ -2111,36 +2651,51 @@ impl RunbookParameter {
         Self::default()
     }
 }
+#[doc = "Definition of the runbook property type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookProperties {
+    #[doc = "Gets or sets the type of the runbook."]
     #[serde(rename = "runbookType", default, skip_serializing_if = "Option::is_none")]
     pub runbook_type: Option<runbook_properties::RunbookType>,
+    #[doc = "Definition of the content link."]
     #[serde(rename = "publishContentLink", default, skip_serializing_if = "Option::is_none")]
     pub publish_content_link: Option<ContentLink>,
+    #[doc = "Gets or sets the state of the runbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<runbook_properties::State>,
+    #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
+    #[doc = "Gets or sets progress log option."]
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
+    #[doc = "Gets or sets the option to log activity trace of the runbook."]
     #[serde(rename = "logActivityTrace", default, skip_serializing_if = "Option::is_none")]
     pub log_activity_trace: Option<i32>,
+    #[doc = "Gets or sets the job count of the runbook."]
     #[serde(rename = "jobCount", default, skip_serializing_if = "Option::is_none")]
     pub job_count: Option<i32>,
+    #[doc = "Gets or sets the runbook parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the runbook output types."]
     #[serde(rename = "outputTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub output_types: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub draft: Option<RunbookDraft>,
+    #[doc = "Gets or sets the provisioning state of the runbook."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<runbook_properties::ProvisioningState>,
+    #[doc = "Gets or sets the last modified by."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2151,6 +2706,7 @@ impl RunbookProperties {
 }
 pub mod runbook_properties {
     use super::*;
+    #[doc = "Gets or sets the type of the runbook."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunbookType {
         Script,
@@ -2160,25 +2716,32 @@ pub mod runbook_properties {
         GraphPowerShellWorkflow,
         GraphPowerShell,
     }
+    #[doc = "Gets or sets the state of the runbook."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         New,
         Edit,
         Published,
     }
+    #[doc = "Gets or sets the provisioning state of the runbook."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
     }
 }
+#[doc = "The parameters supplied to the update runbook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookUpdateParameters {
+    #[doc = "The parameters supplied to the update runbook properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunbookUpdateProperties>,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -2187,14 +2750,19 @@ impl RunbookUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update runbook properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookUpdateProperties {
+    #[doc = "Gets or sets the description of the runbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
+    #[doc = "Gets or sets progress log option."]
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
+    #[doc = "Gets or sets the activity-level tracing options of the runbook."]
     #[serde(rename = "logActivityTrace", default, skip_serializing_if = "Option::is_none")]
     pub log_activity_trace: Option<i32>,
 }
@@ -2203,10 +2771,12 @@ impl RunbookUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Definition of schedule parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduleProperties>,
 }
@@ -2215,8 +2785,10 @@ impl Schedule {
         Self::default()
     }
 }
+#[doc = "The schedule property associated with the entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleAssociationProperty {
+    #[doc = "Gets or sets the name of the Schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -2225,9 +2797,12 @@ impl ScheduleAssociationProperty {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the Schedule."]
     pub name: String,
+    #[doc = "The parameters supplied to the create or update schedule operation."]
     pub properties: ScheduleCreateOrUpdateProperties,
 }
 impl ScheduleCreateOrUpdateParameters {
@@ -2235,19 +2810,27 @@ impl ScheduleCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The parameters supplied to the create or update schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleCreateOrUpdateProperties {
+    #[doc = "Gets or sets the description of the schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the start time of the schedule."]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "Gets or sets the end time of the schedule."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "Gets or sets the interval of the schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<serde_json::Value>,
+    #[doc = "Gets or sets the frequency of the schedule."]
     pub frequency: ScheduleFrequency,
+    #[doc = "Gets or sets the time zone of the schedule."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
+    #[doc = "The properties of the create Advanced Schedule."]
     #[serde(rename = "advancedSchedule", default, skip_serializing_if = "Option::is_none")]
     pub advanced_schedule: Option<AdvancedSchedule>,
 }
@@ -2264,10 +2847,13 @@ impl ScheduleCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "The response model for the list schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleListResult {
+    #[doc = "Gets or sets a list of schedules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Schedule>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2276,34 +2862,49 @@ impl ScheduleListResult {
         Self::default()
     }
 }
+#[doc = "Definition of schedule parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleProperties {
+    #[doc = "Gets or sets the start time of the schedule."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Gets the start time's offset in minutes."]
     #[serde(rename = "startTimeOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
     pub start_time_offset_minutes: Option<f64>,
+    #[doc = "Gets or sets the end time of the schedule."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "Gets or sets the expiry time's offset in minutes."]
     #[serde(rename = "expiryTimeOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time_offset_minutes: Option<f64>,
+    #[doc = "Gets or sets a value indicating whether this schedule is enabled."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Gets or sets the next run time of the schedule."]
     #[serde(rename = "nextRun", default, skip_serializing_if = "Option::is_none")]
     pub next_run: Option<String>,
+    #[doc = "Gets or sets the next run time's offset in minutes."]
     #[serde(rename = "nextRunOffsetMinutes", default, skip_serializing_if = "Option::is_none")]
     pub next_run_offset_minutes: Option<f64>,
+    #[doc = "Gets or sets the interval of the schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<serde_json::Value>,
+    #[doc = "Gets or sets the frequency of the schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduleFrequency>,
+    #[doc = "Gets or sets the time zone of the schedule."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
+    #[doc = "The properties of the create Advanced Schedule."]
     #[serde(rename = "advancedSchedule", default, skip_serializing_if = "Option::is_none")]
     pub advanced_schedule: Option<AdvancedSchedule>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2312,10 +2913,13 @@ impl ScheduleProperties {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleUpdateParameters {
+    #[doc = "Gets or sets the name of the Schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The parameters supplied to the update schedule operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduleUpdateProperties>,
 }
@@ -2324,10 +2928,13 @@ impl ScheduleUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update schedule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleUpdateProperties {
+    #[doc = "Gets or sets the description of the schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets a value indicating whether this schedule is enabled."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
 }
@@ -2336,11 +2943,15 @@ impl ScheduleUpdateProperties {
         Self::default()
     }
 }
+#[doc = "The account SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Gets or sets the SKU name of the account."]
     pub name: sku::Name,
+    #[doc = "Gets or sets the SKU family."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
+    #[doc = "Gets or sets the SKU capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -2355,22 +2966,29 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Gets or sets the SKU name of the account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         Free,
         Basic,
     }
 }
+#[doc = "Definition of the statistic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Statistics {
+    #[doc = "Gets the property value of the statistic."]
     #[serde(rename = "counterProperty", default, skip_serializing_if = "Option::is_none")]
     pub counter_property: Option<String>,
+    #[doc = "Gets the value of the statistic."]
     #[serde(rename = "counterValue", default, skip_serializing_if = "Option::is_none")]
     pub counter_value: Option<i64>,
+    #[doc = "Gets the startTime of the statistic."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Gets the endTime of the statistic."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Gets the id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -2379,8 +2997,10 @@ impl Statistics {
         Self::default()
     }
 }
+#[doc = "The response model for the list statistics operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatisticsListResult {
+    #[doc = "Gets or sets a list of statistics."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Statistics>,
 }
@@ -2389,28 +3009,40 @@ impl StatisticsListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the test job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestJob {
+    #[doc = "Gets or sets the creation time of the test job."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the status of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Gets or sets the status details of the test job."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+    #[doc = "Gets or sets the runOn which specifies the group name where the job is to be executed."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets the start time of the test job."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Gets or sets the end time of the test job."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Gets or sets the exception of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<String>,
+    #[doc = "Gets or sets the last modified time of the test job."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the last status modified time of the test job."]
     #[serde(rename = "lastStatusModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_status_modified_time: Option<String>,
+    #[doc = "Gets or sets the parameters of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "The activity-level tracing options of the runbook."]
     #[serde(rename = "logActivityTrace", default, skip_serializing_if = "Option::is_none")]
     pub log_activity_trace: Option<i32>,
 }
@@ -2419,10 +3051,13 @@ impl TestJob {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create test job operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestJobCreateParameters {
+    #[doc = "Gets or sets the parameters of the test job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the runOn which specifies the group name where the job is to be executed."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
 }
@@ -2431,12 +3066,15 @@ impl TestJobCreateParameters {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM tracked top level resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The Azure Region where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -2445,10 +3083,13 @@ impl TrackedResource {
         Self::default()
     }
 }
+#[doc = "Information about a field of a type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TypeField {
+    #[doc = "Gets or sets the name of the field."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the type of the field."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -2457,8 +3098,10 @@ impl TypeField {
         Self::default()
     }
 }
+#[doc = "The response model for the list fields operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TypeFieldListResult {
+    #[doc = "Gets or sets a list of fields."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TypeField>,
 }
@@ -2467,18 +3110,25 @@ impl TypeFieldListResult {
         Self::default()
     }
 }
+#[doc = "Definition of Usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Gets or sets the id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Definition of usage counter name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageCounterName>,
+    #[doc = "Gets or sets the usage unit name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Gets or sets the current usage value."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<f64>,
+    #[doc = "Gets or sets max limit. -1 for unlimited"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "Gets or sets the throttle status."]
     #[serde(rename = "throttleStatus", default, skip_serializing_if = "Option::is_none")]
     pub throttle_status: Option<String>,
 }
@@ -2487,10 +3137,13 @@ impl Usage {
         Self::default()
     }
 }
+#[doc = "Definition of usage counter name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageCounterName {
+    #[doc = "Gets or sets the usage counter name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets or sets the localized usage counter name."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -2499,8 +3152,10 @@ impl UsageCounterName {
         Self::default()
     }
 }
+#[doc = "The response model for the get usage operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
+    #[doc = "Gets or sets usage."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
@@ -2509,10 +3164,12 @@ impl UsageListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the variable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Variable {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Definition of the variable properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VariableProperties>,
 }
@@ -2521,9 +3178,12 @@ impl Variable {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update variable operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VariableCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the variable."]
     pub name: String,
+    #[doc = "The properties of the create variable operation."]
     pub properties: VariableCreateOrUpdateProperties,
 }
 impl VariableCreateOrUpdateParameters {
@@ -2531,12 +3191,16 @@ impl VariableCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The properties of the create variable operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VariableCreateOrUpdateProperties {
+    #[doc = "Gets or sets the value of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets or sets the description of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the encrypted flag of the variable."]
     #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
     pub is_encrypted: Option<bool>,
 }
@@ -2545,10 +3209,13 @@ impl VariableCreateOrUpdateProperties {
         Self::default()
     }
 }
+#[doc = "The response model for the list variables operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VariableListResult {
+    #[doc = "Gets or sets a list of variables."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Variable>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2557,16 +3224,22 @@ impl VariableListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the variable properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VariableProperties {
+    #[doc = "Gets or sets the value of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets or sets the encrypted flag of the variable."]
     #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
     pub is_encrypted: Option<bool>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2575,10 +3248,13 @@ impl VariableProperties {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update variable operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VariableUpdateParameters {
+    #[doc = "Gets or sets the name of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The properties of the update variable"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VariableUpdateProperties>,
 }
@@ -2587,10 +3263,13 @@ impl VariableUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of the update variable"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VariableUpdateProperties {
+    #[doc = "Gets or sets the value of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets or sets the description of the variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2599,12 +3278,15 @@ impl VariableUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the watcher type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Watcher {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Definition of the watcher properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WatcherProperties>,
+    #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -2613,10 +3295,13 @@ impl Watcher {
         Self::default()
     }
 }
+#[doc = "The response model for the list watcher operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WatcherListResult {
+    #[doc = "Gets or sets a list of watchers."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Watcher>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2625,24 +3310,34 @@ impl WatcherListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the watcher properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WatcherProperties {
+    #[doc = "Gets or sets the frequency at which the watcher is invoked."]
     #[serde(rename = "executionFrequencyInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub execution_frequency_in_seconds: Option<i64>,
+    #[doc = "Gets or sets the name of the script the watcher is attached to, i.e. the name of an existing runbook."]
     #[serde(rename = "scriptName", default, skip_serializing_if = "Option::is_none")]
     pub script_name: Option<String>,
+    #[doc = "Gets or sets the parameters of the script."]
     #[serde(rename = "scriptParameters", default, skip_serializing_if = "Option::is_none")]
     pub script_parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name of the hybrid worker group the watcher will run on."]
     #[serde(rename = "scriptRunOn", default, skip_serializing_if = "Option::is_none")]
     pub script_run_on: Option<String>,
+    #[doc = "Gets the current status of the watcher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Details of the user who last modified the watcher."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2653,8 +3348,10 @@ impl WatcherProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WatcherUpdateParameters {
+    #[doc = "The properties of the update watcher operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WatcherUpdateProperties>,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -2663,8 +3360,10 @@ impl WatcherUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of the update watcher operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WatcherUpdateProperties {
+    #[doc = "Gets or sets the frequency at which the watcher is invoked."]
     #[serde(rename = "executionFrequencyInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub execution_frequency_in_seconds: Option<i64>,
 }
@@ -2673,10 +3372,12 @@ impl WatcherUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Definition of the webhook type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Webhook {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Definition of the webhook properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookProperties>,
 }
@@ -2685,9 +3386,12 @@ impl Webhook {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the create or update webhook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookCreateOrUpdateParameters {
+    #[doc = "Gets or sets the name of the webhook."]
     pub name: String,
+    #[doc = "The properties of the create webhook operation."]
     pub properties: WebhookCreateOrUpdateProperties,
 }
 impl WebhookCreateOrUpdateParameters {
@@ -2695,18 +3399,25 @@ impl WebhookCreateOrUpdateParameters {
         Self { name, properties }
     }
 }
+#[doc = "The properties of the create webhook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookCreateOrUpdateProperties {
+    #[doc = "Gets or sets the value of the enabled flag of webhook."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Gets or sets the uri."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Gets or sets the expiry time."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "The runbook property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runbook: Option<RunbookAssociationProperty>,
+    #[doc = "Gets or sets the name of the hybrid worker group the webhook job will run on."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
 }
@@ -2715,10 +3426,13 @@ impl WebhookCreateOrUpdateProperties {
         Self::default()
     }
 }
+#[doc = "The response model for the list webhook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookListResult {
+    #[doc = "Gets or sets a list of webhooks."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Webhook>,
+    #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2727,28 +3441,40 @@ impl WebhookListResult {
         Self::default()
     }
 }
+#[doc = "Definition of the webhook properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookProperties {
+    #[doc = "Gets or sets the value of the enabled flag of the webhook."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Gets or sets the webhook uri."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Gets or sets the expiry time."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "Gets or sets the last invoked time."]
     #[serde(rename = "lastInvokedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_invoked_time: Option<String>,
+    #[doc = "Gets or sets the parameters of the job that is created when the webhook calls the runbook it is associated with."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "The runbook property associated with the entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runbook: Option<RunbookAssociationProperty>,
+    #[doc = "Gets or sets the name of the hybrid worker group the webhook job will run on."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets the creation time."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Gets or sets the last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "Details of the user who last modified the Webhook"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2757,10 +3483,13 @@ impl WebhookProperties {
         Self::default()
     }
 }
+#[doc = "The parameters supplied to the update webhook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookUpdateParameters {
+    #[doc = "Gets or sets the name of the webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The properties of the update webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookUpdateProperties>,
 }
@@ -2769,14 +3498,19 @@ impl WebhookUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of the update webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookUpdateProperties {
+    #[doc = "Gets or sets the value of the enabled flag of webhook."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Gets or sets the name of the hybrid worker group the webhook job will run on."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
+    #[doc = "Gets or sets the parameters of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the description of the webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -2785,6 +3519,7 @@ impl WebhookUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Gets or sets the frequency of the schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScheduleFrequency {
     OneTime,

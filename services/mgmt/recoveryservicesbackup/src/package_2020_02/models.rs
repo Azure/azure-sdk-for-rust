@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -14,16 +17,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -32,18 +41,25 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Operation status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
+    #[doc = "ID of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_status::Status>,
+    #[doc = "Operation start time. Format: ISO-8601."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Operation end time. Format: ISO-8601."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Error information associated with operation status call."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationStatusError>,
 }
@@ -54,6 +70,7 @@ impl OperationStatus {
 }
 pub mod operation_status {
     use super::*;
+    #[doc = "Operation status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Invalid,
@@ -63,10 +80,13 @@ pub mod operation_status {
         Canceled,
     }
 }
+#[doc = "Error information associated with operation status call."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusError {
+    #[doc = "Error code of the operation failure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message displayed if the operation failure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -75,8 +95,10 @@ impl OperationStatusError {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint network resource that is linked to the Private Endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "Gets or sets id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -85,12 +107,16 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "Private Endpoint Connection Response Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[doc = "Gets or sets provisioning state of the private endpoint connection"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection::ProvisioningState>,
+    #[doc = "The Private Endpoint network resource that is linked to the Private Endpoint connection"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "Private Link Service Connection State"]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
 }
@@ -101,6 +127,7 @@ impl PrivateEndpointConnection {
 }
 pub mod private_endpoint_connection {
     use super::*;
+    #[doc = "Gets or sets provisioning state of the private endpoint connection"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -109,10 +136,12 @@ pub mod private_endpoint_connection {
         Pending,
     }
 }
+#[doc = "Private Endpoint Connection Response Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Private Endpoint Connection Response Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnection>,
 }
@@ -121,12 +150,16 @@ impl PrivateEndpointConnectionResource {
         Self::default()
     }
 }
+#[doc = "Private Link Service Connection State"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "Gets or sets the status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<private_link_service_connection_state::Status>,
+    #[doc = "Gets or sets description"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets actions required"]
     #[serde(rename = "actionRequired", default, skip_serializing_if = "Option::is_none")]
     pub action_required: Option<String>,
 }
@@ -137,6 +170,7 @@ impl PrivateLinkServiceConnectionState {
 }
 pub mod private_link_service_connection_state {
     use super::*;
+    #[doc = "Gets or sets the status"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Pending,
@@ -145,18 +179,25 @@ pub mod private_link_service_connection_state {
         Disconnected,
     }
 }
+#[doc = "ARM Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id represents the complete path to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type represents the complete path of the form Namespace/ResourceType/ResourceType/..."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Optional ETag."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }

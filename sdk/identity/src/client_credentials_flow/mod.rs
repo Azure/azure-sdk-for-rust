@@ -69,7 +69,7 @@ pub async fn perform(
         .body(encoded)
         .send()
         .await
-        .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
+        .map_err(|e| ClientCredentialError::Request(Box::new(e)))?;
 
     if !response.status().is_success() {
         return Err(ClientCredentialError::UnsuccessfulResponse(
@@ -81,7 +81,7 @@ pub async fn perform(
     let b = response
         .text()
         .await
-        .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
+        .map_err(|e| ClientCredentialError::Request(Box::new(e)))?;
 
     serde_json::from_str::<LoginResponse>(&b)
         .map_err(|_| ClientCredentialError::InvalidResponseBody(b))
@@ -100,6 +100,6 @@ pub enum ClientCredentialError {
     #[error("The supplied tenant id could not be url encoded: {0}")]
     InvalidTenantId(String),
     /// An error occurred when trying to make a request
-    #[error("An error occurred when trying to make a request: {0}")]
-    RequestError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("An error occurred when trying to make a request")]
+    Request(#[source] Box<dyn std::error::Error + Send + Sync>),
 }

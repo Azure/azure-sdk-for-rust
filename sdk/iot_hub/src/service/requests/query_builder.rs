@@ -16,13 +16,13 @@ struct QueryBody {
 }
 
 /// Builder for creating queries
-pub struct QueryBuilder<'a, 'b> {
+pub struct QueryBuilder<'a> {
     service_client: &'a ServiceClient,
     max_item_count: MaxItemCount,
-    continuation: Option<Continuation<'b>>,
+    continuation: Option<Continuation>,
 }
 
-impl<'a, 'b> QueryBuilder<'a, 'b> {
+impl<'a> QueryBuilder<'a> {
     /// Create a new query struct
     pub(crate) fn new(service_client: &'a ServiceClient) -> Self {
         Self {
@@ -33,7 +33,7 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     }
 
     azure_core::setters! {
-        continuation: &'b str => Some(Continuation::new(continuation)),
+        continuation: String => Some(Continuation::new(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
@@ -42,7 +42,7 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";

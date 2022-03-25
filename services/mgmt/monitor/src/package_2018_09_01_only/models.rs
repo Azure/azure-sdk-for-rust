@@ -2,29 +2,42 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Azure action group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
+    #[doc = "The short name of the action group. This will be used in SMS messages."]
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
+    #[doc = "Indicates whether this action group is enabled. If an action group is not enabled, then none of its receivers will receive communications."]
     pub enabled: bool,
+    #[doc = "The list of email receivers that are part of this action group."]
     #[serde(rename = "emailReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub email_receivers: Vec<EmailReceiver>,
+    #[doc = "The list of SMS receivers that are part of this action group."]
     #[serde(rename = "smsReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub sms_receivers: Vec<SmsReceiver>,
+    #[doc = "The list of webhook receivers that are part of this action group."]
     #[serde(rename = "webhookReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub webhook_receivers: Vec<WebhookReceiver>,
+    #[doc = "The list of ITSM receivers that are part of this action group."]
     #[serde(rename = "itsmReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub itsm_receivers: Vec<ItsmReceiver>,
+    #[doc = "The list of AzureAppPush receivers that are part of this action group."]
     #[serde(rename = "azureAppPushReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
+    #[doc = "The list of AutomationRunbook receivers that are part of this action group."]
     #[serde(rename = "automationRunbookReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
+    #[doc = "The list of voice receivers that are part of this action group."]
     #[serde(rename = "voiceReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub voice_receivers: Vec<VoiceReceiver>,
+    #[doc = "The list of logic app receivers that are part of this action group."]
     #[serde(rename = "logicAppReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub logic_app_receivers: Vec<LogicAppReceiver>,
+    #[doc = "The list of azure function receivers that are part of this action group."]
     #[serde(rename = "azureFunctionReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_function_receivers: Vec<AzureFunctionReceiver>,
+    #[doc = "The list of ARM role receivers that are part of this action group. Roles are Azure RBAC roles and only built-in roles are supported."]
     #[serde(rename = "armRoleReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
 }
@@ -46,10 +59,13 @@ impl ActionGroup {
         }
     }
 }
+#[doc = "A list of action groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
+    #[doc = "The list of action groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActionGroupResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -58,8 +74,10 @@ impl ActionGroupList {
         Self::default()
     }
 }
+#[doc = "An Azure action group for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
+    #[doc = "Indicates whether this action group is enabled. If an action group is not enabled, then none of its actions will be activated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -68,10 +86,13 @@ impl ActionGroupPatch {
         Self::default()
     }
 }
+#[doc = "An action group object for the body of patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "An Azure action group for patch operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
@@ -80,10 +101,12 @@ impl ActionGroupPatchBody {
         Self::default()
     }
 }
+#[doc = "An action group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An Azure action group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
 }
@@ -95,9 +118,12 @@ impl ActionGroupResource {
         }
     }
 }
+#[doc = "An arm role receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmRoleReceiver {
+    #[doc = "The name of the arm role receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The arm role id."]
     #[serde(rename = "roleId")]
     pub role_id: String,
 }
@@ -106,18 +132,25 @@ impl ArmRoleReceiver {
         Self { name, role_id }
     }
 }
+#[doc = "The Azure Automation Runbook notification receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
+    #[doc = "The Azure automation account Id which holds this runbook and authenticate to Azure resource."]
     #[serde(rename = "automationAccountId")]
     pub automation_account_id: String,
+    #[doc = "The name for this runbook."]
     #[serde(rename = "runbookName")]
     pub runbook_name: String,
+    #[doc = "The resource id for webhook linked to this runbook."]
     #[serde(rename = "webhookResourceId")]
     pub webhook_resource_id: String,
+    #[doc = "Indicates whether this instance is global runbook."]
     #[serde(rename = "isGlobalRunbook")]
     pub is_global_runbook: bool,
+    #[doc = "Indicates name of the webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The URI where webhooks should be sent."]
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
 }
@@ -133,9 +166,12 @@ impl AutomationRunbookReceiver {
         }
     }
 }
+#[doc = "The Azure mobile App push notification receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAppPushReceiver {
+    #[doc = "The name of the Azure mobile app push receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The email address registered for the Azure mobile app."]
     #[serde(rename = "emailAddress")]
     pub email_address: String,
 }
@@ -144,13 +180,18 @@ impl AzureAppPushReceiver {
         Self { name, email_address }
     }
 }
+#[doc = "An azure function receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
+    #[doc = "The name of the azure function receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The azure resource id of the function app."]
     #[serde(rename = "functionAppResourceId")]
     pub function_app_resource_id: String,
+    #[doc = "The function name in the function app."]
     #[serde(rename = "functionName")]
     pub function_name: String,
+    #[doc = "The http trigger url where http request sent to."]
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
 }
@@ -164,17 +205,24 @@ impl AzureFunctionReceiver {
         }
     }
 }
+#[doc = "The baseline values for a single sensitivity value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Baseline {
+    #[doc = "The sensitivity of the baseline."]
     pub sensitivity: baseline::Sensitivity,
+    #[doc = "The low thresholds of the baseline."]
     #[serde(rename = "lowThresholds")]
     pub low_thresholds: Vec<f64>,
+    #[doc = "The high thresholds of the baseline."]
     #[serde(rename = "highThresholds")]
     pub high_thresholds: Vec<f64>,
+    #[doc = "the array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+    #[doc = "The prediction result type of the baseline."]
     #[serde(rename = "PredictionResultType", default, skip_serializing_if = "Option::is_none")]
     pub prediction_result_type: Option<baseline::PredictionResultType>,
+    #[doc = "The error type of the baseline."]
     #[serde(rename = "ErrorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<baseline::ErrorType>,
 }
@@ -192,21 +240,27 @@ impl Baseline {
 }
 pub mod baseline {
     use super::*;
+    #[doc = "The sensitivity of the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Sensitivity {
         Low,
         Medium,
         High,
     }
+    #[doc = "The prediction result type of the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PredictionResultType {}
+    #[doc = "The error type of the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ErrorType {}
 }
+#[doc = "Represents a baseline metadata value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineMetadataValue {
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "The value of the metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -215,14 +269,19 @@ impl BaselineMetadataValue {
         Self::default()
     }
 }
+#[doc = "The baseline properties class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineProperties {
+    #[doc = "The timespan for which the data was retrieved. Its value consists of two datetimes concatenated, separated by '/'.  This may be adjusted in the future and returned back from what was originally requested."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timespan: Option<String>,
+    #[doc = "The interval (window size) for which the metric data was returned in.  This may be adjusted in the future and returned back from what was originally requested.  This is not present if a metadata request was made."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
+    #[doc = "The aggregation type of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<String>,
+    #[doc = "internal operation id"]
     #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
     pub internal_operation_id: Option<String>,
 }
@@ -231,24 +290,34 @@ impl BaselineProperties {
         Self::default()
     }
 }
+#[doc = "The response to a baseline query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineResponse {
+    #[doc = "The metric baseline ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The resource type of the baseline resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "The array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+    #[doc = "The baseline values for each sensitivity."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub baseline: Vec<Baseline>,
+    #[doc = "The baseline metadata values."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metdata: Vec<BaselineMetadataValue>,
+    #[doc = "The prediction result type of the baseline."]
     #[serde(rename = "predictionResultType", default, skip_serializing_if = "Option::is_none")]
     pub prediction_result_type: Option<baseline_response::PredictionResultType>,
+    #[doc = "The error type of the baseline."]
     #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<baseline_response::ErrorType>,
+    #[doc = "The baseline properties class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaselineProperties>,
 }
@@ -259,22 +328,31 @@ impl BaselineResponse {
 }
 pub mod baseline_response {
     use super::*;
+    #[doc = "The prediction result type of the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PredictionResultType {}
+    #[doc = "The error type of the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ErrorType {}
 }
+#[doc = "The response to a calculate baseline call."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CalculateBaselineResponse {
+    #[doc = "The resource type of the baseline resource."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+    #[doc = "The baseline values for each sensitivity."]
     pub baseline: Vec<Baseline>,
+    #[doc = "The statistics"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub statistics: Option<calculate_baseline_response::Statistics>,
+    #[doc = "internal operation id"]
     #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
     pub internal_operation_id: Option<String>,
+    #[doc = "The error type for calculating the baseline."]
     #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<calculate_baseline_response::ErrorType>,
 }
@@ -292,12 +370,16 @@ impl CalculateBaselineResponse {
 }
 pub mod calculate_baseline_response {
     use super::*;
+    #[doc = "The statistics"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Statistics {
+        #[doc = "is series eligible for dynamic threshold analysis"]
         #[serde(rename = "isEligible", default, skip_serializing_if = "Option::is_none")]
         pub is_eligible: Option<bool>,
+        #[doc = "The list of extended status for calculating the baseline."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub status: Vec<String>,
+        #[doc = "The seasonality period for calculating the baseline."]
         #[serde(rename = "seasonalityPeriod", default, skip_serializing_if = "Option::is_none")]
         pub seasonality_period: Option<i32>,
     }
@@ -306,14 +388,19 @@ pub mod calculate_baseline_response {
             Self::default()
         }
     }
+    #[doc = "The error type for calculating the baseline."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ErrorType {}
 }
+#[doc = "An email receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
+    #[doc = "The name of the email receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The email address of this receiver."]
     #[serde(rename = "emailAddress")]
     pub email_address: String,
+    #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
@@ -326,8 +413,10 @@ impl EmailReceiver {
         }
     }
 }
+#[doc = "Describes a receiver that should be resubscribed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
+    #[doc = "The name of the receiver to resubscribe."]
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
 }
@@ -336,10 +425,13 @@ impl EnableRequest {
         Self { receiver_name }
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -348,15 +440,21 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "An Itsm receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
+    #[doc = "The name of the Itsm receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "OMS LA instance identifier."]
     #[serde(rename = "workspaceId")]
     pub workspace_id: String,
+    #[doc = "Unique identification of ITSM connection among multiple defined in above workspace."]
     #[serde(rename = "connectionId")]
     pub connection_id: String,
+    #[doc = "JSON blob for the configurations of the ITSM action. CreateMultipleWorkItems option will be part of this blob as well."]
     #[serde(rename = "ticketConfiguration")]
     pub ticket_configuration: String,
+    #[doc = "Region in which workspace resides. Supported values:'centralindia','japaneast','southeastasia','australiasoutheast','uksouth','westcentralus','canadacentral','eastus','westeurope'"]
     pub region: String,
 }
 impl ItsmReceiver {
@@ -370,9 +468,12 @@ impl ItsmReceiver {
         }
     }
 }
+#[doc = "The localizable string class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
+    #[doc = "The invariant value."]
     pub value: String,
+    #[doc = "The locale specific value."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -384,11 +485,15 @@ impl LocalizableString {
         }
     }
 }
+#[doc = "A logic app receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogicAppReceiver {
+    #[doc = "The name of the logic app receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The azure resource id of the logic app receiver."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[doc = "The callback url where http request sent to."]
     #[serde(rename = "callbackUrl")]
     pub callback_url: String,
 }
@@ -401,21 +506,28 @@ impl LogicAppReceiver {
         }
     }
 }
+#[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReceiverStatus {
     NotSpecified,
     Enabled,
     Disabled,
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -430,13 +542,18 @@ impl Resource {
         }
     }
 }
+#[doc = "An SMS receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
+    #[doc = "The name of the SMS receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The country code of the SMS receiver."]
     #[serde(rename = "countryCode")]
     pub country_code: String,
+    #[doc = "The phone number of the SMS receiver."]
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
+    #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
@@ -450,10 +567,14 @@ impl SmsReceiver {
         }
     }
 }
+#[doc = "The time series info needed for calculating the baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesInformation {
+    #[doc = "The list of sensitivities for calculating the baseline."]
     pub sensitivities: Vec<String>,
+    #[doc = "The metric values to calculate the baseline."]
     pub values: Vec<f64>,
+    #[doc = "The array of timestamps of the baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
 }
@@ -466,11 +587,15 @@ impl TimeSeriesInformation {
         }
     }
 }
+#[doc = "A voice receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
+    #[doc = "The name of the voice receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The country code of the voice receiver."]
     #[serde(rename = "countryCode")]
     pub country_code: String,
+    #[doc = "The phone number of the voice receiver."]
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
 }
@@ -483,9 +608,12 @@ impl VoiceReceiver {
         }
     }
 }
+#[doc = "A webhook receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookReceiver {
+    #[doc = "The name of the webhook receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The URI where webhooks should be sent."]
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
 }

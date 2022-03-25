@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A list of active directory administrators."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdministratorListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerAzureAdAdministrator>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -14,14 +17,20 @@ impl AdministratorListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a active directory administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdministratorProperties {
+    #[doc = "Type of the sever administrator."]
     #[serde(rename = "administratorType")]
     pub administrator_type: administrator_properties::AdministratorType,
+    #[doc = "Login name of the server administrator."]
     pub login: String,
+    #[doc = "SID (object ID) of the server administrator."]
     pub sid: String,
+    #[doc = "Tenant ID of the administrator."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Azure Active Directory only Authentication enabled."]
     #[serde(rename = "azureADOnlyAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub azure_ad_only_authentication: Option<bool>,
 }
@@ -38,19 +47,25 @@ impl AdministratorProperties {
 }
 pub mod administrator_properties {
     use super::*;
+    #[doc = "Type of the sever administrator."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AdministratorType {
         ActiveDirectory,
     }
 }
+#[doc = "Automatic tuning properties for individual advisors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomaticTuningOptions {
+    #[doc = "Automatic tuning option desired state."]
     #[serde(rename = "desiredState", default, skip_serializing_if = "Option::is_none")]
     pub desired_state: Option<automatic_tuning_options::DesiredState>,
+    #[doc = "Automatic tuning option actual state."]
     #[serde(rename = "actualState", default, skip_serializing_if = "Option::is_none")]
     pub actual_state: Option<automatic_tuning_options::ActualState>,
+    #[doc = "Reason code if desired and actual state are different."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<i32>,
+    #[doc = "Reason description if desired and actual state are different."]
     #[serde(rename = "reasonDesc", default, skip_serializing_if = "Option::is_none")]
     pub reason_desc: Option<automatic_tuning_options::ReasonDesc>,
 }
@@ -61,17 +76,20 @@ impl AutomaticTuningOptions {
 }
 pub mod automatic_tuning_options {
     use super::*;
+    #[doc = "Automatic tuning option desired state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DesiredState {
         Off,
         On,
         Default,
     }
+    #[doc = "Automatic tuning option actual state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActualState {
         Off,
         On,
     }
+    #[doc = "Reason description if desired and actual state are different."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonDesc {
         Default,
@@ -83,14 +101,19 @@ pub mod automatic_tuning_options {
         NotSupported,
     }
 }
+#[doc = "Automatic tuning properties for individual advisors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomaticTuningServerOptions {
+    #[doc = "Automatic tuning option desired state."]
     #[serde(rename = "desiredState", default, skip_serializing_if = "Option::is_none")]
     pub desired_state: Option<automatic_tuning_server_options::DesiredState>,
+    #[doc = "Automatic tuning option actual state."]
     #[serde(rename = "actualState", default, skip_serializing_if = "Option::is_none")]
     pub actual_state: Option<automatic_tuning_server_options::ActualState>,
+    #[doc = "Reason code if desired and actual state are different."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<i32>,
+    #[doc = "Reason description if desired and actual state are different."]
     #[serde(rename = "reasonDesc", default, skip_serializing_if = "Option::is_none")]
     pub reason_desc: Option<automatic_tuning_server_options::ReasonDesc>,
 }
@@ -101,17 +124,20 @@ impl AutomaticTuningServerOptions {
 }
 pub mod automatic_tuning_server_options {
     use super::*;
+    #[doc = "Automatic tuning option desired state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DesiredState {
         Off,
         On,
         Default,
     }
+    #[doc = "Automatic tuning option actual state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActualState {
         Off,
         On,
     }
+    #[doc = "Reason description if desired and actual state are different."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonDesc {
         Default,
@@ -119,12 +145,16 @@ pub mod automatic_tuning_server_options {
         AutoConfigured,
     }
 }
+#[doc = "Server-level Automatic Tuning properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomaticTuningServerProperties {
+    #[doc = "Automatic tuning desired state."]
     #[serde(rename = "desiredState", default, skip_serializing_if = "Option::is_none")]
     pub desired_state: Option<automatic_tuning_server_properties::DesiredState>,
+    #[doc = "Automatic tuning actual state."]
     #[serde(rename = "actualState", default, skip_serializing_if = "Option::is_none")]
     pub actual_state: Option<automatic_tuning_server_properties::ActualState>,
+    #[doc = "Automatic tuning options definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<serde_json::Value>,
 }
@@ -135,12 +165,14 @@ impl AutomaticTuningServerProperties {
 }
 pub mod automatic_tuning_server_properties {
     use super::*;
+    #[doc = "Automatic tuning desired state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DesiredState {
         Custom,
         Auto,
         Unspecified,
     }
+    #[doc = "Automatic tuning actual state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActualState {
         Custom,
@@ -148,10 +180,13 @@ pub mod automatic_tuning_server_properties {
         Unspecified,
     }
 }
+#[doc = "A list of active directory only authentications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAdOnlyAuthListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerAzureAdOnlyAuthentication>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -160,8 +195,10 @@ impl AzureAdOnlyAuthListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a active directory only authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAdOnlyAuthProperties {
+    #[doc = "Azure Active Directory only Authentication enabled."]
     #[serde(rename = "azureADOnlyAuthentication")]
     pub azure_ad_only_authentication: bool,
 }
@@ -172,10 +209,12 @@ impl AzureAdOnlyAuthProperties {
         }
     }
 }
+#[doc = "A short term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupShortTermRetentionPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a short term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackupShortTermRetentionPolicyProperties>,
 }
@@ -184,10 +223,13 @@ impl BackupShortTermRetentionPolicy {
         Self::default()
     }
 }
+#[doc = "A list of short term retention policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupShortTermRetentionPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupShortTermRetentionPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -196,8 +238,10 @@ impl BackupShortTermRetentionPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a short term retention policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupShortTermRetentionPolicyProperties {
+    #[doc = "The backup retention period in days. This is how many days Point-in-Time Restore will be supported."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
 }
@@ -206,14 +250,19 @@ impl BackupShortTermRetentionPolicyProperties {
         Self::default()
     }
 }
+#[doc = "Properties of a long term retention policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseLongTermRetentionPolicyProperties {
+    #[doc = "The weekly retention policy for an LTR backup in an ISO 8601 format."]
     #[serde(rename = "weeklyRetention", default, skip_serializing_if = "Option::is_none")]
     pub weekly_retention: Option<String>,
+    #[doc = "The monthly retention policy for an LTR backup in an ISO 8601 format."]
     #[serde(rename = "monthlyRetention", default, skip_serializing_if = "Option::is_none")]
     pub monthly_retention: Option<String>,
+    #[doc = "The yearly retention policy for an LTR backup in an ISO 8601 format."]
     #[serde(rename = "yearlyRetention", default, skip_serializing_if = "Option::is_none")]
     pub yearly_retention: Option<String>,
+    #[doc = "The week of year to take the yearly backup in an ISO 8601 format."]
     #[serde(rename = "weekOfYear", default, skip_serializing_if = "Option::is_none")]
     pub week_of_year: Option<i32>,
 }
@@ -222,6 +271,7 @@ impl BaseLongTermRetentionPolicyProperties {
         Self::default()
     }
 }
+#[doc = "The availability status of the capability"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CapabilityStatus {
     Visible,
@@ -229,6 +279,7 @@ pub enum CapabilityStatus {
     Default,
     Disabled,
 }
+#[doc = "A request to check whether the specified name for a resource is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
     pub name: String,
@@ -248,14 +299,19 @@ pub mod check_name_availability_request {
         MicrosoftSqlServers,
     }
 }
+#[doc = "The result of a name availability check."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResponse {
+    #[doc = "The name whose availability was checked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "True if the name is available, otherwise false."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
+    #[doc = "The reason code explaining why the name is unavailable. Will be undefined if the name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
+    #[doc = "A message explaining why the name is unavailable. Will be undefined if the name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -266,14 +322,17 @@ impl CheckNameAvailabilityResponse {
 }
 pub mod check_name_availability_response {
     use super::*;
+    #[doc = "The reason code explaining why the name is unavailable. Will be undefined if the name is available."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         Invalid,
         AlreadyExists,
     }
 }
+#[doc = "Contains the information necessary to perform a complete database restore operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CompleteDatabaseRestoreDefinition {
+    #[doc = "The last backup name to apply"]
     #[serde(rename = "lastBackupName")]
     pub last_backup_name: String,
 }
@@ -282,8 +341,10 @@ impl CompleteDatabaseRestoreDefinition {
         Self { last_backup_name }
     }
 }
+#[doc = "Contains the information necessary to perform a create database restore point operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateDatabaseRestorePointDefinition {
+    #[doc = "The restore point label to apply"]
     #[serde(rename = "restorePointLabel")]
     pub restore_point_label: String,
 }
@@ -292,14 +353,18 @@ impl CreateDatabaseRestorePointDefinition {
         Self { restore_point_label }
     }
 }
+#[doc = "Represents a database data masking policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a database data masking policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataMaskingPolicyProperties>,
+    #[doc = "The location of the data masking policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The kind of data masking policy. Metadata, used for Azure portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -308,14 +373,19 @@ impl DataMaskingPolicy {
         Self::default()
     }
 }
+#[doc = "The properties of a database data masking policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataMaskingPolicyProperties {
+    #[doc = "The state of the data masking policy."]
     #[serde(rename = "dataMaskingState")]
     pub data_masking_state: data_masking_policy_properties::DataMaskingState,
+    #[doc = "The list of the exempt principals. Specifies the semicolon-separated list of database users for which the data masking policy does not apply. The specified users receive data results without masking for all of the database queries."]
     #[serde(rename = "exemptPrincipals", default, skip_serializing_if = "Option::is_none")]
     pub exempt_principals: Option<String>,
+    #[doc = "The list of the application principals. This is a legacy parameter and is no longer used."]
     #[serde(rename = "applicationPrincipals", default, skip_serializing_if = "Option::is_none")]
     pub application_principals: Option<String>,
+    #[doc = "The masking level. This is a legacy parameter and is no longer used."]
     #[serde(rename = "maskingLevel", default, skip_serializing_if = "Option::is_none")]
     pub masking_level: Option<String>,
 }
@@ -331,20 +401,25 @@ impl DataMaskingPolicyProperties {
 }
 pub mod data_masking_policy_properties {
     use super::*;
+    #[doc = "The state of the data masking policy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataMaskingState {
         Disabled,
         Enabled,
     }
 }
+#[doc = "Represents a database data masking rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a database data masking rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataMaskingRuleProperties>,
+    #[doc = "The location of the data masking rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The kind of Data Masking Rule. Metadata, used for Azure portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -353,8 +428,10 @@ impl DataMaskingRule {
         Self::default()
     }
 }
+#[doc = "The response to a list data masking rules request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingRuleListResult {
+    #[doc = "The list of database data masking rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataMaskingRule>,
 }
@@ -363,30 +440,43 @@ impl DataMaskingRuleListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a database data masking rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataMaskingRuleProperties {
+    #[doc = "The rule Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The alias name. This is a legacy parameter and is no longer used."]
     #[serde(rename = "aliasName", default, skip_serializing_if = "Option::is_none")]
     pub alias_name: Option<String>,
+    #[doc = "The rule state. Used to delete a rule. To delete an existing rule, specify the schemaName, tableName, columnName, maskingFunction, and specify ruleState as disabled. However, if the rule doesn't already exist, the rule will be created with ruleState set to enabled, regardless of the provided value of ruleState."]
     #[serde(rename = "ruleState", default, skip_serializing_if = "Option::is_none")]
     pub rule_state: Option<data_masking_rule_properties::RuleState>,
+    #[doc = "The schema name on which the data masking rule is applied."]
     #[serde(rename = "schemaName")]
     pub schema_name: String,
+    #[doc = "The table name on which the data masking rule is applied."]
     #[serde(rename = "tableName")]
     pub table_name: String,
+    #[doc = "The column name on which the data masking rule is applied."]
     #[serde(rename = "columnName")]
     pub column_name: String,
+    #[doc = "The masking function that is used for the data masking rule."]
     #[serde(rename = "maskingFunction")]
     pub masking_function: data_masking_rule_properties::MaskingFunction,
+    #[doc = "The numberFrom property of the masking rule. Required if maskingFunction is set to Number, otherwise this parameter will be ignored."]
     #[serde(rename = "numberFrom", default, skip_serializing_if = "Option::is_none")]
     pub number_from: Option<String>,
+    #[doc = "The numberTo property of the data masking rule. Required if maskingFunction is set to Number, otherwise this parameter will be ignored."]
     #[serde(rename = "numberTo", default, skip_serializing_if = "Option::is_none")]
     pub number_to: Option<String>,
+    #[doc = "If maskingFunction is set to Text, the number of characters to show unmasked in the beginning of the string. Otherwise, this parameter will be ignored."]
     #[serde(rename = "prefixSize", default, skip_serializing_if = "Option::is_none")]
     pub prefix_size: Option<String>,
+    #[doc = "If maskingFunction is set to Text, the number of characters to show unmasked at the end of the string. Otherwise, this parameter will be ignored."]
     #[serde(rename = "suffixSize", default, skip_serializing_if = "Option::is_none")]
     pub suffix_size: Option<String>,
+    #[doc = "If maskingFunction is set to Text, the character to use for masking the unexposed part of the string. Otherwise, this parameter will be ignored."]
     #[serde(rename = "replacementString", default, skip_serializing_if = "Option::is_none")]
     pub replacement_string: Option<String>,
 }
@@ -415,11 +505,13 @@ impl DataMaskingRuleProperties {
 }
 pub mod data_masking_rule_properties {
     use super::*;
+    #[doc = "The rule state. Used to delete a rule. To delete an existing rule, specify the schemaName, tableName, columnName, maskingFunction, and specify ruleState as disabled. However, if the rule doesn't already exist, the rule will be created with ruleState set to enabled, regardless of the provided value of ruleState."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RuleState {
         Disabled,
         Enabled,
     }
+    #[doc = "The masking function that is used for the data masking rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MaskingFunction {
         Default,
@@ -432,12 +524,15 @@ pub mod data_masking_rule_properties {
         Text,
     }
 }
+#[doc = "Represents a database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Database {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Kind of database.  This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Represents the properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -450,10 +545,12 @@ impl Database {
         }
     }
 }
+#[doc = "Database-level Automatic Tuning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAutomaticTuning {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Database-level Automatic Tuning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseAutomaticTuningProperties>,
 }
@@ -462,12 +559,16 @@ impl DatabaseAutomaticTuning {
         Self::default()
     }
 }
+#[doc = "Database-level Automatic Tuning properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAutomaticTuningProperties {
+    #[doc = "Automatic tuning desired state."]
     #[serde(rename = "desiredState", default, skip_serializing_if = "Option::is_none")]
     pub desired_state: Option<database_automatic_tuning_properties::DesiredState>,
+    #[doc = "Automatic tuning actual state."]
     #[serde(rename = "actualState", default, skip_serializing_if = "Option::is_none")]
     pub actual_state: Option<database_automatic_tuning_properties::ActualState>,
+    #[doc = "Automatic tuning options definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<serde_json::Value>,
 }
@@ -478,6 +579,7 @@ impl DatabaseAutomaticTuningProperties {
 }
 pub mod database_automatic_tuning_properties {
     use super::*;
+    #[doc = "Automatic tuning desired state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DesiredState {
         Inherit,
@@ -485,6 +587,7 @@ pub mod database_automatic_tuning_properties {
         Auto,
         Unspecified,
     }
+    #[doc = "Automatic tuning actual state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActualState {
         Inherit,
@@ -493,12 +596,15 @@ pub mod database_automatic_tuning_properties {
         Unspecified,
     }
 }
+#[doc = "A database blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseBlobAuditingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Properties of a database blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseBlobAuditingPolicyProperties>,
 }
@@ -507,10 +613,13 @@ impl DatabaseBlobAuditingPolicy {
         Self::default()
     }
 }
+#[doc = "A list of database auditing settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseBlobAuditingPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabaseBlobAuditingPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -519,23 +628,33 @@ impl DatabaseBlobAuditingPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a database blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseBlobAuditingPolicyProperties {
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     pub state: database_blob_auditing_policy_properties::State,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled is required."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the auditing storage account. \r\nIf state is Enabled and storageEndpoint is specified, not specifying the storageAccountAccessKey will use SQL server system-assigned managed identity to access the storage.\r\nPrerequisites for using managed identity authentication:\r\n1. Assign SQL Server a system-assigned managed identity in Azure Active Directory (AAD).\r\n2. Grant SQL Server identity access to the storage account by adding 'Storage Blob Data Contributor' RBAC role to the server identity.\r\nFor more information, see [Auditing to storage using Managed Identity authentication](https://go.microsoft.com/fwlink/?linkid=2114355)"]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the audit logs in the storage account."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\nDBCC_GROUP\r\nDATABASE_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_CHANGE_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
     #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub audit_actions_and_groups: Vec<String>,
+    #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_subscription_id: Option<String>,
+    #[doc = "Specifies whether storageAccountAccessKey value is the storage's secondary key."]
     #[serde(rename = "isStorageSecondaryKeyInUse", default, skip_serializing_if = "Option::is_none")]
     pub is_storage_secondary_key_in_use: Option<bool>,
+    #[doc = "Specifies whether audit events are sent to Azure Monitor. \r\nIn order to send the events to Azure Monitor, specify 'state' as 'Enabled' and 'isAzureMonitorTargetEnabled' as true.\r\n\r\nWhen using REST API to configure auditing, Diagnostic Settings with 'SQLSecurityAuditEvents' diagnostic logs category on the database should be also created.\r\nNote that for server level audit you should use the 'master' database as {databaseName}.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/{databaseName}/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
     #[serde(rename = "isAzureMonitorTargetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_azure_monitor_target_enabled: Option<bool>,
+    #[doc = "Specifies the amount of time in milliseconds that can elapse before audit actions are forced to be processed.\r\nThe default minimum value is 1000 (1 second). The maximum is 2,147,483,647."]
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
 }
@@ -556,14 +675,17 @@ impl DatabaseBlobAuditingPolicyProperties {
 }
 pub mod database_blob_auditing_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Represents the response to a list database request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseListResult {
+    #[doc = "The list of databases housed in the server."]
     pub value: Vec<Database>,
 }
 impl DatabaseListResult {
@@ -571,10 +693,12 @@ impl DatabaseListResult {
         Self { value }
     }
 }
+#[doc = "A database operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseOperation {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a database operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseOperationProperties>,
 }
@@ -583,10 +707,13 @@ impl DatabaseOperation {
         Self::default()
     }
 }
+#[doc = "The response to a list database operations request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseOperationListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabaseOperation>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -595,34 +722,49 @@ impl DatabaseOperationListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a database operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseOperationProperties {
+    #[doc = "The name of the database the operation is being performed on."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The name of operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The friendly name of operation."]
     #[serde(rename = "operationFriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub operation_friendly_name: Option<String>,
+    #[doc = "The percentage of the operation completed."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The name of the server."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The operation start time."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The operation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<database_operation_properties::State>,
+    #[doc = "The operation error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "The operation error description."]
     #[serde(rename = "errorDescription", default, skip_serializing_if = "Option::is_none")]
     pub error_description: Option<String>,
+    #[doc = "The operation error severity."]
     #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
     pub error_severity: Option<i32>,
+    #[doc = "Whether or not the error is a user error."]
     #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
     pub is_user_error: Option<bool>,
+    #[doc = "The estimated completion time of the operation."]
     #[serde(rename = "estimatedCompletionTime", default, skip_serializing_if = "Option::is_none")]
     pub estimated_completion_time: Option<String>,
+    #[doc = "The operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Whether the operation can be cancelled."]
     #[serde(rename = "isCancellable", default, skip_serializing_if = "Option::is_none")]
     pub is_cancellable: Option<bool>,
 }
@@ -633,6 +775,7 @@ impl DatabaseOperationProperties {
 }
 pub mod database_operation_properties {
     use super::*;
+    #[doc = "The operation state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Pending,
@@ -643,62 +786,89 @@ pub mod database_operation_properties {
         Cancelled,
     }
 }
+#[doc = "Represents the properties of a database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProperties {
+    #[doc = "The collation of the database. If createMode is not Default, this value is ignored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collation: Option<String>,
+    #[doc = "The creation date of the database (ISO8601 format)."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The containment state of the database."]
     #[serde(rename = "containmentState", default, skip_serializing_if = "Option::is_none")]
     pub containment_state: Option<i64>,
+    #[doc = "The current service level objective ID of the database. This is the ID of the service level objective that is currently active."]
     #[serde(rename = "currentServiceObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub current_service_objective_id: Option<String>,
+    #[doc = "The ID of the database."]
     #[serde(rename = "databaseId", default, skip_serializing_if = "Option::is_none")]
     pub database_id: Option<String>,
+    #[doc = "This records the earliest start date and time that restore is available for this database (ISO8601 format)."]
     #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_date: Option<String>,
+    #[doc = "Specifies the mode of database creation.\n\nDefault: regular database creation.\n\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\n\nOnlineSecondary/NonReadableSecondary: creates a database as a (readable or nonreadable) secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\n\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\n\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\n\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\n\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\n\nCopy, NonReadableSecondary, OnlineSecondary and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<database_properties::CreateMode>,
+    #[doc = "Conditional. If createMode is Copy, NonReadableSecondary, OnlineSecondary, PointInTimeRestore, Recovery, or Restore, then this value is required. Specifies the resource ID of the source database. If createMode is NonReadableSecondary or OnlineSecondary, the name of the source database must be the same as the new database being created."]
     #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub source_database_id: Option<String>,
+    #[doc = "Conditional. If createMode is Restore and sourceDatabaseId is the deleted database's original resource id when it existed (as opposed to its current restorable dropped database id), then this value is required. Specifies the time that the database was deleted."]
     #[serde(rename = "sourceDatabaseDeletionDate", default, skip_serializing_if = "Option::is_none")]
     pub source_database_deletion_date: Option<String>,
+    #[doc = "Conditional. If createMode is PointInTimeRestore, this value is required. If createMode is Restore, this value is optional. Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database. Must be greater than or equal to the source database's earliestRestoreDate value."]
     #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_in_time: Option<String>,
+    #[doc = "Conditional. If createMode is RestoreLongTermRetentionBackup, then this value is required. Specifies the resource ID of the recovery point to restore from."]
     #[serde(
         rename = "recoveryServicesRecoveryPointResourceId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub recovery_services_recovery_point_resource_id: Option<String>,
+    #[doc = "The edition of the database. The DatabaseEditions enumeration contains all the valid editions. If createMode is NonReadableSecondary or OnlineSecondary, this value is ignored.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<database_properties::Edition>,
+    #[doc = "The max size of the database expressed in bytes. If createMode is not Default, this value is ignored. To see possible values, query the capabilities API (/subscriptions/{subscriptionId}/providers/Microsoft.Sql/locations/{locationID}/capabilities) referred to by operationId: \"Capabilities_ListByLocation.\""]
     #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_bytes: Option<String>,
+    #[doc = "The configured service level objective ID of the database. This is the service level objective that is in the process of being applied to the database. Once successfully updated, it will match the value of currentServiceObjectiveId property. If requestedServiceObjectiveId and requestedServiceObjectiveName are both updated, the value of requestedServiceObjectiveId overrides the value of requestedServiceObjectiveName.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the service objective ids that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API."]
     #[serde(rename = "requestedServiceObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub requested_service_objective_id: Option<String>,
+    #[doc = "The name of the configured service level objective of the database. This is the service level objective that is in the process of being applied to the database. Once successfully updated, it will match the value of serviceLevelObjective property. \r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[serde(rename = "requestedServiceObjectiveName", default, skip_serializing_if = "Option::is_none")]
     pub requested_service_objective_name: Option<database_properties::RequestedServiceObjectiveName>,
+    #[doc = "The current service level objective of the database."]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<database_properties::ServiceLevelObjective>,
+    #[doc = "The status of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The name of the elastic pool the database is in. If elasticPoolName and requestedServiceObjectiveName are both updated, the value of requestedServiceObjectiveName is ignored. Not supported for DataWarehouse edition."]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The default secondary region for this database."]
     #[serde(rename = "defaultSecondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub default_secondary_location: Option<String>,
+    #[doc = "The list of service tier advisors for this database. Expanded property"]
     #[serde(rename = "serviceTierAdvisors", default, skip_serializing_if = "Vec::is_empty")]
     pub service_tier_advisors: Vec<ServiceTierAdvisor>,
+    #[doc = "The transparent data encryption info for this database."]
     #[serde(rename = "transparentDataEncryption", default, skip_serializing_if = "Vec::is_empty")]
     pub transparent_data_encryption: Vec<TransparentDataEncryption>,
+    #[doc = "The recommended indices for this database."]
     #[serde(rename = "recommendedIndex", default, skip_serializing_if = "Vec::is_empty")]
     pub recommended_index: Vec<RecommendedIndex>,
+    #[doc = "The resource identifier of the failover group containing this database."]
     #[serde(rename = "failoverGroupId", default, skip_serializing_if = "Option::is_none")]
     pub failover_group_id: Option<String>,
+    #[doc = "Conditional. If the database is a geo-secondary, readScale indicates whether read-only connections are allowed to this database or not. Not supported for DataWarehouse edition."]
     #[serde(rename = "readScale", default, skip_serializing_if = "Option::is_none")]
     pub read_scale: Option<database_properties::ReadScale>,
+    #[doc = "Indicates the name of the sample schema to apply when creating this database. If createMode is not Default, this value is ignored. Not supported for DataWarehouse edition."]
     #[serde(rename = "sampleName", default, skip_serializing_if = "Option::is_none")]
     pub sample_name: Option<database_properties::SampleName>,
+    #[doc = "Whether or not this database is zone redundant, which means the replicas of this database will be spread across multiple availability zones."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -709,6 +879,7 @@ impl DatabaseProperties {
 }
 pub mod database_properties {
     use super::*;
+    #[doc = "Specifies the mode of database creation.\n\nDefault: regular database creation.\n\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\n\nOnlineSecondary/NonReadableSecondary: creates a database as a (readable or nonreadable) secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\n\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\n\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\n\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\n\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\n\nCopy, NonReadableSecondary, OnlineSecondary and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
         Copy,
@@ -720,6 +891,7 @@ pub mod database_properties {
         Restore,
         RestoreLongTermRetentionBackup,
     }
+    #[doc = "The edition of the database. The DatabaseEditions enumeration contains all the valid editions. If createMode is NonReadableSecondary or OnlineSecondary, this value is ignored.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Edition {
         Web,
@@ -738,6 +910,7 @@ pub mod database_properties {
         BusinessCritical,
         Hyperscale,
     }
+    #[doc = "The name of the configured service level objective of the database. This is the service level objective that is in the process of being applied to the database. Once successfully updated, it will match the value of serviceLevelObjective property. \r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestedServiceObjectiveName {
         System,
@@ -843,6 +1016,7 @@ pub mod database_properties {
         Ds2000,
         ElasticPool,
     }
+    #[doc = "The current service level objective of the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceLevelObjective {
         System,
@@ -948,25 +1122,31 @@ pub mod database_properties {
         Ds2000,
         ElasticPool,
     }
+    #[doc = "Conditional. If the database is a geo-secondary, readScale indicates whether read-only connections are allowed to this database or not. Not supported for DataWarehouse edition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReadScale {
         Enabled,
         Disabled,
     }
+    #[doc = "Indicates the name of the sample schema to apply when creating this database. If createMode is not Default, this value is ignored. Not supported for DataWarehouse edition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SampleName {
         #[serde(rename = "AdventureWorksLT")]
         AdventureWorksLt,
     }
 }
+#[doc = "Contains information about a database Threat Detection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSecurityAlertPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Properties for a database Threat Detection policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseSecurityAlertPolicyProperties>,
 }
@@ -975,21 +1155,30 @@ impl DatabaseSecurityAlertPolicy {
         Self::default()
     }
 }
+#[doc = "Properties for a database Threat Detection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseSecurityAlertPolicyProperties {
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint and storageAccountAccessKey are required."]
     pub state: database_security_alert_policy_properties::State,
+    #[doc = "Specifies the semicolon-separated list of alerts that are disabled, or empty string to disable no alerts. Possible values: Sql_Injection; Sql_Injection_Vulnerability; Access_Anomaly; Data_Exfiltration; Unsafe_Action."]
     #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Option::is_none")]
     pub disabled_alerts: Option<String>,
+    #[doc = "Specifies the semicolon-separated list of e-mail addresses to which the alert is sent."]
     #[serde(rename = "emailAddresses", default, skip_serializing_if = "Option::is_none")]
     pub email_addresses: Option<String>,
+    #[doc = "Specifies that the alert is sent to the account administrators."]
     #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
     pub email_account_admins: Option<database_security_alert_policy_properties::EmailAccountAdmins>,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). This blob storage will hold all Threat Detection audit logs. If state is Enabled, storageEndpoint is required."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the Threat Detection audit storage account. If state is Enabled, storageAccountAccessKey is required."]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the Threat Detection audit logs."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies whether to use the default server policy."]
     #[serde(rename = "useServerDefault", default, skip_serializing_if = "Option::is_none")]
     pub use_server_default: Option<database_security_alert_policy_properties::UseServerDefault>,
 }
@@ -1009,29 +1198,35 @@ impl DatabaseSecurityAlertPolicyProperties {
 }
 pub mod database_security_alert_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint and storageAccountAccessKey are required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         New,
         Enabled,
         Disabled,
     }
+    #[doc = "Specifies that the alert is sent to the account administrators."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EmailAccountAdmins {
         Enabled,
         Disabled,
     }
+    #[doc = "Specifies whether to use the default server policy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UseServerDefault {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Represents a database update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseUpdate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Represents the properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -1040,20 +1235,28 @@ impl DatabaseUpdate {
         Self::default()
     }
 }
+#[doc = "The database usages."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseUsage {
+    #[doc = "The name of the usage metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
+    #[doc = "The usage metric display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The current value of the usage metric."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<f64>,
+    #[doc = "The current limit of the usage metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
+    #[doc = "The units of the usage metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "The next reset time for the usage metric (ISO8601 format)."]
     #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
     pub next_reset_time: Option<String>,
 }
@@ -1062,8 +1265,10 @@ impl DatabaseUsage {
         Self::default()
     }
 }
+#[doc = "The response to a list database metrics request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseUsageListResult {
+    #[doc = "The list of database usages for the database."]
     pub value: Vec<DatabaseUsage>,
 }
 impl DatabaseUsageListResult {
@@ -1071,10 +1276,12 @@ impl DatabaseUsageListResult {
         Self { value }
     }
 }
+#[doc = "A database vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a database Vulnerability Assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentProperties>,
 }
@@ -1083,10 +1290,13 @@ impl DatabaseVulnerabilityAssessment {
         Self::default()
     }
 }
+#[doc = "A list of the database's vulnerability assessments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabaseVulnerabilityAssessment>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1095,14 +1305,19 @@ impl DatabaseVulnerabilityAssessmentListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a database Vulnerability Assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentProperties {
+    #[doc = "A blob storage container path to hold the scan results (e.g. https://myStorage.blob.core.windows.net/VaScans/).  It is required if server level vulnerability assessment policy doesn't set"]
     #[serde(rename = "storageContainerPath", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_path: Option<String>,
+    #[doc = "A shared access signature (SAS Key) that has read and write access to the blob container specified in 'storageContainerPath' parameter. If 'storageAccountAccessKey' isn't specified, StorageContainerSasKey is required."]
     #[serde(rename = "storageContainerSasKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_sas_key: Option<String>,
+    #[doc = "Specifies the identifier key of the storage account for vulnerability assessment scan results. If 'StorageContainerSasKey' isn't specified, storageAccountAccessKey is required."]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Properties of a Vulnerability Assessment recurring scans."]
     #[serde(rename = "recurringScans", default, skip_serializing_if = "Option::is_none")]
     pub recurring_scans: Option<VulnerabilityAssessmentRecurringScansProperties>,
 }
@@ -1111,10 +1326,12 @@ impl DatabaseVulnerabilityAssessmentProperties {
         Self::default()
     }
 }
+#[doc = "A database vulnerability assessment rule baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentRuleBaseline {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a database Vulnerability Assessment rule baseline."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentRuleBaselineProperties>,
 }
@@ -1123,8 +1340,10 @@ impl DatabaseVulnerabilityAssessmentRuleBaseline {
         Self::default()
     }
 }
+#[doc = "Properties for an Azure SQL Database Vulnerability Assessment rule baseline's result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseVulnerabilityAssessmentRuleBaselineItem {
+    #[doc = "The rule baseline result"]
     pub result: Vec<String>,
 }
 impl DatabaseVulnerabilityAssessmentRuleBaselineItem {
@@ -1132,8 +1351,10 @@ impl DatabaseVulnerabilityAssessmentRuleBaselineItem {
         Self { result }
     }
 }
+#[doc = "Properties of a database Vulnerability Assessment rule baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseVulnerabilityAssessmentRuleBaselineProperties {
+    #[doc = "The rule baseline result"]
     #[serde(rename = "baselineResults")]
     pub baseline_results: Vec<DatabaseVulnerabilityAssessmentRuleBaselineItem>,
 }
@@ -1142,8 +1363,10 @@ impl DatabaseVulnerabilityAssessmentRuleBaselineProperties {
         Self { baseline_results }
     }
 }
+#[doc = "Properties of the export operation's result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentScanExportProperties {
+    #[doc = "Location of the exported report (e.g. https://myStorage.blob.core.windows.net/VaScans/scans/serverName/databaseName/scan_scanId.xlsx)."]
     #[serde(rename = "exportedReportLocation", default, skip_serializing_if = "Option::is_none")]
     pub exported_report_location: Option<String>,
 }
@@ -1152,10 +1375,12 @@ impl DatabaseVulnerabilityAssessmentScanExportProperties {
         Self::default()
     }
 }
+#[doc = "A database Vulnerability Assessment scan export resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentScansExport {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the export operation's result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentScanExportProperties>,
 }
@@ -1164,14 +1389,19 @@ impl DatabaseVulnerabilityAssessmentScansExport {
         Self::default()
     }
 }
+#[doc = "The database edition capabilities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EditionCapability {
+    #[doc = "The edition name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "The list of supported service objectives for the edition."]
     #[serde(rename = "supportedServiceLevelObjectives", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_service_level_objectives: Vec<ServiceObjectiveCapability>,
+    #[doc = "Whether or not zone redundancy is supported for the edition."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -1180,12 +1410,15 @@ impl EditionCapability {
         Self::default()
     }
 }
+#[doc = "Represents a database elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPool {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Represents the properties of an elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolProperties>,
+    #[doc = "Kind of elastic pool.  This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -1198,12 +1431,15 @@ impl ElasticPool {
         }
     }
 }
+#[doc = "Represents the activity on an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of an elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolActivityProperties>,
 }
@@ -1212,8 +1448,10 @@ impl ElasticPoolActivity {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list elastic pool activity request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolActivityListResult {
+    #[doc = "The list of elastic pool activities."]
     pub value: Vec<ElasticPoolActivity>,
 }
 impl ElasticPoolActivityListResult {
@@ -1221,46 +1459,67 @@ impl ElasticPoolActivityListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolActivityProperties {
+    #[doc = "The time the operation finished (ISO8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The error code if available."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "The error message if available."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The error severity if available."]
     #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
     pub error_severity: Option<i32>,
+    #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The unique operation ID."]
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
+    #[doc = "The percentage complete if available."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The requested max DTU per database if available."]
     #[serde(rename = "requestedDatabaseDtuMax", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_max: Option<i32>,
+    #[doc = "The requested min DTU per database if available."]
     #[serde(rename = "requestedDatabaseDtuMin", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_min: Option<i32>,
+    #[doc = "The requested DTU for the pool if available."]
     #[serde(rename = "requestedDtu", default, skip_serializing_if = "Option::is_none")]
     pub requested_dtu: Option<i32>,
+    #[doc = "The requested name for the elastic pool if available."]
     #[serde(rename = "requestedElasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub requested_elastic_pool_name: Option<String>,
+    #[doc = "The requested storage limit for the pool in GB if available."]
     #[serde(rename = "requestedStorageLimitInGB", default, skip_serializing_if = "Option::is_none")]
     pub requested_storage_limit_in_gb: Option<i64>,
+    #[doc = "The name of the elastic pool."]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The name of the server the elastic pool is in."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The time the operation started (ISO8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The current state of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The requested storage limit in MB."]
     #[serde(rename = "requestedStorageLimitInMB", default, skip_serializing_if = "Option::is_none")]
     pub requested_storage_limit_in_mb: Option<i32>,
+    #[doc = "The requested per database DTU guarantee."]
     #[serde(rename = "requestedDatabaseDtuGuarantee", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_guarantee: Option<i32>,
+    #[doc = "The requested per database DTU cap."]
     #[serde(rename = "requestedDatabaseDtuCap", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_cap: Option<i32>,
+    #[doc = "The requested DTU guarantee."]
     #[serde(rename = "requestedDtuGuarantee", default, skip_serializing_if = "Option::is_none")]
     pub requested_dtu_guarantee: Option<i32>,
 }
@@ -1269,12 +1528,15 @@ impl ElasticPoolActivityProperties {
         Self::default()
     }
 }
+#[doc = "Represents the activity on an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolDatabaseActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of an elastic pool database activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolDatabaseActivityProperties>,
 }
@@ -1283,8 +1545,10 @@ impl ElasticPoolDatabaseActivity {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list elastic pool database activity request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolDatabaseActivityListResult {
+    #[doc = "The list of elastic pool database activities."]
     pub value: Vec<ElasticPoolDatabaseActivity>,
 }
 impl ElasticPoolDatabaseActivityListResult {
@@ -1292,36 +1556,52 @@ impl ElasticPoolDatabaseActivityListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of an elastic pool database activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolDatabaseActivityProperties {
+    #[doc = "The database name."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The time the operation finished (ISO8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The error code if available."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "The error message if available."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The error severity if available."]
     #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
     pub error_severity: Option<i32>,
+    #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The unique operation ID."]
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
+    #[doc = "The percentage complete if available."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The name for the elastic pool the database is moving into if available."]
     #[serde(rename = "requestedElasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub requested_elastic_pool_name: Option<String>,
+    #[doc = "The name of the current elastic pool the database is in if available."]
     #[serde(rename = "currentElasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub current_elastic_pool_name: Option<String>,
+    #[doc = "The name of the current service objective if available."]
     #[serde(rename = "currentServiceObjective", default, skip_serializing_if = "Option::is_none")]
     pub current_service_objective: Option<String>,
+    #[doc = "The name of the requested service objective if available."]
     #[serde(rename = "requestedServiceObjective", default, skip_serializing_if = "Option::is_none")]
     pub requested_service_objective: Option<String>,
+    #[doc = "The name of the server the elastic pool is in."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The time the operation started (ISO8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The current state of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
@@ -1330,20 +1610,28 @@ impl ElasticPoolDatabaseActivityProperties {
         Self::default()
     }
 }
+#[doc = "The Elastic Pool DTU capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolDtuCapability {
+    #[doc = "The maximum size of the database (see 'unit' for the units)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "The maximum number of databases supported."]
     #[serde(rename = "maxDatabaseCount", default, skip_serializing_if = "Option::is_none")]
     pub max_database_count: Option<i64>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "The list of supported max sizes."]
     #[serde(rename = "supportedMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_max_sizes: Vec<MaxSizeCapability>,
+    #[doc = "The maximum size limits for a database."]
     #[serde(rename = "includedMaxSize", default, skip_serializing_if = "Option::is_none")]
     pub included_max_size: Option<MaxSizeCapability>,
+    #[doc = "The list of supported max database sizes."]
     #[serde(rename = "supportedPerDatabaseMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_per_database_max_sizes: Vec<MaxSizeCapability>,
+    #[doc = "The list of supported max database DTUs."]
     #[serde(rename = "supportedPerDatabaseMaxDtus", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_per_database_max_dtus: Vec<ElasticPoolPerDatabaseMaxDtuCapability>,
 }
@@ -1352,14 +1640,19 @@ impl ElasticPoolDtuCapability {
         Self::default()
     }
 }
+#[doc = "The elastic pool edition capabilities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolEditionCapability {
+    #[doc = "The elastic pool edition name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "The list of supported elastic pool DTU levels for the edition."]
     #[serde(rename = "supportedElasticPoolDtus", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_elastic_pool_dtus: Vec<ElasticPoolDtuCapability>,
+    #[doc = "Whether or not zone redundancy is supported for the edition."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -1368,8 +1661,10 @@ impl ElasticPoolEditionCapability {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list elastic pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolListResult {
+    #[doc = "The list of elastic pools hosted in the server."]
     pub value: Vec<ElasticPool>,
 }
 impl ElasticPoolListResult {
@@ -1377,10 +1672,12 @@ impl ElasticPoolListResult {
         Self { value }
     }
 }
+#[doc = "A elastic pool operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolOperation {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a elastic pool operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolOperationProperties>,
 }
@@ -1389,10 +1686,13 @@ impl ElasticPoolOperation {
         Self::default()
     }
 }
+#[doc = "The response to a list elastic pool operations request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolOperationListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ElasticPoolOperation>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1401,34 +1701,49 @@ impl ElasticPoolOperationListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a elastic pool operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolOperationProperties {
+    #[doc = "The name of the elastic pool the operation is being performed on."]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The name of operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The friendly name of operation."]
     #[serde(rename = "operationFriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub operation_friendly_name: Option<String>,
+    #[doc = "The percentage of the operation completed."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The name of the server."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The operation start time."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The operation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The operation error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "The operation error description."]
     #[serde(rename = "errorDescription", default, skip_serializing_if = "Option::is_none")]
     pub error_description: Option<String>,
+    #[doc = "The operation error severity."]
     #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
     pub error_severity: Option<i32>,
+    #[doc = "Whether or not the error is a user error."]
     #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
     pub is_user_error: Option<bool>,
+    #[doc = "The estimated completion time of the operation."]
     #[serde(rename = "estimatedCompletionTime", default, skip_serializing_if = "Option::is_none")]
     pub estimated_completion_time: Option<String>,
+    #[doc = "The operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Whether the operation can be cancelled."]
     #[serde(rename = "isCancellable", default, skip_serializing_if = "Option::is_none")]
     pub is_cancellable: Option<bool>,
 }
@@ -1437,12 +1752,16 @@ impl ElasticPoolOperationProperties {
         Self::default()
     }
 }
+#[doc = "The max per-database DTU capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolPerDatabaseMaxDtuCapability {
+    #[doc = "The maximum DTUs per database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "The list of supported min database DTUs."]
     #[serde(rename = "supportedPerDatabaseMinDtus", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_per_database_min_dtus: Vec<ElasticPoolPerDatabaseMinDtuCapability>,
 }
@@ -1451,10 +1770,13 @@ impl ElasticPoolPerDatabaseMaxDtuCapability {
         Self::default()
     }
 }
+#[doc = "The minimum per-database DTU capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolPerDatabaseMinDtuCapability {
+    #[doc = "The maximum DTUs per database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
 }
@@ -1463,22 +1785,31 @@ impl ElasticPoolPerDatabaseMinDtuCapability {
         Self::default()
     }
 }
+#[doc = "Represents the properties of an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolProperties {
+    #[doc = "The creation date of the elastic pool (ISO8601 format)."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The state of the elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<elastic_pool_properties::State>,
+    #[doc = "The edition of the elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<elastic_pool_properties::Edition>,
+    #[doc = "The total shared DTU for the database elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<i32>,
+    #[doc = "The maximum DTU any one database can consume."]
     #[serde(rename = "databaseDtuMax", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_max: Option<i32>,
+    #[doc = "The minimum DTU all databases are guaranteed."]
     #[serde(rename = "databaseDtuMin", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_min: Option<i32>,
+    #[doc = "Gets storage limit for the database elastic pool in MB."]
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<i32>,
+    #[doc = "Whether or not this database elastic pool is zone redundant, which means the replicas of this database will be spread across multiple availability zones."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -1489,12 +1820,14 @@ impl ElasticPoolProperties {
 }
 pub mod elastic_pool_properties {
     use super::*;
+    #[doc = "The state of the elastic pool."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Creating,
         Ready,
         Disabled,
     }
+    #[doc = "The edition of the elastic pool."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Edition {
         Basic,
@@ -1504,12 +1837,15 @@ pub mod elastic_pool_properties {
         BusinessCritical,
     }
 }
+#[doc = "Represents an elastic pool update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolUpdate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Represents the properties of an elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolProperties>,
 }
@@ -1518,14 +1854,18 @@ impl ElasticPoolUpdate {
         Self::default()
     }
 }
+#[doc = "The server encryption protector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProtector {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Properties for an encryption protector execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EncryptionProtectorProperties>,
 }
@@ -1534,10 +1874,13 @@ impl EncryptionProtector {
         Self::default()
     }
 }
+#[doc = "A list of server encryption protectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProtectorListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EncryptionProtector>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1546,16 +1889,22 @@ impl EncryptionProtectorListResult {
         Self::default()
     }
 }
+#[doc = "Properties for an encryption protector execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionProtectorProperties {
+    #[doc = "Subregion of the encryption protector."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subregion: Option<String>,
+    #[doc = "The name of the server key."]
     #[serde(rename = "serverKeyName", default, skip_serializing_if = "Option::is_none")]
     pub server_key_name: Option<String>,
+    #[doc = "The encryption protector type like 'ServiceManaged', 'AzureKeyVault'."]
     #[serde(rename = "serverKeyType")]
     pub server_key_type: encryption_protector_properties::ServerKeyType,
+    #[doc = "The URI of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Thumbprint of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
@@ -1572,24 +1921,32 @@ impl EncryptionProtectorProperties {
 }
 pub mod encryption_protector_properties {
     use super::*;
+    #[doc = "The encryption protector type like 'ServiceManaged', 'AzureKeyVault'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {
         ServiceManaged,
         AzureKeyVault,
     }
 }
+#[doc = "Export database parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportRequest {
+    #[doc = "The type of the storage key to use."]
     #[serde(rename = "storageKeyType")]
     pub storage_key_type: export_request::StorageKeyType,
+    #[doc = "The storage key to use.  If storage key type is SharedAccessKey, it must be preceded with a \"?.\""]
     #[serde(rename = "storageKey")]
     pub storage_key: String,
+    #[doc = "The storage uri to use."]
     #[serde(rename = "storageUri")]
     pub storage_uri: String,
+    #[doc = "The name of the SQL administrator."]
     #[serde(rename = "administratorLogin")]
     pub administrator_login: String,
+    #[doc = "The password of the SQL administrator."]
     #[serde(rename = "administratorLoginPassword")]
     pub administrator_login_password: String,
+    #[doc = "The authentication type."]
     #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<export_request::AuthenticationType>,
 }
@@ -1613,11 +1970,13 @@ impl ExportRequest {
 }
 pub mod export_request {
     use super::*;
+    #[doc = "The type of the storage key to use."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageKeyType {
         StorageAccessKey,
         SharedAccessKey,
     }
+    #[doc = "The authentication type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
         #[serde(rename = "SQL")]
@@ -1631,10 +1990,12 @@ pub mod export_request {
         }
     }
 }
+#[doc = "An extended database blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedDatabaseBlobAuditingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an extended database blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtendedDatabaseBlobAuditingPolicyProperties>,
 }
@@ -1643,10 +2004,13 @@ impl ExtendedDatabaseBlobAuditingPolicy {
         Self::default()
     }
 }
+#[doc = "A list of database extended auditing settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedDatabaseBlobAuditingPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExtendedDatabaseBlobAuditingPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1655,25 +2019,36 @@ impl ExtendedDatabaseBlobAuditingPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Properties of an extended database blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedDatabaseBlobAuditingPolicyProperties {
+    #[doc = "Specifies condition of where clause when creating an audit."]
     #[serde(rename = "predicateExpression", default, skip_serializing_if = "Option::is_none")]
     pub predicate_expression: Option<String>,
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     pub state: extended_database_blob_auditing_policy_properties::State,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled is required."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the auditing storage account. \r\nIf state is Enabled and storageEndpoint is specified, not specifying the storageAccountAccessKey will use SQL server system-assigned managed identity to access the storage.\r\nPrerequisites for using managed identity authentication:\r\n1. Assign SQL Server a system-assigned managed identity in Azure Active Directory (AAD).\r\n2. Grant SQL Server identity access to the storage account by adding 'Storage Blob Data Contributor' RBAC role to the server identity.\r\nFor more information, see [Auditing to storage using Managed Identity authentication](https://go.microsoft.com/fwlink/?linkid=2114355)"]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the audit logs in the storage account."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\nDBCC_GROUP\r\nDATABASE_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_CHANGE_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
     #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub audit_actions_and_groups: Vec<String>,
+    #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_subscription_id: Option<String>,
+    #[doc = "Specifies whether storageAccountAccessKey value is the storage's secondary key."]
     #[serde(rename = "isStorageSecondaryKeyInUse", default, skip_serializing_if = "Option::is_none")]
     pub is_storage_secondary_key_in_use: Option<bool>,
+    #[doc = "Specifies whether audit events are sent to Azure Monitor. \r\nIn order to send the events to Azure Monitor, specify 'state' as 'Enabled' and 'isAzureMonitorTargetEnabled' as true.\r\n\r\nWhen using REST API to configure auditing, Diagnostic Settings with 'SQLSecurityAuditEvents' diagnostic logs category on the database should be also created.\r\nNote that for server level audit you should use the 'master' database as {databaseName}.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/{databaseName}/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
     #[serde(rename = "isAzureMonitorTargetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_azure_monitor_target_enabled: Option<bool>,
+    #[doc = "Specifies the amount of time in milliseconds that can elapse before audit actions are forced to be processed.\r\nThe default minimum value is 1000 (1 second). The maximum is 2,147,483,647."]
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
 }
@@ -1695,16 +2070,19 @@ impl ExtendedDatabaseBlobAuditingPolicyProperties {
 }
 pub mod extended_database_blob_auditing_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
         Disabled,
     }
 }
+#[doc = "An extended server blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedServerBlobAuditingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an extended server blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtendedServerBlobAuditingPolicyProperties>,
 }
@@ -1713,10 +2091,13 @@ impl ExtendedServerBlobAuditingPolicy {
         Self::default()
     }
 }
+#[doc = "A list of server extended auditing settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedServerBlobAuditingPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExtendedServerBlobAuditingPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1725,25 +2106,36 @@ impl ExtendedServerBlobAuditingPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Properties of an extended server blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedServerBlobAuditingPolicyProperties {
+    #[doc = "Specifies condition of where clause when creating an audit."]
     #[serde(rename = "predicateExpression", default, skip_serializing_if = "Option::is_none")]
     pub predicate_expression: Option<String>,
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     pub state: extended_server_blob_auditing_policy_properties::State,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled is required."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the auditing storage account. \r\nIf state is Enabled and storageEndpoint is specified, not specifying the storageAccountAccessKey will use SQL server system-assigned managed identity to access the storage.\r\nPrerequisites for using managed identity authentication:\r\n1. Assign SQL Server a system-assigned managed identity in Azure Active Directory (AAD).\r\n2. Grant SQL Server identity access to the storage account by adding 'Storage Blob Data Contributor' RBAC role to the server identity.\r\nFor more information, see [Auditing to storage using Managed Identity authentication](https://go.microsoft.com/fwlink/?linkid=2114355)"]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the audit logs in the storage account."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\nDBCC_GROUP\r\nDATABASE_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_CHANGE_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
     #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub audit_actions_and_groups: Vec<String>,
+    #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_subscription_id: Option<String>,
+    #[doc = "Specifies whether storageAccountAccessKey value is the storage's secondary key."]
     #[serde(rename = "isStorageSecondaryKeyInUse", default, skip_serializing_if = "Option::is_none")]
     pub is_storage_secondary_key_in_use: Option<bool>,
+    #[doc = "Specifies whether audit events are sent to Azure Monitor. \r\nIn order to send the events to Azure Monitor, specify 'state' as 'Enabled' and 'isAzureMonitorTargetEnabled' as true.\r\n\r\nWhen using REST API to configure auditing, Diagnostic Settings with 'SQLSecurityAuditEvents' diagnostic logs category on the database should be also created.\r\nNote that for server level audit you should use the 'master' database as {databaseName}.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/{databaseName}/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
     #[serde(rename = "isAzureMonitorTargetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_azure_monitor_target_enabled: Option<bool>,
+    #[doc = "Specifies the amount of time in milliseconds that can elapse before audit actions are forced to be processed.\r\nThe default minimum value is 1000 (1 second). The maximum is 2,147,483,647."]
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
 }
@@ -1765,20 +2157,25 @@ impl ExtendedServerBlobAuditingPolicyProperties {
 }
 pub mod extended_server_blob_auditing_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
         Disabled,
     }
 }
+#[doc = "A failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of a failover group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FailoverGroupProperties>,
 }
@@ -1787,10 +2184,13 @@ impl FailoverGroup {
         Self::default()
     }
 }
+#[doc = "A list of failover groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FailoverGroup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1799,18 +2199,25 @@ impl FailoverGroupListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FailoverGroupProperties {
+    #[doc = "Read-write endpoint of the failover group instance."]
     #[serde(rename = "readWriteEndpoint")]
     pub read_write_endpoint: FailoverGroupReadWriteEndpoint,
+    #[doc = "Read-only endpoint of the failover group instance."]
     #[serde(rename = "readOnlyEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub read_only_endpoint: Option<FailoverGroupReadOnlyEndpoint>,
+    #[doc = "Local replication role of the failover group instance."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<failover_group_properties::ReplicationRole>,
+    #[doc = "Replication state of the failover group instance."]
     #[serde(rename = "replicationState", default, skip_serializing_if = "Option::is_none")]
     pub replication_state: Option<String>,
+    #[doc = "List of partner server information for the failover group."]
     #[serde(rename = "partnerServers")]
     pub partner_servers: Vec<PartnerInfo>,
+    #[doc = "List of databases in the failover group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub databases: Vec<String>,
 }
@@ -1828,14 +2235,17 @@ impl FailoverGroupProperties {
 }
 pub mod failover_group_properties {
     use super::*;
+    #[doc = "Local replication role of the failover group instance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationRole {
         Primary,
         Secondary,
     }
 }
+#[doc = "Read-only endpoint of the failover group instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroupReadOnlyEndpoint {
+    #[doc = "Failover policy of the read-only endpoint for the failover group."]
     #[serde(rename = "failoverPolicy", default, skip_serializing_if = "Option::is_none")]
     pub failover_policy: Option<failover_group_read_only_endpoint::FailoverPolicy>,
 }
@@ -1846,16 +2256,20 @@ impl FailoverGroupReadOnlyEndpoint {
 }
 pub mod failover_group_read_only_endpoint {
     use super::*;
+    #[doc = "Failover policy of the read-only endpoint for the failover group."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FailoverPolicy {
         Disabled,
         Enabled,
     }
 }
+#[doc = "Read-write endpoint of the failover group instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FailoverGroupReadWriteEndpoint {
+    #[doc = "Failover policy of the read-write endpoint for the failover group. If failoverPolicy is Automatic then failoverWithDataLossGracePeriodMinutes is required."]
     #[serde(rename = "failoverPolicy")]
     pub failover_policy: failover_group_read_write_endpoint::FailoverPolicy,
+    #[doc = "Grace period before failover with data loss is attempted for the read-write endpoint. If failoverPolicy is Automatic then failoverWithDataLossGracePeriodMinutes is required."]
     #[serde(
         rename = "failoverWithDataLossGracePeriodMinutes",
         default,
@@ -1873,16 +2287,20 @@ impl FailoverGroupReadWriteEndpoint {
 }
 pub mod failover_group_read_write_endpoint {
     use super::*;
+    #[doc = "Failover policy of the read-write endpoint for the failover group. If failoverPolicy is Automatic then failoverWithDataLossGracePeriodMinutes is required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FailoverPolicy {
         Manual,
         Automatic,
     }
 }
+#[doc = "A failover group update request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroupUpdate {
+    #[doc = "Properties of a failover group update."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FailoverGroupUpdateProperties>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1891,12 +2309,16 @@ impl FailoverGroupUpdate {
         Self::default()
     }
 }
+#[doc = "Properties of a failover group update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroupUpdateProperties {
+    #[doc = "Read-write endpoint of the failover group instance."]
     #[serde(rename = "readWriteEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub read_write_endpoint: Option<FailoverGroupReadWriteEndpoint>,
+    #[doc = "Read-only endpoint of the failover group instance."]
     #[serde(rename = "readOnlyEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub read_only_endpoint: Option<FailoverGroupReadOnlyEndpoint>,
+    #[doc = "List of databases in the failover group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub databases: Vec<String>,
 }
@@ -1905,16 +2327,21 @@ impl FailoverGroupUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Represents a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Kind of server that contains this firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Location of the server that contains this firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Type of resource this is."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Represents the properties of a server firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirewallRuleProperties>,
 }
@@ -1923,8 +2350,10 @@ impl FirewallRule {
         Self::default()
     }
 }
+#[doc = "Represents the response to a List Firewall Rules request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
+    #[doc = "The list of server firewall rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallRule>,
 }
@@ -1933,10 +2362,13 @@ impl FirewallRuleListResult {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRuleProperties {
+    #[doc = "The start IP address of the firewall rule. Must be IPv4 format. Use value '0.0.0.0' to represent all Azure-internal IP addresses."]
     #[serde(rename = "startIpAddress")]
     pub start_ip_address: String,
+    #[doc = "The end IP address of the firewall rule. Must be IPv4 format. Must be greater than or equal to startIpAddress. Use value '0.0.0.0' to represent all Azure-internal IP addresses."]
     #[serde(rename = "endIpAddress")]
     pub end_ip_address: String,
 }
@@ -1948,13 +2380,17 @@ impl FirewallRuleProperties {
         }
     }
 }
+#[doc = "A database geo backup policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoBackupPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of the geo backup policy."]
     pub properties: GeoBackupPolicyProperties,
+    #[doc = "Kind of geo backup policy.  This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Backup policy location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -1968,8 +2404,10 @@ impl GeoBackupPolicy {
         }
     }
 }
+#[doc = "The response to a list geo backup policies request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeoBackupPolicyListResult {
+    #[doc = "The list of geo backup policies."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GeoBackupPolicy>,
 }
@@ -1978,9 +2416,12 @@ impl GeoBackupPolicyListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the geo backup policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoBackupPolicyProperties {
+    #[doc = "The state of the geo backup policy."]
     pub state: geo_backup_policy_properties::State,
+    #[doc = "The storage type of the geo backup policy."]
     #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
     pub storage_type: Option<String>,
 }
@@ -1991,16 +2432,19 @@ impl GeoBackupPolicyProperties {
 }
 pub mod geo_backup_policy_properties {
     use super::*;
+    #[doc = "The state of the geo backup policy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Disabled,
         Enabled,
     }
 }
+#[doc = "Response for Import/Export Get operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExportResponse {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Response for Import/Export Status operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImportExportResponseProperties>,
 }
@@ -2009,24 +2453,34 @@ impl ImportExportResponse {
         Self::default()
     }
 }
+#[doc = "Response for Import/Export Status operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExportResponseProperties {
+    #[doc = "The request type of the operation."]
     #[serde(rename = "requestType", default, skip_serializing_if = "Option::is_none")]
     pub request_type: Option<String>,
+    #[doc = "The request type of the operation."]
     #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
+    #[doc = "The name of the server."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The name of the database."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The status message returned from the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The operation status last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "The operation queued time."]
     #[serde(rename = "queuedTime", default, skip_serializing_if = "Option::is_none")]
     pub queued_time: Option<String>,
+    #[doc = "The blob uri."]
     #[serde(rename = "blobUri", default, skip_serializing_if = "Option::is_none")]
     pub blob_uri: Option<String>,
+    #[doc = "The error message returned from the server."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
@@ -2035,10 +2489,12 @@ impl ImportExportResponseProperties {
         Self::default()
     }
 }
+#[doc = "Represents the properties for an import operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportExtensionProperties {
     #[serde(flatten)]
     pub export_request: ExportRequest,
+    #[doc = "The type of import operation being performed. This is always Import."]
     #[serde(rename = "operationMode")]
     pub operation_mode: import_extension_properties::OperationMode,
 }
@@ -2052,17 +2508,22 @@ impl ImportExtensionProperties {
 }
 pub mod import_extension_properties {
     use super::*;
+    #[doc = "The type of import operation being performed. This is always Import."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationMode {
         Import,
     }
 }
+#[doc = "Import database parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExtensionRequest {
+    #[doc = "The name of the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the extension."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Represents the properties for an import operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImportExtensionProperties>,
 }
@@ -2071,15 +2532,20 @@ impl ImportExtensionRequest {
         Self::default()
     }
 }
+#[doc = "Import database parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportRequest {
     #[serde(flatten)]
     pub export_request: ExportRequest,
+    #[doc = "The name of the database to import."]
     #[serde(rename = "databaseName")]
     pub database_name: String,
+    #[doc = "The edition for the database being created.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     pub edition: import_request::Edition,
+    #[doc = "The name of the service objective to assign to the database."]
     #[serde(rename = "serviceObjectiveName")]
     pub service_objective_name: import_request::ServiceObjectiveName,
+    #[doc = "The maximum size for the newly imported database."]
     #[serde(rename = "maxSizeBytes")]
     pub max_size_bytes: String,
 }
@@ -2102,6 +2568,7 @@ impl ImportRequest {
 }
 pub mod import_request {
     use super::*;
+    #[doc = "The edition for the database being created.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Edition {
         Web,
@@ -2120,6 +2587,7 @@ pub mod import_request {
         BusinessCritical,
         Hyperscale,
     }
+    #[doc = "The name of the service objective to assign to the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceObjectiveName {
         System,
@@ -2226,10 +2694,12 @@ pub mod import_request {
         ElasticPool,
     }
 }
+#[doc = "An instance failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceFailoverGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a instance failover group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InstanceFailoverGroupProperties>,
 }
@@ -2238,10 +2708,13 @@ impl InstanceFailoverGroup {
         Self::default()
     }
 }
+#[doc = "A list of instance failover groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceFailoverGroupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<InstanceFailoverGroup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2250,18 +2723,25 @@ impl InstanceFailoverGroupListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a instance failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstanceFailoverGroupProperties {
+    #[doc = "Read-write endpoint of the failover group instance."]
     #[serde(rename = "readWriteEndpoint")]
     pub read_write_endpoint: InstanceFailoverGroupReadWriteEndpoint,
+    #[doc = "Read-only endpoint of the failover group instance."]
     #[serde(rename = "readOnlyEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub read_only_endpoint: Option<InstanceFailoverGroupReadOnlyEndpoint>,
+    #[doc = "Local replication role of the failover group instance."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<instance_failover_group_properties::ReplicationRole>,
+    #[doc = "Replication state of the failover group instance."]
     #[serde(rename = "replicationState", default, skip_serializing_if = "Option::is_none")]
     pub replication_state: Option<String>,
+    #[doc = "Partner region information for the failover group."]
     #[serde(rename = "partnerRegions")]
     pub partner_regions: Vec<PartnerRegionInfo>,
+    #[doc = "List of managed instance pairs in the failover group."]
     #[serde(rename = "managedInstancePairs")]
     pub managed_instance_pairs: Vec<ManagedInstancePairInfo>,
 }
@@ -2283,14 +2763,17 @@ impl InstanceFailoverGroupProperties {
 }
 pub mod instance_failover_group_properties {
     use super::*;
+    #[doc = "Local replication role of the failover group instance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationRole {
         Primary,
         Secondary,
     }
 }
+#[doc = "Read-only endpoint of the failover group instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceFailoverGroupReadOnlyEndpoint {
+    #[doc = "Failover policy of the read-only endpoint for the failover group."]
     #[serde(rename = "failoverPolicy", default, skip_serializing_if = "Option::is_none")]
     pub failover_policy: Option<instance_failover_group_read_only_endpoint::FailoverPolicy>,
 }
@@ -2301,16 +2784,20 @@ impl InstanceFailoverGroupReadOnlyEndpoint {
 }
 pub mod instance_failover_group_read_only_endpoint {
     use super::*;
+    #[doc = "Failover policy of the read-only endpoint for the failover group."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FailoverPolicy {
         Disabled,
         Enabled,
     }
 }
+#[doc = "Read-write endpoint of the failover group instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstanceFailoverGroupReadWriteEndpoint {
+    #[doc = "Failover policy of the read-write endpoint for the failover group. If failoverPolicy is Automatic then failoverWithDataLossGracePeriodMinutes is required."]
     #[serde(rename = "failoverPolicy")]
     pub failover_policy: instance_failover_group_read_write_endpoint::FailoverPolicy,
+    #[doc = "Grace period before failover with data loss is attempted for the read-write endpoint. If failoverPolicy is Automatic then failoverWithDataLossGracePeriodMinutes is required."]
     #[serde(
         rename = "failoverWithDataLossGracePeriodMinutes",
         default,
@@ -2328,18 +2815,22 @@ impl InstanceFailoverGroupReadWriteEndpoint {
 }
 pub mod instance_failover_group_read_write_endpoint {
     use super::*;
+    #[doc = "Failover policy of the read-write endpoint for the failover group. If failoverPolicy is Automatic then failoverWithDataLossGracePeriodMinutes is required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FailoverPolicy {
         Manual,
         Automatic,
     }
 }
+#[doc = "An Azure SQL instance pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstancePool {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Properties of an instance pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InstancePoolProperties>,
 }
@@ -2352,10 +2843,13 @@ impl InstancePool {
         }
     }
 }
+#[doc = "A list of Azure SQL instance pools."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancePoolListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<InstancePool>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2364,12 +2858,16 @@ impl InstancePoolListResult {
         Self::default()
     }
 }
+#[doc = "Properties of an instance pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstancePoolProperties {
+    #[doc = "Resource ID of the subnet to place this instance pool in."]
     #[serde(rename = "subnetId")]
     pub subnet_id: String,
+    #[doc = "Count of vCores belonging to this instance pool."]
     #[serde(rename = "vCores")]
     pub v_cores: i32,
+    #[doc = "The license type. Possible values are 'LicenseIncluded' (price for SQL license is included) and 'BasePrice' (without SQL license price)."]
     #[serde(rename = "licenseType")]
     pub license_type: instance_pool_properties::LicenseType,
 }
@@ -2384,14 +2882,17 @@ impl InstancePoolProperties {
 }
 pub mod instance_pool_properties {
     use super::*;
+    #[doc = "The license type. Possible values are 'LicenseIncluded' (price for SQL license is included) and 'BasePrice' (without SQL license price)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LicenseType {
         LicenseIncluded,
         BasePrice,
     }
 }
+#[doc = "An update to an Instance pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancePoolUpdate {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -2400,10 +2901,12 @@ impl InstancePoolUpdate {
         Self::default()
     }
 }
+#[doc = "A job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
@@ -2412,12 +2915,15 @@ impl Job {
         Self::default()
     }
 }
+#[doc = "An Azure SQL job agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobAgent {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Properties of a job agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobAgentProperties>,
 }
@@ -2430,10 +2936,13 @@ impl JobAgent {
         }
     }
 }
+#[doc = "A list of Azure SQL job agents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobAgentListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobAgent>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2442,10 +2951,13 @@ impl JobAgentListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a job agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobAgentProperties {
+    #[doc = "Resource ID of the database to store job metadata in."]
     #[serde(rename = "databaseId")]
     pub database_id: String,
+    #[doc = "The state of the job agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_agent_properties::State>,
 }
@@ -2456,6 +2968,7 @@ impl JobAgentProperties {
 }
 pub mod job_agent_properties {
     use super::*;
+    #[doc = "The state of the job agent."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Creating,
@@ -2465,8 +2978,10 @@ pub mod job_agent_properties {
         Disabled,
     }
 }
+#[doc = "An update to an Azure SQL job agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobAgentUpdate {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -2475,10 +2990,12 @@ impl JobAgentUpdate {
         Self::default()
     }
 }
+#[doc = "A stored credential that can be used by a job to connect to target databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCredential {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a job credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobCredentialProperties>,
 }
@@ -2487,10 +3004,13 @@ impl JobCredential {
         Self::default()
     }
 }
+#[doc = "A list of job credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCredentialListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobCredential>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2499,9 +3019,12 @@ impl JobCredentialListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a job credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCredentialProperties {
+    #[doc = "The credential user name."]
     pub username: String,
+    #[doc = "The credential password."]
     pub password: String,
 }
 impl JobCredentialProperties {
@@ -2509,10 +3032,12 @@ impl JobCredentialProperties {
         Self { username, password }
     }
 }
+#[doc = "An execution of a job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExecution {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties for an Azure SQL Database Elastic job execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobExecutionProperties>,
 }
@@ -2521,10 +3046,13 @@ impl JobExecution {
         Self::default()
     }
 }
+#[doc = "A list of job executions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExecutionListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobExecution>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2533,32 +3061,46 @@ impl JobExecutionListResult {
         Self::default()
     }
 }
+#[doc = "Properties for an Azure SQL Database Elastic job execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExecutionProperties {
+    #[doc = "The job version number."]
     #[serde(rename = "jobVersion", default, skip_serializing_if = "Option::is_none")]
     pub job_version: Option<i32>,
+    #[doc = "The job step name."]
     #[serde(rename = "stepName", default, skip_serializing_if = "Option::is_none")]
     pub step_name: Option<String>,
+    #[doc = "The job step id."]
     #[serde(rename = "stepId", default, skip_serializing_if = "Option::is_none")]
     pub step_id: Option<i32>,
+    #[doc = "The unique identifier of the job execution."]
     #[serde(rename = "jobExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub job_execution_id: Option<String>,
+    #[doc = "The detailed state of the job execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lifecycle: Option<job_execution_properties::Lifecycle>,
+    #[doc = "The ARM provisioning state of the job execution."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<job_execution_properties::ProvisioningState>,
+    #[doc = "The time that the job execution was created."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
+    #[doc = "The time that the job execution started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The time that the job execution completed."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Number of times the job execution has been attempted."]
     #[serde(rename = "currentAttempts", default, skip_serializing_if = "Option::is_none")]
     pub current_attempts: Option<i32>,
+    #[doc = "Start time of the current attempt."]
     #[serde(rename = "currentAttemptStartTime", default, skip_serializing_if = "Option::is_none")]
     pub current_attempt_start_time: Option<String>,
+    #[doc = "The last status or error message."]
     #[serde(rename = "lastMessage", default, skip_serializing_if = "Option::is_none")]
     pub last_message: Option<String>,
+    #[doc = "The target that a job execution is executed on."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<JobExecutionTarget>,
 }
@@ -2569,6 +3111,7 @@ impl JobExecutionProperties {
 }
 pub mod job_execution_properties {
     use super::*;
+    #[doc = "The detailed state of the job execution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Lifecycle {
         Created,
@@ -2582,6 +3125,7 @@ pub mod job_execution_properties {
         Canceled,
         Skipped,
     }
+    #[doc = "The ARM provisioning state of the job execution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Created,
@@ -2591,12 +3135,16 @@ pub mod job_execution_properties {
         Canceled,
     }
 }
+#[doc = "The target that a job execution is executed on."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExecutionTarget {
+    #[doc = "The type of the target."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_execution_target::Type>,
+    #[doc = "The server name."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The database name."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
 }
@@ -2607,6 +3155,7 @@ impl JobExecutionTarget {
 }
 pub mod job_execution_target {
     use super::*;
+    #[doc = "The type of the target."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         TargetGroup,
@@ -2616,10 +3165,13 @@ pub mod job_execution_target {
         SqlServer,
     }
 }
+#[doc = "A list of jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2628,12 +3180,16 @@ impl JobListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobProperties {
+    #[doc = "User-defined description of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The job version number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
+    #[doc = "Scheduling properties of a job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<JobSchedule>,
 }
@@ -2642,16 +3198,22 @@ impl JobProperties {
         Self::default()
     }
 }
+#[doc = "Scheduling properties of a job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobSchedule {
+    #[doc = "Schedule start time."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Schedule end time."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Schedule interval type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_schedule::Type>,
+    #[doc = "Whether or not the schedule is enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Value of the schedule's recurring interval, if the schedule type is recurring. ISO8601 duration format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
 }
@@ -2662,6 +3224,7 @@ impl JobSchedule {
 }
 pub mod job_schedule {
     use super::*;
+    #[doc = "Schedule interval type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Once,
@@ -2673,10 +3236,12 @@ pub mod job_schedule {
         }
     }
 }
+#[doc = "A job step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStep {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a job step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobStepProperties>,
 }
@@ -2685,12 +3250,16 @@ impl JobStep {
         Self::default()
     }
 }
+#[doc = "The action to be executed by a job step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStepAction {
+    #[doc = "Type of action being executed by the job step."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_step_action::Type>,
+    #[doc = "The source of the action to execute."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<job_step_action::Source>,
+    #[doc = "The action value, for example the text of the T-SQL script to execute."]
     pub value: String,
 }
 impl JobStepAction {
@@ -2704,6 +3273,7 @@ impl JobStepAction {
 }
 pub mod job_step_action {
     use super::*;
+    #[doc = "Type of action being executed by the job step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         TSql,
@@ -2713,6 +3283,7 @@ pub mod job_step_action {
             Self::TSql
         }
     }
+    #[doc = "The source of the action to execute."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
         Inline,
@@ -2723,16 +3294,22 @@ pub mod job_step_action {
         }
     }
 }
+#[doc = "The execution options of a job step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStepExecutionOptions {
+    #[doc = "Execution timeout for the job step."]
     #[serde(rename = "timeoutSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<i32>,
+    #[doc = "Maximum number of times the job step will be reattempted if the first attempt fails."]
     #[serde(rename = "retryAttempts", default, skip_serializing_if = "Option::is_none")]
     pub retry_attempts: Option<i32>,
+    #[doc = "Initial delay between retries for job step execution."]
     #[serde(rename = "initialRetryIntervalSeconds", default, skip_serializing_if = "Option::is_none")]
     pub initial_retry_interval_seconds: Option<i32>,
+    #[doc = "The maximum amount of time to wait between retries for job step execution."]
     #[serde(rename = "maximumRetryIntervalSeconds", default, skip_serializing_if = "Option::is_none")]
     pub maximum_retry_interval_seconds: Option<i32>,
+    #[doc = "The backoff multiplier for the time between retries."]
     #[serde(rename = "retryIntervalBackoffMultiplier", default, skip_serializing_if = "Option::is_none")]
     pub retry_interval_backoff_multiplier: Option<f32>,
 }
@@ -2741,10 +3318,13 @@ impl JobStepExecutionOptions {
         Self::default()
     }
 }
+#[doc = "A list of job steps."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStepListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobStep>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2753,22 +3333,31 @@ impl JobStepListResult {
         Self::default()
     }
 }
+#[doc = "The output configuration of a job step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStepOutput {
+    #[doc = "The output destination type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_step_output::Type>,
+    #[doc = "The output destination subscription id."]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
+    #[doc = "The output destination resource group."]
     #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_name: Option<String>,
+    #[doc = "The output destination server name."]
     #[serde(rename = "serverName")]
     pub server_name: String,
+    #[doc = "The output destination database."]
     #[serde(rename = "databaseName")]
     pub database_name: String,
+    #[doc = "The output destination schema."]
     #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
     pub schema_name: Option<String>,
+    #[doc = "The output destination table."]
     #[serde(rename = "tableName")]
     pub table_name: String,
+    #[doc = "The resource ID of the credential to use to connect to the output destination."]
     pub credential: String,
 }
 impl JobStepOutput {
@@ -2787,6 +3376,7 @@ impl JobStepOutput {
 }
 pub mod job_step_output {
     use super::*;
+    #[doc = "The output destination type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SqlDatabase,
@@ -2797,16 +3387,23 @@ pub mod job_step_output {
         }
     }
 }
+#[doc = "Properties of a job step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStepProperties {
+    #[doc = "The job step's index within the job. If not specified when creating the job step, it will be created as the last step. If not specified when updating the job step, the step id is not modified."]
     #[serde(rename = "stepId", default, skip_serializing_if = "Option::is_none")]
     pub step_id: Option<i32>,
+    #[doc = "The resource ID of the target group that the job step will be executed on."]
     #[serde(rename = "targetGroup")]
     pub target_group: String,
+    #[doc = "The resource ID of the job credential that will be used to connect to the targets."]
     pub credential: String,
+    #[doc = "The action to be executed by a job step."]
     pub action: JobStepAction,
+    #[doc = "The output configuration of a job step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<JobStepOutput>,
+    #[doc = "The execution options of a job step."]
     #[serde(rename = "executionOptions", default, skip_serializing_if = "Option::is_none")]
     pub execution_options: Option<JobStepExecutionOptions>,
 }
@@ -2822,20 +3419,28 @@ impl JobStepProperties {
         }
     }
 }
+#[doc = "A job target, for example a specific database or a container of databases that is evaluated during job execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobTarget {
+    #[doc = "Whether the target is included or excluded from the group."]
     #[serde(rename = "membershipType", default, skip_serializing_if = "Option::is_none")]
     pub membership_type: Option<job_target::MembershipType>,
+    #[doc = "The target type."]
     #[serde(rename = "type")]
     pub type_: job_target::Type,
+    #[doc = "The target server name."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The target database name."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The target elastic pool name."]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The target shard map."]
     #[serde(rename = "shardMapName", default, skip_serializing_if = "Option::is_none")]
     pub shard_map_name: Option<String>,
+    #[doc = "The resource ID of the credential that is used during job execution to connect to the target and determine the list of databases inside the target."]
     #[serde(rename = "refreshCredential", default, skip_serializing_if = "Option::is_none")]
     pub refresh_credential: Option<String>,
 }
@@ -2854,6 +3459,7 @@ impl JobTarget {
 }
 pub mod job_target {
     use super::*;
+    #[doc = "Whether the target is included or excluded from the group."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MembershipType {
         Include,
@@ -2864,6 +3470,7 @@ pub mod job_target {
             Self::Include
         }
     }
+    #[doc = "The target type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         TargetGroup,
@@ -2873,10 +3480,12 @@ pub mod job_target {
         SqlServer,
     }
 }
+#[doc = "A group of job targets."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobTargetGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of job target group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobTargetGroupProperties>,
 }
@@ -2885,10 +3494,13 @@ impl JobTargetGroup {
         Self::default()
     }
 }
+#[doc = "A list of target groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobTargetGroupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobTargetGroup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2897,8 +3509,10 @@ impl JobTargetGroupListResult {
         Self::default()
     }
 }
+#[doc = "Properties of job target group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobTargetGroupProperties {
+    #[doc = "Members of the target group."]
     pub members: Vec<JobTarget>,
 }
 impl JobTargetGroupProperties {
@@ -2906,6 +3520,7 @@ impl JobTargetGroupProperties {
         Self { members }
     }
 }
+#[doc = "A job version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobVersion {
     #[serde(flatten)]
@@ -2916,10 +3531,13 @@ impl JobVersion {
         Self::default()
     }
 }
+#[doc = "A list of job versions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobVersionListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobVersion>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2928,12 +3546,16 @@ impl JobVersionListResult {
         Self::default()
     }
 }
+#[doc = "The capabilities for a location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationCapabilities {
+    #[doc = "The location name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "The list of supported server versions."]
     #[serde(rename = "supportedServerVersions", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_server_versions: Vec<ServerVersionCapability>,
 }
@@ -2942,10 +3564,13 @@ impl LocationCapabilities {
         Self::default()
     }
 }
+#[doc = "A list of the server's security alert policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogicalServerSecurityAlertPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerSecurityAlertPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2954,10 +3579,12 @@ impl LogicalServerSecurityAlertPolicyListResult {
         Self::default()
     }
 }
+#[doc = "A short term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedBackupShortTermRetentionPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a short term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedBackupShortTermRetentionPolicyProperties>,
 }
@@ -2966,10 +3593,13 @@ impl ManagedBackupShortTermRetentionPolicy {
         Self::default()
     }
 }
+#[doc = "A list of short term retention policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedBackupShortTermRetentionPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedBackupShortTermRetentionPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2978,8 +3608,10 @@ impl ManagedBackupShortTermRetentionPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a short term retention policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedBackupShortTermRetentionPolicyProperties {
+    #[doc = "The backup retention period in days. This is how many days Point-in-Time Restore will be supported."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
 }
@@ -2988,10 +3620,12 @@ impl ManagedBackupShortTermRetentionPolicyProperties {
         Self::default()
     }
 }
+#[doc = "A managed database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedDatabase {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The managed database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedDatabaseProperties>,
 }
@@ -3003,10 +3637,13 @@ impl ManagedDatabase {
         }
     }
 }
+#[doc = "A list of managed databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedDatabase>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3015,40 +3652,58 @@ impl ManagedDatabaseListResult {
         Self::default()
     }
 }
+#[doc = "The managed database's properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseProperties {
+    #[doc = "Collation of the managed database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collation: Option<String>,
+    #[doc = "Status of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<managed_database_properties::Status>,
+    #[doc = "Creation date of the database."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "Earliest restore point in time for point in time restore."]
     #[serde(rename = "earliestRestorePoint", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_point: Option<String>,
+    #[doc = "Conditional. If createMode is PointInTimeRestore, this value is required. Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database."]
     #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_in_time: Option<String>,
+    #[doc = "Geo paired region."]
     #[serde(rename = "defaultSecondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub default_secondary_location: Option<String>,
+    #[doc = "Collation of the metadata catalog."]
     #[serde(rename = "catalogCollation", default, skip_serializing_if = "Option::is_none")]
     pub catalog_collation: Option<managed_database_properties::CatalogCollation>,
+    #[doc = "Managed database create mode. PointInTimeRestore: Create a database by restoring a point in time backup of an existing database. SourceDatabaseName, SourceManagedInstanceName and PointInTime must be specified. RestoreExternalBackup: Create a database by restoring from external backup files. Collation, StorageContainerUri and StorageContainerSasToken must be specified. Recovery: Creates a database by restoring a geo-replicated backup. RecoverableDatabaseId must be specified as the recoverable database resource ID to restore. RestoreLongTermRetentionBackup: Create a database by restoring from a long term retention backup (longTermRetentionBackupResourceId required)."]
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<managed_database_properties::CreateMode>,
+    #[doc = "Conditional. If createMode is RestoreExternalBackup, this value is required. Specifies the uri of the storage container where backups for this restore are stored."]
     #[serde(rename = "storageContainerUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_uri: Option<String>,
+    #[doc = "The resource identifier of the source database associated with create operation of this database."]
     #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub source_database_id: Option<String>,
+    #[doc = "The restorable dropped database resource id to restore when creating this database."]
     #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub restorable_dropped_database_id: Option<String>,
+    #[doc = "Conditional. If createMode is RestoreExternalBackup, this value is required. Specifies the storage container sas token."]
     #[serde(rename = "storageContainerSasToken", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_sas_token: Option<String>,
+    #[doc = "Instance Failover Group resource identifier that this managed database belongs to."]
     #[serde(rename = "failoverGroupId", default, skip_serializing_if = "Option::is_none")]
     pub failover_group_id: Option<String>,
+    #[doc = "The resource identifier of the recoverable database associated with create operation of this database."]
     #[serde(rename = "recoverableDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub recoverable_database_id: Option<String>,
+    #[doc = "The name of the Long Term Retention backup to be used for restore of this managed database."]
     #[serde(rename = "longTermRetentionBackupResourceId", default, skip_serializing_if = "Option::is_none")]
     pub long_term_retention_backup_resource_id: Option<String>,
+    #[doc = "Whether to auto complete restore of this managed database."]
     #[serde(rename = "autoCompleteRestore", default, skip_serializing_if = "Option::is_none")]
     pub auto_complete_restore: Option<bool>,
+    #[doc = "Last backup file name for restore of this managed database."]
     #[serde(rename = "lastBackupName", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_name: Option<String>,
 }
@@ -3059,6 +3714,7 @@ impl ManagedDatabaseProperties {
 }
 pub mod managed_database_properties {
     use super::*;
+    #[doc = "Status of the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Online,
@@ -3069,6 +3725,7 @@ pub mod managed_database_properties {
         Restoring,
         Updating,
     }
+    #[doc = "Collation of the metadata catalog."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CatalogCollation {
         #[serde(rename = "DATABASE_DEFAULT")]
@@ -3076,6 +3733,7 @@ pub mod managed_database_properties {
         #[serde(rename = "SQL_Latin1_General_CP1_CI_AS")]
         SqlLatin1GeneralCp1CiAs,
     }
+    #[doc = "Managed database create mode. PointInTimeRestore: Create a database by restoring a point in time backup of an existing database. SourceDatabaseName, SourceManagedInstanceName and PointInTime must be specified. RestoreExternalBackup: Create a database by restoring from external backup files. Collation, StorageContainerUri and StorageContainerSasToken must be specified. Recovery: Creates a database by restoring a geo-replicated backup. RecoverableDatabaseId must be specified as the recoverable database resource ID to restore. RestoreLongTermRetentionBackup: Create a database by restoring from a long term retention backup (longTermRetentionBackupResourceId required)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
         Default,
@@ -3085,10 +3743,12 @@ pub mod managed_database_properties {
         RestoreLongTermRetentionBackup,
     }
 }
+#[doc = "A managed database security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseSecurityAlertPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a security alert policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertPolicyProperties>,
 }
@@ -3097,10 +3757,13 @@ impl ManagedDatabaseSecurityAlertPolicy {
         Self::default()
     }
 }
+#[doc = "A list of the managed database's security alert policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseSecurityAlertPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedDatabaseSecurityAlertPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3109,10 +3772,13 @@ impl ManagedDatabaseSecurityAlertPolicyListResult {
         Self::default()
     }
 }
+#[doc = "An managed database update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseUpdate {
+    #[doc = "The managed database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedDatabaseProperties>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -3121,14 +3787,18 @@ impl ManagedDatabaseUpdate {
         Self::default()
     }
 }
+#[doc = "An Azure SQL managed instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Azure Active Directory identity configuration for a resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "The properties of a managed instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceProperties>,
 }
@@ -3142,10 +3812,12 @@ impl ManagedInstance {
         }
     }
 }
+#[doc = "An Azure SQL managed instance administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAdministrator {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a managed instance administrator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceAdministratorProperties>,
 }
@@ -3154,10 +3826,13 @@ impl ManagedInstanceAdministrator {
         Self::default()
     }
 }
+#[doc = "A list of managed instance administrators."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAdministratorListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceAdministrator>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3166,12 +3841,17 @@ impl ManagedInstanceAdministratorListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a managed instance administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstanceAdministratorProperties {
+    #[doc = "Type of the managed instance administrator."]
     #[serde(rename = "administratorType")]
     pub administrator_type: managed_instance_administrator_properties::AdministratorType,
+    #[doc = "Login name of the managed instance administrator."]
     pub login: String,
+    #[doc = "SID (object ID) of the managed instance administrator."]
     pub sid: String,
+    #[doc = "Tenant ID of the managed instance administrator."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -3187,15 +3867,19 @@ impl ManagedInstanceAdministratorProperties {
 }
 pub mod managed_instance_administrator_properties {
     use super::*;
+    #[doc = "Type of the managed instance administrator."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AdministratorType {
         ActiveDirectory,
     }
 }
+#[doc = "A list of active directory only authentications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAzureAdOnlyAuthListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceAzureAdOnlyAuthentication>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3204,8 +3888,10 @@ impl ManagedInstanceAzureAdOnlyAuthListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a active directory only authentication for Managed Instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstanceAzureAdOnlyAuthProperties {
+    #[doc = "Azure Active Directory only Authentication enabled."]
     #[serde(rename = "azureADOnlyAuthentication")]
     pub azure_ad_only_authentication: bool,
 }
@@ -3216,10 +3902,12 @@ impl ManagedInstanceAzureAdOnlyAuthProperties {
         }
     }
 }
+#[doc = "Azure Active Directory only authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAzureAdOnlyAuthentication {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a active directory only authentication for Managed Instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceAzureAdOnlyAuthProperties>,
 }
@@ -3228,12 +3916,15 @@ impl ManagedInstanceAzureAdOnlyAuthentication {
         Self::default()
     }
 }
+#[doc = "The managed instance encryption protector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceEncryptionProtector {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Properties for an encryption protector execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceEncryptionProtectorProperties>,
 }
@@ -3242,10 +3933,13 @@ impl ManagedInstanceEncryptionProtector {
         Self::default()
     }
 }
+#[doc = "A list of managed instance encryption protectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceEncryptionProtectorListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceEncryptionProtector>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3254,14 +3948,19 @@ impl ManagedInstanceEncryptionProtectorListResult {
         Self::default()
     }
 }
+#[doc = "Properties for an encryption protector execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstanceEncryptionProtectorProperties {
+    #[doc = "The name of the managed instance key."]
     #[serde(rename = "serverKeyName", default, skip_serializing_if = "Option::is_none")]
     pub server_key_name: Option<String>,
+    #[doc = "The encryption protector type like 'ServiceManaged', 'AzureKeyVault'."]
     #[serde(rename = "serverKeyType")]
     pub server_key_type: managed_instance_encryption_protector_properties::ServerKeyType,
+    #[doc = "The URI of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Thumbprint of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
@@ -3277,18 +3976,22 @@ impl ManagedInstanceEncryptionProtectorProperties {
 }
 pub mod managed_instance_encryption_protector_properties {
     use super::*;
+    #[doc = "The encryption protector type like 'ServiceManaged', 'AzureKeyVault'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {
         ServiceManaged,
         AzureKeyVault,
     }
 }
+#[doc = "A managed instance key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceKey {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Properties for a key execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceKeyProperties>,
 }
@@ -3297,10 +4000,13 @@ impl ManagedInstanceKey {
         Self::default()
     }
 }
+#[doc = "A list of managed instance keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceKeyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceKey>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3309,14 +4015,19 @@ impl ManagedInstanceKeyListResult {
         Self::default()
     }
 }
+#[doc = "Properties for a key execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstanceKeyProperties {
+    #[doc = "The key type like 'ServiceManaged', 'AzureKeyVault'."]
     #[serde(rename = "serverKeyType")]
     pub server_key_type: managed_instance_key_properties::ServerKeyType,
+    #[doc = "The URI of the key. If the ServerKeyType is AzureKeyVault, then the URI is required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Thumbprint of the key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "The key creation date."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
 }
@@ -3332,16 +4043,20 @@ impl ManagedInstanceKeyProperties {
 }
 pub mod managed_instance_key_properties {
     use super::*;
+    #[doc = "The key type like 'ServiceManaged', 'AzureKeyVault'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {
         ServiceManaged,
         AzureKeyVault,
     }
 }
+#[doc = "A list of managed instances."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstance>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3350,10 +4065,12 @@ impl ManagedInstanceListResult {
         Self::default()
     }
 }
+#[doc = "A long term retention backup for a managed database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionBackup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a long term retention backup"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceLongTermRetentionBackupProperties>,
 }
@@ -3362,10 +4079,13 @@ impl ManagedInstanceLongTermRetentionBackup {
         Self::default()
     }
 }
+#[doc = "A list of long term retention backups for managed database(s)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionBackupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceLongTermRetentionBackup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3374,18 +4094,25 @@ impl ManagedInstanceLongTermRetentionBackupListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a long term retention backup"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionBackupProperties {
+    #[doc = "The managed instance that the backup database belongs to."]
     #[serde(rename = "managedInstanceName", default, skip_serializing_if = "Option::is_none")]
     pub managed_instance_name: Option<String>,
+    #[doc = "The create time of the instance."]
     #[serde(rename = "managedInstanceCreateTime", default, skip_serializing_if = "Option::is_none")]
     pub managed_instance_create_time: Option<String>,
+    #[doc = "The name of the database the backup belong to"]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The delete time of the database"]
     #[serde(rename = "databaseDeletionTime", default, skip_serializing_if = "Option::is_none")]
     pub database_deletion_time: Option<String>,
+    #[doc = "The time the backup was taken"]
     #[serde(rename = "backupTime", default, skip_serializing_if = "Option::is_none")]
     pub backup_time: Option<String>,
+    #[doc = "The time the long term retention backup will expire."]
     #[serde(rename = "backupExpirationTime", default, skip_serializing_if = "Option::is_none")]
     pub backup_expiration_time: Option<String>,
 }
@@ -3394,10 +4121,12 @@ impl ManagedInstanceLongTermRetentionBackupProperties {
         Self::default()
     }
 }
+#[doc = "A long term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a long term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaseLongTermRetentionPolicyProperties>,
 }
@@ -3406,10 +4135,13 @@ impl ManagedInstanceLongTermRetentionPolicy {
         Self::default()
     }
 }
+#[doc = "A list of long term retention policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceLongTermRetentionPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3418,10 +4150,13 @@ impl ManagedInstanceLongTermRetentionPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Pairs of Managed Instances in the failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstancePairInfo {
+    #[doc = "Id of Primary Managed Instance in pair."]
     #[serde(rename = "primaryManagedInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub primary_managed_instance_id: Option<String>,
+    #[doc = "Id of Partner Managed Instance in pair."]
     #[serde(rename = "partnerManagedInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub partner_managed_instance_id: Option<String>,
 }
@@ -3430,10 +4165,13 @@ impl ManagedInstancePairInfo {
         Self::default()
     }
 }
+#[doc = "A private endpoint connection under a managed instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstancePecProperty {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstancePrivateEndpointConnectionProperties>,
 }
@@ -3442,12 +4180,14 @@ impl ManagedInstancePecProperty {
         Self::default()
     }
 }
+#[doc = "Properties of a private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstancePrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<ManagedInstancePrivateEndpointProperty>,
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<ManagedInstancePrivateLinkServiceConnectionStateProperty>,
+    #[doc = "State of the Private Endpoint Connection."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -3458,6 +4198,7 @@ impl ManagedInstancePrivateEndpointConnectionProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstancePrivateEndpointProperty {
+    #[doc = "Resource id of the private endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -3468,8 +4209,11 @@ impl ManagedInstancePrivateEndpointProperty {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstancePrivateLinkServiceConnectionStateProperty {
+    #[doc = "The private link service connection status."]
     pub status: String,
+    #[doc = "The private link service connection description."]
     pub description: String,
+    #[doc = "The private link service connection description."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -3482,54 +4226,78 @@ impl ManagedInstancePrivateLinkServiceConnectionStateProperty {
         }
     }
 }
+#[doc = "The properties of a managed instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<managed_instance_properties::ProvisioningState>,
+    #[doc = "Specifies the mode of database creation.\r\n\r\nDefault: Regular instance creation.\r\n\r\nRestore: Creates an instance by restoring a set of backups to specific point in time. RestorePointInTime and SourceManagedInstanceId must be specified."]
     #[serde(rename = "managedInstanceCreateMode", default, skip_serializing_if = "Option::is_none")]
     pub managed_instance_create_mode: Option<managed_instance_properties::ManagedInstanceCreateMode>,
+    #[doc = "The fully qualified domain name of the managed instance."]
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub fully_qualified_domain_name: Option<String>,
+    #[doc = "Administrator username for the managed instance. Can only be specified when the managed instance is being created (and is required for creation)."]
     #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
+    #[doc = "The administrator login password (required for managed instance creation)."]
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
+    #[doc = "Subnet resource ID for the managed instance."]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
+    #[doc = "The state of the managed instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The license type. Possible values are 'LicenseIncluded' (regular price inclusive of a new SQL license) and 'BasePrice' (discounted AHB price for bringing your own SQL licenses)."]
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<managed_instance_properties::LicenseType>,
+    #[doc = "The number of vCores. Allowed values: 8, 16, 24, 32, 40, 64, 80."]
     #[serde(rename = "vCores", default, skip_serializing_if = "Option::is_none")]
     pub v_cores: Option<i32>,
+    #[doc = "Storage size in GB. Minimum value: 32. Maximum value: 8192. Increments of 32 GB allowed only."]
     #[serde(rename = "storageSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub storage_size_in_gb: Option<i32>,
+    #[doc = "Collation of the managed instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collation: Option<String>,
+    #[doc = "The Dns Zone that the managed instance is in."]
     #[serde(rename = "dnsZone", default, skip_serializing_if = "Option::is_none")]
     pub dns_zone: Option<String>,
+    #[doc = "The resource id of another managed instance whose DNS zone this managed instance will share after creation."]
     #[serde(rename = "dnsZonePartner", default, skip_serializing_if = "Option::is_none")]
     pub dns_zone_partner: Option<String>,
+    #[doc = "Whether or not the public data endpoint is enabled."]
     #[serde(rename = "publicDataEndpointEnabled", default, skip_serializing_if = "Option::is_none")]
     pub public_data_endpoint_enabled: Option<bool>,
+    #[doc = "The resource identifier of the source managed instance associated with create operation of this instance."]
     #[serde(rename = "sourceManagedInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub source_managed_instance_id: Option<String>,
+    #[doc = "Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database."]
     #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_in_time: Option<String>,
+    #[doc = "Connection type used for connecting to the instance."]
     #[serde(rename = "proxyOverride", default, skip_serializing_if = "Option::is_none")]
     pub proxy_override: Option<managed_instance_properties::ProxyOverride>,
+    #[doc = "Id of the timezone. Allowed values are timezones supported by Windows.\r\nWindows keeps details on supported timezones, including the id, in registry under\r\nKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones.\r\nYou can get those registry values via SQL Server by querying SELECT name AS timezone_id FROM sys.time_zone_info.\r\nList of Ids can also be obtained by executing [System.TimeZoneInfo]::GetSystemTimeZones() in PowerShell.\r\nAn example of valid timezone id is \"Pacific Standard Time\" or \"W. Europe Standard Time\"."]
     #[serde(rename = "timezoneId", default, skip_serializing_if = "Option::is_none")]
     pub timezone_id: Option<String>,
+    #[doc = "The Id of the instance pool this managed server belongs to."]
     #[serde(rename = "instancePoolId", default, skip_serializing_if = "Option::is_none")]
     pub instance_pool_id: Option<String>,
+    #[doc = "Specifies maintenance configuration id to apply to this managed instance."]
     #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_configuration_id: Option<String>,
+    #[doc = "List of private endpoint connections on a managed instance."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<ManagedInstancePecProperty>,
+    #[doc = "Minimal TLS version. Allowed values: 'None', '1.0', '1.1', '1.2'"]
     #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<String>,
+    #[doc = "The storage account type used to store backups for this instance. The options are LRS (LocallyRedundantStorage), ZRS (ZoneRedundantStorage) and GRS (GeoRedundantStorage)"]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<managed_instance_properties::StorageAccountType>,
+    #[doc = "Whether or not the multi-az is enabled."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -3549,22 +4317,26 @@ pub mod managed_instance_properties {
         Succeeded,
         Failed,
     }
+    #[doc = "Specifies the mode of database creation.\r\n\r\nDefault: Regular instance creation.\r\n\r\nRestore: Creates an instance by restoring a set of backups to specific point in time. RestorePointInTime and SourceManagedInstanceId must be specified."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ManagedInstanceCreateMode {
         Default,
         PointInTimeRestore,
     }
+    #[doc = "The license type. Possible values are 'LicenseIncluded' (regular price inclusive of a new SQL license) and 'BasePrice' (discounted AHB price for bringing your own SQL licenses)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LicenseType {
         LicenseIncluded,
         BasePrice,
     }
+    #[doc = "Connection type used for connecting to the instance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProxyOverride {
         Proxy,
         Redirect,
         Default,
     }
+    #[doc = "The storage account type used to store backups for this instance. The options are LRS (LocallyRedundantStorage), ZRS (ZoneRedundantStorage) and GRS (GeoRedundantStorage)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageAccountType {
         #[serde(rename = "GRS")]
@@ -3575,14 +4347,19 @@ pub mod managed_instance_properties {
         Zrs,
     }
 }
+#[doc = "An update request for an Azure SQL Database managed instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceUpdate {
+    #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Azure Active Directory identity configuration for a resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "The properties of a managed instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceProperties>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -3591,10 +4368,12 @@ impl ManagedInstanceUpdate {
         Self::default()
     }
 }
+#[doc = "A managed instance vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceVulnerabilityAssessment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a managed instance vulnerability assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceVulnerabilityAssessmentProperties>,
 }
@@ -3603,10 +4382,13 @@ impl ManagedInstanceVulnerabilityAssessment {
         Self::default()
     }
 }
+#[doc = "A list of the ManagedInstance's vulnerability assessments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceVulnerabilityAssessmentListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedInstanceVulnerabilityAssessment>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3615,14 +4397,19 @@ impl ManagedInstanceVulnerabilityAssessmentListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a managed instance vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstanceVulnerabilityAssessmentProperties {
+    #[doc = "A blob storage container path to hold the scan results (e.g. https://myStorage.blob.core.windows.net/VaScans/)."]
     #[serde(rename = "storageContainerPath")]
     pub storage_container_path: String,
+    #[doc = "A shared access signature (SAS Key) that has read and write access to the blob container specified in 'storageContainerPath' parameter. If 'storageAccountAccessKey' isn't specified, StorageContainerSasKey is required."]
     #[serde(rename = "storageContainerSasKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_sas_key: Option<String>,
+    #[doc = "Specifies the identifier key of the storage account for vulnerability assessment scan results. If 'StorageContainerSasKey' isn't specified, storageAccountAccessKey is required."]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Properties of a Vulnerability Assessment recurring scans."]
     #[serde(rename = "recurringScans", default, skip_serializing_if = "Option::is_none")]
     pub recurring_scans: Option<VulnerabilityAssessmentRecurringScansProperties>,
 }
@@ -3636,10 +4423,12 @@ impl ManagedInstanceVulnerabilityAssessmentProperties {
         }
     }
 }
+#[doc = "A managed server security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServerSecurityAlertPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a security alert policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertPolicyProperties>,
 }
@@ -3648,10 +4437,13 @@ impl ManagedServerSecurityAlertPolicy {
         Self::default()
     }
 }
+#[doc = "A list of the managed Server's security alert policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServerSecurityAlertPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedServerSecurityAlertPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3660,12 +4452,16 @@ impl ManagedServerSecurityAlertPolicyListResult {
         Self::default()
     }
 }
+#[doc = "The maximum size limits for a database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaxSizeCapability {
+    #[doc = "The maximum size of the database (see 'unit' for the units)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "The units that the limit is expressed in."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<max_size_capability::Unit>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
 }
@@ -3676,6 +4472,7 @@ impl MaxSizeCapability {
 }
 pub mod max_size_capability {
     use super::*;
+    #[doc = "The units that the limit is expressed in."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Megabytes,
@@ -3684,18 +4481,25 @@ pub mod max_size_capability {
         Petabytes,
     }
 }
+#[doc = "Database metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metric {
+    #[doc = "The start time for the metric (ISO-8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The end time for the metric (ISO-8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The time step to be used to summarize the metric values."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
+    #[doc = "The unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<metric::Unit>,
+    #[doc = "A database metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricName>,
+    #[doc = "The metric values for the specified time window and timestep."]
     #[serde(rename = "metricValues", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_values: Vec<MetricValue>,
 }
@@ -3706,6 +4510,7 @@ impl Metric {
 }
 pub mod metric {
     use super::*;
+    #[doc = "The unit of the metric."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         #[serde(rename = "count")]
@@ -3722,10 +4527,13 @@ pub mod metric {
         BytesPerSecond,
     }
 }
+#[doc = "A metric availability value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
+    #[doc = "The length of retention for the database metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retention: Option<String>,
+    #[doc = "The granularity of the database metric."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
 }
@@ -3734,16 +4542,22 @@ impl MetricAvailability {
         Self::default()
     }
 }
+#[doc = "A database metric definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDefinition {
+    #[doc = "A database metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricName>,
+    #[doc = "The primary aggregation type defining how metric values are displayed."]
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub primary_aggregation_type: Option<metric_definition::PrimaryAggregationType>,
+    #[doc = "The resource uri of the database."]
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
+    #[doc = "The unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<metric_definition::Unit>,
+    #[doc = "The list of database metric availabilities for the metric."]
     #[serde(rename = "metricAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_availabilities: Vec<MetricAvailability>,
 }
@@ -3754,6 +4568,7 @@ impl MetricDefinition {
 }
 pub mod metric_definition {
     use super::*;
+    #[doc = "The primary aggregation type defining how metric values are displayed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrimaryAggregationType {
         None,
@@ -3763,6 +4578,7 @@ pub mod metric_definition {
         Maximum,
         Total,
     }
+    #[doc = "The unit of the metric."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
@@ -3773,8 +4589,10 @@ pub mod metric_definition {
         BytesPerSecond,
     }
 }
+#[doc = "The response to a list database metric definitions request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricDefinitionListResult {
+    #[doc = "The list of metric definitions for the database."]
     pub value: Vec<MetricDefinition>,
 }
 impl MetricDefinitionListResult {
@@ -3782,8 +4600,10 @@ impl MetricDefinitionListResult {
         Self { value }
     }
 }
+#[doc = "The response to a list database metrics request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricListResult {
+    #[doc = "The list of metrics for the database."]
     pub value: Vec<Metric>,
 }
 impl MetricListResult {
@@ -3791,10 +4611,13 @@ impl MetricListResult {
         Self { value }
     }
 }
+#[doc = "A database metric name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricName {
+    #[doc = "The name of the database metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The friendly name of the database metric."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -3803,18 +4626,25 @@ impl MetricName {
         Self::default()
     }
 }
+#[doc = "Represents database metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricValue {
+    #[doc = "The number of values for the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<f64>,
+    #[doc = "The average value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
+    #[doc = "The max value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<f64>,
+    #[doc = "The min value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<f64>,
+    #[doc = "The metric timestamp (ISO-8601 format)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+    #[doc = "The total value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<f64>,
 }
@@ -3823,10 +4653,13 @@ impl MetricValue {
         Self::default()
     }
 }
+#[doc = "ARM Usage Name"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Name {
+    #[doc = "Usage name value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Usage name localized value."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -3835,14 +4668,19 @@ impl Name {
         Self::default()
     }
 }
+#[doc = "SQL REST API operation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "The name of the operation being performed on this particular object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "The intended executor of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
+    #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -3853,6 +4691,7 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The intended executor of the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
         #[serde(rename = "user")]
@@ -3861,14 +4700,19 @@ pub mod operation {
         System,
     }
 }
+#[doc = "Display metadata associated with the operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "The localized friendly form of the resource provider name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The localized friendly form of the resource type related to this action/operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The localized friendly name for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The localized friendly description for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -3877,14 +4721,19 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "The impact of an operation, both in absolute and relative terms."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationImpact {
+    #[doc = "The name of the impact dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The unit in which estimated impact to dimension is measured."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "The absolute impact to dimension."]
     #[serde(rename = "changeValueAbsolute", default, skip_serializing_if = "Option::is_none")]
     pub change_value_absolute: Option<f64>,
+    #[doc = "The relative impact to dimension (null if not applicable)"]
     #[serde(rename = "changeValueRelative", default, skip_serializing_if = "Option::is_none")]
     pub change_value_relative: Option<f64>,
 }
@@ -3893,10 +4742,13 @@ impl OperationImpact {
         Self::default()
     }
 }
+#[doc = "Result of the request to list SQL operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3905,11 +4757,15 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Partner server information for the failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartnerInfo {
+    #[doc = "Resource identifier of the partner server."]
     pub id: String,
+    #[doc = "Geo location of the partner server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Replication role of the partner server."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<partner_info::ReplicationRole>,
 }
@@ -3924,16 +4780,20 @@ impl PartnerInfo {
 }
 pub mod partner_info {
     use super::*;
+    #[doc = "Replication role of the partner server."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationRole {
         Primary,
         Secondary,
     }
 }
+#[doc = "Partner region information for the failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerRegionInfo {
+    #[doc = "Geo location of the partner managed instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Replication role of the partner managed instances."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<partner_region_info::ReplicationRole>,
 }
@@ -3944,16 +4804,20 @@ impl PartnerRegionInfo {
 }
 pub mod partner_region_info {
     use super::*;
+    #[doc = "Replication role of the partner managed instances."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationRole {
         Primary,
         Secondary,
     }
 }
+#[doc = "A possible performance level of a service objective capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PerformanceLevel {
+    #[doc = "Unit type used to measure service objective performance level."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<performance_level::Unit>,
+    #[doc = "Performance level value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<i64>,
 }
@@ -3964,16 +4828,19 @@ impl PerformanceLevel {
 }
 pub mod performance_level {
     use super::*;
+    #[doc = "Unit type used to measure service objective performance level."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         #[serde(rename = "DTU")]
         Dtu,
     }
 }
+#[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -3982,10 +4849,13 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "A list of private endpoint connections."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -3994,12 +4864,14 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpointProperty>,
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionStateProperty>,
+    #[doc = "State of the private endpoint connection."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
@@ -4010,6 +4882,7 @@ impl PrivateEndpointConnectionProperties {
 }
 pub mod private_endpoint_connection_properties {
     use super::*;
+    #[doc = "State of the private endpoint connection."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Approving,
@@ -4021,6 +4894,7 @@ pub mod private_endpoint_connection_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointProperty {
+    #[doc = "Resource id of the private endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -4029,10 +4903,12 @@ impl PrivateEndpointProperty {
         Self::default()
     }
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -4041,10 +4917,13 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4053,10 +4932,13 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
 }
@@ -4067,8 +4949,11 @@ impl PrivateLinkResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkServiceConnectionStateProperty {
+    #[doc = "The private link service connection status."]
     pub status: private_link_service_connection_state_property::Status,
+    #[doc = "The private link service connection description."]
     pub description: String,
+    #[doc = "The actions required for private link service connection."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<private_link_service_connection_state_property::ActionsRequired>,
 }
@@ -4083,6 +4968,7 @@ impl PrivateLinkServiceConnectionStateProperty {
 }
 pub mod private_link_service_connection_state_property {
     use super::*;
+    #[doc = "The private link service connection status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Approved,
@@ -4090,11 +4976,13 @@ pub mod private_link_service_connection_state_property {
         Rejected,
         Disconnected,
     }
+    #[doc = "The actions required for private link service connection."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionsRequired {
         None,
     }
 }
+#[doc = "ARM proxy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -4105,14 +4993,19 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Properties of a query metrics interval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryMetricInterval {
+    #[doc = "The start time for the metric interval (ISO-8601 format)."]
     #[serde(rename = "intervalStartTime", default, skip_serializing_if = "Option::is_none")]
     pub interval_start_time: Option<String>,
+    #[doc = "Interval type (length)."]
     #[serde(rename = "intervalType", default, skip_serializing_if = "Option::is_none")]
     pub interval_type: Option<query_metric_interval::IntervalType>,
+    #[doc = "Execution count of a query in this interval."]
     #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
     pub execution_count: Option<i64>,
+    #[doc = "List of metric objects for this interval"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metrics: Vec<QueryMetricProperties>,
 }
@@ -4123,6 +5016,7 @@ impl QueryMetricInterval {
 }
 pub mod query_metric_interval {
     use super::*;
+    #[doc = "Interval type (length)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IntervalType {
         #[serde(rename = "PT1H")]
@@ -4131,24 +5025,34 @@ pub mod query_metric_interval {
         P1d,
     }
 }
+#[doc = "Properties of a topquery metric in one interval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryMetricProperties {
+    #[doc = "The name information for the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The UI appropriate name for the metric."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<query_metric_properties::Unit>,
+    #[doc = "The value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
+    #[doc = "Metric value when min() aggregate function is used over the interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min: Option<f64>,
+    #[doc = "Metric value when max() aggregate function is used over the interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<f64>,
+    #[doc = "Metric value when avg() aggregate function is used over the interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avg: Option<f64>,
+    #[doc = "Metric value when sum() aggregate function is used over the interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sum: Option<f64>,
+    #[doc = "Metric value when stdev aggregate function is used over the interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stdev: Option<f64>,
 }
@@ -4159,6 +5063,7 @@ impl QueryMetricProperties {
 }
 pub mod query_metric_properties {
     use super::*;
+    #[doc = "The unit of the metric."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         #[serde(rename = "percentage")]
@@ -4171,16 +5076,22 @@ pub mod query_metric_properties {
         Count,
     }
 }
+#[doc = "Properties of a query execution statistics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryStatisticsProperties {
+    #[doc = "Database name of the database in which this query was executed."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "Unique query id (unique within one database)."]
     #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
     pub query_id: Option<String>,
+    #[doc = "The start time for the metric (ISO-8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The end time for the metric (ISO-8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "List of intervals with appropriate metric data"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub intervals: Vec<QueryMetricInterval>,
 }
@@ -4189,10 +5100,12 @@ impl QueryStatisticsProperties {
         Self::default()
     }
 }
+#[doc = "Represents a recommended elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPool {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a recommended elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecommendedElasticPoolProperties>,
 }
@@ -4201,8 +5114,10 @@ impl RecommendedElasticPool {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list recommended elastic pool metrics request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendedElasticPoolListMetricsResult {
+    #[doc = "The list of recommended elastic pools metrics."]
     pub value: Vec<RecommendedElasticPoolMetric>,
 }
 impl RecommendedElasticPoolListMetricsResult {
@@ -4210,8 +5125,10 @@ impl RecommendedElasticPoolListMetricsResult {
         Self { value }
     }
 }
+#[doc = "Represents the response to a list recommended elastic pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendedElasticPoolListResult {
+    #[doc = "The list of recommended elastic pools hosted in the server."]
     pub value: Vec<RecommendedElasticPool>,
 }
 impl RecommendedElasticPoolListResult {
@@ -4219,12 +5136,16 @@ impl RecommendedElasticPoolListResult {
         Self { value }
     }
 }
+#[doc = "Represents recommended elastic pool metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPoolMetric {
+    #[doc = "The time of metric (ISO8601 format)."]
     #[serde(rename = "dateTime", default, skip_serializing_if = "Option::is_none")]
     pub date_time: Option<String>,
+    #[doc = "Gets or sets the DTUs (Database Transaction Units). See https://azure.microsoft.com/documentation/articles/sql-database-what-is-a-dtu/"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<f64>,
+    #[doc = "Gets or sets size in gigabytes."]
     #[serde(rename = "sizeGB", default, skip_serializing_if = "Option::is_none")]
     pub size_gb: Option<f64>,
 }
@@ -4233,28 +5154,40 @@ impl RecommendedElasticPoolMetric {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a recommended elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPoolProperties {
+    #[doc = "The edition of the recommended elastic pool. The ElasticPoolEdition enumeration contains all the valid editions."]
     #[serde(rename = "databaseEdition", default, skip_serializing_if = "Option::is_none")]
     pub database_edition: Option<recommended_elastic_pool_properties::DatabaseEdition>,
+    #[doc = "The DTU for the recommended elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<f64>,
+    #[doc = "The minimum DTU for the database."]
     #[serde(rename = "databaseDtuMin", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_min: Option<f64>,
+    #[doc = "The maximum DTU for the database."]
     #[serde(rename = "databaseDtuMax", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_max: Option<f64>,
+    #[doc = "Gets storage size in megabytes."]
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<f64>,
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_start: Option<String>,
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_end: Option<String>,
+    #[doc = "Gets maximum observed DTU."]
     #[serde(rename = "maxObservedDtu", default, skip_serializing_if = "Option::is_none")]
     pub max_observed_dtu: Option<f64>,
+    #[doc = "Gets maximum observed storage in megabytes."]
     #[serde(rename = "maxObservedStorageMB", default, skip_serializing_if = "Option::is_none")]
     pub max_observed_storage_mb: Option<f64>,
+    #[doc = "The list of databases in this pool. Expanded property"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub databases: Vec<Database>,
+    #[doc = "The list of databases housed in the server. Expanded property"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metrics: Vec<RecommendedElasticPoolMetric>,
 }
@@ -4265,6 +5198,7 @@ impl RecommendedElasticPoolProperties {
 }
 pub mod recommended_elastic_pool_properties {
     use super::*;
+    #[doc = "The edition of the recommended elastic pool. The ElasticPoolEdition enumeration contains all the valid editions."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DatabaseEdition {
         Basic,
@@ -4274,10 +5208,12 @@ pub mod recommended_elastic_pool_properties {
         BusinessCritical,
     }
 }
+#[doc = "Represents a database recommended index."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedIndex {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a database recommended index."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecommendedIndexProperties>,
 }
@@ -4286,30 +5222,43 @@ impl RecommendedIndex {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a database recommended index."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedIndexProperties {
+    #[doc = "The proposed index action. You can create a missing index, drop an unused index, or rebuild an existing index to improve its performance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<recommended_index_properties::Action>,
+    #[doc = "The current recommendation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<recommended_index_properties::State>,
+    #[doc = "The UTC datetime showing when this resource was created (ISO8601 format)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The UTC datetime of when was this resource last changed (ISO8601 format)."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "The type of index (CLUSTERED, NONCLUSTERED, COLUMNSTORE, CLUSTERED COLUMNSTORE)"]
     #[serde(rename = "indexType", default, skip_serializing_if = "Option::is_none")]
     pub index_type: Option<recommended_index_properties::IndexType>,
+    #[doc = "The schema where table to build index over resides"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
+    #[doc = "The table on which to build index."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<String>,
+    #[doc = "Columns over which to build index"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<String>,
+    #[doc = "The list of column names to be included in the index"]
     #[serde(rename = "includedColumns", default, skip_serializing_if = "Vec::is_empty")]
     pub included_columns: Vec<String>,
+    #[doc = "The full build index script"]
     #[serde(rename = "indexScript", default, skip_serializing_if = "Option::is_none")]
     pub index_script: Option<String>,
+    #[doc = "The estimated impact of doing recommended index action."]
     #[serde(rename = "estimatedImpact", default, skip_serializing_if = "Vec::is_empty")]
     pub estimated_impact: Vec<OperationImpact>,
+    #[doc = "The values reported after index action is complete."]
     #[serde(rename = "reportedImpact", default, skip_serializing_if = "Vec::is_empty")]
     pub reported_impact: Vec<OperationImpact>,
 }
@@ -4320,12 +5269,14 @@ impl RecommendedIndexProperties {
 }
 pub mod recommended_index_properties {
     use super::*;
+    #[doc = "The proposed index action. You can create a missing index, drop an unused index, or rebuild an existing index to improve its performance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Create,
         Drop,
         Rebuild,
     }
+    #[doc = "The current recommendation state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Active,
@@ -4341,6 +5292,7 @@ pub mod recommended_index_properties {
         Blocked,
         Success,
     }
+    #[doc = "The type of index (CLUSTERED, NONCLUSTERED, COLUMNSTORE, CLUSTERED COLUMNSTORE)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IndexType {
         #[serde(rename = "CLUSTERED")]
@@ -4353,10 +5305,12 @@ pub mod recommended_index_properties {
         ClusteredColumnstore,
     }
 }
+#[doc = "A recoverable database"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableDatabase {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a recoverable database"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecoverableDatabaseProperties>,
 }
@@ -4365,8 +5319,10 @@ impl RecoverableDatabase {
         Self::default()
     }
 }
+#[doc = "The response to a list recoverable databases request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoverableDatabaseListResult {
+    #[doc = "A list of recoverable databases"]
     pub value: Vec<RecoverableDatabase>,
 }
 impl RecoverableDatabaseListResult {
@@ -4374,14 +5330,19 @@ impl RecoverableDatabaseListResult {
         Self { value }
     }
 }
+#[doc = "The properties of a recoverable database"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableDatabaseProperties {
+    #[doc = "The edition of the database"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<String>,
+    #[doc = "The service level objective name of the database"]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<String>,
+    #[doc = "The elastic pool name of the database"]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The last available backup date of the database (ISO8601 format)"]
     #[serde(rename = "lastAvailableBackupDate", default, skip_serializing_if = "Option::is_none")]
     pub last_available_backup_date: Option<String>,
 }
@@ -4390,10 +5351,12 @@ impl RecoverableDatabaseProperties {
         Self::default()
     }
 }
+#[doc = "A recoverable managed database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableManagedDatabase {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The recoverable managed database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecoverableManagedDatabaseProperties>,
 }
@@ -4402,10 +5365,13 @@ impl RecoverableManagedDatabase {
         Self::default()
     }
 }
+#[doc = "A list of recoverable managed databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableManagedDatabaseListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RecoverableManagedDatabase>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4414,8 +5380,10 @@ impl RecoverableManagedDatabaseListResult {
         Self::default()
     }
 }
+#[doc = "The recoverable managed database's properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableManagedDatabaseProperties {
+    #[doc = "The last available backup date."]
     #[serde(rename = "lastAvailableBackupDate", default, skip_serializing_if = "Option::is_none")]
     pub last_available_backup_date: Option<String>,
 }
@@ -4424,14 +5392,18 @@ impl RecoverableManagedDatabaseProperties {
         Self::default()
     }
 }
+#[doc = "Represents a database replication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLink {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Location of the server that contains this firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Type of resource this is."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Represents the properties of a database replication link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReplicationLinkProperties>,
 }
@@ -4440,8 +5412,10 @@ impl ReplicationLink {
         Self::default()
     }
 }
+#[doc = "Represents the response to a List database replication link request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLinkListResult {
+    #[doc = "The list of database replication links housed in the database."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReplicationLink>,
 }
@@ -4450,26 +5424,37 @@ impl ReplicationLinkListResult {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a database replication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLinkProperties {
+    #[doc = "Legacy value indicating whether termination is allowed.  Currently always returns true."]
     #[serde(rename = "isTerminationAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_termination_allowed: Option<bool>,
+    #[doc = "Replication mode of this replication link."]
     #[serde(rename = "replicationMode", default, skip_serializing_if = "Option::is_none")]
     pub replication_mode: Option<String>,
+    #[doc = "The name of the server hosting the partner database."]
     #[serde(rename = "partnerServer", default, skip_serializing_if = "Option::is_none")]
     pub partner_server: Option<String>,
+    #[doc = "The name of the partner database."]
     #[serde(rename = "partnerDatabase", default, skip_serializing_if = "Option::is_none")]
     pub partner_database: Option<String>,
+    #[doc = "The Azure Region of the partner database."]
     #[serde(rename = "partnerLocation", default, skip_serializing_if = "Option::is_none")]
     pub partner_location: Option<String>,
+    #[doc = "The role of the database in the replication link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<replication_link_properties::Role>,
+    #[doc = "The role of the partner database in the replication link."]
     #[serde(rename = "partnerRole", default, skip_serializing_if = "Option::is_none")]
     pub partner_role: Option<replication_link_properties::PartnerRole>,
+    #[doc = "The start time for the replication link."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The percentage of seeding complete for the replication link."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The replication state for the replication link."]
     #[serde(rename = "replicationState", default, skip_serializing_if = "Option::is_none")]
     pub replication_state: Option<replication_link_properties::ReplicationState>,
 }
@@ -4480,6 +5465,7 @@ impl ReplicationLinkProperties {
 }
 pub mod replication_link_properties {
     use super::*;
+    #[doc = "The role of the database in the replication link."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
         Primary,
@@ -4488,6 +5474,7 @@ pub mod replication_link_properties {
         Source,
         Copy,
     }
+    #[doc = "The role of the partner database in the replication link."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PartnerRole {
         Primary,
@@ -4496,6 +5483,7 @@ pub mod replication_link_properties {
         Source,
         Copy,
     }
+    #[doc = "The replication state for the replication link."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationState {
         #[serde(rename = "PENDING")]
@@ -4508,12 +5496,16 @@ pub mod replication_link_properties {
         Suspended,
     }
 }
+#[doc = "ARM resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -4522,12 +5514,16 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Azure Active Directory identity configuration for a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdentity {
+    #[doc = "The Azure Active Directory principal id."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The identity type. Set this to 'SystemAssigned' in order to automatically create and assign an Azure Active Directory principal for the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_identity::Type>,
+    #[doc = "The Azure Active Directory tenant id."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -4538,6 +5534,7 @@ impl ResourceIdentity {
 }
 pub mod resource_identity {
     use super::*;
+    #[doc = "The identity type. Set this to 'SystemAssigned' in order to automatically create and assign an Azure Active Directory principal for the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
@@ -4547,8 +5544,10 @@ pub mod resource_identity {
         SystemAssignedUserAssigned,
     }
 }
+#[doc = "Contains the information necessary to perform a resource move (rename)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceMoveDefinition {
+    #[doc = "The target ID for the resource"]
     pub id: String,
 }
 impl ResourceMoveDefinition {
@@ -4556,12 +5555,15 @@ impl ResourceMoveDefinition {
         Self { id }
     }
 }
+#[doc = "A restorable dropped database"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedDatabase {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The properties of a restorable dropped database"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableDroppedDatabaseProperties>,
 }
@@ -4570,8 +5572,10 @@ impl RestorableDroppedDatabase {
         Self::default()
     }
 }
+#[doc = "The response to a list restorable dropped databases request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableDroppedDatabaseListResult {
+    #[doc = "A list of restorable dropped databases"]
     pub value: Vec<RestorableDroppedDatabase>,
 }
 impl RestorableDroppedDatabaseListResult {
@@ -4579,22 +5583,31 @@ impl RestorableDroppedDatabaseListResult {
         Self { value }
     }
 }
+#[doc = "The properties of a restorable dropped database"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedDatabaseProperties {
+    #[doc = "The name of the database"]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The edition of the database"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<String>,
+    #[doc = "The max size in bytes of the database"]
     #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_bytes: Option<String>,
+    #[doc = "The service level objective name of the database"]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<String>,
+    #[doc = "The elastic pool name of the database"]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The creation date of the database (ISO8601 format)"]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The deletion date of the database (ISO8601 format)"]
     #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
     pub deletion_date: Option<String>,
+    #[doc = "The earliest restore date of the database (ISO8601 format)"]
     #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_date: Option<String>,
 }
@@ -4603,10 +5616,12 @@ impl RestorableDroppedDatabaseProperties {
         Self::default()
     }
 }
+#[doc = "A restorable dropped managed database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableDroppedManagedDatabase {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The restorable dropped managed database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableDroppedManagedDatabaseProperties>,
 }
@@ -4618,10 +5633,13 @@ impl RestorableDroppedManagedDatabase {
         }
     }
 }
+#[doc = "A list of restorable dropped managed databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedManagedDatabaseListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RestorableDroppedManagedDatabase>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4630,14 +5648,19 @@ impl RestorableDroppedManagedDatabaseListResult {
         Self::default()
     }
 }
+#[doc = "The restorable dropped managed database's properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedManagedDatabaseProperties {
+    #[doc = "The name of the database."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The creation date of the database (ISO8601 format)."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The deletion date of the database (ISO8601 format)."]
     #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
     pub deletion_date: Option<String>,
+    #[doc = "The earliest restore date of the database (ISO8601 format)."]
     #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_date: Option<String>,
 }
@@ -4646,12 +5669,15 @@ impl RestorableDroppedManagedDatabaseProperties {
         Self::default()
     }
 }
+#[doc = "Database restore points."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorePoint {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Properties of a database restore point"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorePointProperties>,
 }
@@ -4660,10 +5686,13 @@ impl RestorePoint {
         Self::default()
     }
 }
+#[doc = "A list of long term retention backups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorePointListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RestorePoint>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4672,14 +5701,19 @@ impl RestorePointListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a database restore point"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorePointProperties {
+    #[doc = "The type of restore point"]
     #[serde(rename = "restorePointType", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_type: Option<restore_point_properties::RestorePointType>,
+    #[doc = "The earliest time to which this database can be restored"]
     #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_date: Option<String>,
+    #[doc = "The time the backup was taken"]
     #[serde(rename = "restorePointCreationDate", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_creation_date: Option<String>,
+    #[doc = "The label of restore point for backup request by user"]
     #[serde(rename = "restorePointLabel", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_label: Option<String>,
 }
@@ -4690,6 +5724,7 @@ impl RestorePointProperties {
 }
 pub mod restore_point_properties {
     use super::*;
+    #[doc = "The type of restore point"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RestorePointType {
         #[serde(rename = "CONTINUOUS")]
@@ -4698,21 +5733,30 @@ pub mod restore_point_properties {
         Discrete,
     }
 }
+#[doc = "Properties of a security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlertPolicyProperties {
+    #[doc = "Specifies the state of the policy, whether it is enabled or disabled or a policy has not been applied yet on the specific database."]
     pub state: security_alert_policy_properties::State,
+    #[doc = "Specifies an array of alerts that are disabled. Allowed values are: Sql_Injection, Sql_Injection_Vulnerability, Access_Anomaly, Data_Exfiltration, Unsafe_Action"]
     #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Vec::is_empty")]
     pub disabled_alerts: Vec<String>,
+    #[doc = "Specifies an array of e-mail addresses to which the alert is sent."]
     #[serde(rename = "emailAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub email_addresses: Vec<String>,
+    #[doc = "Specifies that the alert is sent to the account administrators."]
     #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
     pub email_account_admins: Option<bool>,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). This blob storage will hold all Threat Detection audit logs."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the Threat Detection audit storage account."]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the Threat Detection audit logs."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies the UTC creation time of the policy."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
 }
@@ -4732,6 +5776,7 @@ impl SecurityAlertPolicyProperties {
 }
 pub mod security_alert_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy, whether it is enabled or disabled or a policy has not been applied yet on the specific database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         New,
@@ -4739,10 +5784,12 @@ pub mod security_alert_policy_properties {
         Disabled,
     }
 }
+#[doc = "A sensitivity label."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SensitivityLabelProperties>,
 }
@@ -4751,10 +5798,13 @@ impl SensitivityLabel {
         Self::default()
     }
 }
+#[doc = "A list of sensitivity labels."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabelListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SensitivityLabel>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4763,16 +5813,22 @@ impl SensitivityLabelListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a sensitivity label."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabelProperties {
+    #[doc = "The label name."]
     #[serde(rename = "labelName", default, skip_serializing_if = "Option::is_none")]
     pub label_name: Option<String>,
+    #[doc = "The label ID."]
     #[serde(rename = "labelId", default, skip_serializing_if = "Option::is_none")]
     pub label_id: Option<String>,
+    #[doc = "The information type."]
     #[serde(rename = "informationType", default, skip_serializing_if = "Option::is_none")]
     pub information_type: Option<String>,
+    #[doc = "The information type ID."]
     #[serde(rename = "informationTypeId", default, skip_serializing_if = "Option::is_none")]
     pub information_type_id: Option<String>,
+    #[doc = "Is sensitivity recommendation disabled. Applicable for recommended sensitivity label only. Specifies whether the sensitivity recommendation on this column is disabled (dismissed) or not."]
     #[serde(rename = "isDisabled", default, skip_serializing_if = "Option::is_none")]
     pub is_disabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4794,14 +5850,18 @@ pub mod sensitivity_label_properties {
         Critical,
     }
 }
+#[doc = "An Azure SQL Database server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Server {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Azure Active Directory identity configuration for a resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "Kind of sql server. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "The properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerProperties>,
 }
@@ -4815,10 +5875,12 @@ impl Server {
         }
     }
 }
+#[doc = "Server-level Automatic Tuning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAutomaticTuning {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Server-level Automatic Tuning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomaticTuningServerProperties>,
 }
@@ -4827,10 +5889,12 @@ impl ServerAutomaticTuning {
         Self::default()
     }
 }
+#[doc = "Azure Active Directory administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAzureAdAdministrator {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a active directory administrator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdministratorProperties>,
 }
@@ -4839,10 +5903,12 @@ impl ServerAzureAdAdministrator {
         Self::default()
     }
 }
+#[doc = "Azure Active Directory only authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAzureAdOnlyAuthentication {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a active directory only authentication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureAdOnlyAuthProperties>,
 }
@@ -4851,10 +5917,12 @@ impl ServerAzureAdOnlyAuthentication {
         Self::default()
     }
 }
+#[doc = "A server blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBlobAuditingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a server blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerBlobAuditingPolicyProperties>,
 }
@@ -4863,10 +5931,13 @@ impl ServerBlobAuditingPolicy {
         Self::default()
     }
 }
+#[doc = "A list of server auditing settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBlobAuditingPolicyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerBlobAuditingPolicy>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -4875,23 +5946,33 @@ impl ServerBlobAuditingPolicyListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a server blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerBlobAuditingPolicyProperties {
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     pub state: server_blob_auditing_policy_properties::State,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled is required."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the auditing storage account. \r\nIf state is Enabled and storageEndpoint is specified, not specifying the storageAccountAccessKey will use SQL server system-assigned managed identity to access the storage.\r\nPrerequisites for using managed identity authentication:\r\n1. Assign SQL Server a system-assigned managed identity in Azure Active Directory (AAD).\r\n2. Grant SQL Server identity access to the storage account by adding 'Storage Blob Data Contributor' RBAC role to the server identity.\r\nFor more information, see [Auditing to storage using Managed Identity authentication](https://go.microsoft.com/fwlink/?linkid=2114355)"]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the audit logs in the storage account."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\nDBCC_GROUP\r\nDATABASE_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_CHANGE_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
     #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub audit_actions_and_groups: Vec<String>,
+    #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_subscription_id: Option<String>,
+    #[doc = "Specifies whether storageAccountAccessKey value is the storage's secondary key."]
     #[serde(rename = "isStorageSecondaryKeyInUse", default, skip_serializing_if = "Option::is_none")]
     pub is_storage_secondary_key_in_use: Option<bool>,
+    #[doc = "Specifies whether audit events are sent to Azure Monitor. \r\nIn order to send the events to Azure Monitor, specify 'state' as 'Enabled' and 'isAzureMonitorTargetEnabled' as true.\r\n\r\nWhen using REST API to configure auditing, Diagnostic Settings with 'SQLSecurityAuditEvents' diagnostic logs category on the database should be also created.\r\nNote that for server level audit you should use the 'master' database as {databaseName}.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/{databaseName}/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
     #[serde(rename = "isAzureMonitorTargetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_azure_monitor_target_enabled: Option<bool>,
+    #[doc = "Specifies the amount of time in milliseconds that can elapse before audit actions are forced to be processed.\r\nThe default minimum value is 1000 (1 second). The maximum is 2,147,483,647."]
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
 }
@@ -4912,20 +5993,25 @@ impl ServerBlobAuditingPolicyProperties {
 }
 pub mod server_blob_auditing_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint or isAzureMonitorTargetEnabled are required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Server communication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerCommunicationLink {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a server communication link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerCommunicationLinkProperties>,
+    #[doc = "Communication link location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Communication link kind.  This property is used for Azure Portal metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -4934,8 +6020,10 @@ impl ServerCommunicationLink {
         Self::default()
     }
 }
+#[doc = "A list of server communication links."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerCommunicationLinkListResult {
+    #[doc = "The list of server communication links."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerCommunicationLink>,
 }
@@ -4944,10 +6032,13 @@ impl ServerCommunicationLinkListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a server communication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerCommunicationLinkProperties {
+    #[doc = "The state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The name of the partner server."]
     #[serde(rename = "partnerServer")]
     pub partner_server: String,
 }
@@ -4959,14 +6050,18 @@ impl ServerCommunicationLinkProperties {
         }
     }
 }
+#[doc = "A server secure connection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerConnectionPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The properties of a server secure connection policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerConnectionPolicyProperties>,
 }
@@ -4975,8 +6070,10 @@ impl ServerConnectionPolicy {
         Self::default()
     }
 }
+#[doc = "The properties of a server secure connection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerConnectionPolicyProperties {
+    #[doc = "The server connection type."]
     #[serde(rename = "connectionType")]
     pub connection_type: server_connection_policy_properties::ConnectionType,
 }
@@ -4987,6 +6084,7 @@ impl ServerConnectionPolicyProperties {
 }
 pub mod server_connection_policy_properties {
     use super::*;
+    #[doc = "The server connection type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectionType {
         Default,
@@ -4994,10 +6092,12 @@ pub mod server_connection_policy_properties {
         Redirect,
     }
 }
+#[doc = "A server DNS alias."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerDnsAlias {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a server DNS alias."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerDnsAliasProperties>,
 }
@@ -5006,8 +6106,10 @@ impl ServerDnsAlias {
         Self::default()
     }
 }
+#[doc = "A server DNS alias acquisition request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerDnsAliasAcquisition {
+    #[doc = "The id of the server alias that will be acquired to point to this server instead."]
     #[serde(rename = "oldServerDnsAliasId", default, skip_serializing_if = "Option::is_none")]
     pub old_server_dns_alias_id: Option<String>,
 }
@@ -5016,10 +6118,13 @@ impl ServerDnsAliasAcquisition {
         Self::default()
     }
 }
+#[doc = "A list of server DNS aliases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerDnsAliasListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerDnsAlias>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5028,8 +6133,10 @@ impl ServerDnsAliasListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a server DNS alias."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerDnsAliasProperties {
+    #[doc = "The fully qualified DNS record for alias"]
     #[serde(rename = "azureDnsRecord", default, skip_serializing_if = "Option::is_none")]
     pub azure_dns_record: Option<String>,
 }
@@ -5038,8 +6145,10 @@ impl ServerDnsAliasProperties {
         Self::default()
     }
 }
+#[doc = "Server info for the server trust group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerInfo {
+    #[doc = "Server Id."]
     #[serde(rename = "serverId")]
     pub server_id: String,
 }
@@ -5048,14 +6157,18 @@ impl ServerInfo {
         Self { server_id }
     }
 }
+#[doc = "A server key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerKey {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Properties for a server key execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerKeyProperties>,
 }
@@ -5064,10 +6177,13 @@ impl ServerKey {
         Self::default()
     }
 }
+#[doc = "A list of server keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerKeyListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerKey>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5076,16 +6192,22 @@ impl ServerKeyListResult {
         Self::default()
     }
 }
+#[doc = "Properties for a server key execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerKeyProperties {
+    #[doc = "Subregion of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subregion: Option<String>,
+    #[doc = "The server key type like 'ServiceManaged', 'AzureKeyVault'."]
     #[serde(rename = "serverKeyType")]
     pub server_key_type: server_key_properties::ServerKeyType,
+    #[doc = "The URI of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "Thumbprint of the server key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "The server key creation date."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
 }
@@ -5102,16 +6224,20 @@ impl ServerKeyProperties {
 }
 pub mod server_key_properties {
     use super::*;
+    #[doc = "The server key type like 'ServiceManaged', 'AzureKeyVault'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerKeyType {
         ServiceManaged,
         AzureKeyVault,
     }
 }
+#[doc = "A list of servers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Server>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5120,10 +6246,13 @@ impl ServerListResult {
         Self::default()
     }
 }
+#[doc = "A private endpoint connection under a server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerPrivateEndpointConnection {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -5132,22 +6261,31 @@ impl ServerPrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "The properties of a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerProperties {
+    #[doc = "Administrator username for the server. Once created it cannot be changed."]
     #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
+    #[doc = "The administrator login password (required for server creation)."]
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
+    #[doc = "The version of the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "The state of the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The fully qualified domain name of the server."]
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub fully_qualified_domain_name: Option<String>,
+    #[doc = "List of private endpoint connections on a server"]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<ServerPrivateEndpointConnection>,
+    #[doc = "Minimal TLS version. Allowed values: '1.0', '1.1', '1.2'"]
     #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<String>,
+    #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<server_properties::PublicNetworkAccess>,
 }
@@ -5158,16 +6296,19 @@ impl ServerProperties {
 }
 pub mod server_properties {
     use super::*;
+    #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
     }
 }
+#[doc = "A server security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerSecurityAlertPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a security alert policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertPolicyProperties>,
 }
@@ -5176,10 +6317,12 @@ impl ServerSecurityAlertPolicy {
         Self::default()
     }
 }
+#[doc = "A server trust group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerTrustGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a server trust group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerTrustGroupProperties>,
 }
@@ -5188,10 +6331,13 @@ impl ServerTrustGroup {
         Self::default()
     }
 }
+#[doc = "A list of server trust groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerTrustGroupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerTrustGroup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5200,10 +6346,13 @@ impl ServerTrustGroupListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a server trust group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerTrustGroupProperties {
+    #[doc = "Group members information for the server trust group."]
     #[serde(rename = "groupMembers")]
     pub group_members: Vec<ServerInfo>,
+    #[doc = "Trust scope of the server trust group."]
     #[serde(rename = "trustScopes")]
     pub trust_scopes: Vec<String>,
 }
@@ -5215,10 +6364,13 @@ impl ServerTrustGroupProperties {
         }
     }
 }
+#[doc = "An update request for an Azure SQL Database server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerUpdate {
+    #[doc = "The properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerProperties>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -5227,20 +6379,28 @@ impl ServerUpdate {
         Self::default()
     }
 }
+#[doc = "Represents server metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerUsage {
+    #[doc = "Name of the server usage metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
+    #[doc = "The metric display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The current value of the metric."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<f64>,
+    #[doc = "The current limit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
+    #[doc = "The units of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "The next reset time for the metric (ISO8601 format)."]
     #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
     pub next_reset_time: Option<String>,
 }
@@ -5249,8 +6409,10 @@ impl ServerUsage {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list server metrics request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerUsageListResult {
+    #[doc = "The list of server metrics for the server."]
     pub value: Vec<ServerUsage>,
 }
 impl ServerUsageListResult {
@@ -5258,14 +6420,19 @@ impl ServerUsageListResult {
         Self { value }
     }
 }
+#[doc = "The server capabilities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVersionCapability {
+    #[doc = "The server version name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "The list of supported database editions."]
     #[serde(rename = "supportedEditions", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_editions: Vec<EditionCapability>,
+    #[doc = "The list of supported elastic pool editions."]
     #[serde(rename = "supportedElasticPoolEditions", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_elastic_pool_editions: Vec<ElasticPoolEditionCapability>,
 }
@@ -5274,10 +6441,12 @@ impl ServerVersionCapability {
         Self::default()
     }
 }
+#[doc = "A server vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a server Vulnerability Assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerVulnerabilityAssessmentProperties>,
 }
@@ -5286,10 +6455,13 @@ impl ServerVulnerabilityAssessment {
         Self::default()
     }
 }
+#[doc = "A list of the server's vulnerability assessments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessmentListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerVulnerabilityAssessment>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5298,14 +6470,19 @@ impl ServerVulnerabilityAssessmentListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a server Vulnerability Assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerVulnerabilityAssessmentProperties {
+    #[doc = "A blob storage container path to hold the scan results (e.g. https://myStorage.blob.core.windows.net/VaScans/)."]
     #[serde(rename = "storageContainerPath")]
     pub storage_container_path: String,
+    #[doc = "A shared access signature (SAS Key) that has read and write access to the blob container specified in 'storageContainerPath' parameter. If 'storageAccountAccessKey' isn't specified, StorageContainerSasKey is required."]
     #[serde(rename = "storageContainerSasKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_sas_key: Option<String>,
+    #[doc = "Specifies the identifier key of the storage account for vulnerability assessment scan results. If 'StorageContainerSasKey' isn't specified, storageAccountAccessKey is required."]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Properties of a Vulnerability Assessment recurring scans."]
     #[serde(rename = "recurringScans", default, skip_serializing_if = "Option::is_none")]
     pub recurring_scans: Option<VulnerabilityAssessmentRecurringScansProperties>,
 }
@@ -5319,10 +6496,12 @@ impl ServerVulnerabilityAssessmentProperties {
         }
     }
 }
+#[doc = "Represents a database service objective."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceObjective {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a database service objective."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceObjectiveProperties>,
 }
@@ -5331,18 +6510,25 @@ impl ServiceObjective {
         Self::default()
     }
 }
+#[doc = "The service objectives capability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceObjectiveCapability {
+    #[doc = "The service objective name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The availability status of the capability"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CapabilityStatus>,
+    #[doc = "A possible performance level of a service objective capability."]
     #[serde(rename = "performanceLevel", default, skip_serializing_if = "Option::is_none")]
     pub performance_level: Option<PerformanceLevel>,
+    #[doc = "The unique ID of the service objective."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The list of supported maximum database sizes for this service objective."]
     #[serde(rename = "supportedMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_max_sizes: Vec<MaxSizeCapability>,
+    #[doc = "The maximum size limits for a database."]
     #[serde(rename = "includedMaxSize", default, skip_serializing_if = "Option::is_none")]
     pub included_max_size: Option<MaxSizeCapability>,
 }
@@ -5351,8 +6537,10 @@ impl ServiceObjectiveCapability {
         Self::default()
     }
 }
+#[doc = "Represents the response to a get database service objectives request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceObjectiveListResult {
+    #[doc = "The list of database service objectives."]
     pub value: Vec<ServiceObjective>,
 }
 impl ServiceObjectiveListResult {
@@ -5360,16 +6548,22 @@ impl ServiceObjectiveListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of a database service objective."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceObjectiveProperties {
+    #[doc = "The name for the service objective."]
     #[serde(rename = "serviceObjectiveName", default, skip_serializing_if = "Option::is_none")]
     pub service_objective_name: Option<String>,
+    #[doc = "Gets whether the service level objective is the default service objective."]
     #[serde(rename = "isDefault", default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
+    #[doc = "Gets whether the service level objective is a system service objective."]
     #[serde(rename = "isSystem", default, skip_serializing_if = "Option::is_none")]
     pub is_system: Option<bool>,
+    #[doc = "The description for the service level objective."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets whether the service level objective is enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -5378,10 +6572,12 @@ impl ServiceObjectiveProperties {
         Self::default()
     }
 }
+#[doc = "Represents a Service Tier Advisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTierAdvisor {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a Service Tier Advisor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceTierAdvisorProperties>,
 }
@@ -5390,8 +6586,10 @@ impl ServiceTierAdvisor {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list service tier advisor request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceTierAdvisorListResult {
+    #[doc = "The list of service tier advisors for specified database."]
     pub value: Vec<ServiceTierAdvisor>,
 }
 impl ServiceTierAdvisorListResult {
@@ -5399,76 +6597,96 @@ impl ServiceTierAdvisorListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of a Service Tier Advisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTierAdvisorProperties {
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_start: Option<String>,
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_end: Option<String>,
+    #[doc = "The activeTimeRatio for service tier advisor."]
     #[serde(rename = "activeTimeRatio", default, skip_serializing_if = "Option::is_none")]
     pub active_time_ratio: Option<f64>,
+    #[doc = "Gets or sets minDtu for service tier advisor."]
     #[serde(rename = "minDtu", default, skip_serializing_if = "Option::is_none")]
     pub min_dtu: Option<f64>,
+    #[doc = "Gets or sets avgDtu for service tier advisor."]
     #[serde(rename = "avgDtu", default, skip_serializing_if = "Option::is_none")]
     pub avg_dtu: Option<f64>,
+    #[doc = "Gets or sets maxDtu for service tier advisor."]
     #[serde(rename = "maxDtu", default, skip_serializing_if = "Option::is_none")]
     pub max_dtu: Option<f64>,
+    #[doc = "Gets or sets maxSizeInGB for service tier advisor."]
     #[serde(rename = "maxSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_gb: Option<f64>,
+    #[doc = "Gets or sets serviceLevelObjectiveUsageMetrics for the service tier advisor."]
     #[serde(rename = "serviceLevelObjectiveUsageMetrics", default, skip_serializing_if = "Vec::is_empty")]
     pub service_level_objective_usage_metrics: Vec<SloUsageMetric>,
+    #[doc = "Gets or sets currentServiceLevelObjective for service tier advisor."]
     #[serde(rename = "currentServiceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub current_service_level_objective: Option<String>,
+    #[doc = "Gets or sets currentServiceLevelObjectiveId for service tier advisor."]
     #[serde(rename = "currentServiceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub current_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets usageBasedRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "usageBasedRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub usage_based_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets usageBasedRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "usageBasedRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub usage_based_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets databaseSizeBasedRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "databaseSizeBasedRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub database_size_based_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets databaseSizeBasedRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "databaseSizeBasedRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub database_size_based_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets disasterPlanBasedRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "disasterPlanBasedRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub disaster_plan_based_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets disasterPlanBasedRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "disasterPlanBasedRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub disaster_plan_based_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets overallRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "overallRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub overall_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets overallRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "overallRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub overall_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets confidence for service tier advisor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
 }
@@ -5477,15 +6695,21 @@ impl ServiceTierAdvisorProperties {
         Self::default()
     }
 }
+#[doc = "An ARM Resource SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The name of the SKU, typically, a letter + Number code, e.g. P3."]
     pub name: String,
+    #[doc = "The tier or edition of the particular SKU, e.g. Basic, Premium."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "Size of the particular SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
+    #[doc = "If the service has different generations of hardware, for the same SKU, then that can be captured here."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
+    #[doc = "Capacity of the particular SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -5500,12 +6724,16 @@ impl Sku {
         }
     }
 }
+#[doc = "A Slo Usage Metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SloUsageMetric {
+    #[doc = "The serviceLevelObjective for SLO usage metric."]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<slo_usage_metric::ServiceLevelObjective>,
+    #[doc = "The serviceLevelObjectiveId for SLO usage metric."]
     #[serde(rename = "serviceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets inRangeTimeRatio for SLO usage metric."]
     #[serde(rename = "inRangeTimeRatio", default, skip_serializing_if = "Option::is_none")]
     pub in_range_time_ratio: Option<f64>,
 }
@@ -5516,6 +6744,7 @@ impl SloUsageMetric {
 }
 pub mod slo_usage_metric {
     use super::*;
+    #[doc = "The serviceLevelObjective for SLO usage metric."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceLevelObjective {
         System,
@@ -5622,10 +6851,12 @@ pub mod slo_usage_metric {
         ElasticPool,
     }
 }
+#[doc = "Usage Metric of a Subscription in a Location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionUsage {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a subscription usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionUsageProperties>,
 }
@@ -5634,10 +6865,13 @@ impl SubscriptionUsage {
         Self::default()
     }
 }
+#[doc = "A list of subscription usage metrics in a location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionUsageListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionUsage>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5646,14 +6880,19 @@ impl SubscriptionUsageListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a subscription usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionUsageProperties {
+    #[doc = "User-readable name of the metric."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Current value of the metric."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<f64>,
+    #[doc = "Boundary value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
+    #[doc = "Unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
 }
@@ -5662,10 +6901,12 @@ impl SubscriptionUsageProperties {
         Self::default()
     }
 }
+#[doc = "An Azure SQL Database sync agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgent {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an Azure SQL Database sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncAgentProperties>,
 }
@@ -5674,8 +6915,10 @@ impl SyncAgent {
         Self::default()
     }
 }
+#[doc = "Properties of an Azure SQL Database sync agent key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentKeyProperties {
+    #[doc = "Key of sync agent."]
     #[serde(rename = "syncAgentKey", default, skip_serializing_if = "Option::is_none")]
     pub sync_agent_key: Option<String>,
 }
@@ -5684,10 +6927,12 @@ impl SyncAgentKeyProperties {
         Self::default()
     }
 }
+#[doc = "An Azure SQL Database sync agent linked database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentLinkedDatabase {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an Azure SQL Database sync agent linked database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncAgentLinkedDatabaseProperties>,
 }
@@ -5696,10 +6941,13 @@ impl SyncAgentLinkedDatabase {
         Self::default()
     }
 }
+#[doc = "A list of sync agent linked databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentLinkedDatabaseListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncAgentLinkedDatabase>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5708,18 +6956,25 @@ impl SyncAgentLinkedDatabaseListResult {
         Self::default()
     }
 }
+#[doc = "Properties of an Azure SQL Database sync agent linked database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentLinkedDatabaseProperties {
+    #[doc = "Type of the sync agent linked database."]
     #[serde(rename = "databaseType", default, skip_serializing_if = "Option::is_none")]
     pub database_type: Option<sync_agent_linked_database_properties::DatabaseType>,
+    #[doc = "Id of the sync agent linked database."]
     #[serde(rename = "databaseId", default, skip_serializing_if = "Option::is_none")]
     pub database_id: Option<String>,
+    #[doc = "Description of the sync agent linked database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Server name of the sync agent linked database."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "Database name of the sync agent linked database."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "User name of the sync agent linked database."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -5730,16 +6985,20 @@ impl SyncAgentLinkedDatabaseProperties {
 }
 pub mod sync_agent_linked_database_properties {
     use super::*;
+    #[doc = "Type of the sync agent linked database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DatabaseType {
         AzureSqlDatabase,
         SqlServerDatabase,
     }
 }
+#[doc = "A list of sync agents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncAgent>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5748,20 +7007,28 @@ impl SyncAgentListResult {
         Self::default()
     }
 }
+#[doc = "Properties of an Azure SQL Database sync agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentProperties {
+    #[doc = "Name of the sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "ARM resource id of the sync database in the sync agent."]
     #[serde(rename = "syncDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub sync_database_id: Option<String>,
+    #[doc = "Last alive time of the sync agent."]
     #[serde(rename = "lastAliveTime", default, skip_serializing_if = "Option::is_none")]
     pub last_alive_time: Option<String>,
+    #[doc = "State of the sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<sync_agent_properties::State>,
+    #[doc = "If the sync agent version is up to date."]
     #[serde(rename = "isUpToDate", default, skip_serializing_if = "Option::is_none")]
     pub is_up_to_date: Option<bool>,
+    #[doc = "Expiration time of the sync agent version."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "Version of the sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -5772,6 +7039,7 @@ impl SyncAgentProperties {
 }
 pub mod sync_agent_properties {
     use super::*;
+    #[doc = "State of the sync agent."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Online,
@@ -5779,10 +7047,13 @@ pub mod sync_agent_properties {
         NeverConnected,
     }
 }
+#[doc = "A list of sync database ID properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncDatabaseIdListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncDatabaseIdProperties>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5791,8 +7062,10 @@ impl SyncDatabaseIdListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the sync database id."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncDatabaseIdProperties {
+    #[doc = "ARM resource id of sync database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -5801,10 +7074,13 @@ impl SyncDatabaseIdProperties {
         Self::default()
     }
 }
+#[doc = "Properties of the database full schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncFullSchemaProperties {
+    #[doc = "List of tables in the database full schema."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tables: Vec<SyncFullSchemaTable>,
+    #[doc = "Last update time of the database schema."]
     #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time: Option<String>,
 }
@@ -5813,10 +7089,13 @@ impl SyncFullSchemaProperties {
         Self::default()
     }
 }
+#[doc = "A list of sync schema properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncFullSchemaPropertiesListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncFullSchemaProperties>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5825,16 +7104,22 @@ impl SyncFullSchemaPropertiesListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the table in the database full schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncFullSchemaTable {
+    #[doc = "List of columns in the table of database full schema."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<SyncFullSchemaTableColumn>,
+    #[doc = "Error id of the table."]
     #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
     pub error_id: Option<String>,
+    #[doc = "If there is error in the table."]
     #[serde(rename = "hasError", default, skip_serializing_if = "Option::is_none")]
     pub has_error: Option<bool>,
+    #[doc = "Name of the table."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Quoted name of the table."]
     #[serde(rename = "quotedName", default, skip_serializing_if = "Option::is_none")]
     pub quoted_name: Option<String>,
 }
@@ -5843,20 +7128,28 @@ impl SyncFullSchemaTable {
         Self::default()
     }
 }
+#[doc = "Properties of the column in the table of database full schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncFullSchemaTableColumn {
+    #[doc = "Data size of the column."]
     #[serde(rename = "dataSize", default, skip_serializing_if = "Option::is_none")]
     pub data_size: Option<String>,
+    #[doc = "Data type of the column."]
     #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<String>,
+    #[doc = "Error id of the column."]
     #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
     pub error_id: Option<String>,
+    #[doc = "If there is error in the table."]
     #[serde(rename = "hasError", default, skip_serializing_if = "Option::is_none")]
     pub has_error: Option<bool>,
+    #[doc = "If it is the primary key of the table."]
     #[serde(rename = "isPrimaryKey", default, skip_serializing_if = "Option::is_none")]
     pub is_primary_key: Option<bool>,
+    #[doc = "Name of the column."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Quoted name of the column."]
     #[serde(rename = "quotedName", default, skip_serializing_if = "Option::is_none")]
     pub quoted_name: Option<String>,
 }
@@ -5865,10 +7158,12 @@ impl SyncFullSchemaTableColumn {
         Self::default()
     }
 }
+#[doc = "An Azure SQL Database sync group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a sync group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncGroupProperties>,
 }
@@ -5877,10 +7172,13 @@ impl SyncGroup {
         Self::default()
     }
 }
+#[doc = "A list of sync groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncGroup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5889,10 +7187,13 @@ impl SyncGroupListResult {
         Self::default()
     }
 }
+#[doc = "A list of sync group log properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupLogListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncGroupLogProperties>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -5901,18 +7202,25 @@ impl SyncGroupLogListResult {
         Self::default()
     }
 }
+#[doc = "Properties of an Azure SQL Database sync group log."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupLogProperties {
+    #[doc = "Timestamp of the sync group log."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+    #[doc = "Type of the sync group log."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sync_group_log_properties::Type>,
+    #[doc = "Source of the sync group log."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[doc = "Details of the sync group log."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
+    #[doc = "TracingId of the sync group log."]
     #[serde(rename = "tracingId", default, skip_serializing_if = "Option::is_none")]
     pub tracing_id: Option<String>,
+    #[doc = "OperationStatus of the sync group log."]
     #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
     pub operation_status: Option<String>,
 }
@@ -5923,6 +7231,7 @@ impl SyncGroupLogProperties {
 }
 pub mod sync_group_log_properties {
     use super::*;
+    #[doc = "Type of the sync group log."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         All,
@@ -5931,26 +7240,37 @@ pub mod sync_group_log_properties {
         Success,
     }
 }
+#[doc = "Properties of a sync group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupProperties {
+    #[doc = "Sync interval of the sync group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<i32>,
+    #[doc = "Last sync time of the sync group."]
     #[serde(rename = "lastSyncTime", default, skip_serializing_if = "Option::is_none")]
     pub last_sync_time: Option<String>,
+    #[doc = "Conflict resolution policy of the sync group."]
     #[serde(rename = "conflictResolutionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub conflict_resolution_policy: Option<sync_group_properties::ConflictResolutionPolicy>,
+    #[doc = "ARM resource id of the sync database in the sync group."]
     #[serde(rename = "syncDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub sync_database_id: Option<String>,
+    #[doc = "User name for the sync group hub database credential."]
     #[serde(rename = "hubDatabaseUserName", default, skip_serializing_if = "Option::is_none")]
     pub hub_database_user_name: Option<String>,
+    #[doc = "Password for the sync group hub database credential."]
     #[serde(rename = "hubDatabasePassword", default, skip_serializing_if = "Option::is_none")]
     pub hub_database_password: Option<String>,
+    #[doc = "Sync state of the sync group."]
     #[serde(rename = "syncState", default, skip_serializing_if = "Option::is_none")]
     pub sync_state: Option<sync_group_properties::SyncState>,
+    #[doc = "Properties of sync group schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<SyncGroupSchema>,
+    #[doc = "If use private link connection is enabled."]
     #[serde(rename = "usePrivateLinkConnection", default, skip_serializing_if = "Option::is_none")]
     pub use_private_link_connection: Option<bool>,
+    #[doc = "Private endpoint name of the sync group if use private link connection is enabled."]
     #[serde(rename = "privateEndpointName", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_name: Option<String>,
 }
@@ -5961,11 +7281,13 @@ impl SyncGroupProperties {
 }
 pub mod sync_group_properties {
     use super::*;
+    #[doc = "Conflict resolution policy of the sync group."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConflictResolutionPolicy {
         HubWin,
         MemberWin,
     }
+    #[doc = "Sync state of the sync group."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncState {
         NotReady,
@@ -5975,10 +7297,13 @@ pub mod sync_group_properties {
         Good,
     }
 }
+#[doc = "Properties of sync group schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupSchema {
+    #[doc = "List of tables in sync group schema."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tables: Vec<SyncGroupSchemaTable>,
+    #[doc = "Name of master sync member where the schema is from."]
     #[serde(rename = "masterSyncMemberName", default, skip_serializing_if = "Option::is_none")]
     pub master_sync_member_name: Option<String>,
 }
@@ -5987,10 +7312,13 @@ impl SyncGroupSchema {
         Self::default()
     }
 }
+#[doc = "Properties of table in sync group schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupSchemaTable {
+    #[doc = "List of columns in sync group schema."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<SyncGroupSchemaTableColumn>,
+    #[doc = "Quoted name of sync group schema table."]
     #[serde(rename = "quotedName", default, skip_serializing_if = "Option::is_none")]
     pub quoted_name: Option<String>,
 }
@@ -5999,12 +7327,16 @@ impl SyncGroupSchemaTable {
         Self::default()
     }
 }
+#[doc = "Properties of column in sync group table."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupSchemaTableColumn {
+    #[doc = "Quoted name of sync group table column."]
     #[serde(rename = "quotedName", default, skip_serializing_if = "Option::is_none")]
     pub quoted_name: Option<String>,
+    #[doc = "Data size of the column."]
     #[serde(rename = "dataSize", default, skip_serializing_if = "Option::is_none")]
     pub data_size: Option<String>,
+    #[doc = "Data type of the column."]
     #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<String>,
 }
@@ -6013,10 +7345,12 @@ impl SyncGroupSchemaTableColumn {
         Self::default()
     }
 }
+#[doc = "An Azure SQL Database sync member."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncMember {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a sync member."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncMemberProperties>,
 }
@@ -6025,10 +7359,13 @@ impl SyncMember {
         Self::default()
     }
 }
+#[doc = "A list of Azure SQL Database sync members."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncMemberListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncMember>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6037,30 +7374,43 @@ impl SyncMemberListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a sync member."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncMemberProperties {
+    #[doc = "Database type of the sync member."]
     #[serde(rename = "databaseType", default, skip_serializing_if = "Option::is_none")]
     pub database_type: Option<sync_member_properties::DatabaseType>,
+    #[doc = "ARM resource id of the sync agent in the sync member."]
     #[serde(rename = "syncAgentId", default, skip_serializing_if = "Option::is_none")]
     pub sync_agent_id: Option<String>,
+    #[doc = "SQL Server database id of the sync member."]
     #[serde(rename = "sqlServerDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_database_id: Option<String>,
+    #[doc = "ARM resource id of the sync member logical database, for sync members in Azure."]
     #[serde(rename = "syncMemberAzureDatabaseResourceId", default, skip_serializing_if = "Option::is_none")]
     pub sync_member_azure_database_resource_id: Option<String>,
+    #[doc = "Whether to use private link connection."]
     #[serde(rename = "usePrivateLinkConnection", default, skip_serializing_if = "Option::is_none")]
     pub use_private_link_connection: Option<bool>,
+    #[doc = "Private endpoint name of the sync member if use private link connection is enabled, for sync members in Azure."]
     #[serde(rename = "privateEndpointName", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_name: Option<String>,
+    #[doc = "Server name of the member database in the sync member"]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "Database name of the member database in the sync member."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "User name of the member database in the sync member."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
+    #[doc = "Password of the member database in the sync member."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "Sync direction of the sync member."]
     #[serde(rename = "syncDirection", default, skip_serializing_if = "Option::is_none")]
     pub sync_direction: Option<sync_member_properties::SyncDirection>,
+    #[doc = "Sync state of the sync member."]
     #[serde(rename = "syncState", default, skip_serializing_if = "Option::is_none")]
     pub sync_state: Option<sync_member_properties::SyncState>,
 }
@@ -6071,17 +7421,20 @@ impl SyncMemberProperties {
 }
 pub mod sync_member_properties {
     use super::*;
+    #[doc = "Database type of the sync member."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DatabaseType {
         AzureSqlDatabase,
         SqlServerDatabase,
     }
+    #[doc = "Sync direction of the sync member."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncDirection {
         Bidirectional,
         OneWayMemberToHub,
         OneWayHubToMember,
     }
+    #[doc = "Sync state of the sync member."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncState {
         SyncInProgress,
@@ -6104,10 +7457,12 @@ pub mod sync_member_properties {
         UnReprovisioned,
     }
 }
+#[doc = "A TDE certificate that can be uploaded into a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TdeCertificate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a TDE certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TdeCertificateProperties>,
 }
@@ -6116,10 +7471,13 @@ impl TdeCertificate {
         Self::default()
     }
 }
+#[doc = "Properties of a TDE certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TdeCertificateProperties {
+    #[doc = "The base64 encoded certificate private blob."]
     #[serde(rename = "privateBlob")]
     pub private_blob: String,
+    #[doc = "The certificate password."]
     #[serde(rename = "certPassword", default, skip_serializing_if = "Option::is_none")]
     pub cert_password: Option<String>,
 }
@@ -6133,18 +7491,25 @@ impl TdeCertificateProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopQueries {
+    #[doc = "Requested number of top queries."]
     #[serde(rename = "numberOfQueries", default, skip_serializing_if = "Option::is_none")]
     pub number_of_queries: Option<i32>,
+    #[doc = "Aggregation function used to calculate query metrics."]
     #[serde(rename = "aggregationFunction", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_function: Option<String>,
+    #[doc = "Metric used to rank queries."]
     #[serde(rename = "observationMetric", default, skip_serializing_if = "Option::is_none")]
     pub observation_metric: Option<String>,
+    #[doc = "Interval type (length)."]
     #[serde(rename = "intervalType", default, skip_serializing_if = "Option::is_none")]
     pub interval_type: Option<top_queries::IntervalType>,
+    #[doc = "The start time for the metric (ISO-8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The end time for the metric (ISO-8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "List of top resource consuming queries with appropriate metric data"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub queries: Vec<QueryStatisticsProperties>,
 }
@@ -6155,6 +7520,7 @@ impl TopQueries {
 }
 pub mod top_queries {
     use super::*;
+    #[doc = "Interval type (length)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IntervalType {
         #[serde(rename = "PT1H")]
@@ -6163,10 +7529,13 @@ pub mod top_queries {
         P1d,
     }
 }
+#[doc = "A list of top resource consuming queries on managed instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopQueriesListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TopQueries>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6175,11 +7544,14 @@ impl TopQueriesListResult {
         Self::default()
     }
 }
+#[doc = "ARM tracked top level resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -6192,12 +7564,15 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Represents a database transparent data encryption configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryption {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of a database transparent data encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransparentDataEncryptionProperties>,
 }
@@ -6206,12 +7581,15 @@ impl TransparentDataEncryption {
         Self::default()
     }
 }
+#[doc = "Represents a database transparent data encryption Scan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of a database transparent data encryption Scan."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransparentDataEncryptionActivityProperties>,
 }
@@ -6220,8 +7598,10 @@ impl TransparentDataEncryptionActivity {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list database transparent data encryption activity request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransparentDataEncryptionActivityListResult {
+    #[doc = "The list of database transparent data encryption activities."]
     pub value: Vec<TransparentDataEncryptionActivity>,
 }
 impl TransparentDataEncryptionActivityListResult {
@@ -6229,10 +7609,13 @@ impl TransparentDataEncryptionActivityListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of a database transparent data encryption Scan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionActivityProperties {
+    #[doc = "The status of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<transparent_data_encryption_activity_properties::Status>,
+    #[doc = "The percent complete of the transparent data encryption scan for a database."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f32>,
 }
@@ -6243,14 +7626,17 @@ impl TransparentDataEncryptionActivityProperties {
 }
 pub mod transparent_data_encryption_activity_properties {
     use super::*;
+    #[doc = "The status of the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Encrypting,
         Decrypting,
     }
 }
+#[doc = "Represents the properties of a database transparent data encryption."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionProperties {
+    #[doc = "The status of the database transparent data encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<transparent_data_encryption_properties::Status>,
 }
@@ -6261,14 +7647,17 @@ impl TransparentDataEncryptionProperties {
 }
 pub mod transparent_data_encryption_properties {
     use super::*;
+    #[doc = "The status of the database transparent data encryption."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Represents the parameters for Unlink Replication Link request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UnlinkParameters {
+    #[doc = "Determines whether link will be terminated in a forced or a friendly way."]
     #[serde(rename = "forcedTermination", default, skip_serializing_if = "Option::is_none")]
     pub forced_termination: Option<bool>,
 }
@@ -6277,20 +7666,28 @@ impl UnlinkParameters {
         Self::default()
     }
 }
+#[doc = "ARM usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "ARM Usage Name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<Name>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Usage unit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Usage current value."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i32>,
+    #[doc = "Usage limit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
+    #[doc = "Usage requested limit."]
     #[serde(rename = "requestedLimit", default, skip_serializing_if = "Option::is_none")]
     pub requested_limit: Option<i32>,
 }
@@ -6299,10 +7696,13 @@ impl Usage {
         Self::default()
     }
 }
+#[doc = "A list of usages."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6311,10 +7711,12 @@ impl UsageListResult {
         Self::default()
     }
 }
+#[doc = "An Azure SQL virtual cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualCluster {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The properties of a virtual cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualClusterProperties>,
 }
@@ -6326,10 +7728,13 @@ impl VirtualCluster {
         }
     }
 }
+#[doc = "A list of virtual clusters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualClusterListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualCluster>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6338,12 +7743,16 @@ impl VirtualClusterListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a virtual cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualClusterProperties {
+    #[doc = "Subnet resource ID for the virtual cluster."]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
+    #[doc = "If the service has different generations of hardware, for the same SKU, then that can be captured here."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
+    #[doc = "List of resources in this virtual cluster."]
     #[serde(rename = "childResources", default, skip_serializing_if = "Vec::is_empty")]
     pub child_resources: Vec<String>,
 }
@@ -6352,10 +7761,13 @@ impl VirtualClusterProperties {
         Self::default()
     }
 }
+#[doc = "An update request for an Azure SQL Database virtual cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualClusterUpdate {
+    #[doc = "The properties of a virtual cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualClusterProperties>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -6364,10 +7776,12 @@ impl VirtualClusterUpdate {
         Self::default()
     }
 }
+#[doc = "A virtual network rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkRuleProperties>,
 }
@@ -6376,10 +7790,13 @@ impl VirtualNetworkRule {
         Self::default()
     }
 }
+#[doc = "A list of virtual network rules."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkRuleListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkRule>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6388,12 +7805,16 @@ impl VirtualNetworkRuleListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a virtual network rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRuleProperties {
+    #[doc = "The ARM resource id of the virtual network subnet."]
     #[serde(rename = "virtualNetworkSubnetId")]
     pub virtual_network_subnet_id: String,
+    #[doc = "Create firewall rule before the virtual network has vnet service endpoint enabled."]
     #[serde(rename = "ignoreMissingVnetServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub ignore_missing_vnet_service_endpoint: Option<bool>,
+    #[doc = "Virtual Network Rule State"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<virtual_network_rule_properties::State>,
 }
@@ -6408,6 +7829,7 @@ impl VirtualNetworkRuleProperties {
 }
 pub mod virtual_network_rule_properties {
     use super::*;
+    #[doc = "Virtual Network Rule State"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Initializing,
@@ -6417,12 +7839,16 @@ pub mod virtual_network_rule_properties {
         Unknown,
     }
 }
+#[doc = "Properties of a Vulnerability Assessment recurring scans."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentRecurringScansProperties {
+    #[doc = "Recurring scans state."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Specifies that the schedule scan notification will be is sent to the subscription administrators."]
     #[serde(rename = "emailSubscriptionAdmins", default, skip_serializing_if = "Option::is_none")]
     pub email_subscription_admins: Option<bool>,
+    #[doc = "Specifies an array of e-mail addresses to which the scan notification is sent."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub emails: Vec<String>,
 }
@@ -6431,10 +7857,13 @@ impl VulnerabilityAssessmentRecurringScansProperties {
         Self::default()
     }
 }
+#[doc = "Properties of a vulnerability assessment scan error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentScanError {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -6443,10 +7872,12 @@ impl VulnerabilityAssessmentScanError {
         Self::default()
     }
 }
+#[doc = "A vulnerability assessment scan record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentScanRecord {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a vulnerability assessment scan record."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VulnerabilityAssessmentScanRecordProperties>,
 }
@@ -6455,10 +7886,13 @@ impl VulnerabilityAssessmentScanRecord {
         Self::default()
     }
 }
+#[doc = "A list of vulnerability assessment scan records."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentScanRecordListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VulnerabilityAssessmentScanRecord>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6467,22 +7901,31 @@ impl VulnerabilityAssessmentScanRecordListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a vulnerability assessment scan record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentScanRecordProperties {
+    #[doc = "The scan ID."]
     #[serde(rename = "scanId", default, skip_serializing_if = "Option::is_none")]
     pub scan_id: Option<String>,
+    #[doc = "The scan trigger type."]
     #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<vulnerability_assessment_scan_record_properties::TriggerType>,
+    #[doc = "The scan status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<vulnerability_assessment_scan_record_properties::State>,
+    #[doc = "The scan start time (UTC)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The scan end time (UTC)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The scan errors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<VulnerabilityAssessmentScanError>,
+    #[doc = "The scan results storage container path."]
     #[serde(rename = "storageContainerPath", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_path: Option<String>,
+    #[doc = "The number of failed security checks."]
     #[serde(rename = "numberOfFailedSecurityChecks", default, skip_serializing_if = "Option::is_none")]
     pub number_of_failed_security_checks: Option<i32>,
 }
@@ -6493,11 +7936,13 @@ impl VulnerabilityAssessmentScanRecordProperties {
 }
 pub mod vulnerability_assessment_scan_record_properties {
     use super::*;
+    #[doc = "The scan trigger type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TriggerType {
         OnDemand,
         Recurring,
     }
+    #[doc = "The scan status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -6506,10 +7951,12 @@ pub mod vulnerability_assessment_scan_record_properties {
         InProgress,
     }
 }
+#[doc = "Workload classifier operations for a data warehouse"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadClassifier {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Workload classifier definition. For more information look at sys.workload_management_workload_classifiers (DMV)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadClassifierProperties>,
 }
@@ -6518,10 +7965,13 @@ impl WorkloadClassifier {
         Self::default()
     }
 }
+#[doc = "A list of workload classifiers for a workload group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadClassifierListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkloadClassifier>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6530,18 +7980,25 @@ impl WorkloadClassifierListResult {
         Self::default()
     }
 }
+#[doc = "Workload classifier definition. For more information look at sys.workload_management_workload_classifiers (DMV)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkloadClassifierProperties {
+    #[doc = "The workload classifier member name."]
     #[serde(rename = "memberName")]
     pub member_name: String,
+    #[doc = "The workload classifier label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "The workload classifier context."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<String>,
+    #[doc = "The workload classifier start time for classification."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The workload classifier end time for classification."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The workload classifier importance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub importance: Option<String>,
 }
@@ -6557,10 +8014,12 @@ impl WorkloadClassifierProperties {
         }
     }
 }
+#[doc = "Workload group operations for a data warehouse"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Workload group definition. For more information look at sys.workload_management_workload_groups (DMV)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadGroupProperties>,
 }
@@ -6569,10 +8028,13 @@ impl WorkloadGroup {
         Self::default()
     }
 }
+#[doc = "A list of workload groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadGroupListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkloadGroup>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -6581,18 +8043,25 @@ impl WorkloadGroupListResult {
         Self::default()
     }
 }
+#[doc = "Workload group definition. For more information look at sys.workload_management_workload_groups (DMV)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkloadGroupProperties {
+    #[doc = "The workload group minimum percentage resource."]
     #[serde(rename = "minResourcePercent")]
     pub min_resource_percent: i32,
+    #[doc = "The workload group cap percentage resource."]
     #[serde(rename = "maxResourcePercent")]
     pub max_resource_percent: i32,
+    #[doc = "The workload group request minimum grant percentage."]
     #[serde(rename = "minResourcePercentPerRequest")]
     pub min_resource_percent_per_request: f64,
+    #[doc = "The workload group request maximum grant percentage."]
     #[serde(rename = "maxResourcePercentPerRequest", default, skip_serializing_if = "Option::is_none")]
     pub max_resource_percent_per_request: Option<f64>,
+    #[doc = "The workload group importance level."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub importance: Option<String>,
+    #[doc = "The workload group query execution timeout."]
     #[serde(rename = "queryExecutionTimeout", default, skip_serializing_if = "Option::is_none")]
     pub query_execution_timeout: Option<i32>,
 }

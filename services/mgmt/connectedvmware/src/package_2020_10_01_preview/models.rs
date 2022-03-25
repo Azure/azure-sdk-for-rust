@@ -2,22 +2,32 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Define the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Cluster {
+    #[doc = "Defines the resource properties."]
     pub properties: ClusterProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -36,6 +46,7 @@ impl Cluster {
         }
     }
 }
+#[doc = "The cluster inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterInventoryItem {
     #[serde(flatten)]
@@ -46,26 +57,37 @@ impl ClusterInventoryItem {
         Self { inventory_item_properties }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this cluster resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the cluster."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the cluster."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the cluster."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "Gets or sets the datastore ARM ids."]
     #[serde(rename = "datastoreIds", default, skip_serializing_if = "Vec::is_empty")]
     pub datastore_ids: Vec<String>,
+    #[doc = "Gets or sets the network ARM ids."]
     #[serde(rename = "networkIds", default, skip_serializing_if = "Vec::is_empty")]
     pub network_ids: Vec<String>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -74,10 +96,13 @@ impl ClusterProperties {
         Self::default()
     }
 }
+#[doc = "List of Clusters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClustersList {
+    #[doc = "Url to follow for getting next page of Clusters."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of Clusters"]
     pub value: Vec<Cluster>,
 }
 impl ClustersList {
@@ -85,14 +110,19 @@ impl ClustersList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Condition defines an extension to status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
+    #[doc = "Status of the condition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The reason for the condition's status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "A human readable message indicating details about the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Severity with which to treat failures of this type of condition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
 }
@@ -101,22 +131,32 @@ impl Condition {
         Self::default()
     }
 }
+#[doc = "Define the datastore."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Datastore {
+    #[doc = "Defines the resource properties."]
     pub properties: DatastoreProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -135,12 +175,15 @@ impl Datastore {
         }
     }
 }
+#[doc = "The datastore inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatastoreInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
+    #[doc = "Gets or sets Maximum capacity of this datastore, in GBs."]
     #[serde(rename = "capacityGB", default, skip_serializing_if = "Option::is_none")]
     pub capacity_gb: Option<i64>,
+    #[doc = "Gets or sets Available space of this datastore, in GBs."]
     #[serde(rename = "freeSpaceGB", default, skip_serializing_if = "Option::is_none")]
     pub free_space_gb: Option<i64>,
 }
@@ -153,22 +196,31 @@ impl DatastoreInventoryItem {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatastoreProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this datastore resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the datastore."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the datastore."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the datastore."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "The current deployment state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
@@ -177,10 +229,13 @@ impl DatastoreProperties {
         Self::default()
     }
 }
+#[doc = "List of Datastores."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatastoresList {
+    #[doc = "Url to follow for getting next page of Datastores."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of Datastores"]
     pub value: Vec<Datastore>,
 }
 impl DatastoresList {
@@ -188,6 +243,7 @@ impl DatastoresList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Defines the different types of disk modes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskMode {
     #[serde(rename = "persistent")]
@@ -197,6 +253,7 @@ pub enum DiskMode {
     #[serde(rename = "independent_nonpersistent")]
     IndependentNonpersistent,
 }
+#[doc = "Defines the different types of disks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskType {
     #[serde(rename = "flat")]
@@ -214,12 +271,16 @@ pub enum DiskType {
     #[serde(rename = "unknown")]
     Unknown,
 }
+#[doc = "Error definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
+    #[doc = "Service specific error code which serves as the substatus for the HTTP error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Internal error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
@@ -230,10 +291,14 @@ impl ErrorDefinition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
+    #[doc = "The error's code."]
     pub code: String,
+    #[doc = "A human readable error message."]
     pub message: String,
+    #[doc = "Indicates which property in the request is responsible for the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Additional error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
@@ -247,8 +312,10 @@ impl ErrorDetail {
         }
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -257,10 +324,13 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The extended location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedLocation {
+    #[doc = "The extended location type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The extended location name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -269,6 +339,7 @@ impl ExtendedLocation {
         Self::default()
     }
 }
+#[doc = "Firmware type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FirmwareType {
     #[serde(rename = "bios")]
@@ -276,11 +347,14 @@ pub enum FirmwareType {
     #[serde(rename = "efi")]
     Efi,
 }
+#[doc = "Defines the GuestAgent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestAgent {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Defines the resource properties."]
     pub properties: GuestAgentProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -293,10 +367,13 @@ impl GuestAgent {
         }
     }
 }
+#[doc = "List of GuestAgent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestAgentList {
+    #[doc = "Url to follow for getting next page of GuestAgent."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of GuestAgent"]
     pub value: Vec<GuestAgent>,
 }
 impl GuestAgentList {
@@ -304,16 +381,22 @@ impl GuestAgentList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestAgentProfile {
+    #[doc = "Specifies the VM's unique SMBIOS ID."]
     #[serde(rename = "vmUuid", default, skip_serializing_if = "Option::is_none")]
     pub vm_uuid: Option<String>,
+    #[doc = "The status of the hybrid machine agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<guest_agent_profile::Status>,
+    #[doc = "The time of the last status change."]
     #[serde(rename = "lastStatusChange", default, skip_serializing_if = "Option::is_none")]
     pub last_status_change: Option<String>,
+    #[doc = "The hybrid machine agent full version."]
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
+    #[doc = "Details about the error state."]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub error_details: Vec<ErrorDetail>,
 }
@@ -324,6 +407,7 @@ impl GuestAgentProfile {
 }
 pub mod guest_agent_profile {
     use super::*;
+    #[doc = "The status of the hybrid machine agent."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Connected,
@@ -331,22 +415,31 @@ pub mod guest_agent_profile {
         Error,
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestAgentProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Username / Password Credentials to connect to guest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<GuestCredential>,
+    #[doc = "HTTP Proxy configuration for the VM."]
     #[serde(rename = "httpProxyConfig", default, skip_serializing_if = "Option::is_none")]
     pub http_proxy_config: Option<HttpProxyConfiguration>,
+    #[doc = "Defines the different types of operations for guest agent."]
     #[serde(rename = "provisioningAction", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_action: Option<ProvisioningAction>,
+    #[doc = "Gets or sets the guest agent status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -355,10 +448,13 @@ impl GuestAgentProperties {
         Self::default()
     }
 }
+#[doc = "Username / Password Credentials to connect to guest."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestCredential {
+    #[doc = "Gets or sets username to connect with the guest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "Gets or sets the password to connect with the guest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
@@ -367,18 +463,25 @@ impl GuestCredential {
         Self::default()
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfile {
+    #[doc = "Gets or sets memory size in MBs for the vm."]
     #[serde(rename = "memorySizeMB", default, skip_serializing_if = "Option::is_none")]
     pub memory_size_mb: Option<i32>,
+    #[doc = "Gets or sets the number of vCPUs for the vm."]
     #[serde(rename = "numCPUs", default, skip_serializing_if = "Option::is_none")]
     pub num_cp_us: Option<i32>,
+    #[doc = "Gets or sets the number of cores per socket for the vm. Defaults to 1 if unspecified."]
     #[serde(rename = "numCoresPerSocket", default, skip_serializing_if = "Option::is_none")]
     pub num_cores_per_socket: Option<i32>,
+    #[doc = "Gets or sets a value indicating whether virtual processors can be added while this virtual machine is running."]
     #[serde(rename = "cpuHotAddEnabled", default, skip_serializing_if = "Option::is_none")]
     pub cpu_hot_add_enabled: Option<bool>,
+    #[doc = "Gets or sets a value indicating whether virtual processors can be removed while this virtual machine is running."]
     #[serde(rename = "cpuHotRemoveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub cpu_hot_remove_enabled: Option<bool>,
+    #[doc = "Gets or sets a value indicating whether memory can be added while this virtual machine is running."]
     #[serde(rename = "memoryHotAddEnabled", default, skip_serializing_if = "Option::is_none")]
     pub memory_hot_add_enabled: Option<bool>,
 }
@@ -387,22 +490,32 @@ impl HardwareProfile {
         Self::default()
     }
 }
+#[doc = "Define the host."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Host {
+    #[doc = "Defines the resource properties."]
     pub properties: HostProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -421,10 +534,12 @@ impl Host {
         }
     }
 }
+#[doc = "The host inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
+    #[doc = "Defines the resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<InventoryItemDetails>,
 }
@@ -436,22 +551,31 @@ impl HostInventoryItem {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this host resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the host."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the host."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the host."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -460,10 +584,13 @@ impl HostProperties {
         Self::default()
     }
 }
+#[doc = "List of Hosts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostsList {
+    #[doc = "Url to follow for getting next page of Hosts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of Hosts"]
     pub value: Vec<Host>,
 }
 impl HostsList {
@@ -471,8 +598,10 @@ impl HostsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "HTTP Proxy configuration for the VM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpProxyConfiguration {
+    #[doc = "Gets or sets httpsProxy url."]
     #[serde(rename = "httpsProxy", default, skip_serializing_if = "Option::is_none")]
     pub https_proxy: Option<String>,
 }
@@ -481,11 +610,14 @@ impl HttpProxyConfiguration {
         Self::default()
     }
 }
+#[doc = "Defines the HybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadata {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Defines the resource properties."]
     pub properties: HybridIdentityMetadataProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -498,10 +630,13 @@ impl HybridIdentityMetadata {
         }
     }
 }
+#[doc = "List of HybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadataList {
+    #[doc = "Url to follow for getting next page of HybridIdentityMetadata."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of HybridIdentityMetadata"]
     pub value: Vec<HybridIdentityMetadata>,
 }
 impl HybridIdentityMetadataList {
@@ -509,14 +644,19 @@ impl HybridIdentityMetadataList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridIdentityMetadataProperties {
+    #[doc = "Gets or sets the Vm Id."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
+    #[doc = "Gets or sets the Public Key."]
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
+    #[doc = "Managed service identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -525,6 +665,7 @@ impl HybridIdentityMetadataProperties {
         Self::default()
     }
 }
+#[doc = "IP address allocation method."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IpAddressAllocationMethod {
     #[serde(rename = "unset")]
@@ -540,12 +681,16 @@ pub enum IpAddressAllocationMethod {
     #[serde(rename = "other")]
     Other,
 }
+#[doc = "Managed service identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
+    #[doc = "The principal id of managed service identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant of managed service identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The type of managed service identity."]
     #[serde(rename = "type")]
     pub type_: identity::Type,
 }
@@ -560,19 +705,24 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The type of managed service identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
         SystemAssigned,
     }
 }
+#[doc = "Defines the inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItem {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Defines the resource properties."]
     pub properties: InventoryItemProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -586,10 +736,13 @@ impl InventoryItem {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InventoryItemDetails {
+    #[doc = "Gets or sets the inventory Item ID for the resource."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the resource."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
 }
@@ -598,16 +751,22 @@ impl InventoryItemDetails {
         Self::default()
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItemProperties {
+    #[doc = "The inventory type."]
     #[serde(rename = "inventoryType")]
     pub inventory_type: InventoryType,
+    #[doc = "Gets or sets the tracked resource id corresponding to the inventory resource."]
     #[serde(rename = "managedResourceId", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_id: Option<String>,
+    #[doc = "Gets or sets the MoRef (Managed Object Reference) ID for the inventory item."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the inventory item."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -622,10 +781,13 @@ impl InventoryItemProperties {
         }
     }
 }
+#[doc = "List of InventoryItems."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItemsList {
+    #[doc = "Url to follow for getting next page of InventoryItems."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of InventoryItems"]
     pub value: Vec<InventoryItem>,
 }
 impl InventoryItemsList {
@@ -633,6 +795,7 @@ impl InventoryItemsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "The inventory type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum InventoryType {
     ResourcePool,
@@ -643,20 +806,28 @@ pub enum InventoryType {
     Datastore,
     Host,
 }
+#[doc = "Describes a Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtension {
+    #[doc = "Describes the properties of a Machine Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineExtensionProperties>,
+    #[doc = "Gets or sets the location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -665,14 +836,19 @@ impl MachineExtension {
         Self::default()
     }
 }
+#[doc = "Describes the Machine Extension Instance View."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionInstanceView {
+    #[doc = "The machine extension name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Instance view status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<machine_extension_instance_view::Status>,
 }
@@ -683,16 +859,22 @@ impl MachineExtensionInstanceView {
 }
 pub mod machine_extension_instance_view {
     use super::*;
+    #[doc = "Instance view status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Status {
+        #[doc = "The status code."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "The level code."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub level: Option<status::Level>,
+        #[doc = "The short localizable label for the status."]
         #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
         pub display_status: Option<String>,
+        #[doc = "The detailed status message, including for alerts and error messages."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+        #[doc = "The time of the status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub time: Option<String>,
     }
@@ -703,6 +885,7 @@ pub mod machine_extension_instance_view {
     }
     pub mod status {
         use super::*;
+        #[doc = "The level code."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum Level {
             Info,
@@ -711,24 +894,34 @@ pub mod machine_extension_instance_view {
         }
     }
 }
+#[doc = "Describes the properties of a Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionProperties {
+    #[doc = "How the extension handler should be forced to update even if the extension configuration has not changed."]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
+    #[doc = "The name of the extension handler publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Indicates whether the extension should use a newer minor version if one is available at deployment time. Once deployed, however, the extension will not upgrade minor versions unless redeployed, even with this property set to true."]
     #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_minor_version: Option<bool>,
+    #[doc = "Json formatted public settings for the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Value>,
+    #[doc = "The extension can contain either protectedSettings or protectedSettingsFromKeyVault or no protected settings at all."]
     #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings: Option<serde_json::Value>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The machine extension instance view."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<serde_json::Value>,
 }
@@ -737,10 +930,12 @@ impl MachineExtensionProperties {
         Self::default()
     }
 }
+#[doc = "Describes a Machine Extension Update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionUpdate {
     #[serde(flatten)]
     pub resource_patch: ResourcePatch,
+    #[doc = "Describes the properties of a Machine Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineExtensionUpdateProperties>,
 }
@@ -749,20 +944,28 @@ impl MachineExtensionUpdate {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionUpdateProperties {
+    #[doc = "How the extension handler should be forced to update even if the extension configuration has not changed."]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
+    #[doc = "The name of the extension handler publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Indicates whether the extension should use a newer minor version if one is available at deployment time. Once deployed, however, the extension will not upgrade minor versions unless redeployed, even with this property set to true."]
     #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_minor_version: Option<bool>,
+    #[doc = "Json formatted public settings for the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Value>,
+    #[doc = "The extension can contain either protectedSettings or protectedSettingsFromKeyVault or no protected settings at all."]
     #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings: Option<serde_json::Value>,
 }
@@ -771,10 +974,13 @@ impl MachineExtensionUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Describes the Machine Extensions List Result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineExtensionsListResult {
+    #[doc = "The list of extensions"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MachineExtension>,
+    #[doc = "The uri to fetch the next page of machine extensions. Call ListNext() with this to fetch the next page of extensions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -783,6 +989,7 @@ impl MachineExtensionsListResult {
         Self::default()
     }
 }
+#[doc = "NIC type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NicType {
     #[serde(rename = "vmxnet3")]
@@ -798,28 +1005,40 @@ pub enum NicType {
     #[serde(rename = "pcnet32")]
     Pcnet32,
 }
+#[doc = "Network Interface model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterface {
+    #[doc = "Gets or sets the name of the network interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the label of the virtual network in vCenter that the nic is connected to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "Gets or sets the nic ip addresses."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "Gets or sets the NIC MAC address."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the network resource to connect the virtual machine."]
     #[serde(rename = "networkId", default, skip_serializing_if = "Option::is_none")]
     pub network_id: Option<String>,
+    #[doc = "NIC type"]
     #[serde(rename = "nicType", default, skip_serializing_if = "Option::is_none")]
     pub nic_type: Option<NicType>,
+    #[doc = "Defines the options for power on boot."]
     #[serde(rename = "powerOnBoot", default, skip_serializing_if = "Option::is_none")]
     pub power_on_boot: Option<PowerOnBootOption>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID of the virtual network\r\nthat the nic is connected to."]
     #[serde(rename = "networkMoRefId", default, skip_serializing_if = "Option::is_none")]
     pub network_mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the name of the virtual network in vCenter that the nic is connected to."]
     #[serde(rename = "networkMoName", default, skip_serializing_if = "Option::is_none")]
     pub network_mo_name: Option<String>,
+    #[doc = "Gets or sets the device key value."]
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
     pub device_key: Option<i32>,
+    #[doc = "Defines the network interface ip settings."]
     #[serde(rename = "ipSettings", default, skip_serializing_if = "Option::is_none")]
     pub ip_settings: Option<NicIpSettings>,
 }
@@ -828,16 +1047,22 @@ impl NetworkInterface {
         Self::default()
     }
 }
+#[doc = "Defines the network interface update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceUpdate {
+    #[doc = "Gets or sets the name of the network interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the network resource to connect the virtual machine."]
     #[serde(rename = "networkId", default, skip_serializing_if = "Option::is_none")]
     pub network_id: Option<String>,
+    #[doc = "NIC type"]
     #[serde(rename = "nicType", default, skip_serializing_if = "Option::is_none")]
     pub nic_type: Option<NicType>,
+    #[doc = "Defines the options for power on boot."]
     #[serde(rename = "powerOnBoot", default, skip_serializing_if = "Option::is_none")]
     pub power_on_boot: Option<PowerOnBootOption>,
+    #[doc = "Gets or sets the device key value."]
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
     pub device_key: Option<i32>,
 }
@@ -846,8 +1071,10 @@ impl NetworkInterfaceUpdate {
         Self::default()
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
+    #[doc = "Gets or sets the list of network interfaces associated with the virtual machine."]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<NetworkInterface>,
 }
@@ -856,8 +1083,10 @@ impl NetworkProfile {
         Self::default()
     }
 }
+#[doc = "Defines the update resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfileUpdate {
+    #[doc = "Gets or sets the list of network interfaces associated with the virtual machine."]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<NetworkInterfaceUpdate>,
 }
@@ -866,12 +1095,16 @@ impl NetworkProfileUpdate {
         Self::default()
     }
 }
+#[doc = "IP address information for a virtual network adapter reported by the fabric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NicIpAddressSettings {
+    #[doc = "Gets the ip address allocation method."]
     #[serde(rename = "allocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub allocation_method: Option<String>,
+    #[doc = "Gets the ip address for the nic."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "Gets the mask."]
     #[serde(rename = "subnetMask", default, skip_serializing_if = "Option::is_none")]
     pub subnet_mask: Option<String>,
 }
@@ -880,22 +1113,31 @@ impl NicIpAddressSettings {
         Self::default()
     }
 }
+#[doc = "Defines the network interface ip settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NicIpSettings {
+    #[doc = "IP address allocation method."]
     #[serde(rename = "allocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub allocation_method: Option<IpAddressAllocationMethod>,
+    #[doc = "Gets or sets the dns servers."]
     #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
     pub dns_servers: Vec<String>,
+    #[doc = "Gets or sets the gateway."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub gateway: Vec<String>,
+    #[doc = "Gets or sets the ip address for the nic."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "Gets or sets the mask."]
     #[serde(rename = "subnetMask", default, skip_serializing_if = "Option::is_none")]
     pub subnet_mask: Option<String>,
+    #[doc = "Gets or sets the primary server."]
     #[serde(rename = "primaryWinsServer", default, skip_serializing_if = "Option::is_none")]
     pub primary_wins_server: Option<String>,
+    #[doc = "Gets or sets the secondary server."]
     #[serde(rename = "secondaryWinsServer", default, skip_serializing_if = "Option::is_none")]
     pub secondary_wins_server: Option<String>,
+    #[doc = "Gets or sets the IP address information being reported for this NIC. This contains the same IPv4 information above plus IPV6 information."]
     #[serde(rename = "ipAddressInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_address_info: Vec<NicIpAddressSettings>,
 }
@@ -904,22 +1146,31 @@ impl NicIpSettings {
         Self::default()
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsProfile {
+    #[doc = "Gets or sets computer name."]
     #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
+    #[doc = "Gets or sets administrator username."]
     #[serde(rename = "adminUsername", default, skip_serializing_if = "Option::is_none")]
     pub admin_username: Option<String>,
+    #[doc = "Gets or sets administrator password."]
     #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_password: Option<String>,
+    #[doc = "Defines the different types of VM guest operating systems."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Gets or sets the current running status of VMware Tools running in the guest operating system."]
     #[serde(rename = "toolsRunningStatus", default, skip_serializing_if = "Option::is_none")]
     pub tools_running_status: Option<String>,
+    #[doc = "Gets or sets the current version status of VMware Tools installed in the guest operating system."]
     #[serde(rename = "toolsVersionStatus", default, skip_serializing_if = "Option::is_none")]
     pub tools_version_status: Option<String>,
+    #[doc = "Gets or sets the current version of VMware Tools."]
     #[serde(rename = "toolsVersion", default, skip_serializing_if = "Option::is_none")]
     pub tools_version: Option<String>,
 }
@@ -928,20 +1179,26 @@ impl OsProfile {
         Self::default()
     }
 }
+#[doc = "Defines the different types of VM guest operating systems."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
     Windows,
     Linux,
     Other,
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlacementProfile {
+    #[doc = "Gets or sets the ARM Id of the resourcePool resource on which this virtual machine will deploy."]
     #[serde(rename = "resourcePoolId", default, skip_serializing_if = "Option::is_none")]
     pub resource_pool_id: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the cluster resource on which this virtual machine will deploy."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the host resource on which this virtual machine will deploy."]
     #[serde(rename = "hostId", default, skip_serializing_if = "Option::is_none")]
     pub host_id: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the datastore resource on which the data for the virtual machine will be kept."]
     #[serde(rename = "datastoreId", default, skip_serializing_if = "Option::is_none")]
     pub datastore_id: Option<String>,
 }
@@ -950,6 +1207,7 @@ impl PlacementProfile {
         Self::default()
     }
 }
+#[doc = "Defines the options for power on boot."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PowerOnBootOption {
     #[serde(rename = "enabled")]
@@ -957,6 +1215,7 @@ pub enum PowerOnBootOption {
     #[serde(rename = "disabled")]
     Disabled,
 }
+#[doc = "Defines the different types of operations for guest agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningAction {
     #[serde(rename = "install")]
@@ -966,6 +1225,7 @@ pub enum ProvisioningAction {
     #[serde(rename = "repair")]
     Repair,
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -976,12 +1236,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -990,8 +1254,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Object containing updates for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcePatch {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1000,22 +1266,32 @@ impl ResourcePatch {
         Self::default()
     }
 }
+#[doc = "Define the resourcePool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourcePool {
+    #[doc = "Defines the resource properties."]
     pub properties: ResourcePoolProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -1034,10 +1310,12 @@ impl ResourcePool {
         }
     }
 }
+#[doc = "The resource pool inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourcePoolInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
+    #[doc = "Defines the resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<InventoryItemDetails>,
 }
@@ -1049,34 +1327,49 @@ impl ResourcePoolInventoryItem {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcePoolProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this resource pool resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the resource pool."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the resource pool."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the resource pool."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "Gets or sets CPUSharesLevel which specifies the CPU allocation level for this pool.\r\nThis property is used in relative allocation between resource consumers."]
     #[serde(rename = "cpuSharesLevel", default, skip_serializing_if = "Option::is_none")]
     pub cpu_shares_level: Option<String>,
+    #[doc = "Gets or sets CPUReservationMHz which specifies the CPU size in MHz that is guaranteed\r\nto be available."]
     #[serde(rename = "cpuReservationMHz", default, skip_serializing_if = "Option::is_none")]
     pub cpu_reservation_m_hz: Option<i64>,
+    #[doc = "Gets or sets CPULimitMHz which specifies a CPU usage limit in MHz.\r\nUtilization will not exceed this limit even if there are available resources."]
     #[serde(rename = "cpuLimitMHz", default, skip_serializing_if = "Option::is_none")]
     pub cpu_limit_m_hz: Option<i64>,
+    #[doc = "Gets or sets CPUSharesLevel which specifies the memory allocation level for this pool.\r\nThis property is used in relative allocation between resource consumers."]
     #[serde(rename = "memSharesLevel", default, skip_serializing_if = "Option::is_none")]
     pub mem_shares_level: Option<String>,
+    #[doc = "Gets or sets MemReservationMB which specifies the guaranteed available memory in\r\nmegabytes."]
     #[serde(rename = "memReservationMB", default, skip_serializing_if = "Option::is_none")]
     pub mem_reservation_mb: Option<i64>,
+    #[doc = "Gets or sets MemLimitMB specifies a memory usage limit in megabytes.\r\nUtilization will not exceed the specified limit even if there are available resources."]
     #[serde(rename = "memLimitMB", default, skip_serializing_if = "Option::is_none")]
     pub mem_limit_mb: Option<i64>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1085,10 +1378,13 @@ impl ResourcePoolProperties {
         Self::default()
     }
 }
+#[doc = "List of ResourcePools."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourcePoolsList {
+    #[doc = "Url to follow for getting next page of ResourcePools."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of ResourcePools"]
     pub value: Vec<ResourcePool>,
 }
 impl ResourcePoolsList {
@@ -1096,6 +1392,7 @@ impl ResourcePoolsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "The current deployment state of resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceProvisioningState {
     Succeeded,
@@ -1107,18 +1404,25 @@ pub enum ResourceProvisioningState {
     Accepted,
     Created,
 }
+#[doc = "The resource status information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceStatus {
+    #[doc = "The type of the condition."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Status of the condition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The reason for the condition's status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "A human readable message indicating details about the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Severity with which to treat failures of this type of condition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
+    #[doc = "The last update time for this condition."]
     #[serde(rename = "lastUpdatedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_at: Option<String>,
 }
@@ -1127,6 +1431,7 @@ impl ResourceStatus {
         Self::default()
     }
 }
+#[doc = "Defines the different types of SCSI controllers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScsiControllerType {
     #[serde(rename = "lsilogic")]
@@ -1138,8 +1443,10 @@ pub enum ScsiControllerType {
     #[serde(rename = "lsilogicsas")]
     Lsilogicsas,
 }
+#[doc = "Defines the stop action properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StopVirtualMachineOptions {
+    #[doc = "Gets or sets a value indicating whether to request non-graceful VM shutdown. True value for this flag indicates non-graceful shutdown whereas false indicates otherwise. Defaults to false."]
     #[serde(rename = "skipShutdown", default, skip_serializing_if = "Option::is_none")]
     pub skip_shutdown: Option<bool>,
 }
@@ -1148,10 +1455,13 @@ impl StopVirtualMachineOptions {
         Self::default()
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
+    #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<VirtualDisk>,
+    #[doc = "Gets or sets the list of virtual SCSI controllers associated with the virtual machine."]
     #[serde(rename = "scsiControllers", default, skip_serializing_if = "Vec::is_empty")]
     pub scsi_controllers: Vec<VirtualScsiController>,
 }
@@ -1160,8 +1470,10 @@ impl StorageProfile {
         Self::default()
     }
 }
+#[doc = "Defines the resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfileUpdate {
+    #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<VirtualDiskUpdate>,
 }
@@ -1170,22 +1482,32 @@ impl StorageProfileUpdate {
         Self::default()
     }
 }
+#[doc = "Defines the vCenter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VCenter {
+    #[doc = "Defines the resource properties."]
     pub properties: VCenterProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -1204,25 +1526,36 @@ impl VCenter {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VCenterProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the FQDN/IPAddress of the vCenter."]
     pub fqdn: String,
+    #[doc = "Gets or sets the port of the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
+    #[doc = "Gets or sets the version of the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Gets or sets the instance UUID of the vCenter."]
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
+    #[doc = "Gets or sets the connection status to the vCenter."]
     #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<String>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "Username / Password Credentials to connect to vcenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<ViCredential>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1242,10 +1575,13 @@ impl VCenterProperties {
         }
     }
 }
+#[doc = "List of VCenters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VCentersList {
+    #[doc = "Url to follow for getting next page of VCenters."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of VCenters"]
     pub value: Vec<VCenter>,
 }
 impl VCentersList {
@@ -1253,10 +1589,13 @@ impl VCentersList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Username / Password Credentials to connect to vcenter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViCredential {
+    #[doc = "Gets or sets username to connect with the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "Gets or sets the password to connect with the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
@@ -1265,26 +1604,37 @@ impl ViCredential {
         Self::default()
     }
 }
+#[doc = "Virtual disk model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualDisk {
+    #[doc = "Gets or sets the name of the virtual disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the label of the virtual disk in vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "Gets or sets the disk object id."]
     #[serde(rename = "diskObjectId", default, skip_serializing_if = "Option::is_none")]
     pub disk_object_id: Option<String>,
+    #[doc = "Gets or sets the disk total size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Gets or sets the device key value."]
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
     pub device_key: Option<i32>,
+    #[doc = "Defines the different types of disk modes."]
     #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
     pub disk_mode: Option<DiskMode>,
+    #[doc = "Gets or sets the controller id."]
     #[serde(rename = "controllerKey", default, skip_serializing_if = "Option::is_none")]
     pub controller_key: Option<i32>,
+    #[doc = "Gets or sets the unit number of the disk on the controller."]
     #[serde(rename = "unitNumber", default, skip_serializing_if = "Option::is_none")]
     pub unit_number: Option<i32>,
+    #[doc = "Gets or sets the device name."]
     #[serde(rename = "deviceName", default, skip_serializing_if = "Option::is_none")]
     pub device_name: Option<String>,
+    #[doc = "Defines the different types of disks."]
     #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<DiskType>,
 }
@@ -1293,22 +1643,31 @@ impl VirtualDisk {
         Self::default()
     }
 }
+#[doc = "Defines the virtual disk update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualDiskUpdate {
+    #[doc = "Gets or sets the name of the virtual disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the disk total size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Gets or sets the device key value."]
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
     pub device_key: Option<i32>,
+    #[doc = "Defines the different types of disk modes."]
     #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
     pub disk_mode: Option<DiskMode>,
+    #[doc = "Gets or sets the controller id."]
     #[serde(rename = "controllerKey", default, skip_serializing_if = "Option::is_none")]
     pub controller_key: Option<i32>,
+    #[doc = "Gets or sets the unit number of the disk on the controller."]
     #[serde(rename = "unitNumber", default, skip_serializing_if = "Option::is_none")]
     pub unit_number: Option<i32>,
+    #[doc = "Gets or sets the device name."]
     #[serde(rename = "deviceName", default, skip_serializing_if = "Option::is_none")]
     pub device_name: Option<String>,
+    #[doc = "Defines the different types of disks."]
     #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<DiskType>,
 }
@@ -1317,24 +1676,35 @@ impl VirtualDiskUpdate {
         Self::default()
     }
 }
+#[doc = "Define the virtualMachine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
+    #[doc = "Defines the resource properties."]
     pub properties: VirtualMachineProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Managed service identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
@@ -1354,32 +1724,45 @@ impl VirtualMachine {
         }
     }
 }
+#[doc = "The VM inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
+    #[doc = "Defines the different types of VM guest operating systems."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Gets or sets the nic ip addresses."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "Gets or sets the folder path of the vm."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<String>,
+    #[doc = "Defines the resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub host: Option<InventoryItemDetails>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "resourcePool", default, skip_serializing_if = "Option::is_none")]
     pub resource_pool: Option<InventoryItemDetails>,
+    #[doc = "Gets or sets the instance uuid of the vm."]
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
+    #[doc = "Gets or sets the SMBIOS UUID of the vm."]
     #[serde(rename = "smbiosUuid", default, skip_serializing_if = "Option::is_none")]
     pub smbios_uuid: Option<String>,
+    #[doc = "Gets the power state of the virtual machine."]
     #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<String>,
+    #[doc = "Gets or sets the current running status of VMware Tools running in the guest operating system."]
     #[serde(rename = "toolsRunningStatus", default, skip_serializing_if = "Option::is_none")]
     pub tools_running_status: Option<String>,
+    #[doc = "Gets or sets the current version status of VMware Tools installed in the guest operating system."]
     #[serde(rename = "toolsVersionStatus", default, skip_serializing_if = "Option::is_none")]
     pub tools_version_status: Option<String>,
+    #[doc = "Gets or sets the current version of VMware Tools."]
     #[serde(rename = "toolsVersion", default, skip_serializing_if = "Option::is_none")]
     pub tools_version: Option<String>,
 }
@@ -1402,50 +1785,73 @@ impl VirtualMachineInventoryItem {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineProperties {
+    #[doc = "Gets or sets the ARM Id of the resourcePool resource on which this virtual machine will\r\ndeploy."]
     #[serde(rename = "resourcePoolId", default, skip_serializing_if = "Option::is_none")]
     pub resource_pool_id: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the template resource to deploy the virtual machine."]
     #[serde(rename = "templateId", default, skip_serializing_if = "Option::is_none")]
     pub template_id: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this resource pool resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "placementProfile", default, skip_serializing_if = "Option::is_none")]
     pub placement_profile: Option<PlacementProfile>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<OsProfile>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
     pub hardware_profile: Option<HardwareProfile>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "guestAgentProfile", default, skip_serializing_if = "Option::is_none")]
     pub guest_agent_profile: Option<GuestAgentProfile>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the virtual machine."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the virtual machine."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the virtual machine."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "Gets or sets the folder path of the vm."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<String>,
+    #[doc = "Gets or sets the instance uuid of the vm."]
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
+    #[doc = "Gets or sets the SMBIOS UUID of the vm."]
     #[serde(rename = "smbiosUuid", default, skip_serializing_if = "Option::is_none")]
     pub smbios_uuid: Option<String>,
+    #[doc = "Firmware type"]
     #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
     pub firmware_type: Option<FirmwareType>,
+    #[doc = "Gets the power state of the virtual machine."]
     #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<String>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Gets or sets a unique identifier for the vm resource."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
 }
@@ -1454,22 +1860,32 @@ impl VirtualMachineProperties {
         Self::default()
     }
 }
+#[doc = "Define the virtualMachineTemplate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineTemplate {
+    #[doc = "Defines the resource properties."]
     pub properties: VirtualMachineTemplateProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -1488,20 +1904,27 @@ impl VirtualMachineTemplate {
         }
     }
 }
+#[doc = "The VM Template inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineTemplateInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
+    #[doc = "Gets or sets memory size in MBs for the template."]
     #[serde(rename = "memorySizeMB", default, skip_serializing_if = "Option::is_none")]
     pub memory_size_mb: Option<i32>,
+    #[doc = "Gets or sets the number of vCPUs for the template."]
     #[serde(rename = "numCPUs", default, skip_serializing_if = "Option::is_none")]
     pub num_cp_us: Option<i32>,
+    #[doc = "Gets or sets the number of cores per socket for the template.\r\nDefaults to 1 if unspecified."]
     #[serde(rename = "numCoresPerSocket", default, skip_serializing_if = "Option::is_none")]
     pub num_cores_per_socket: Option<i32>,
+    #[doc = "Defines the different types of VM guest operating systems."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Gets or sets the folder path of the template."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<String>,
 }
@@ -1518,44 +1941,64 @@ impl VirtualMachineTemplateInventoryItem {
         }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineTemplateProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this template resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the virtual machine\r\ntemplate."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the virtual machine template."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the virtual machine template."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "Gets or sets memory size in MBs for the template."]
     #[serde(rename = "memorySizeMB", default, skip_serializing_if = "Option::is_none")]
     pub memory_size_mb: Option<i32>,
+    #[doc = "Gets or sets the number of vCPUs for the template."]
     #[serde(rename = "numCPUs", default, skip_serializing_if = "Option::is_none")]
     pub num_cp_us: Option<i32>,
+    #[doc = "Gets or sets the number of cores per socket for the template.\r\nDefaults to 1 if unspecified."]
     #[serde(rename = "numCoresPerSocket", default, skip_serializing_if = "Option::is_none")]
     pub num_cores_per_socket: Option<i32>,
+    #[doc = "Defines the different types of VM guest operating systems."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Gets or sets the folder path of the template."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<String>,
+    #[doc = "Gets or sets the network interfaces of the template."]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<NetworkInterface>,
+    #[doc = "Gets or sets the disks the template."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<VirtualDisk>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "Gets or sets the current version status of VMware Tools installed in the guest operating system."]
     #[serde(rename = "toolsVersionStatus", default, skip_serializing_if = "Option::is_none")]
     pub tools_version_status: Option<String>,
+    #[doc = "Gets or sets the current version of VMware Tools."]
     #[serde(rename = "toolsVersion", default, skip_serializing_if = "Option::is_none")]
     pub tools_version: Option<String>,
+    #[doc = "Firmware type"]
     #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
     pub firmware_type: Option<FirmwareType>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1564,10 +2007,13 @@ impl VirtualMachineTemplateProperties {
         Self::default()
     }
 }
+#[doc = "List of VirtualMachineTemplates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineTemplatesList {
+    #[doc = "Url to follow for getting next page of VirtualMachineTemplates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of VirtualMachineTemplates"]
     pub value: Vec<VirtualMachineTemplate>,
 }
 impl VirtualMachineTemplatesList {
@@ -1575,12 +2021,16 @@ impl VirtualMachineTemplatesList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Defines the virtualMachineUpdate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineUpdate {
+    #[doc = "Defines the resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineUpdateProperties>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Managed service identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
@@ -1589,12 +2039,16 @@ impl VirtualMachineUpdate {
         Self::default()
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineUpdateProperties {
+    #[doc = "Defines the resource properties."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
     pub hardware_profile: Option<HardwareProfile>,
+    #[doc = "Defines the resource update properties."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfileUpdate>,
+    #[doc = "Defines the update resource properties."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfileUpdate>,
 }
@@ -1603,10 +2057,13 @@ impl VirtualMachineUpdateProperties {
         Self::default()
     }
 }
+#[doc = "List of VirtualMachines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachinesList {
+    #[doc = "Url to follow for getting next page of VirtualMachines."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of VirtualMachines"]
     pub value: Vec<VirtualMachine>,
 }
 impl VirtualMachinesList {
@@ -1614,22 +2071,32 @@ impl VirtualMachinesList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Define the virtualNetwork."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetwork {
+    #[doc = "Defines the resource properties."]
     pub properties: VirtualNetworkProperties,
+    #[doc = "Gets or sets the location."]
     pub location: String,
+    #[doc = "The extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Gets or sets the Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Gets or sets the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -1648,6 +2115,7 @@ impl VirtualNetwork {
         }
     }
 }
+#[doc = "The Virtual network inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkInventoryItem {
     #[serde(flatten)]
@@ -1658,22 +2126,31 @@ impl VirtualNetworkInventoryItem {
         Self { inventory_item_properties }
     }
 }
+#[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkProperties {
+    #[doc = "Gets or sets a unique identifier for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Gets or sets the ARM Id of the vCenter resource in which this template resides."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID for the virtual network."]
     #[serde(rename = "moRefId", default, skip_serializing_if = "Option::is_none")]
     pub mo_ref_id: Option<String>,
+    #[doc = "Gets or sets the inventory Item ID for the virtual network."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
+    #[doc = "Gets or sets the vCenter Managed Object name for the virtual network."]
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
+    #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<ResourceStatus>,
+    #[doc = "Gets or sets the provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1682,10 +2159,13 @@ impl VirtualNetworkProperties {
         Self::default()
     }
 }
+#[doc = "List of VirtualNetworks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworksList {
+    #[doc = "Url to follow for getting next page of VirtualNetworks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of VirtualNetworks"]
     pub value: Vec<VirtualNetwork>,
 }
 impl VirtualNetworksList {
@@ -1693,16 +2173,22 @@ impl VirtualNetworksList {
         Self { next_link: None, value }
     }
 }
+#[doc = "This data object type contains the properties of a SCSI controller device attached to a virtual machine that is reported by the controller."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualScsiController {
+    #[doc = "Defines the different types of SCSI controllers."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ScsiControllerType>,
+    #[doc = "Gets or sets the key of the controller."]
     #[serde(rename = "controllerKey", default, skip_serializing_if = "Option::is_none")]
     pub controller_key: Option<i32>,
+    #[doc = "Gets or sets the bus number of the controller."]
     #[serde(rename = "busNumber", default, skip_serializing_if = "Option::is_none")]
     pub bus_number: Option<i32>,
+    #[doc = "Gets or sets the SCSI controller unit number."]
     #[serde(rename = "scsiCtlrUnitNumber", default, skip_serializing_if = "Option::is_none")]
     pub scsi_ctlr_unit_number: Option<i32>,
+    #[doc = "Defines the sharing mode for sharing the SCSI bus."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sharing: Option<VirtualScsiSharing>,
 }
@@ -1711,6 +2197,7 @@ impl VirtualScsiController {
         Self::default()
     }
 }
+#[doc = "Defines the sharing mode for sharing the SCSI bus."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum VirtualScsiSharing {
     #[serde(rename = "noSharing")]
@@ -1720,12 +2207,16 @@ pub enum VirtualScsiSharing {
     #[serde(rename = "virtualSharing")]
     VirtualSharing,
 }
+#[doc = "Operation provided by provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is data action or not."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -1736,14 +2227,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Properties of the operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Provider name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -1753,10 +2249,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Lists the operations available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
+    #[doc = "Url to follow for getting next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
 impl OperationsList {
@@ -1764,18 +2263,25 @@ impl OperationsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1786,6 +2292,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1793,6 +2300,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

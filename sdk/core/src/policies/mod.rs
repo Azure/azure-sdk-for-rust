@@ -6,13 +6,13 @@ mod transport;
 use crate::{Context, Request, Response};
 pub use custom_headers_policy::{CustomHeaders, CustomHeadersPolicy};
 pub use retry_policies::*;
-use std::error::Error;
 use std::sync::Arc;
 pub use telemetry_policy::*;
 pub use transport::*;
 
 /// A specialized `Result` type for policies.
-pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
+pub type PolicyResult = crate::error::Result<Response>;
+// pub type PolicyResult = Result<Response, Box<dyn Error + Send + Sync>>;
 
 /// A pipeline policy.
 ///
@@ -28,5 +28,5 @@ pub trait Policy: Send + Sync + std::fmt::Debug {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response>;
+    ) -> PolicyResult;
 }

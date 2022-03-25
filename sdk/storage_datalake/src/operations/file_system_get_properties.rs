@@ -2,16 +2,12 @@ use crate::clients::FileSystemClient;
 use crate::{util::*, Properties};
 use azure_core::prelude::*;
 use azure_core::{
-    headers::{add_mandatory_header2, add_optional_header2},
-    AppendToUrlQuery, Response as HttpResponse,
-};
-use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
-    Etag,
+    AppendToUrlQuery, Etag, Response as HttpResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 
 /// A future of a file system get properties response
 type GetFileSystemProperties =
@@ -43,16 +39,16 @@ impl GetFileSystemPropertiesBuilder {
         let ctx = self.client.context.clone();
 
         Box::pin(async move {
-            let mut url = this.client.url().clone();
+            let mut url = this.client.url()?;
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
             let mut request = this
                 .client
-                .prepare_request_pipeline(url.as_str(), http::Method::HEAD);
+                .prepare_request(url.as_str(), http::Method::HEAD);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&ContentLength::new(0));
 
             let response = self
                 .client
@@ -83,7 +79,7 @@ impl GetFileSystemPropertiesResponse {
             etag: Etag::from(etag_from_headers(&headers)?),
             last_modified: last_modified_from_headers(&headers)?,
             namespace_enabled: namespace_enabled_from_headers(&headers)?,
-            properties: Properties::try_from(&headers)?,
+            properties: (&headers).try_into()?,
         })
     }
 }

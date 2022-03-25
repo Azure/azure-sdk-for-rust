@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Object model for the Azure CLI script."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCliScript {
     #[serde(flatten)]
     pub deployment_script: DeploymentScript,
+    #[doc = "Properties of the Azure CLI script object."]
     pub properties: AzureCliScriptProperties,
 }
 impl AzureCliScript {
@@ -16,12 +18,14 @@ impl AzureCliScript {
         }
     }
 }
+#[doc = "Properties of the Azure CLI script object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCliScriptProperties {
     #[serde(flatten)]
     pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
     #[serde(flatten)]
     pub script_configuration_base: ScriptConfigurationBase,
+    #[doc = "Azure CLI module version to be used."]
     #[serde(rename = "azCliVersion")]
     pub az_cli_version: String,
 }
@@ -34,10 +38,12 @@ impl AzureCliScriptProperties {
         }
     }
 }
+#[doc = "Object model for the Azure PowerShell script."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzurePowerShellScript {
     #[serde(flatten)]
     pub deployment_script: DeploymentScript,
+    #[doc = "Properties of the Azure PowerShell script object."]
     pub properties: AzurePowerShellScriptProperties,
 }
 impl AzurePowerShellScript {
@@ -48,12 +54,14 @@ impl AzurePowerShellScript {
         }
     }
 }
+#[doc = "Properties of the Azure PowerShell script object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzurePowerShellScriptProperties {
     #[serde(flatten)]
     pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
     #[serde(flatten)]
     pub script_configuration_base: ScriptConfigurationBase,
+    #[doc = "Azure PowerShell module version to be used."]
     #[serde(rename = "azPowerShellVersion")]
     pub az_power_shell_version: String,
 }
@@ -66,12 +74,16 @@ impl AzurePowerShellScriptProperties {
         }
     }
 }
+#[doc = "Common properties for all Azure resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceBase {
+    #[doc = "String Id used to locate any resource on Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of this resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -80,8 +92,10 @@ impl AzureResourceBase {
         Self::default()
     }
 }
+#[doc = "Settings to customize ACI container instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerConfiguration {
+    #[doc = "Container group name, if not specified then the name will get auto-generated. Not specifying a 'containerGroupName' indicates the system to generate a unique name which might end up flagging an Azure Policy as non-compliant. Use 'containerGroupName' when you have an Azure Policy that expects a specific naming convention or when you want to fully control the name. 'containerGroupName' property must be between 1 and 63 characters long, must contain only lowercase letters, numbers, and dashes and it cannot start or end with a dash and consecutive dashes are not allowed. To specify a 'containerGroupName', add the following object to properties: { \"containerSettings\": { \"containerGroupName\": \"contoso-container\" } }. If you do not want to specify a 'containerGroupName' then do not add 'containerSettings' property."]
     #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
     pub container_group_name: Option<String>,
 }
@@ -90,16 +104,22 @@ impl ContainerConfiguration {
         Self::default()
     }
 }
+#[doc = "Deployment script object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScript {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Managed identity generic object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
+    #[doc = "The location of the ACI and the storage account for the deployment script."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Type of the script."]
     pub kind: deployment_script::Kind,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -117,6 +137,7 @@ impl DeploymentScript {
 }
 pub mod deployment_script {
     use super::*;
+    #[doc = "Type of the script."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         AzurePowerShell,
@@ -124,10 +145,13 @@ pub mod deployment_script {
         AzureCli,
     }
 }
+#[doc = "List of deployment scripts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentScriptListResult {
+    #[doc = "An array of deployment scripts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeploymentScript>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -136,18 +160,25 @@ impl DeploymentScriptListResult {
         Self::default()
     }
 }
+#[doc = "Common properties for the deployment script."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentScriptPropertiesBase {
+    #[doc = "Settings to customize ACI container instance."]
     #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
     pub container_settings: Option<ContainerConfiguration>,
+    #[doc = "Settings to use an existing storage account. Valid storage account kinds are: Storage, StorageV2 and FileStorage"]
     #[serde(rename = "storageAccountSettings", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_settings: Option<StorageAccountConfiguration>,
+    #[doc = "The clean up preference when the script execution gets in a terminal state. Default setting is 'Always'."]
     #[serde(rename = "cleanupPreference", default, skip_serializing_if = "Option::is_none")]
     pub cleanup_preference: Option<deployment_script_properties_base::CleanupPreference>,
+    #[doc = "State of the script execution. This only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<deployment_script_properties_base::ProvisioningState>,
+    #[doc = "Generic object modeling results of script execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ScriptStatus>,
+    #[doc = "List of script outputs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
 }
@@ -158,6 +189,7 @@ impl DeploymentScriptPropertiesBase {
 }
 pub mod deployment_script_properties_base {
     use super::*;
+    #[doc = "The clean up preference when the script execution gets in a terminal state. Default setting is 'Always'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CleanupPreference {
         Always,
@@ -169,6 +201,7 @@ pub mod deployment_script_properties_base {
             Self::Always
         }
     }
+    #[doc = "State of the script execution. This only appears in the response."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -179,10 +212,12 @@ pub mod deployment_script_properties_base {
         Canceled,
     }
 }
+#[doc = "Deployment script parameters to be updated. "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentScriptUpdateParameter {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Resource tags to be updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -191,8 +226,10 @@ impl DeploymentScriptUpdateParameter {
         Self::default()
     }
 }
+#[doc = "Deployment scripts error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentScriptsError {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -201,11 +238,15 @@ impl DeploymentScriptsError {
         Self::default()
     }
 }
+#[doc = "The environment variable to pass to the script in the container instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariable {
+    #[doc = "The name of the environment variable."]
     pub name: String,
+    #[doc = "The value of the environment variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The value of the secure environment variable."]
     #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
     pub secure_value: Option<String>,
 }
@@ -218,10 +259,13 @@ impl EnvironmentVariable {
         }
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -230,16 +274,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -248,8 +298,10 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Script log properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogProperties {
+    #[doc = "Script execution logs in text format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub log: Option<String>,
 }
@@ -258,12 +310,16 @@ impl LogProperties {
         Self::default()
     }
 }
+#[doc = "Managed identity generic object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServiceIdentity {
+    #[doc = "Type of the managed identity."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_service_identity::Type>,
+    #[doc = "ID of the Azure Active Directory."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The list of user-assigned managed identities associated with the resource. Key is the Azure resource Id of the managed identity."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
@@ -274,27 +330,37 @@ impl ManagedServiceIdentity {
 }
 pub mod managed_service_identity {
     use super::*;
+    #[doc = "Type of the managed identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         UserAssigned,
     }
 }
+#[doc = "Common configuration settings for both Azure PowerShell and Azure CLI scripts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptConfigurationBase {
+    #[doc = "Uri for the script. This is the entry point for the external script."]
     #[serde(rename = "primaryScriptUri", default, skip_serializing_if = "Option::is_none")]
     pub primary_script_uri: Option<String>,
+    #[doc = "Supporting files for the external script."]
     #[serde(rename = "supportingScriptUris", default, skip_serializing_if = "Vec::is_empty")]
     pub supporting_script_uris: Vec<String>,
+    #[doc = "Script body."]
     #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
     pub script_content: Option<String>,
+    #[doc = "Command line arguments to pass to the script. Arguments are separated by spaces. ex: -Name blue* -Location 'West US 2' "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arguments: Option<String>,
+    #[doc = "The environment variables to pass over to the script."]
     #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_variables: Vec<EnvironmentVariable>,
+    #[doc = "Gets or sets how the deployment script should be forced to execute even if the script resource has not changed. Can be current time stamp or a GUID."]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
+    #[doc = "Interval for which the service retains the script resource after it reaches a terminal state. Resource will be deleted when this duration expires. Duration is based on ISO 8601 pattern (for example P1D means one day)."]
     #[serde(rename = "retentionInterval")]
     pub retention_interval: String,
+    #[doc = "Maximum allowed script execution time specified in ISO 8601 format. Default value is P1D"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
@@ -312,10 +378,12 @@ impl ScriptConfigurationBase {
         }
     }
 }
+#[doc = "Script execution log object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptLog {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Script log properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogProperties>,
 }
@@ -324,8 +392,10 @@ impl ScriptLog {
         Self::default()
     }
 }
+#[doc = "Deployment script execution logs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptLogsList {
+    #[doc = "Deployment scripts logs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScriptLog>,
 }
@@ -334,18 +404,25 @@ impl ScriptLogsList {
         Self::default()
     }
 }
+#[doc = "Generic object modeling results of script execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptStatus {
+    #[doc = "ACI resource Id."]
     #[serde(rename = "containerInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub container_instance_id: Option<String>,
+    #[doc = "Storage account resource Id."]
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
+    #[doc = "Start time of the script execution."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time of the script execution."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Time the deployment script resource will expire."]
     #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time: Option<String>,
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -354,10 +431,13 @@ impl ScriptStatus {
         Self::default()
     }
 }
+#[doc = "Settings to use an existing storage account. Valid storage account kinds are: Storage, StorageV2 and FileStorage"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountConfiguration {
+    #[doc = "The storage account name."]
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
+    #[doc = "The storage account access key."]
     #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_key: Option<String>,
 }
@@ -366,10 +446,13 @@ impl StorageAccountConfiguration {
         Self::default()
     }
 }
+#[doc = "User-assigned managed identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
+    #[doc = "Azure Active Directory principal ID associated with this identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Client App Id associated with this identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
@@ -378,18 +461,25 @@ impl UserAssignedIdentity {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -400,6 +490,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -407,6 +498,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

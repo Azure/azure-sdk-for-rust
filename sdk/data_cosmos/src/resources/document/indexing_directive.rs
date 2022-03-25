@@ -1,6 +1,5 @@
-use crate::headers;
+use azure_core::headers::{self, AsHeaders};
 use azure_core::ParseError;
-use http::request::Builder;
 use std::fmt;
 
 /// Whether the resource should be included in the index.
@@ -46,33 +45,22 @@ impl fmt::Display for IndexingDirective {
     }
 }
 
-impl azure_core::AddAsHeader for IndexingDirective {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+impl AsHeaders for IndexingDirective {
+    type Iter = std::vec::IntoIter<(headers::HeaderName, headers::HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
         match self {
-            IndexingDirective::Default => builder,
-            IndexingDirective::Exclude => {
-                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Exclude")
-            }
-            IndexingDirective::Include => {
-                builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Include")
-            }
+            IndexingDirective::Default => vec![].into_iter(),
+            IndexingDirective::Exclude => vec![(
+                crate::headers::HEADER_INDEXING_DIRECTIVE.into(),
+                "Exclude".into(),
+            )]
+            .into_iter(),
+            IndexingDirective::Include => vec![(
+                crate::headers::HEADER_INDEXING_DIRECTIVE.into(),
+                "Include".into(),
+            )]
+            .into_iter(),
         }
-    }
-
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        let (header_name, header_value) = match self {
-            IndexingDirective::Default => return Ok(()),
-            IndexingDirective::Exclude => (headers::HEADER_INDEXING_DIRECTIVE, "Exclude"),
-            IndexingDirective::Include => (headers::HEADER_INDEXING_DIRECTIVE, "Include"),
-        };
-
-        request.headers_mut().append(
-            header_name,
-            http::header::HeaderValue::from_str(header_value)?,
-        );
-        Ok(())
     }
 }

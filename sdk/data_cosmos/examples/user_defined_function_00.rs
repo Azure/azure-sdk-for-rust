@@ -35,23 +35,21 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database);
-    let collection_client = database_client.into_collection_client(collection);
-    let user_defined_function_client = collection_client
-        .clone()
-        .into_user_defined_function_client("test15");
+    let database = client.database_client(database);
+    let collection = database.collection_client(collection);
+    let user_defined_function = collection.user_defined_function_client("test15");
 
-    let ret = user_defined_function_client
-        .create_user_defined_function()
-        .execute("body")
+    let ret = user_defined_function
+        .create_user_defined_function("body")
+        .into_future()
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
-    let stream = collection_client
+    let stream = collection
         .list_user_defined_functions()
         .max_item_count(3)
         .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+    let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         println!(
@@ -60,19 +58,21 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         );
     }
 
-    let ret = user_defined_function_client
-        .replace_user_defined_function()
+    let ret = user_defined_function
+        .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
-        .execute(FN_BODY)
+        .into_future()
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
-    let ret = collection_client
-        .query_documents()
+    let ret = collection
+        .query_documents("SELECT udf.test15(100)")
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .execute::<serde_json::Value, _>("SELECT udf.test15(100)")
-        .await?
+        .into_stream::<serde_json::Value>()
+        .next()
+        .await
+        .unwrap()?
         .into_raw();
     println!("Query response object:\n{:#?}", ret);
 
@@ -90,10 +90,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .unwrap();
     println!("value == {:?}", value);
 
-    let ret = user_defined_function_client
+    let ret = user_defined_function
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
 
     println!("Delete response object:\n{:#?}", ret);

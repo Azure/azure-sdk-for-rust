@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Alexa channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlexaChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Alexa channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlexaChannelProperties>,
 }
@@ -14,14 +16,19 @@ impl AlexaChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Alexa channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlexaChannelProperties {
+    #[doc = "The Alexa skill Id"]
     #[serde(rename = "alexaSkillId")]
     pub alexa_skill_id: String,
+    #[doc = "Url fragment used in part of the Uri configured in Alexa"]
     #[serde(rename = "urlFragment", default, skip_serializing_if = "Option::is_none")]
     pub url_fragment: Option<String>,
+    #[doc = "Full Uri used to configured the skill in Alexa"]
     #[serde(rename = "serviceEndpointUri", default, skip_serializing_if = "Option::is_none")]
     pub service_endpoint_uri: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -35,10 +42,12 @@ impl AlexaChannelProperties {
         }
     }
 }
+#[doc = "Bot resource definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Bot {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The parameters to provide for the Bot."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BotProperties>,
 }
@@ -47,10 +56,12 @@ impl Bot {
         Self::default()
     }
 }
+#[doc = "Bot channel resource definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BotChannel {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Channel>,
 }
@@ -59,73 +70,108 @@ impl BotChannel {
         Self::default()
     }
 }
+#[doc = "The parameters to provide for the Bot."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotProperties {
+    #[doc = "The Name of the bot"]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "The description of the bot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The Icon Url of the bot"]
     #[serde(rename = "iconUrl", default, skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<String>,
+    #[doc = "The bot's endpoint"]
     pub endpoint: String,
+    #[doc = "The bot's endpoint version"]
     #[serde(rename = "endpointVersion", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_version: Option<String>,
+    #[doc = "Contains resource all settings defined as key/value pairs."]
     #[serde(rename = "allSettings", default, skip_serializing_if = "Option::is_none")]
     pub all_settings: Option<serde_json::Value>,
+    #[doc = "Contains resource parameters defined as key/value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "The bot's manifest url"]
     #[serde(rename = "manifestUrl", default, skip_serializing_if = "Option::is_none")]
     pub manifest_url: Option<String>,
+    #[doc = "Microsoft App Type for the bot"]
     #[serde(rename = "msaAppType", default, skip_serializing_if = "Option::is_none")]
     pub msa_app_type: Option<bot_properties::MsaAppType>,
+    #[doc = "Microsoft App Id for the bot"]
     #[serde(rename = "msaAppId")]
     pub msa_app_id: String,
+    #[doc = "Microsoft App Tenant Id for the bot"]
     #[serde(rename = "msaAppTenantId", default, skip_serializing_if = "Option::is_none")]
     pub msa_app_tenant_id: Option<String>,
+    #[doc = "Microsoft App Managed Identity Resource Id for the bot"]
     #[serde(rename = "msaAppMSIResourceId", default, skip_serializing_if = "Option::is_none")]
     pub msa_app_msi_resource_id: Option<String>,
+    #[doc = "Collection of channels for which the bot is configured"]
     #[serde(rename = "configuredChannels", default, skip_serializing_if = "Vec::is_empty")]
     pub configured_channels: Vec<String>,
+    #[doc = "Collection of channels for which the bot is enabled"]
     #[serde(rename = "enabledChannels", default, skip_serializing_if = "Vec::is_empty")]
     pub enabled_channels: Vec<String>,
+    #[doc = "The Application Insights key"]
     #[serde(rename = "developerAppInsightKey", default, skip_serializing_if = "Option::is_none")]
     pub developer_app_insight_key: Option<String>,
+    #[doc = "The Application Insights Api Key"]
     #[serde(rename = "developerAppInsightsApiKey", default, skip_serializing_if = "Option::is_none")]
     pub developer_app_insights_api_key: Option<String>,
+    #[doc = "The Application Insights App Id"]
     #[serde(rename = "developerAppInsightsApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub developer_app_insights_application_id: Option<String>,
+    #[doc = "Collection of LUIS App Ids"]
     #[serde(rename = "luisAppIds", default, skip_serializing_if = "Vec::is_empty")]
     pub luis_app_ids: Vec<String>,
+    #[doc = "The LUIS Key"]
     #[serde(rename = "luisKey", default, skip_serializing_if = "Option::is_none")]
     pub luis_key: Option<String>,
+    #[doc = "Whether Cmek is enabled"]
     #[serde(rename = "isCmekEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_cmek_enabled: Option<bool>,
+    #[doc = "The CMK Url"]
     #[serde(rename = "cmekKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub cmek_key_vault_url: Option<String>,
+    #[doc = "The CMK encryption status"]
     #[serde(rename = "cmekEncryptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub cmek_encryption_status: Option<String>,
+    #[doc = "Whether the bot is in an isolated network"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<bot_properties::PublicNetworkAccess>,
+    #[doc = "Whether the bot is streaming supported"]
     #[serde(rename = "isStreamingSupported", default, skip_serializing_if = "Option::is_none")]
     pub is_streaming_supported: Option<bool>,
+    #[doc = "Whether the bot is developerAppInsightsApiKey set"]
     #[serde(rename = "isDeveloperAppInsightsApiKeySet", default, skip_serializing_if = "Option::is_none")]
     pub is_developer_app_insights_api_key_set: Option<bool>,
+    #[doc = "Token used to migrate non Azure bot to azure subscription"]
     #[serde(rename = "migrationToken", default, skip_serializing_if = "Option::is_none")]
     pub migration_token: Option<String>,
+    #[doc = "Opt-out of local authentication and ensure only MSI and AAD can be used exclusively for authentication."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
+    #[doc = "The channel schema transformation version for the bot"]
     #[serde(rename = "schemaTransformationVersion", default, skip_serializing_if = "Option::is_none")]
     pub schema_transformation_version: Option<String>,
+    #[doc = "The storage resourceId for the bot"]
     #[serde(rename = "storageResourceId", default, skip_serializing_if = "Option::is_none")]
     pub storage_resource_id: Option<String>,
+    #[doc = "List of Private Endpoint Connections configured for the bot"]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "The hint to browser (e.g. protocol handler) on how to open the bot for authoring"]
     #[serde(rename = "openWithHint", default, skip_serializing_if = "Option::is_none")]
     pub open_with_hint: Option<String>,
+    #[doc = "The hint (e.g. keyVault secret resourceId) on how to fetch the app secret"]
     #[serde(rename = "appPasswordHint", default, skip_serializing_if = "Option::is_none")]
     pub app_password_hint: Option<String>,
+    #[doc = "Provisioning state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Publishing credentials of the resource"]
     #[serde(rename = "publishingCredentials", default, skip_serializing_if = "Option::is_none")]
     pub publishing_credentials: Option<String>,
 }
@@ -171,6 +217,7 @@ impl BotProperties {
 }
 pub mod bot_properties {
     use super::*;
+    #[doc = "Microsoft App Type for the bot"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MsaAppType {
         #[serde(rename = "UserAssignedMSI")]
@@ -178,6 +225,7 @@ pub mod bot_properties {
         SingleTenant,
         MultiTenant,
     }
+    #[doc = "Whether the bot is in an isolated network"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
@@ -189,10 +237,13 @@ pub mod bot_properties {
         }
     }
 }
+#[doc = "The list of  bot service operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BotResponseList {
+    #[doc = "The link used to get the next page of bot service resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Gets the list of bot service results and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Bot>,
 }
@@ -201,14 +252,19 @@ impl BotResponseList {
         Self::default()
     }
 }
+#[doc = "Channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Channel {
+    #[doc = "The channel name"]
     #[serde(rename = "channelName")]
     pub channel_name: String,
+    #[doc = "Entity Tag of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Provisioning state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Specifies the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -222,10 +278,13 @@ impl Channel {
         }
     }
 }
+#[doc = "The list of bot service channel operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChannelResponseList {
+    #[doc = "The link used to get the next page of bot service channel resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Gets the list of bot service channel results and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BotChannel>,
 }
@@ -234,24 +293,34 @@ impl ChannelResponseList {
         Self::default()
     }
 }
+#[doc = "Channel settings definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChannelSettings {
+    #[doc = "The extensionKey1"]
     #[serde(rename = "extensionKey1", default, skip_serializing_if = "Option::is_none")]
     pub extension_key1: Option<String>,
+    #[doc = "The extensionKey2"]
     #[serde(rename = "extensionKey2", default, skip_serializing_if = "Option::is_none")]
     pub extension_key2: Option<String>,
+    #[doc = "The list of sites"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<Site>,
+    #[doc = "The channel id"]
     #[serde(rename = "channelId", default, skip_serializing_if = "Option::is_none")]
     pub channel_id: Option<String>,
+    #[doc = "The channel display name"]
     #[serde(rename = "channelDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub channel_display_name: Option<String>,
+    #[doc = "The bot id"]
     #[serde(rename = "botId", default, skip_serializing_if = "Option::is_none")]
     pub bot_id: Option<String>,
+    #[doc = "The bot icon url"]
     #[serde(rename = "botIconUrl", default, skip_serializing_if = "Option::is_none")]
     pub bot_icon_url: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Opt-out of local authentication and ensure only MSI and AAD can be used exclusively for authentication."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
 }
@@ -260,10 +329,13 @@ impl ChannelSettings {
         Self::default()
     }
 }
+#[doc = "The request body for a request to Bot Service Management to check availability of a bot name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityRequestBody {
+    #[doc = "the name of the bot for which availability needs to be checked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "the type of the bot for which availability needs to be checked"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -272,10 +344,13 @@ impl CheckNameAvailabilityRequestBody {
         Self::default()
     }
 }
+#[doc = "The response body returned for a request to Bot Service Management to check availability of a bot name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResponseBody {
+    #[doc = "indicates if the bot name is valid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub valid: Option<bool>,
+    #[doc = "additional message from the bot management api showing why a bot name is not available"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -284,8 +359,10 @@ impl CheckNameAvailabilityResponseBody {
         Self::default()
     }
 }
+#[doc = "The display name of a connection Item Setting registered with the Bot"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionItemName {
+    #[doc = "Connection Item name that has been added in the API"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -294,10 +371,12 @@ impl ConnectionItemName {
         Self::default()
     }
 }
+#[doc = "Bot channel resource definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties for a Connection Setting Item"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionSettingProperties>,
 }
@@ -306,10 +385,13 @@ impl ConnectionSetting {
         Self::default()
     }
 }
+#[doc = "Extra Parameter in a Connection Setting Properties to indicate service provider specific properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingParameter {
+    #[doc = "Key for the Connection Setting Parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "Value associated with the Connection Setting Parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -318,26 +400,37 @@ impl ConnectionSettingParameter {
         Self::default()
     }
 }
+#[doc = "Properties for a Connection Setting Item"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingProperties {
+    #[doc = "Id associated with the Connection Setting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name associated with the Connection Setting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Client Id associated with the Connection Setting."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "Setting Id set by the service for the Connection Setting."]
     #[serde(rename = "settingId", default, skip_serializing_if = "Option::is_none")]
     pub setting_id: Option<String>,
+    #[doc = "Client Secret associated with the Connection Setting"]
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
+    #[doc = "Scopes associated with the Connection Setting"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scopes: Option<String>,
+    #[doc = "Service Provider Id associated with the Connection Setting"]
     #[serde(rename = "serviceProviderId", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_id: Option<String>,
+    #[doc = "Service Provider Display Name associated with the Connection Setting"]
     #[serde(rename = "serviceProviderDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_display_name: Option<String>,
+    #[doc = "Service Provider Parameters associated with the Connection Setting"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ConnectionSettingParameter>,
+    #[doc = "Provisioning state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -346,10 +439,13 @@ impl ConnectionSettingProperties {
         Self::default()
     }
 }
+#[doc = "The list of bot service connection settings response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingResponseList {
+    #[doc = "The link used to get the next page of bot service connection setting resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Gets the list of bot service connection settings and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionSetting>,
 }
@@ -358,10 +454,12 @@ impl ConnectionSettingResponseList {
         Self::default()
     }
 }
+#[doc = "Direct Line channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Direct Line channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineChannelProperties>,
 }
@@ -370,10 +468,13 @@ impl DirectLineChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Direct Line channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DirectLineChannelProperties {
+    #[doc = "The list of Direct Line sites"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<DirectLineSite>,
+    #[doc = "Direct Line embed code of the resource"]
     #[serde(rename = "DirectLineEmbedCode", default, skip_serializing_if = "Option::is_none")]
     pub direct_line_embed_code: Option<String>,
 }
@@ -382,26 +483,37 @@ impl DirectLineChannelProperties {
         Self::default()
     }
 }
+#[doc = "A site for the Direct Line channel"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSite {
+    #[doc = "Site Id"]
     #[serde(rename = "siteId", default, skip_serializing_if = "Option::is_none")]
     pub site_id: Option<String>,
+    #[doc = "Site name"]
     #[serde(rename = "siteName")]
     pub site_name: String,
+    #[doc = "Primary key. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "Secondary key. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
+    #[doc = "Whether this site is enabled for DirectLine channel."]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+    #[doc = "Whether this site is enabled for Bot Framework V1 protocol."]
     #[serde(rename = "isV1Enabled")]
     pub is_v1_enabled: bool,
+    #[doc = "Whether this site is enabled for Bot Framework V1 protocol."]
     #[serde(rename = "isV3Enabled")]
     pub is_v3_enabled: bool,
+    #[doc = "Whether this site is enabled for authentication with Bot Framework."]
     #[serde(rename = "isSecureSiteEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_secure_site_enabled: Option<bool>,
+    #[doc = "Whether this site is enabled for block user upload."]
     #[serde(rename = "isBlockUserUploadEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_block_user_upload_enabled: Option<bool>,
+    #[doc = "List of Trusted Origin URLs for this site. This field is applicable only if isSecureSiteEnabled is True."]
     #[serde(rename = "trustedOrigins", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_origins: Vec<String>,
 }
@@ -421,10 +533,12 @@ impl DirectLineSite {
         }
     }
 }
+#[doc = "DirectLine Speech channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSpeechChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the DirectLine Speech channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineSpeechChannelProperties>,
 }
@@ -433,18 +547,25 @@ impl DirectLineSpeechChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the DirectLine Speech channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSpeechChannelProperties {
+    #[doc = "The cognitive service region with this channel registration."]
     #[serde(rename = "cognitiveServiceRegion")]
     pub cognitive_service_region: String,
+    #[doc = "The cognitive service subscription key to use with this channel registration."]
     #[serde(rename = "cognitiveServiceSubscriptionKey")]
     pub cognitive_service_subscription_key: String,
+    #[doc = "Whether this channel is enabled or not."]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
+    #[doc = "Custom speech model id (optional)."]
     #[serde(rename = "customVoiceDeploymentId", default, skip_serializing_if = "Option::is_none")]
     pub custom_voice_deployment_id: Option<String>,
+    #[doc = "Custom voice deployment id (optional)."]
     #[serde(rename = "customSpeechModelId", default, skip_serializing_if = "Option::is_none")]
     pub custom_speech_model_id: Option<String>,
+    #[doc = "Make this a default bot for chosen cognitive service account."]
     #[serde(rename = "isDefaultBotForCogSvcAccount", default, skip_serializing_if = "Option::is_none")]
     pub is_default_bot_for_cog_svc_account: Option<bool>,
 }
@@ -460,10 +581,12 @@ impl DirectLineSpeechChannelProperties {
         }
     }
 }
+#[doc = "Email channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Email channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmailChannelProperties>,
 }
@@ -472,12 +595,16 @@ impl EmailChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Email channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailChannelProperties {
+    #[doc = "The email address"]
     #[serde(rename = "emailAddress")]
     pub email_address: String,
+    #[doc = "The password for the email address. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -490,8 +617,10 @@ impl EmailChannelProperties {
         }
     }
 }
+#[doc = "Bot Service error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "Bot Service error body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
 }
@@ -500,9 +629,12 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "Bot Service error body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorBody {
+    #[doc = "error code"]
     pub code: String,
+    #[doc = "error message"]
     pub message: String,
 }
 impl ErrorBody {
@@ -510,10 +642,12 @@ impl ErrorBody {
         Self { code, message }
     }
 }
+#[doc = "Facebook channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Facebook channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FacebookChannelProperties>,
 }
@@ -522,18 +656,25 @@ impl FacebookChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Facebook channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookChannelProperties {
+    #[doc = "Verify token. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "verifyToken", default, skip_serializing_if = "Option::is_none")]
     pub verify_token: Option<String>,
+    #[doc = "The list of Facebook pages"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pages: Vec<FacebookPage>,
+    #[doc = "Facebook application id"]
     #[serde(rename = "appId")]
     pub app_id: String,
+    #[doc = "Facebook application secret. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "appSecret", default, skip_serializing_if = "Option::is_none")]
     pub app_secret: Option<String>,
+    #[doc = "Callback Url"]
     #[serde(rename = "callbackUrl", default, skip_serializing_if = "Option::is_none")]
     pub callback_url: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -549,9 +690,12 @@ impl FacebookChannelProperties {
         }
     }
 }
+#[doc = "A Facebook page for Facebook channel registration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookPage {
+    #[doc = "Page id"]
     pub id: String,
+    #[doc = "Facebook application access token. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 }
@@ -560,22 +704,31 @@ impl FacebookPage {
         Self { id, access_token: None }
     }
 }
+#[doc = "The response body returned for a request to Bot Service Management to check per subscription hostSettings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostSettingsResponse {
+    #[doc = "For in-conversation bot user authentication"]
     #[serde(rename = "OAuthUrl", default, skip_serializing_if = "Option::is_none")]
     pub o_auth_url: Option<String>,
+    #[doc = "For verifying incoming tokens from the channels"]
     #[serde(rename = "ToBotFromChannelOpenIdMetadataUrl", default, skip_serializing_if = "Option::is_none")]
     pub to_bot_from_channel_open_id_metadata_url: Option<String>,
+    #[doc = "For verifying incoming tokens from the channels"]
     #[serde(rename = "ToBotFromChannelTokenIssuer", default, skip_serializing_if = "Option::is_none")]
     pub to_bot_from_channel_token_issuer: Option<String>,
+    #[doc = "For verifying incoming tokens from bot emulator"]
     #[serde(rename = "ToBotFromEmulatorOpenIdMetadataUrl", default, skip_serializing_if = "Option::is_none")]
     pub to_bot_from_emulator_open_id_metadata_url: Option<String>,
+    #[doc = "For getting access token to channels from bot host"]
     #[serde(rename = "ToChannelFromBotLoginUrl", default, skip_serializing_if = "Option::is_none")]
     pub to_channel_from_bot_login_url: Option<String>,
+    #[doc = "For getting access token to channels from bot host"]
     #[serde(rename = "ToChannelFromBotOAuthScope", default, skip_serializing_if = "Option::is_none")]
     pub to_channel_from_bot_o_auth_scope: Option<String>,
+    #[doc = "Per cloud OAuth setting on whether authority is validated"]
     #[serde(rename = "ValidateAuthority", default, skip_serializing_if = "Option::is_none")]
     pub validate_authority: Option<bool>,
+    #[doc = "Same as toBotFromChannelOpenIdMetadataUrl, used by SDK < v4.12"]
     #[serde(rename = "BotOpenIdMetadata", default, skip_serializing_if = "Option::is_none")]
     pub bot_open_id_metadata: Option<String>,
 }
@@ -584,10 +737,12 @@ impl HostSettingsResponse {
         Self::default()
     }
 }
+#[doc = "Kik channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KikChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Kik channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<KikChannelProperties>,
 }
@@ -596,14 +751,19 @@ impl KikChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Kik channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KikChannelProperties {
+    #[doc = "The Kik user name"]
     #[serde(rename = "userName")]
     pub user_name: String,
+    #[doc = "Kik API key. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
+    #[doc = "Whether this channel is validated for the bot"]
     #[serde(rename = "isValidated", default, skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -617,6 +777,7 @@ impl KikChannelProperties {
         }
     }
 }
+#[doc = "Indicates the type of bot service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Kind {
     #[serde(rename = "sdk")]
@@ -630,10 +791,12 @@ pub enum Kind {
     #[serde(rename = "azurebot")]
     Azurebot,
 }
+#[doc = "Line channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LineChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Line channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LineChannelProperties>,
 }
@@ -642,12 +805,16 @@ impl LineChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Line channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LineChannelProperties {
+    #[doc = "The list of line channel registrations"]
     #[serde(rename = "lineRegistrations")]
     pub line_registrations: Vec<LineRegistration>,
+    #[doc = "Callback Url to enter in line registration."]
     #[serde(rename = "callbackUrl", default, skip_serializing_if = "Option::is_none")]
     pub callback_url: Option<String>,
+    #[doc = "Whether this channel is validated for the bot"]
     #[serde(rename = "isValidated", default, skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
 }
@@ -660,12 +827,16 @@ impl LineChannelProperties {
         }
     }
 }
+#[doc = "The properties corresponding to a line channel registration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LineRegistration {
+    #[doc = "Id generated for the line channel registration"]
     #[serde(rename = "generatedId", default, skip_serializing_if = "Option::is_none")]
     pub generated_id: Option<String>,
+    #[doc = "Secret for the line channel registration"]
     #[serde(rename = "channelSecret", default, skip_serializing_if = "Option::is_none")]
     pub channel_secret: Option<String>,
+    #[doc = "Access token for the line channel registration"]
     #[serde(rename = "channelAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub channel_access_token: Option<String>,
 }
@@ -674,24 +845,38 @@ impl LineRegistration {
         Self::default()
     }
 }
+#[doc = "The ARM channel of list channel with keys operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListChannelWithKeysResponse {
     #[serde(flatten)]
     pub bot_channel: BotChannel,
+    #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<Channel>,
+    #[doc = "Channel settings definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setting: Option<ChannelSettings>,
+    #[doc = "Provisioning state of the resource"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[doc = "Entity tag of the resource"]
+    #[serde(rename = "entityTag", default, skip_serializing_if = "Option::is_none")]
+    pub entity_tag: Option<String>,
+    #[doc = "Changed time of the resource"]
+    #[serde(rename = "changedTime", default, skip_serializing_if = "Option::is_none")]
+    pub changed_time: Option<String>,
 }
 impl ListChannelWithKeysResponse {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Microsoft Teams channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsTeamsChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Microsoft Teams channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MsTeamsChannelProperties>,
 }
@@ -700,18 +885,25 @@ impl MsTeamsChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Microsoft Teams channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsTeamsChannelProperties {
+    #[doc = "Enable calling for Microsoft Teams channel"]
     #[serde(rename = "enableCalling", default, skip_serializing_if = "Option::is_none")]
     pub enable_calling: Option<bool>,
+    #[doc = "Webhook for Microsoft Teams channel calls"]
     #[serde(rename = "callingWebHook", default, skip_serializing_if = "Option::is_none")]
     pub calling_web_hook: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+    #[doc = "Webhook for Microsoft Teams channel calls"]
     #[serde(rename = "incomingCallRoute", default, skip_serializing_if = "Option::is_none")]
     pub incoming_call_route: Option<String>,
+    #[doc = "Deployment environment for Microsoft Teams channel calls"]
     #[serde(rename = "deploymentEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub deployment_environment: Option<String>,
+    #[doc = "Whether this channel accepted terms"]
     #[serde(rename = "acceptedTerms", default, skip_serializing_if = "Option::is_none")]
     pub accepted_terms: Option<bool>,
 }
@@ -727,14 +919,19 @@ impl MsTeamsChannelProperties {
         }
     }
 }
+#[doc = "The operation supported by Bot Service Management."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayInfo {
+    #[doc = "The description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The action that users can perform, based on their permission level."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Service provider: Microsoft Bot Service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -743,14 +940,19 @@ impl OperationDisplayInfo {
         Self::default()
     }
 }
+#[doc = "The operations supported by Bot Service Management."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The operation supported by Bot Service Management."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
+    #[doc = "The origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Additional properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -759,10 +961,13 @@ impl OperationEntity {
         Self::default()
     }
 }
+#[doc = "The list of bot service operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
+    #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
@@ -771,14 +976,19 @@ impl OperationEntityListResult {
         Self::default()
     }
 }
+#[doc = "The properties indicating the operation result of an operation on a service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultsDescription {
+    #[doc = "The ID of the operation returned."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the operation result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The status of the operation being performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_results_description::Status>,
+    #[doc = "The time that the operation was started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
 }
@@ -789,6 +999,7 @@ impl OperationResultsDescription {
 }
 pub mod operation_results_description {
     use super::*;
+    #[doc = "The status of the operation being performed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Canceled,
@@ -798,8 +1009,10 @@ pub mod operation_results_description {
         Running,
     }
 }
+#[doc = "The Private Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -808,10 +1021,12 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint Connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub private_link_resource_base: PrivateLinkResourceBase,
+    #[doc = "Properties of the PrivateEndpointConnectProperties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -820,8 +1035,10 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "List of private endpoint connection associated with the specified storage account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
@@ -830,12 +1047,16 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the PrivateEndpointConnectProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The Private Endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
@@ -848,6 +1069,7 @@ impl PrivateEndpointConnectionProperties {
         }
     }
 }
+#[doc = "The current provisioning state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
     Succeeded,
@@ -855,16 +1077,19 @@ pub enum PrivateEndpointConnectionProvisioningState {
     Deleting,
     Failed,
 }
+#[doc = "The private endpoint connection status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
     Pending,
     Approved,
     Rejected,
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub private_link_resource_base: PrivateLinkResourceBase,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -873,12 +1098,16 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all BotService Private Link Resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceBase {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -887,8 +1116,10 @@ impl PrivateLinkResourceBase {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
@@ -897,12 +1128,16 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "The private link resource Private link DNS zone name."]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
@@ -911,12 +1146,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -925,24 +1164,34 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "Azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Specifies the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Contains resource tags defined as key/value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The SKU of the cognitive services account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Indicates the type of bot service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<Kind>,
+    #[doc = "Entity Tag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Entity zones"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
@@ -951,8 +1200,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Service Provider Definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProvider {
+    #[doc = "The Object used to describe a Service Provider supported by Bot Service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceProviderProperties>,
 }
@@ -961,20 +1212,28 @@ impl ServiceProvider {
         Self::default()
     }
 }
+#[doc = "Extra Parameters specific to each Service Provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProviderParameter {
+    #[doc = "Name of the Service Provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the Service Provider"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Display Name of the Service Provider"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Description of the Service Provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Help Url for the  Service Provider"]
     #[serde(rename = "helpUrl", default, skip_serializing_if = "Option::is_none")]
     pub help_url: Option<String>,
+    #[doc = "Default Name for the Service Provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
+    #[doc = "Meta data for the Service Provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<service_provider_parameter::Metadata>,
 }
@@ -985,8 +1244,10 @@ impl ServiceProviderParameter {
 }
 pub mod service_provider_parameter {
     use super::*;
+    #[doc = "Meta data for the Service Provider"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Metadata {
+        #[doc = "the constraints of the bot meta data."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub constraints: Option<metadata::Constraints>,
     }
@@ -997,8 +1258,10 @@ pub mod service_provider_parameter {
     }
     pub mod metadata {
         use super::*;
+        #[doc = "the constraints of the bot meta data."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Constraints {
+            #[doc = "Whether required the constraints of the bot meta data."]
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub required: Option<bool>,
         }
@@ -1009,18 +1272,25 @@ pub mod service_provider_parameter {
         }
     }
 }
+#[doc = "The Object used to describe a Service Provider supported by Bot Service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProviderProperties {
+    #[doc = "Id for Service Provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Display Name of the Service Provider"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Display Name of the Service Provider"]
     #[serde(rename = "serviceProviderName", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_name: Option<String>,
+    #[doc = "Display Name of the Service Provider"]
     #[serde(rename = "devPortalUrl", default, skip_serializing_if = "Option::is_none")]
     pub dev_portal_url: Option<String>,
+    #[doc = "Display Name of the Service Provider"]
     #[serde(rename = "iconUrl", default, skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<String>,
+    #[doc = "The list of parameters for the Service Provider"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ServiceProviderParameter>,
 }
@@ -1029,10 +1299,13 @@ impl ServiceProviderProperties {
         Self::default()
     }
 }
+#[doc = "The list of bot service providers response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProviderResponseList {
+    #[doc = "The link used to get the next page of bot service providers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Gets the list of bot service providers and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceProvider>,
 }
@@ -1041,14 +1314,17 @@ impl ServiceProviderResponseList {
         Self::default()
     }
 }
+#[doc = "A site for the channel"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Site {
     #[serde(flatten)]
     pub web_chat_site: WebChatSite,
     #[serde(flatten)]
     pub direct_line_site: DirectLineSite,
+    #[doc = "Whether this site is token enabled for channel"]
     #[serde(rename = "isTokenEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_token_enabled: Option<bool>,
+    #[doc = "Entity Tag"]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }
@@ -1062,10 +1338,13 @@ impl Site {
         }
     }
 }
+#[doc = "Site information for WebChat or DirectLine Channels to identify which site to regenerate keys for."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SiteInfo {
+    #[doc = "The site name"]
     #[serde(rename = "siteName")]
     pub site_name: String,
+    #[doc = "Determines which key is to be regenerated"]
     pub key: site_info::Key,
 }
 impl SiteInfo {
@@ -1075,6 +1354,7 @@ impl SiteInfo {
 }
 pub mod site_info {
     use super::*;
+    #[doc = "Determines which key is to be regenerated"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Key {
         #[serde(rename = "key1")]
@@ -1083,9 +1363,12 @@ pub mod site_info {
         Key2,
     }
 }
+#[doc = "The SKU of the cognitive services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The name of SKU."]
     pub name: SkuName,
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
@@ -1096,21 +1379,25 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Free,
         Standard,
     }
 }
+#[doc = "The name of SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SkuName {
     F0,
     S1,
 }
+#[doc = "Skype channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkypeChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Microsoft Teams channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SkypeChannelProperties>,
 }
@@ -1119,26 +1406,37 @@ impl SkypeChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Microsoft Teams channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkypeChannelProperties {
+    #[doc = "Enable messaging for Skype channel"]
     #[serde(rename = "enableMessaging", default, skip_serializing_if = "Option::is_none")]
     pub enable_messaging: Option<bool>,
+    #[doc = "Enable media cards for Skype channel"]
     #[serde(rename = "enableMediaCards", default, skip_serializing_if = "Option::is_none")]
     pub enable_media_cards: Option<bool>,
+    #[doc = "Enable video for Skype channel"]
     #[serde(rename = "enableVideo", default, skip_serializing_if = "Option::is_none")]
     pub enable_video: Option<bool>,
+    #[doc = "Enable calling for Skype channel"]
     #[serde(rename = "enableCalling", default, skip_serializing_if = "Option::is_none")]
     pub enable_calling: Option<bool>,
+    #[doc = "Enable screen sharing for Skype channel"]
     #[serde(rename = "enableScreenSharing", default, skip_serializing_if = "Option::is_none")]
     pub enable_screen_sharing: Option<bool>,
+    #[doc = "Enable groups for Skype channel"]
     #[serde(rename = "enableGroups", default, skip_serializing_if = "Option::is_none")]
     pub enable_groups: Option<bool>,
+    #[doc = "Group mode for Skype channel"]
     #[serde(rename = "groupsMode", default, skip_serializing_if = "Option::is_none")]
     pub groups_mode: Option<String>,
+    #[doc = "Calling web hook for Skype channel"]
     #[serde(rename = "callingWebHook", default, skip_serializing_if = "Option::is_none")]
     pub calling_web_hook: Option<String>,
+    #[doc = "Incoming call route for Skype channel"]
     #[serde(rename = "incomingCallRoute", default, skip_serializing_if = "Option::is_none")]
     pub incoming_call_route: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -1158,10 +1456,12 @@ impl SkypeChannelProperties {
         }
     }
 }
+#[doc = "Slack channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlackChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Slack channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SlackChannelProperties>,
 }
@@ -1170,28 +1470,40 @@ impl SlackChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Slack channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlackChannelProperties {
+    #[doc = "The Slack client id"]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "The Slack client secret. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
+    #[doc = "The Slack verification token. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "verificationToken", default, skip_serializing_if = "Option::is_none")]
     pub verification_token: Option<String>,
+    #[doc = "The Slack permission scopes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scopes: Option<String>,
+    #[doc = "The Slack landing page Url"]
     #[serde(rename = "landingPageUrl", default, skip_serializing_if = "Option::is_none")]
     pub landing_page_url: Option<String>,
+    #[doc = "The Slack redirect action"]
     #[serde(rename = "redirectAction", default, skip_serializing_if = "Option::is_none")]
     pub redirect_action: Option<String>,
+    #[doc = "The Sms auth token"]
     #[serde(rename = "lastSubmissionId", default, skip_serializing_if = "Option::is_none")]
     pub last_submission_id: Option<String>,
+    #[doc = "Whether to register the settings before OAuth validation is performed. Recommended to True."]
     #[serde(rename = "registerBeforeOAuthFlow", default, skip_serializing_if = "Option::is_none")]
     pub register_before_o_auth_flow: Option<bool>,
+    #[doc = "Whether this channel is validated for the bot"]
     #[serde(rename = "IsValidated", default, skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
+    #[doc = "The Slack signing secret."]
     #[serde(rename = "signingSecret", default, skip_serializing_if = "Option::is_none")]
     pub signing_secret: Option<String>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -1212,10 +1524,12 @@ impl SlackChannelProperties {
         }
     }
 }
+#[doc = "Sms channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Sms channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmsChannelProperties>,
 }
@@ -1224,15 +1538,21 @@ impl SmsChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Sms channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsChannelProperties {
+    #[doc = "The Sms phone"]
     pub phone: String,
+    #[doc = "The Sms account SID. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "accountSID")]
     pub account_sid: String,
+    #[doc = "The Sms auth token. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "authToken", default, skip_serializing_if = "Option::is_none")]
     pub auth_token: Option<String>,
+    #[doc = "Whether this channel is validated for the bot"]
     #[serde(rename = "isValidated", default, skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -1247,10 +1567,12 @@ impl SmsChannelProperties {
         }
     }
 }
+#[doc = "Telegram channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Telegram channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TelegramChannelProperties>,
 }
@@ -1259,12 +1581,16 @@ impl TelegramChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Telegram channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannelProperties {
+    #[doc = "The Telegram access token. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
+    #[doc = "Whether this channel is validated for the bot"]
     #[serde(rename = "isValidated", default, skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
+    #[doc = "Whether this channel is enabled for the bot"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -1277,10 +1603,12 @@ impl TelegramChannelProperties {
         }
     }
 }
+#[doc = "Web Chat channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebChatChannel {
     #[serde(flatten)]
     pub channel: Channel,
+    #[doc = "The parameters to provide for the Web Chat channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebChatChannelProperties>,
 }
@@ -1289,10 +1617,13 @@ impl WebChatChannel {
         Self { channel, properties: None }
     }
 }
+#[doc = "The parameters to provide for the Web Chat channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebChatChannelProperties {
+    #[doc = "Web chat control embed code"]
     #[serde(rename = "webChatEmbedCode", default, skip_serializing_if = "Option::is_none")]
     pub web_chat_embed_code: Option<String>,
+    #[doc = "The list of Web Chat sites"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<WebChatSite>,
 }
@@ -1301,18 +1632,25 @@ impl WebChatChannelProperties {
         Self::default()
     }
 }
+#[doc = "A site for the Webchat channel"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebChatSite {
+    #[doc = "Site Id"]
     #[serde(rename = "siteId", default, skip_serializing_if = "Option::is_none")]
     pub site_id: Option<String>,
+    #[doc = "Site name"]
     #[serde(rename = "siteName")]
     pub site_name: String,
+    #[doc = "Primary key. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "Secondary key. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
+    #[doc = "Whether this site is enabled for DirectLine channel"]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+    #[doc = "Whether this site is enabled for preview versions of Webchat"]
     #[serde(rename = "isWebchatPreviewEnabled")]
     pub is_webchat_preview_enabled: bool,
 }

@@ -2,27 +2,39 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Azure action group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
+    #[doc = "The short name of the action group. This will be used in SMS messages."]
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
+    #[doc = "Indicates whether this action group is enabled. If an action group is not enabled, then none of its receivers will receive communications."]
     pub enabled: bool,
+    #[doc = "The list of email receivers that are part of this action group."]
     #[serde(rename = "emailReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub email_receivers: Vec<EmailReceiver>,
+    #[doc = "The list of SMS receivers that are part of this action group."]
     #[serde(rename = "smsReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub sms_receivers: Vec<SmsReceiver>,
+    #[doc = "The list of webhook receivers that are part of this action group."]
     #[serde(rename = "webhookReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub webhook_receivers: Vec<WebhookReceiver>,
+    #[doc = "The list of ITSM receivers that are part of this action group."]
     #[serde(rename = "itsmReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub itsm_receivers: Vec<ItsmReceiver>,
+    #[doc = "The list of AzureAppPush receivers that are part of this action group."]
     #[serde(rename = "azureAppPushReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
+    #[doc = "The list of AutomationRunbook receivers that are part of this action group."]
     #[serde(rename = "automationRunbookReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
+    #[doc = "The list of voice receivers that are part of this action group."]
     #[serde(rename = "voiceReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub voice_receivers: Vec<VoiceReceiver>,
+    #[doc = "The list of logic app receivers that are part of this action group."]
     #[serde(rename = "logicAppReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub logic_app_receivers: Vec<LogicAppReceiver>,
+    #[doc = "The list of azure function receivers that are part of this action group."]
     #[serde(rename = "azureFunctionReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_function_receivers: Vec<AzureFunctionReceiver>,
 }
@@ -43,10 +55,13 @@ impl ActionGroup {
         }
     }
 }
+#[doc = "A list of action groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
+    #[doc = "The list of action groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActionGroupResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -55,8 +70,10 @@ impl ActionGroupList {
         Self::default()
     }
 }
+#[doc = "An Azure action group for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
+    #[doc = "Indicates whether this action group is enabled. If an action group is not enabled, then none of its actions will be activated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -65,10 +82,13 @@ impl ActionGroupPatch {
         Self::default()
     }
 }
+#[doc = "An action group object for the body of patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "An Azure action group for patch operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
@@ -77,10 +97,12 @@ impl ActionGroupPatchBody {
         Self::default()
     }
 }
+#[doc = "An action group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An Azure action group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
 }
@@ -92,18 +114,25 @@ impl ActionGroupResource {
         }
     }
 }
+#[doc = "The Azure Automation Runbook notification receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
+    #[doc = "The Azure automation account Id which holds this runbook and authenticate to Azure resource."]
     #[serde(rename = "automationAccountId")]
     pub automation_account_id: String,
+    #[doc = "The name for this runbook."]
     #[serde(rename = "runbookName")]
     pub runbook_name: String,
+    #[doc = "The resource id for webhook linked to this runbook."]
     #[serde(rename = "webhookResourceId")]
     pub webhook_resource_id: String,
+    #[doc = "Indicates whether this instance is global runbook."]
     #[serde(rename = "isGlobalRunbook")]
     pub is_global_runbook: bool,
+    #[doc = "Indicates name of the webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The URI where webhooks should be sent."]
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
 }
@@ -119,9 +148,12 @@ impl AutomationRunbookReceiver {
         }
     }
 }
+#[doc = "The Azure mobile App push notification receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAppPushReceiver {
+    #[doc = "The name of the Azure mobile app push receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The email address registered for the Azure mobile app."]
     #[serde(rename = "emailAddress")]
     pub email_address: String,
 }
@@ -130,13 +162,18 @@ impl AzureAppPushReceiver {
         Self { name, email_address }
     }
 }
+#[doc = "An azure function receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
+    #[doc = "The name of the azure function receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The azure resource id of the function app."]
     #[serde(rename = "functionAppResourceId")]
     pub function_app_resource_id: String,
+    #[doc = "The function name in the function app."]
     #[serde(rename = "functionName")]
     pub function_name: String,
+    #[doc = "The http trigger url where http request sent to."]
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
 }
@@ -150,15 +187,20 @@ impl AzureFunctionReceiver {
         }
     }
 }
+#[doc = "Criterion for dynamic threshold."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicMetricCriteria {
     #[serde(flatten)]
     pub multi_metric_criteria: MultiMetricCriteria,
+    #[doc = "The operator used to compare the metric value against the threshold."]
     pub operator: dynamic_metric_criteria::Operator,
+    #[doc = "The extent of deviation required to trigger an alert. This will affect how tight the threshold is to the metric series pattern."]
     #[serde(rename = "alertSensitivity")]
     pub alert_sensitivity: dynamic_metric_criteria::AlertSensitivity,
+    #[doc = "The minimum number of violations required within the selected lookback time window required to raise an alert."]
     #[serde(rename = "failingPeriods")]
     pub failing_periods: DynamicThresholdFailingPeriods,
+    #[doc = "Use this option to set the date from which to start learning the metric historical data and calculate the dynamic thresholds (in ISO8601 format)"]
     #[serde(rename = "ignoreDataBefore", default, skip_serializing_if = "Option::is_none")]
     pub ignore_data_before: Option<String>,
 }
@@ -180,12 +222,14 @@ impl DynamicMetricCriteria {
 }
 pub mod dynamic_metric_criteria {
     use super::*;
+    #[doc = "The operator used to compare the metric value against the threshold."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         GreaterThan,
         LessThan,
         GreaterOrLessThan,
     }
+    #[doc = "The extent of deviation required to trigger an alert. This will affect how tight the threshold is to the metric series pattern."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AlertSensitivity {
         Low,
@@ -193,10 +237,13 @@ pub mod dynamic_metric_criteria {
         High,
     }
 }
+#[doc = "The minimum number of violations required within the selected lookback time window required to raise an alert."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicThresholdFailingPeriods {
+    #[doc = "The number of aggregated lookback points. The lookback time window is calculated based on the aggregation granularity (windowSize) and the selected number of aggregated points."]
     #[serde(rename = "numberOfEvaluationPeriods")]
     pub number_of_evaluation_periods: f64,
+    #[doc = "The number of violations to trigger an alert. Should be smaller or equal to numberOfEvaluationPeriods."]
     #[serde(rename = "minFailingPeriodsToAlert")]
     pub min_failing_periods_to_alert: f64,
 }
@@ -208,11 +255,15 @@ impl DynamicThresholdFailingPeriods {
         }
     }
 }
+#[doc = "An email receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
+    #[doc = "The name of the email receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The email address of this receiver."]
     #[serde(rename = "emailAddress")]
     pub email_address: String,
+    #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
@@ -225,8 +276,10 @@ impl EmailReceiver {
         }
     }
 }
+#[doc = "Describes a receiver that should be resubscribed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
+    #[doc = "The name of the receiver to resubscribe."]
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
 }
@@ -235,10 +288,13 @@ impl EnableRequest {
         Self { receiver_name }
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -247,15 +303,21 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "An Itsm receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
+    #[doc = "The name of the Itsm receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "OMS LA instance identifier."]
     #[serde(rename = "workspaceId")]
     pub workspace_id: String,
+    #[doc = "Unique identification of ITSM connection among multiple defined in above workspace."]
     #[serde(rename = "connectionId")]
     pub connection_id: String,
+    #[doc = "JSON blob for the configurations of the ITSM action. CreateMultipleWorkItems option will be part of this blob as well."]
     #[serde(rename = "ticketConfiguration")]
     pub ticket_configuration: String,
+    #[doc = "Region in which workspace resides. Supported values:'centralindia','japaneast','southeastasia','australiasoutheast','uksouth','westcentralus','canadacentral','eastus','westeurope'"]
     pub region: String,
 }
 impl ItsmReceiver {
@@ -269,11 +331,15 @@ impl ItsmReceiver {
         }
     }
 }
+#[doc = "A logic app receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogicAppReceiver {
+    #[doc = "The name of the logic app receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The azure resource id of the logic app receiver."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[doc = "The callback url where http request sent to."]
     #[serde(rename = "callbackUrl")]
     pub callback_url: String,
 }
@@ -286,10 +352,13 @@ impl LogicAppReceiver {
         }
     }
 }
+#[doc = "An alert action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertAction {
+    #[doc = "the id of the action group to use."]
     #[serde(rename = "actionGroupId", default, skip_serializing_if = "Option::is_none")]
     pub action_group_id: Option<String>,
+    #[doc = "This field allows specifying custom properties, which would be appended to the alert payload sent as input to the webhook."]
     #[serde(rename = "webHookProperties", default, skip_serializing_if = "Option::is_none")]
     pub web_hook_properties: Option<serde_json::Value>,
 }
@@ -298,8 +367,10 @@ impl MetricAlertAction {
         Self::default()
     }
 }
+#[doc = "The rule criteria that defines the conditions of the alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertCriteria {
+    #[doc = "specifies the type of the alert criteria."]
     #[serde(rename = "odata.type")]
     pub odata_type: metric_alert_criteria::OdataType,
 }
@@ -310,6 +381,7 @@ impl MetricAlertCriteria {
 }
 pub mod metric_alert_criteria {
     use super::*;
+    #[doc = "specifies the type of the alert criteria."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OdataType {
         #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
@@ -320,10 +392,12 @@ pub mod metric_alert_criteria {
         MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
     }
 }
+#[doc = "Specifies the metric alert criteria for multiple resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
     #[serde(flatten)]
     pub metric_alert_criteria: MetricAlertCriteria,
+    #[doc = "the list of multiple metric criteria for this 'all of' operation. "]
     #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<MultiMetricCriteria>,
 }
@@ -335,28 +409,42 @@ impl MetricAlertMultipleResourceMultipleMetricCriteria {
         }
     }
 }
+#[doc = "An alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertProperties {
+    #[doc = "the description of the metric alert that will be included in the alert email."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Alert severity {0, 1, 2, 3, 4}"]
     pub severity: i32,
+    #[doc = "the flag that indicates whether the metric alert is enabled."]
     pub enabled: bool,
+    #[doc = "the list of resource id's that this metric alert is scoped to."]
     pub scopes: Vec<String>,
+    #[doc = "how often the metric alert is evaluated represented in ISO 8601 duration format."]
     #[serde(rename = "evaluationFrequency")]
     pub evaluation_frequency: String,
+    #[doc = "the period of time (in ISO 8601 duration format) that is used to monitor alert activity based on the threshold."]
     #[serde(rename = "windowSize")]
     pub window_size: String,
+    #[doc = "the resource type of the target resource(s) on which the alert is created/updated. Mandatory if the scope contains a subscription, resource group, or more than one resource."]
     #[serde(rename = "targetResourceType", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_type: Option<String>,
+    #[doc = "the region of the target resource(s) on which the alert is created/updated. Mandatory if the scope contains a subscription, resource group, or more than one resource."]
     #[serde(rename = "targetResourceRegion", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_region: Option<String>,
+    #[doc = "The rule criteria that defines the conditions of the alert rule."]
     pub criteria: MetricAlertCriteria,
+    #[doc = "the flag that indicates whether the alert should be auto resolved or not. The default is true."]
     #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
     pub auto_mitigate: Option<bool>,
+    #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<MetricAlertAction>,
+    #[doc = "Last time the rule was updated in ISO8601 format."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "the value indicating whether this alert rule is migrated."]
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
 }
@@ -386,32 +474,46 @@ impl MetricAlertProperties {
         }
     }
 }
+#[doc = "An alert rule properties for patch."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertPropertiesPatch {
+    #[doc = "the description of the metric alert that will be included in the alert email."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Alert severity {0, 1, 2, 3, 4}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<i32>,
+    #[doc = "the flag that indicates whether the metric alert is enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "the list of resource id's that this metric alert is scoped to."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
+    #[doc = "how often the metric alert is evaluated represented in ISO 8601 duration format."]
     #[serde(rename = "evaluationFrequency", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_frequency: Option<String>,
+    #[doc = "the period of time (in ISO 8601 duration format) that is used to monitor alert activity based on the threshold."]
     #[serde(rename = "windowSize", default, skip_serializing_if = "Option::is_none")]
     pub window_size: Option<String>,
+    #[doc = "the resource type of the target resource(s) on which the alert is created/updated. Mandatory for MultipleResourceMultipleMetricCriteria."]
     #[serde(rename = "targetResourceType", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_type: Option<String>,
+    #[doc = "the region of the target resource(s) on which the alert is created/updated. Mandatory for MultipleResourceMultipleMetricCriteria."]
     #[serde(rename = "targetResourceRegion", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_region: Option<String>,
+    #[doc = "The rule criteria that defines the conditions of the alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub criteria: Option<MetricAlertCriteria>,
+    #[doc = "the flag that indicates whether the alert should be auto resolved or not. The default is true."]
     #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
     pub auto_mitigate: Option<bool>,
+    #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<MetricAlertAction>,
+    #[doc = "Last time the rule was updated in ISO8601 format."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "the value indicating whether this alert rule is migrated."]
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
 }
@@ -420,10 +522,12 @@ impl MetricAlertPropertiesPatch {
         Self::default()
     }
 }
+#[doc = "The metric alert resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An alert rule."]
     pub properties: MetricAlertProperties,
 }
 impl MetricAlertResource {
@@ -431,8 +535,10 @@ impl MetricAlertResource {
         Self { resource, properties }
     }
 }
+#[doc = "Represents a collection of alert rule resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertResourceCollection {
+    #[doc = "the values for the alert rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricAlertResource>,
 }
@@ -441,10 +547,13 @@ impl MetricAlertResourceCollection {
         Self::default()
     }
 }
+#[doc = "The metric alert resource for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertResourcePatch {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "An alert rule properties for patch."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricAlertPropertiesPatch>,
 }
@@ -453,10 +562,12 @@ impl MetricAlertResourcePatch {
         Self::default()
     }
 }
+#[doc = "Specifies the metric alert criteria for a single resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertSingleResourceMultipleMetricCriteria {
     #[serde(flatten)]
     pub metric_alert_criteria: MetricAlertCriteria,
+    #[doc = "The list of metric criteria for this 'all of' operation. "]
     #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<MetricCriteria>,
 }
@@ -468,14 +579,19 @@ impl MetricAlertSingleResourceMultipleMetricCriteria {
         }
     }
 }
+#[doc = "An alert status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertStatus {
+    #[doc = "The status name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The alert rule arm id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The extended resource type name."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "An alert status properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricAlertStatusProperties>,
 }
@@ -484,8 +600,10 @@ impl MetricAlertStatus {
         Self::default()
     }
 }
+#[doc = "Represents a collection of alert rule resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertStatusCollection {
+    #[doc = "the values for the alert rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricAlertStatus>,
 }
@@ -494,12 +612,16 @@ impl MetricAlertStatusCollection {
         Self::default()
     }
 }
+#[doc = "An alert status properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertStatusProperties {
+    #[doc = "An object describing the type of the dimensions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<serde_json::Value>,
+    #[doc = "status value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "UTC time when the status was checked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
@@ -508,11 +630,14 @@ impl MetricAlertStatusProperties {
         Self::default()
     }
 }
+#[doc = "Criterion to filter metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricCriteria {
     #[serde(flatten)]
     pub multi_metric_criteria: MultiMetricCriteria,
+    #[doc = "the criteria operator."]
     pub operator: metric_criteria::Operator,
+    #[doc = "the criteria threshold value that activates the alert."]
     pub threshold: f64,
 }
 impl MetricCriteria {
@@ -526,6 +651,7 @@ impl MetricCriteria {
 }
 pub mod metric_criteria {
     use super::*;
+    #[doc = "the criteria operator."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equals,
@@ -535,10 +661,14 @@ pub mod metric_criteria {
         LessThanOrEqual,
     }
 }
+#[doc = "Specifies a metric dimension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricDimension {
+    #[doc = "Name of the dimension."]
     pub name: String,
+    #[doc = "the dimension operator. Only 'Include' and 'Exclude' are supported"]
     pub operator: String,
+    #[doc = "list of dimension values."]
     pub values: Vec<String>,
 }
 impl MetricDimension {
@@ -546,19 +676,27 @@ impl MetricDimension {
         Self { name, operator, values }
     }
 }
+#[doc = "The types of conditions for a multi resource alert."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiMetricCriteria {
+    #[doc = "Specifies the type of threshold criteria"]
     #[serde(rename = "criterionType")]
     pub criterion_type: multi_metric_criteria::CriterionType,
+    #[doc = "Name of the criteria."]
     pub name: String,
+    #[doc = "Name of the metric."]
     #[serde(rename = "metricName")]
     pub metric_name: String,
+    #[doc = "Namespace of the metric."]
     #[serde(rename = "metricNamespace", default, skip_serializing_if = "Option::is_none")]
     pub metric_namespace: Option<String>,
+    #[doc = "the criteria time aggregation types."]
     #[serde(rename = "timeAggregation")]
     pub time_aggregation: multi_metric_criteria::TimeAggregation,
+    #[doc = "List of dimension conditions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<MetricDimension>,
+    #[doc = "Allows creating an alert rule on a custom metric that isn't yet emitted, by causing the metric validation to be skipped."]
     #[serde(rename = "skipMetricValidation", default, skip_serializing_if = "Option::is_none")]
     pub skip_metric_validation: Option<bool>,
 }
@@ -582,11 +720,13 @@ impl MultiMetricCriteria {
 }
 pub mod multi_metric_criteria {
     use super::*;
+    #[doc = "Specifies the type of threshold criteria"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CriterionType {
         StaticThresholdCriterion,
         DynamicThresholdCriterion,
     }
+    #[doc = "the criteria time aggregation types."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TimeAggregation {
         Average,
@@ -596,21 +736,28 @@ pub mod multi_metric_criteria {
         Total,
     }
 }
+#[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReceiverStatus {
     NotSpecified,
     Enabled,
     Disabled,
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -625,13 +772,18 @@ impl Resource {
         }
     }
 }
+#[doc = "An SMS receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
+    #[doc = "The name of the SMS receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The country code of the SMS receiver."]
     #[serde(rename = "countryCode")]
     pub country_code: String,
+    #[doc = "The phone number of the SMS receiver."]
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
+    #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
@@ -645,11 +797,15 @@ impl SmsReceiver {
         }
     }
 }
+#[doc = "A voice receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
+    #[doc = "The name of the voice receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The country code of the voice receiver."]
     #[serde(rename = "countryCode")]
     pub country_code: String,
+    #[doc = "The phone number of the voice receiver."]
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
 }
@@ -662,9 +818,12 @@ impl VoiceReceiver {
         }
     }
 }
+#[doc = "A webhook receiver."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookReceiver {
+    #[doc = "The name of the webhook receiver. Names must be unique across all receivers within an action group."]
     pub name: String,
+    #[doc = "The URI where webhooks should be sent."]
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
 }
@@ -673,14 +832,18 @@ impl WebhookReceiver {
         Self { name, service_uri }
     }
 }
+#[doc = "Specifies the metric alert rule criteria for a web test resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebtestLocationAvailabilityCriteria {
     #[serde(flatten)]
     pub metric_alert_criteria: MetricAlertCriteria,
+    #[doc = "The Application Insights web test Id."]
     #[serde(rename = "webTestId")]
     pub web_test_id: String,
+    #[doc = "The Application Insights resource Id."]
     #[serde(rename = "componentId")]
     pub component_id: String,
+    #[doc = "The number of failed locations."]
     #[serde(rename = "failedLocationCount")]
     pub failed_location_count: f64,
 }

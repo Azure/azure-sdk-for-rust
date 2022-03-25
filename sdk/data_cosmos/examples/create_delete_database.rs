@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -34,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let mut list_databases_stream = Box::pin(client.list_databases().into_stream());
+    let mut list_databases_stream = client.list_databases().into_stream();
     while let Some(list_databases_response) = list_databases_stream.next().await {
         println!("list_databases_response = {:#?}", list_databases_response?);
     }
@@ -45,14 +44,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create collection!
     {
-        let db_client = client.clone().into_database_client(database_name.clone());
-
-        let create_collection_response = db_client
-            .create_collection(
-                Context::new(),
-                "panzadoro",
-                CreateCollectionOptions::new("/id"),
-            )
+        let database = client.database_client(database_name.clone());
+        let create_collection_response = database
+            .create_collection("panzadoro", "/id")
+            .into_future()
             .await?;
 
         println!(
@@ -60,29 +55,25 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             create_collection_response
         );
 
-        let db_collection = db_client.clone().into_collection_client("panzadoro");
+        let db_collection = database.collection_client("panzadoro");
 
-        let get_collection_response = db_collection
-            .get_collection(Context::new(), GetCollectionOptions::new())
-            .await?;
+        let get_collection_response = db_collection.get_collection().into_future().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
-        let stream = db_client.list_collections(Context::new(), ListCollectionsOptions::new());
-        let mut stream = Box::pin(stream);
+        let mut stream = database.list_collections().into_stream();
         while let Some(res) = stream.next().await {
             let res = res?;
             println!("res == {:#?}", res);
         }
 
-        let delete_response = db_collection
-            .delete_collection(Context::new(), DeleteCollectionOptions::new())
-            .await?;
+        let delete_response = db_collection.delete_collection().into_future().await?;
         println!("collection deleted: {:#?}", delete_response);
     }
 
     let resp = client
-        .into_database_client(database_name)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .database_client(database_name)
+        .delete_database()
+        .into_future()
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

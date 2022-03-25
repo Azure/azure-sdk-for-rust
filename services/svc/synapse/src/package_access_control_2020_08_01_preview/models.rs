@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Check access response details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckAccessDecision {
+    #[doc = "Access Decision."]
     #[serde(rename = "accessDecision", default, skip_serializing_if = "Option::is_none")]
     pub access_decision: Option<String>,
+    #[doc = "Action Id."]
     #[serde(rename = "actionId", default, skip_serializing_if = "Option::is_none")]
     pub action_id: Option<String>,
+    #[doc = "Role Assignment response details"]
     #[serde(rename = "roleAssignment", default, skip_serializing_if = "Option::is_none")]
     pub role_assignment: Option<RoleAssignmentDetails>,
 }
@@ -16,10 +20,14 @@ impl CheckAccessDecision {
         Self::default()
     }
 }
+#[doc = "Check access request details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckPrincipalAccessRequest {
+    #[doc = "Subject details"]
     pub subject: SubjectInfo,
+    #[doc = "List of actions."]
     pub actions: Vec<RequiredAction>,
+    #[doc = "Scope at which the check access is done."]
     pub scope: String,
 }
 impl CheckPrincipalAccessRequest {
@@ -27,8 +35,10 @@ impl CheckPrincipalAccessRequest {
         Self { subject, actions, scope }
     }
 }
+#[doc = "Check access response details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckPrincipalAccessResponse {
+    #[doc = "To check if the current user, group, or service principal has permission to read artifacts in the specified workspace."]
     #[serde(rename = "AccessDecisions", default, skip_serializing_if = "Vec::is_empty")]
     pub access_decisions: Vec<CheckAccessDecision>,
 }
@@ -37,6 +47,7 @@ impl CheckPrincipalAccessResponse {
         Self::default()
     }
 }
+#[doc = "Contains details when the response code indicates an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -82,9 +93,12 @@ impl ErrorResponse {
         }
     }
 }
+#[doc = "Action Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequiredAction {
+    #[doc = "Action Id."]
     pub id: String,
+    #[doc = "Is a data action or not."]
     #[serde(rename = "isDataAction")]
     pub is_data_action: bool,
 }
@@ -93,16 +107,22 @@ impl RequiredAction {
         Self { id, is_data_action }
     }
 }
+#[doc = "Role Assignment response details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentDetails {
+    #[doc = "Role Assignment ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Role ID of the Synapse Built-In Role"]
     #[serde(rename = "roleDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub role_definition_id: Option<String>,
+    #[doc = "Object ID of the AAD principal or security-group"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Scope at the role assignment is created"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "Type of the principal Id: User, Group or ServicePrincipal"]
     #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<String>,
 }
@@ -111,10 +131,13 @@ impl RoleAssignmentDetails {
         Self::default()
     }
 }
+#[doc = "Role Assignment response details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentDetailsList {
+    #[doc = "Number of role assignments"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+    #[doc = "A list of role assignments"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentDetails>,
 }
@@ -123,13 +146,18 @@ impl RoleAssignmentDetailsList {
         Self::default()
     }
 }
+#[doc = "Role Assignment request details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentRequest {
+    #[doc = "Role ID of the Synapse Built-In Role"]
     #[serde(rename = "roleId")]
     pub role_id: String,
+    #[doc = "Object ID of the AAD principal or security-group"]
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[doc = "Scope at which the role assignment is created"]
     pub scope: String,
+    #[doc = "Type of the principal Id: User, Group or ServicePrincipal"]
     #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<String>,
 }
@@ -144,10 +172,13 @@ impl RoleAssignmentRequest {
     }
 }
 pub type RoleDefinitionsListResponse = Vec<SynapseRoleDefinition>;
+#[doc = "Subject details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubjectInfo {
+    #[doc = "Principal Id"]
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[doc = "List of group Ids that the principalId is part of."]
     #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
     pub group_ids: Vec<String>,
 }
@@ -159,14 +190,19 @@ impl SubjectInfo {
         }
     }
 }
+#[doc = "Synapse role definition details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynapseRbacPermission {
+    #[doc = "List of actions"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
+    #[doc = "List of Not actions"]
     #[serde(rename = "notActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_actions: Vec<String>,
+    #[doc = "List of data actions"]
     #[serde(rename = "dataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub data_actions: Vec<String>,
+    #[doc = "List of Not data actions"]
     #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
 }
@@ -175,20 +211,28 @@ impl SynapseRbacPermission {
         Self::default()
     }
 }
+#[doc = "Synapse role definition details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynapseRoleDefinition {
+    #[doc = "Role Definition ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Synapse role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Is a built-in role or not"]
     #[serde(rename = "isBuiltIn", default, skip_serializing_if = "Option::is_none")]
     pub is_built_in: Option<bool>,
+    #[doc = "Description for the Synapse role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Permissions for the Synapse role"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub permissions: Vec<SynapseRbacPermission>,
+    #[doc = "Allowed scopes for the Synapse role"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
+    #[doc = "Availability of the Synapse role"]
     #[serde(rename = "availabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub availability_status: Option<String>,
 }

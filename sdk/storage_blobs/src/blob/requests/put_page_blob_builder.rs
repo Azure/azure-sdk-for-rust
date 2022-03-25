@@ -1,7 +1,8 @@
 use crate::blob::responses::PutBlobResponse;
 use crate::prelude::*;
 use azure_core::headers::{
-    add_optional_header, add_optional_header_ref, BLOB_CONTENT_LENGTH, BLOB_TYPE,
+    add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_CONTENT_LENGTH,
+    BLOB_TYPE,
 };
 use azure_core::prelude::*;
 
@@ -69,7 +70,11 @@ impl<'a> PutPageBlobBuilder<'a> {
                 request = add_optional_header(&self.content_encoding, request);
                 request = add_optional_header(&self.content_language, request);
                 request = add_optional_header(&self.content_disposition, request);
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request = add_optional_header_ref(&self.lease_id, request);
                 request = add_optional_header(&self.sequence_number, request);
                 request = add_optional_header(&self.client_request_id, request);

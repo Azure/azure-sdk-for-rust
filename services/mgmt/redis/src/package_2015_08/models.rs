@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Redis cache access keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisAccessKeys {
+    #[doc = "The current primary key that clients can use to authenticate with Redis cache."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The current secondary key that clients can use to authenticate with Redis cache."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
@@ -14,10 +17,12 @@ impl RedisAccessKeys {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the CreateOrUpdate Redis operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisCreateOrUpdateParameters {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Parameters supplied to CreateOrUpdate Redis operation."]
     pub properties: RedisProperties,
 }
 impl RedisCreateOrUpdateParameters {
@@ -25,10 +30,13 @@ impl RedisCreateOrUpdateParameters {
         Self { resource, properties }
     }
 }
+#[doc = "The response of Redis list keys operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisListKeysResult {
+    #[doc = "The current primary key that clients can use to authenticate with Redis cache."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The current secondary key that clients can use to authenticate with Redis cache."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
@@ -37,10 +45,13 @@ impl RedisListKeysResult {
         Self::default()
     }
 }
+#[doc = "The response of list Redis operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisListResult {
+    #[doc = "Results of the list operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RedisResource>,
+    #[doc = "Link for next set of locations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -49,23 +60,33 @@ impl RedisListResult {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to CreateOrUpdate Redis operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisProperties {
+    #[doc = "RedisVersion parameter has been deprecated. As such, it is no longer necessary to provide this parameter and any value specified is ignored."]
     #[serde(rename = "redisVersion", default, skip_serializing_if = "Option::is_none")]
     pub redis_version: Option<String>,
+    #[doc = "SKU parameters supplied to the create Redis operation."]
     pub sku: Sku,
+    #[doc = "All Redis Settings. Few possible keys: rdb-backup-enabled,rdb-storage-connection-string,rdb-backup-frequency,maxmemory-delta,maxmemory-policy,notify-keyspace-events,maxmemory-samples,slowlog-log-slower-than,slowlog-max-len,list-max-ziplist-entries,list-max-ziplist-value,hash-max-ziplist-entries,hash-max-ziplist-value,set-max-intset-entries,zset-max-ziplist-entries,zset-max-ziplist-value etc."]
     #[serde(rename = "redisConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub redis_configuration: Option<serde_json::Value>,
+    #[doc = "If the value is true, then the non-SLL Redis server port (6379) will be enabled."]
     #[serde(rename = "enableNonSslPort", default, skip_serializing_if = "Option::is_none")]
     pub enable_non_ssl_port: Option<bool>,
+    #[doc = "tenantSettings"]
     #[serde(rename = "tenantSettings", default, skip_serializing_if = "Option::is_none")]
     pub tenant_settings: Option<serde_json::Value>,
+    #[doc = "The number of shards to be created on a Premium Cluster Cache."]
     #[serde(rename = "shardCount", default, skip_serializing_if = "Option::is_none")]
     pub shard_count: Option<i32>,
+    #[doc = "The exact ARM resource ID of the virtual network to deploy the Redis cache in. Example format: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/Microsoft.ClassicNetwork/VirtualNetworks/vnet1"]
     #[serde(rename = "virtualNetwork", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network: Option<String>,
+    #[doc = "Required when deploying a Redis cache inside an existing Azure Virtual Network."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<String>,
+    #[doc = "Required when deploying a Redis cache inside an existing Azure Virtual Network."]
     #[serde(rename = "staticIP", default, skip_serializing_if = "Option::is_none")]
     pub static_ip: Option<String>,
 }
@@ -84,16 +105,21 @@ impl RedisProperties {
         }
     }
 }
+#[doc = "Parameters describing a Redis instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisReadableProperties {
     #[serde(flatten)]
     pub redis_properties: RedisProperties,
+    #[doc = "Redis instance provisioning status."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Redis host name."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "Redis non-SSL port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
+    #[doc = "Redis SSL port."]
     #[serde(rename = "sslPort", default, skip_serializing_if = "Option::is_none")]
     pub ssl_port: Option<i32>,
 }
@@ -108,10 +134,12 @@ impl RedisReadableProperties {
         }
     }
 }
+#[doc = "Properties generated only in response to CreateOrUpdate Redis operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisReadablePropertiesWithAccessKey {
     #[serde(flatten)]
     pub redis_readable_properties: RedisReadableProperties,
+    #[doc = "Redis cache access keys."]
     #[serde(rename = "accessKeys", default, skip_serializing_if = "Option::is_none")]
     pub access_keys: Option<RedisAccessKeys>,
 }
@@ -123,10 +151,13 @@ impl RedisReadablePropertiesWithAccessKey {
         }
     }
 }
+#[doc = "Specifies which Redis node(s) to reboot."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisRebootParameters {
+    #[doc = "Which Redis node(s) to reboot. Depending on this value data loss is possible."]
     #[serde(rename = "rebootType")]
     pub reboot_type: redis_reboot_parameters::RebootType,
+    #[doc = "If clustering is enabled, the ID of the shared be rebooted."]
     #[serde(rename = "shardId", default, skip_serializing_if = "Option::is_none")]
     pub shard_id: Option<i32>,
 }
@@ -140,6 +171,7 @@ impl RedisRebootParameters {
 }
 pub mod redis_reboot_parameters {
     use super::*;
+    #[doc = "Which Redis node(s) to reboot. Depending on this value data loss is possible."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RebootType {
         PrimaryNode,
@@ -147,8 +179,10 @@ pub mod redis_reboot_parameters {
         AllNodes,
     }
 }
+#[doc = "Specifies which Redis access keys to reset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisRegenerateKeyParameters {
+    #[doc = "Which Redis access key to reset."]
     #[serde(rename = "keyType")]
     pub key_type: redis_regenerate_key_parameters::KeyType,
 }
@@ -159,16 +193,19 @@ impl RedisRegenerateKeyParameters {
 }
 pub mod redis_regenerate_key_parameters {
     use super::*;
+    #[doc = "Which Redis access key to reset."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyType {
         Primary,
         Secondary,
     }
 }
+#[doc = "A single Redis item in List or Get Operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Parameters describing a Redis instance"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisReadableProperties>,
 }
@@ -180,10 +217,12 @@ impl RedisResource {
         }
     }
 }
+#[doc = "A Redis item in CreateOrUpdate Operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisResourceWithAccessKey {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties generated only in response to CreateOrUpdate Redis operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisReadablePropertiesWithAccessKey>,
 }
@@ -197,13 +236,18 @@ impl RedisResourceWithAccessKey {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -218,10 +262,14 @@ impl Resource {
         }
     }
 }
+#[doc = "SKU parameters supplied to the create Redis operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "What type of Redis cache to deploy. Valid values: (Basic, Standard, Premium)."]
     pub name: sku::Name,
+    #[doc = "Which family to use. Valid values: (C, P)."]
     pub family: sku::Family,
+    #[doc = "What size of Redis cache to deploy. Valid values: for C family (0, 1, 2, 3, 4, 5, 6), for P family (1, 2, 3, 4)."]
     pub capacity: i32,
 }
 impl Sku {
@@ -231,12 +279,14 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "What type of Redis cache to deploy. Valid values: (Basic, Standard, Premium)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         Basic,
         Standard,
         Premium,
     }
+    #[doc = "Which family to use. Valid values: (C, P)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {
         C,

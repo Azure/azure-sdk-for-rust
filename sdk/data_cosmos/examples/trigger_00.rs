@@ -57,30 +57,30 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database);
-    let collection_client = database_client.into_collection_client(collection);
-    let trigger_client = collection_client.clone().into_trigger_client(trigger_name);
+    let database = client.database_client(database);
+    let collection = database.collection_client(collection);
+    let trigger = collection.clone().trigger_client(trigger_name);
 
-    let ret = trigger_client
-        .create_trigger()
-        .execute("something", TriggerType::Post, TriggerOperation::All)
+    let ret = trigger
+        .create_trigger("something", TriggerType::Post, TriggerOperation::All)
+        .into_future()
         .await?;
-    println!("Creeate response object:\n{:#?}", ret);
+    println!("Create response object:\n{:#?}", ret);
 
-    let ret = trigger_client
-        .replace_trigger()
+    let ret = trigger
+        .replace_trigger(TRIGGER_BODY, TriggerType::Post, TriggerOperation::All)
         .consistency_level(ret)
-        .execute(TRIGGER_BODY, TriggerType::Post, TriggerOperation::All)
+        .into_future()
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
 
-    let stream = collection_client
+    let mut stream = collection
         .list_triggers()
         .max_item_count(3)
-        .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+        .consistency_level(&ret)
+        .into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         println!(
@@ -90,10 +90,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
     }
 
-    let ret = trigger_client
+    let ret = trigger
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .execute()
+        .into_future()
         .await?;
     println!("Delete response object:\n{:#?}", ret);
 

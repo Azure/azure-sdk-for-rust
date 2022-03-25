@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -50,66 +49,59 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
-        database_client
-            .create_collection(
-                Context::new(),
-                COLLECTION_NAME,
-                CreateCollectionOptions::new("/id"),
-            )
+        database
+            .create_collection(COLLECTION_NAME, "/id")
+            .into_future()
             .await
             .unwrap()
     };
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
-    let trigger_client = collection_client.clone().into_trigger_client(TRIGGER_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
+    let trigger = collection.trigger_client(TRIGGER_NAME);
 
-    let ret = trigger_client
-        .create_trigger()
-        .execute(
+    let ret = trigger
+        .create_trigger(
             "something",
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
+        .into_future()
         .await?;
 
-    let ret = trigger_client
-        .replace_trigger()
-        .consistency_level(ret)
-        .execute(
+    let ret = trigger
+        .replace_trigger(
             TRIGGER_BODY,
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
+        .consistency_level(ret)
+        .into_future()
         .await?;
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
 
-    let stream = collection_client
+    let stream = collection
         .list_triggers()
         .max_item_count(3)
         .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+    let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
     }
 
-    let _ret = trigger_client
+    let _ret = trigger
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .execute()
+        .into_future()
         .await?;
 
     // delete the database
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await?;
+    database.delete_database().into_future().await?;
 
     Ok(())
 }

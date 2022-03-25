@@ -1,5 +1,5 @@
 use azure_data_cosmos::prelude::*;
-use azure_data_cosmos::responses::QueryDocumentsResponse;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -43,26 +43,30 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let client = client.into_database_client(database_name);
-    let client = client.into_collection_client(collection_name);
+    let client = client.database_client(database_name);
+    let client = client.collection_client(collection_name);
 
-    let query_obj = Query::new(&query);
+    let query_obj = Query::new(query);
 
     let respo: QueryDocumentsResponse<serde_json::Value> = client
-        .query_documents()
+        .query_documents(query_obj.clone())
         .query_cross_partition(true)
         .max_item_count(3i32)
-        .execute(&query_obj)
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!("as json == {:?}", respo);
 
     let respo: QueryDocumentsResponse<MySecondSampleStructOwned> = client
-        .query_documents()
+        .query_documents(query_obj)
         .query_cross_partition(true)
         .parallelize_cross_partition_query(true)
         .max_item_count(2)
-        .execute(&query_obj)
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!("as items == {:?}", respo);
 
     //let ret = client

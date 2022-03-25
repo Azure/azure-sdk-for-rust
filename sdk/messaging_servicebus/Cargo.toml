@@ -15,12 +15,13 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.1.0" }
-ring = "0.16"
+azure_core = { path = "../core", version = "0.1" }
 base64 = "0.13"
 chrono = "0.4"
 log = "0.4"
 url = "2.2"
+hmac = "0.12"
+sha2 = "0.10"
 
 [dev-dependencies]
 futures = "0.3"

@@ -2,7 +2,7 @@ use crate::blob::requests::*;
 use crate::prelude::*;
 use crate::BA512Range;
 use azure_core::prelude::*;
-use azure_core::HttpClient;
+use azure_core::{HttpClient, HttpError};
 use azure_storage::core::clients::StorageCredentials;
 use azure_storage::core::prelude::*;
 use azure_storage::core::shared_access_signature::{
@@ -12,6 +12,7 @@ use azure_storage::core::shared_access_signature::{
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
+use http::StatusCode;
 use std::sync::Arc;
 use url::Url;
 
@@ -208,6 +209,26 @@ impl BlobClient {
     ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.container_client
             .prepare_request(url, method, http_header_adder, request_body)
+    }
+
+    pub async fn exists(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        let result = self.get_properties().execute().await.map(|_| true);
+
+        if let Err(err) = &result {
+            if let Some(err) = err.downcast_ref::<HttpError>() {
+                if matches!(
+                    err,
+                    HttpError::StatusCode {
+                        status: StatusCode::NOT_FOUND,
+                        ..
+                    }
+                ) {
+                    return Ok(false);
+                }
+            }
+        }
+
+        result
     }
 }
 

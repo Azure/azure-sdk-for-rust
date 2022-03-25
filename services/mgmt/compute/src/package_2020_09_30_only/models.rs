@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A disk access SAS uri."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessUri {
+    #[doc = "A SAS uri for accessing a disk."]
     #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
     pub access_sas: Option<String>,
 }
@@ -12,16 +14,22 @@ impl AccessUri {
         Self::default()
     }
 }
+#[doc = "Api error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
+    #[doc = "The Api error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ApiErrorBase>,
+    #[doc = "Inner error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -30,12 +38,16 @@ impl ApiError {
         Self::default()
     }
 }
+#[doc = "Api error base."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiErrorBase {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -44,8 +56,10 @@ impl ApiErrorBase {
         Self::default()
     }
 }
+#[doc = "An error response from the Compute service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "Api error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
@@ -54,24 +68,34 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "Data used when creating a disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreationData {
+    #[doc = "This enumerates the possible sources of a disk's creation."]
     #[serde(rename = "createOption")]
     pub create_option: creation_data::CreateOption,
+    #[doc = "Required if createOption is Import. The Azure Resource Manager identifier of the storage account containing the blob to import as a disk."]
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
+    #[doc = "The source image used for creating the disk."]
     #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageDiskReference>,
+    #[doc = "The source image used for creating the disk."]
     #[serde(rename = "galleryImageReference", default, skip_serializing_if = "Option::is_none")]
     pub gallery_image_reference: Option<ImageDiskReference>,
+    #[doc = "If createOption is Import, this is the URI of a blob to be imported into a managed disk."]
     #[serde(rename = "sourceUri", default, skip_serializing_if = "Option::is_none")]
     pub source_uri: Option<String>,
+    #[doc = "If createOption is Copy, this is the ARM id of the source snapshot or disk."]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
+    #[doc = "If this field is set, this is the unique id identifying the source of this resource."]
     #[serde(rename = "sourceUniqueId", default, skip_serializing_if = "Option::is_none")]
     pub source_unique_id: Option<String>,
+    #[doc = "If createOption is Upload, this is the size of the contents of the upload including the VHD footer. This value should be between 20972032 (20 MiB + 512 bytes for the VHD footer) and 35183298347520 bytes (32 TiB + 512 bytes for the VHD footer)."]
     #[serde(rename = "uploadSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub upload_size_bytes: Option<i64>,
+    #[doc = "Logical sector size in bytes for Ultra disks. Supported values are 512 ad 4096. 4096 is the default."]
     #[serde(rename = "logicalSectorSize", default, skip_serializing_if = "Option::is_none")]
     pub logical_sector_size: Option<i32>,
 }
@@ -92,6 +116,7 @@ impl CreationData {
 }
 pub mod creation_data {
     use super::*;
+    #[doc = "This enumerates the possible sources of a disk's creation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateOption {
         Empty,
@@ -103,10 +128,12 @@ pub mod creation_data {
         Upload,
     }
 }
+#[doc = "Contains encryption settings for a data disk image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataDiskImageEncryption {
     #[serde(flatten)]
     pub disk_image_encryption: DiskImageEncryption,
+    #[doc = "This property specifies the logical unit number of the data disk. This value is used to identify data disks within the Virtual Machine and therefore must be unique for each data disk attached to the Virtual Machine."]
     pub lun: i32,
 }
 impl DataDiskImageEncryption {
@@ -117,8 +144,10 @@ impl DataDiskImageEncryption {
         }
     }
 }
+#[doc = "Describes the disallowed disk types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Disallowed {
+    #[doc = "A list of disk types."]
     #[serde(rename = "diskTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub disk_types: Vec<String>,
 }
@@ -127,20 +156,27 @@ impl Disallowed {
         Self::default()
     }
 }
+#[doc = "Disk resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "A relative URI containing the ID of the VM that has the disk attached."]
     #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
     pub managed_by: Option<String>,
+    #[doc = "List of relative URIs containing the IDs of the VMs that have the disk attached. maxShares should be set to a value greater than one for disks to allow attaching them to multiple VMs."]
     #[serde(rename = "managedByExtended", default, skip_serializing_if = "Vec::is_empty")]
     pub managed_by_extended: Vec<String>,
+    #[doc = "The disks sku name. Can be Standard_LRS, Premium_LRS, StandardSSD_LRS, or UltraSSD_LRS."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<DiskSku>,
+    #[doc = "The Logical zone list for Disk."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
+    #[doc = "The complex type of the extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Disk resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskProperties>,
 }
@@ -157,6 +193,7 @@ impl Disk {
         }
     }
 }
+#[doc = "disk access resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskAccess {
     #[serde(flatten)]
@@ -172,9 +209,12 @@ impl DiskAccess {
         }
     }
 }
+#[doc = "The List disk access operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskAccessList {
+    #[doc = "A list of disk access resources."]
     pub value: Vec<DiskAccess>,
+    #[doc = "The uri to fetch the next page of disk access resources. Call ListNext() with this to fetch the next page of disk access resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -185,10 +225,13 @@ impl DiskAccessList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskAccessProperties {
+    #[doc = "A readonly collection of private endpoint connections created on the disk. Currently only one endpoint connection is supported."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "The disk access resource provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The time when the disk access was created."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
 }
@@ -197,8 +240,10 @@ impl DiskAccessProperties {
         Self::default()
     }
 }
+#[doc = "Used for updating a disk access resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskAccessUpdate {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -207,10 +252,12 @@ impl DiskAccessUpdate {
         Self::default()
     }
 }
+#[doc = "disk encryption set resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSet {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The managed identity for the disk encryption set. It should be given permission on the key vault before it can be used to encrypt disks."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<EncryptionSetIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -225,9 +272,12 @@ impl DiskEncryptionSet {
         }
     }
 }
+#[doc = "The List disk encryption set operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSetList {
+    #[doc = "A list of disk encryption sets."]
     pub value: Vec<DiskEncryptionSet>,
+    #[doc = "The uri to fetch the next page of disk encryption sets. Call ListNext() with this to fetch the next page of disk encryption sets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -236,15 +286,19 @@ impl DiskEncryptionSetList {
         Self { value, next_link: None }
     }
 }
+#[doc = "The type of key used to encrypt the data of the disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskEncryptionSetType {
     EncryptionAtRestWithCustomerKey,
     EncryptionAtRestWithPlatformAndCustomerKeys,
 }
+#[doc = "disk encryption set update resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionSetUpdate {
+    #[doc = "disk encryption set resource update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskEncryptionSetUpdateProperties>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -253,10 +307,13 @@ impl DiskEncryptionSetUpdate {
         Self::default()
     }
 }
+#[doc = "disk encryption set resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionSetUpdateProperties {
+    #[doc = "The type of key used to encrypt the data of the disk."]
     #[serde(rename = "encryptionType", default, skip_serializing_if = "Option::is_none")]
     pub encryption_type: Option<DiskEncryptionSetType>,
+    #[doc = "Key Vault Key Url to be used for server side encryption of Managed Disks and Snapshots"]
     #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyForDiskEncryptionSet>,
 }
@@ -265,8 +322,10 @@ impl DiskEncryptionSetUpdateProperties {
         Self::default()
     }
 }
+#[doc = "This is the disk image encryption base class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskImageEncryption {
+    #[doc = "A relative URI containing the resource ID of the disk encryption set."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set_id: Option<String>,
 }
@@ -275,9 +334,12 @@ impl DiskImageEncryption {
         Self::default()
     }
 }
+#[doc = "The List Disks operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskList {
+    #[doc = "A list of disks."]
     pub value: Vec<Disk>,
+    #[doc = "The uri to fetch the next page of disks. Call ListNext() with this to fetch the next page of disks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -286,50 +348,73 @@ impl DiskList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Disk resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskProperties {
+    #[doc = "The time when the disk was created."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "The Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<disk_properties::OsType>,
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<disk_properties::HyperVGeneration>,
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<PurchasePlan>,
+    #[doc = "Data used when creating a disk."]
     #[serde(rename = "creationData")]
     pub creation_data: CreationData,
+    #[doc = "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the disk to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "The size of the disk in bytes. This field is read only."]
     #[serde(rename = "diskSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_bytes: Option<i64>,
+    #[doc = "Unique Guid identifying the resource."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
+    #[doc = "Encryption settings for disk or snapshot"]
     #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
+    #[doc = "The disk provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The number of IOPS allowed for this disk; only settable for UltraSSD disks. One operation can transfer between 4k and 256k bytes."]
     #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
     pub disk_iops_read_write: Option<i64>,
+    #[doc = "The bandwidth allowed for this disk; only settable for UltraSSD disks. MBps means millions of bytes per second - MB here uses the ISO notation, of powers of 10."]
     #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
     pub disk_m_bps_read_write: Option<i64>,
+    #[doc = "The total number of IOPS that will be allowed across all VMs mounting the shared disk as ReadOnly. One operation can transfer between 4k and 256k bytes."]
     #[serde(rename = "diskIOPSReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub disk_iops_read_only: Option<i64>,
+    #[doc = "The total throughput (MBps) that will be allowed across all VMs mounting the shared disk as ReadOnly. MBps means millions of bytes per second - MB here uses the ISO notation, of powers of 10."]
     #[serde(rename = "diskMBpsReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub disk_m_bps_read_only: Option<i64>,
+    #[doc = "This enumerates the possible state of the disk."]
     #[serde(rename = "diskState", default, skip_serializing_if = "Option::is_none")]
     pub disk_state: Option<DiskState>,
+    #[doc = "Encryption at rest settings for disk or snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "The maximum number of VMs that can attach to the disk at the same time. Value greater than one indicates a disk that can be mounted on multiple VMs at the same time."]
     #[serde(rename = "maxShares", default, skip_serializing_if = "Option::is_none")]
     pub max_shares: Option<i32>,
+    #[doc = "Details of the list of all VMs that have the disk attached. maxShares should be set to a value greater than one for disks to allow attaching them to multiple VMs."]
     #[serde(rename = "shareInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub share_info: Vec<ShareInfoElement>,
+    #[doc = "Policy for accessing the disk via network."]
     #[serde(rename = "networkAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub network_access_policy: Option<NetworkAccessPolicy>,
+    #[doc = "ARM id of the DiskAccess resource for using private endpoints on disks."]
     #[serde(rename = "diskAccessId", default, skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
+    #[doc = "Performance tier of the disk (e.g, P4, S10) as described here: https://azure.microsoft.com/en-us/pricing/details/managed-disks/. Does not apply to Ultra disks."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "Set to true to enable bursting beyond the provisioned performance target of the disk. Bursting is disabled by default. Does not apply to Ultra disks."]
     #[serde(rename = "burstingEnabled", default, skip_serializing_if = "Option::is_none")]
     pub bursting_enabled: Option<bool>,
 }
@@ -363,21 +448,25 @@ impl DiskProperties {
 }
 pub mod disk_properties {
     use super::*;
+    #[doc = "The Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HyperVGeneration {
         V1,
         V2,
     }
 }
+#[doc = "Properties of disk restore point"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskRestorePoint {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "Properties of an incremental disk restore point"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskRestorePointProperties>,
 }
@@ -386,9 +475,12 @@ impl DiskRestorePoint {
         Self::default()
     }
 }
+#[doc = "The List Disk Restore Points operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskRestorePointList {
+    #[doc = "A list of disk restore points."]
     pub value: Vec<DiskRestorePoint>,
+    #[doc = "The uri to fetch the next page of disk restore points. Call ListNext() with this to fetch the next page of disk restore points."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -397,22 +489,31 @@ impl DiskRestorePointList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Properties of an incremental disk restore point"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskRestorePointProperties {
+    #[doc = "The timestamp of restorePoint creation"]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "arm id of source disk"]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
+    #[doc = "The Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<disk_restore_point_properties::OsType>,
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<disk_restore_point_properties::HyperVGeneration>,
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<PurchasePlan>,
+    #[doc = "id of the backing snapshot's MIS family"]
     #[serde(rename = "familyId", default, skip_serializing_if = "Option::is_none")]
     pub family_id: Option<String>,
+    #[doc = "unique incarnation id of the source disk"]
     #[serde(rename = "sourceUniqueId", default, skip_serializing_if = "Option::is_none")]
     pub source_unique_id: Option<String>,
+    #[doc = "Encryption at rest settings for disk or snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
 }
@@ -423,21 +524,26 @@ impl DiskRestorePointProperties {
 }
 pub mod disk_restore_point_properties {
     use super::*;
+    #[doc = "The Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HyperVGeneration {
         V1,
         V2,
     }
 }
+#[doc = "The disks sku name. Can be Standard_LRS, Premium_LRS, StandardSSD_LRS, or UltraSSD_LRS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskSku {
+    #[doc = "The sku name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<disk_sku::Name>,
+    #[doc = "The sku tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
@@ -448,6 +554,7 @@ impl DiskSku {
 }
 pub mod disk_sku {
     use super::*;
+    #[doc = "The sku name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "Standard_LRS")]
@@ -460,6 +567,7 @@ pub mod disk_sku {
         UltraSsdLrs,
     }
 }
+#[doc = "This enumerates the possible state of the disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskState {
     Unattached,
@@ -470,12 +578,16 @@ pub enum DiskState {
     ReadyToUpload,
     ActiveUpload,
 }
+#[doc = "Disk update resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdate {
+    #[doc = "Disk resource update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskUpdateProperties>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The disks sku name. Can be Standard_LRS, Premium_LRS, StandardSSD_LRS, or UltraSSD_LRS."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<DiskSku>,
 }
@@ -484,34 +596,49 @@ impl DiskUpdate {
         Self::default()
     }
 }
+#[doc = "Disk resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdateProperties {
+    #[doc = "the Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<disk_update_properties::OsType>,
+    #[doc = "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the disk to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Encryption settings for disk or snapshot"]
     #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
+    #[doc = "The number of IOPS allowed for this disk; only settable for UltraSSD disks. One operation can transfer between 4k and 256k bytes."]
     #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
     pub disk_iops_read_write: Option<i64>,
+    #[doc = "The bandwidth allowed for this disk; only settable for UltraSSD disks. MBps means millions of bytes per second - MB here uses the ISO notation, of powers of 10."]
     #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
     pub disk_m_bps_read_write: Option<i64>,
+    #[doc = "The total number of IOPS that will be allowed across all VMs mounting the shared disk as ReadOnly. One operation can transfer between 4k and 256k bytes."]
     #[serde(rename = "diskIOPSReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub disk_iops_read_only: Option<i64>,
+    #[doc = "The total throughput (MBps) that will be allowed across all VMs mounting the shared disk as ReadOnly. MBps means millions of bytes per second - MB here uses the ISO notation, of powers of 10."]
     #[serde(rename = "diskMBpsReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub disk_m_bps_read_only: Option<i64>,
+    #[doc = "The maximum number of VMs that can attach to the disk at the same time. Value greater than one indicates a disk that can be mounted on multiple VMs at the same time."]
     #[serde(rename = "maxShares", default, skip_serializing_if = "Option::is_none")]
     pub max_shares: Option<i32>,
+    #[doc = "Encryption at rest settings for disk or snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "Policy for accessing the disk via network."]
     #[serde(rename = "networkAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub network_access_policy: Option<NetworkAccessPolicy>,
+    #[doc = "ARM id of the DiskAccess resource for using private endpoints on disks."]
     #[serde(rename = "diskAccessId", default, skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
+    #[doc = "Performance tier of the disk (e.g, P4, S10) as described here: https://azure.microsoft.com/en-us/pricing/details/managed-disks/. Does not apply to Ultra disks."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "Set to true to enable bursting beyond the provisioned performance target of the disk. Bursting is disabled by default. Does not apply to Ultra disks."]
     #[serde(rename = "burstingEnabled", default, skip_serializing_if = "Option::is_none")]
     pub bursting_enabled: Option<bool>,
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<PurchasePlan>,
 }
@@ -522,16 +649,20 @@ impl DiskUpdateProperties {
 }
 pub mod disk_update_properties {
     use super::*;
+    #[doc = "the Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "Encryption at rest settings for disk or snapshot"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
+    #[doc = "ResourceId of the disk encryption set to use for enabling encryption at rest."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set_id: Option<String>,
+    #[doc = "The type of key used to encrypt the data of the disk."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<EncryptionType>,
 }
@@ -540,10 +671,13 @@ impl Encryption {
         Self::default()
     }
 }
+#[doc = "Optional. Allows users to provide customer managed keys for encrypting the OS and data disks in the gallery artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionImages {
+    #[doc = "Contains encryption settings for an OS disk image."]
     #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_image: Option<OsDiskImageEncryption>,
+    #[doc = "A list of encryption specifications for data disk images."]
     #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disk_images: Vec<DataDiskImageEncryption>,
 }
@@ -552,12 +686,16 @@ impl EncryptionImages {
         Self::default()
     }
 }
+#[doc = "The managed identity for the disk encryption set. It should be given permission on the key vault before it can be used to encrypt disks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSetIdentity {
+    #[doc = "The type of Managed Identity used by the DiskEncryptionSet. Only SystemAssigned is supported for new creations. Disk Encryption Sets can be updated with Identity type None during migration of subscription to a new Azure Active Directory tenant; it will cause the encrypted resources to lose access to the keys."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_set_identity::Type>,
+    #[doc = "The object id of the Managed Identity Resource. This will be sent to the RP from ARM via the x-ms-identity-principal-id header in the PUT request if the resource has a systemAssigned(implicit) identity"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id of the Managed Identity Resource. This will be sent to the RP from ARM via the x-ms-client-tenant-id header in the PUT request if the resource has a systemAssigned(implicit) identity"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -568,6 +706,7 @@ impl EncryptionSetIdentity {
 }
 pub mod encryption_set_identity {
     use super::*;
+    #[doc = "The type of Managed Identity used by the DiskEncryptionSet. Only SystemAssigned is supported for new creations. Disk Encryption Sets can be updated with Identity type None during migration of subscription to a new Azure Active Directory tenant; it will cause the encrypted resources to lose access to the keys."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
@@ -576,12 +715,16 @@ pub mod encryption_set_identity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSetProperties {
+    #[doc = "The type of key used to encrypt the data of the disk."]
     #[serde(rename = "encryptionType", default, skip_serializing_if = "Option::is_none")]
     pub encryption_type: Option<DiskEncryptionSetType>,
+    #[doc = "Key Vault Key Url to be used for server side encryption of Managed Disks and Snapshots"]
     #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyForDiskEncryptionSet>,
+    #[doc = "A readonly collection of key vault keys previously used by this disk encryption set while a key rotation is in progress. It will be empty if there is no ongoing key rotation."]
     #[serde(rename = "previousKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub previous_keys: Vec<KeyForDiskEncryptionSet>,
+    #[doc = "The disk encryption set provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -590,11 +733,15 @@ impl EncryptionSetProperties {
         Self::default()
     }
 }
+#[doc = "Encryption settings for disk or snapshot"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionSettingsCollection {
+    #[doc = "Set this flag to true and provide DiskEncryptionKey and optional KeyEncryptionKey to enable encryption. Set this flag to false and remove DiskEncryptionKey and KeyEncryptionKey to disable encryption. If EncryptionSettings is null in the request object, the existing settings remain unchanged."]
     pub enabled: bool,
+    #[doc = "A collection of encryption settings, one for each disk volume."]
     #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub encryption_settings: Vec<EncryptionSettingsElement>,
+    #[doc = "Describes what type of encryption is used for the disks. Once this field is set, it cannot be overwritten. '1.0' corresponds to Azure Disk Encryption with AAD app.'1.1' corresponds to Azure Disk Encryption."]
     #[serde(rename = "encryptionSettingsVersion", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_version: Option<String>,
 }
@@ -607,10 +754,13 @@ impl EncryptionSettingsCollection {
         }
     }
 }
+#[doc = "Encryption settings for one disk volume."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSettingsElement {
+    #[doc = "Key Vault Secret Url and vault id of the encryption key "]
     #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
+    #[doc = "Key Vault Key Url and vault id of KeK, KeK is optional and when provided is used to unwrap the encryptionKey"]
     #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub key_encryption_key: Option<KeyVaultAndKeyReference>,
 }
@@ -619,16 +769,20 @@ impl EncryptionSettingsElement {
         Self::default()
     }
 }
+#[doc = "The type of key used to encrypt the data of the disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EncryptionType {
     EncryptionAtRestWithPlatformKey,
     EncryptionAtRestWithCustomerKey,
     EncryptionAtRestWithPlatformAndCustomerKeys,
 }
+#[doc = "The complex type of the extended location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedLocation {
+    #[doc = "The name of the extended location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of extendedLocation."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ExtendedLocationType>,
 }
@@ -637,14 +791,17 @@ impl ExtendedLocation {
         Self::default()
     }
 }
+#[doc = "The type of extendedLocation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ExtendedLocationType {
     EdgeZone,
 }
+#[doc = "Specifies information about the Shared Image Gallery that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Gallery {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a Shared Image Gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryProperties>,
 }
@@ -656,10 +813,12 @@ impl Gallery {
         }
     }
 }
+#[doc = "Specifies information about the gallery Application Definition that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplication {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a gallery Application Definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationProperties>,
 }
@@ -671,9 +830,12 @@ impl GalleryApplication {
         }
     }
 }
+#[doc = "The List Gallery Applications operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationList {
+    #[doc = "A list of Gallery Applications."]
     pub value: Vec<GalleryApplication>,
+    #[doc = "The uri to fetch the next page of Application Definitions in the Application Gallery. Call ListNext() with this to fetch the next page of gallery Application Definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -682,18 +844,25 @@ impl GalleryApplicationList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a gallery Application Definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationProperties {
+    #[doc = "The description of this gallery Application Definition resource. This property is updatable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The Eula agreement for the gallery Application Definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub eula: Option<String>,
+    #[doc = "The privacy statement uri."]
     #[serde(rename = "privacyStatementUri", default, skip_serializing_if = "Option::is_none")]
     pub privacy_statement_uri: Option<String>,
+    #[doc = "The release note uri."]
     #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
     pub release_note_uri: Option<String>,
+    #[doc = "The end of life date of the gallery Application Definition. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_life_date: Option<String>,
+    #[doc = "This property allows you to specify the supported type of the OS that application is built for. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "supportedOSType")]
     pub supported_os_type: gallery_application_properties::SupportedOsType,
 }
@@ -711,16 +880,19 @@ impl GalleryApplicationProperties {
 }
 pub mod gallery_application_properties {
     use super::*;
+    #[doc = "This property allows you to specify the supported type of the OS that application is built for. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedOsType {
         Windows,
         Linux,
     }
 }
+#[doc = "Specifies information about the gallery Application Definition that you want to update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryApplicationUpdate {
     #[serde(flatten)]
     pub update_resource_definition: UpdateResourceDefinition,
+    #[doc = "Describes the properties of a gallery Application Definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationProperties>,
 }
@@ -729,10 +901,12 @@ impl GalleryApplicationUpdate {
         Self::default()
     }
 }
+#[doc = "Specifies information about the gallery Application Version that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersion {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a gallery image version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationVersionProperties>,
 }
@@ -744,9 +918,12 @@ impl GalleryApplicationVersion {
         }
     }
 }
+#[doc = "The List Gallery Application version operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersionList {
+    #[doc = "A list of gallery Application Versions."]
     pub value: Vec<GalleryApplicationVersion>,
+    #[doc = "The uri to fetch the next page of gallery Application Versions. Call ListNext() with this to fetch the next page of gallery Application Versions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -755,12 +932,16 @@ impl GalleryApplicationVersionList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a gallery image version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersionProperties {
+    #[doc = "The publishing profile of a gallery image version."]
     #[serde(rename = "publishingProfile")]
     pub publishing_profile: GalleryApplicationVersionPublishingProfile,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<gallery_application_version_properties::ProvisioningState>,
+    #[doc = "This is the replication status of the gallery image version."]
     #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<ReplicationStatus>,
 }
@@ -775,6 +956,7 @@ impl GalleryApplicationVersionProperties {
 }
 pub mod gallery_application_version_properties {
     use super::*;
+    #[doc = "The provisioning state, which only appears in the response."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -785,13 +967,16 @@ pub mod gallery_application_version_properties {
         Migrating,
     }
 }
+#[doc = "The publishing profile of a gallery image version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersionPublishingProfile {
     #[serde(flatten)]
     pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
+    #[doc = "The source image from which the Image Version is going to be created."]
     pub source: UserArtifactSource,
     #[serde(rename = "manageActions", default, skip_serializing_if = "Option::is_none")]
     pub manage_actions: Option<UserArtifactManage>,
+    #[doc = "Optional. Whether or not this application reports health."]
     #[serde(rename = "enableHealthCheck", default, skip_serializing_if = "Option::is_none")]
     pub enable_health_check: Option<bool>,
 }
@@ -805,10 +990,12 @@ impl GalleryApplicationVersionPublishingProfile {
         }
     }
 }
+#[doc = "Specifies information about the gallery Application Version that you want to update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryApplicationVersionUpdate {
     #[serde(flatten)]
     pub update_resource_definition: UpdateResourceDefinition,
+    #[doc = "Describes the properties of a gallery image version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationVersionProperties>,
 }
@@ -817,18 +1004,25 @@ impl GalleryApplicationVersionUpdate {
         Self::default()
     }
 }
+#[doc = "Describes the basic gallery artifact publishing profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryArtifactPublishingProfileBase {
+    #[doc = "The target regions where the Image Version is going to be replicated to. This property is updatable."]
     #[serde(rename = "targetRegions", default, skip_serializing_if = "Vec::is_empty")]
     pub target_regions: Vec<TargetRegion>,
+    #[doc = "The number of replicas of the Image Version to be created per region. This property would take effect for a region when regionalReplicaCount is not specified. This property is updatable."]
     #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
     pub replica_count: Option<i32>,
+    #[doc = "If set to true, Virtual Machines deployed from the latest version of the Image Definition won't use this Image Version."]
     #[serde(rename = "excludeFromLatest", default, skip_serializing_if = "Option::is_none")]
     pub exclude_from_latest: Option<bool>,
+    #[doc = "The timestamp for when the gallery image version is published."]
     #[serde(rename = "publishedDate", default, skip_serializing_if = "Option::is_none")]
     pub published_date: Option<String>,
+    #[doc = "The end of life date of the gallery image version. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_life_date: Option<String>,
+    #[doc = "Specifies the storage account type to be used to store the image. This property is not updatable."]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<gallery_artifact_publishing_profile_base::StorageAccountType>,
 }
@@ -839,6 +1033,7 @@ impl GalleryArtifactPublishingProfileBase {
 }
 pub mod gallery_artifact_publishing_profile_base {
     use super::*;
+    #[doc = "Specifies the storage account type to be used to store the image. This property is not updatable."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageAccountType {
         #[serde(rename = "Standard_LRS")]
@@ -849,8 +1044,10 @@ pub mod gallery_artifact_publishing_profile_base {
         PremiumLrs,
     }
 }
+#[doc = "The source image from which the Image Version is going to be created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryArtifactSource {
+    #[doc = "The managed artifact."]
     #[serde(rename = "managedImage")]
     pub managed_image: ManagedArtifact,
 }
@@ -859,10 +1056,13 @@ impl GalleryArtifactSource {
         Self { managed_image }
     }
 }
+#[doc = "The gallery artifact version source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryArtifactVersionSource {
+    #[doc = "The id of the gallery artifact version source. Can specify a disk uri, snapshot uri, user image or storage account resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The uri of the gallery artifact version source. Currently used to specify vhd/blob source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
@@ -871,10 +1071,12 @@ impl GalleryArtifactVersionSource {
         Self::default()
     }
 }
+#[doc = "This is the data disk image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryDataDiskImage {
     #[serde(flatten)]
     pub gallery_disk_image: GalleryDiskImage,
+    #[doc = "This property specifies the logical unit number of the data disk. This value is used to identify data disks within the Virtual Machine and therefore must be unique for each data disk attached to the Virtual Machine."]
     pub lun: i32,
 }
 impl GalleryDataDiskImage {
@@ -885,12 +1087,16 @@ impl GalleryDataDiskImage {
         }
     }
 }
+#[doc = "This is the disk image base class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryDiskImage {
+    #[doc = "This property indicates the size of the VHD to be created."]
     #[serde(rename = "sizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub size_in_gb: Option<i32>,
+    #[doc = "The host caching of the disk. Valid values are 'None', 'ReadOnly', and 'ReadWrite'"]
     #[serde(rename = "hostCaching", default, skip_serializing_if = "Option::is_none")]
     pub host_caching: Option<gallery_disk_image::HostCaching>,
+    #[doc = "The gallery artifact version source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<GalleryArtifactVersionSource>,
 }
@@ -901,6 +1107,7 @@ impl GalleryDiskImage {
 }
 pub mod gallery_disk_image {
     use super::*;
+    #[doc = "The host caching of the disk. Valid values are 'None', 'ReadOnly', and 'ReadWrite'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HostCaching {
         None,
@@ -908,8 +1115,10 @@ pub mod gallery_disk_image {
         ReadWrite,
     }
 }
+#[doc = "Describes the gallery unique name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryIdentifier {
+    #[doc = "The unique name of the Shared Image Gallery. This name is generated automatically by Azure."]
     #[serde(rename = "uniqueName", default, skip_serializing_if = "Option::is_none")]
     pub unique_name: Option<String>,
 }
@@ -918,10 +1127,12 @@ impl GalleryIdentifier {
         Self::default()
     }
 }
+#[doc = "Specifies information about the gallery image definition that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImage {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a gallery image definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageProperties>,
 }
@@ -933,10 +1144,13 @@ impl GalleryImage {
         }
     }
 }
+#[doc = "A feature for gallery image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageFeature {
+    #[doc = "The name of the gallery image feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The value of the gallery image feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -945,10 +1159,14 @@ impl GalleryImageFeature {
         Self::default()
     }
 }
+#[doc = "This is the gallery image definition identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageIdentifier {
+    #[doc = "The name of the gallery image definition publisher."]
     pub publisher: String,
+    #[doc = "The name of the gallery image definition offer."]
     pub offer: String,
+    #[doc = "The name of the gallery image definition SKU."]
     pub sku: String,
 }
 impl GalleryImageIdentifier {
@@ -956,9 +1174,12 @@ impl GalleryImageIdentifier {
         Self { publisher, offer, sku }
     }
 }
+#[doc = "The List Gallery Images operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageList {
+    #[doc = "A list of Shared Image Gallery images."]
     pub value: Vec<GalleryImage>,
+    #[doc = "The uri to fetch the next page of Image Definitions in the Shared Image Gallery. Call ListNext() with this to fetch the next page of gallery image definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -967,33 +1188,48 @@ impl GalleryImageList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a gallery image definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageProperties {
+    #[doc = "The description of this gallery image definition resource. This property is updatable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The Eula agreement for the gallery image definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub eula: Option<String>,
+    #[doc = "The privacy statement uri."]
     #[serde(rename = "privacyStatementUri", default, skip_serializing_if = "Option::is_none")]
     pub privacy_statement_uri: Option<String>,
+    #[doc = "The release note uri."]
     #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
     pub release_note_uri: Option<String>,
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk when creating a VM from a managed image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "osType")]
     pub os_type: gallery_image_properties::OsType,
+    #[doc = "This property allows the user to specify whether the virtual machines created under this image are 'Generalized' or 'Specialized'."]
     #[serde(rename = "osState")]
     pub os_state: gallery_image_properties::OsState,
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<gallery_image_properties::HyperVGeneration>,
+    #[doc = "A list of gallery image features."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<GalleryImageFeature>,
+    #[doc = "The end of life date of the gallery image definition. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_life_date: Option<String>,
+    #[doc = "This is the gallery image definition identifier."]
     pub identifier: GalleryImageIdentifier,
+    #[doc = "The properties describe the recommended machine configuration for this Image Definition. These properties are updatable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommended: Option<RecommendedMachineConfiguration>,
+    #[doc = "Describes the disallowed disk types."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disallowed: Option<Disallowed>,
+    #[doc = "Describes the gallery image definition purchase plan. This is used by marketplace images."]
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<ImagePurchasePlan>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<gallery_image_properties::ProvisioningState>,
 }
@@ -1023,21 +1259,25 @@ impl GalleryImageProperties {
 }
 pub mod gallery_image_properties {
     use super::*;
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk when creating a VM from a managed image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
+    #[doc = "This property allows the user to specify whether the virtual machines created under this image are 'Generalized' or 'Specialized'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsState {
         Generalized,
         Specialized,
     }
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HyperVGeneration {
         V1,
         V2,
     }
+    #[doc = "The provisioning state, which only appears in the response."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1048,10 +1288,12 @@ pub mod gallery_image_properties {
         Migrating,
     }
 }
+#[doc = "Specifies information about the gallery image definition that you want to update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageUpdate {
     #[serde(flatten)]
     pub update_resource_definition: UpdateResourceDefinition,
+    #[doc = "Describes the properties of a gallery image definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageProperties>,
 }
@@ -1060,10 +1302,12 @@ impl GalleryImageUpdate {
         Self::default()
     }
 }
+#[doc = "Specifies information about the gallery image version that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageVersion {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a gallery image version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageVersionProperties>,
 }
@@ -1075,9 +1319,12 @@ impl GalleryImageVersion {
         }
     }
 }
+#[doc = "The List Gallery Image version operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageVersionList {
+    #[doc = "A list of gallery image versions."]
     pub value: Vec<GalleryImageVersion>,
+    #[doc = "The uri to fetch the next page of gallery image versions. Call ListNext() with this to fetch the next page of gallery image versions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1086,14 +1333,19 @@ impl GalleryImageVersionList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a gallery image version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageVersionProperties {
+    #[doc = "The publishing profile of a gallery image Version."]
     #[serde(rename = "publishingProfile", default, skip_serializing_if = "Option::is_none")]
     pub publishing_profile: Option<GalleryImageVersionPublishingProfile>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<gallery_image_version_properties::ProvisioningState>,
+    #[doc = "This is the storage profile of a Gallery Image Version."]
     #[serde(rename = "storageProfile")]
     pub storage_profile: GalleryImageVersionStorageProfile,
+    #[doc = "This is the replication status of the gallery image version."]
     #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<ReplicationStatus>,
 }
@@ -1109,6 +1361,7 @@ impl GalleryImageVersionProperties {
 }
 pub mod gallery_image_version_properties {
     use super::*;
+    #[doc = "The provisioning state, which only appears in the response."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1119,6 +1372,7 @@ pub mod gallery_image_version_properties {
         Migrating,
     }
 }
+#[doc = "The publishing profile of a gallery image Version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageVersionPublishingProfile {
     #[serde(flatten)]
@@ -1129,12 +1383,16 @@ impl GalleryImageVersionPublishingProfile {
         Self::default()
     }
 }
+#[doc = "This is the storage profile of a Gallery Image Version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageVersionStorageProfile {
+    #[doc = "The gallery artifact version source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<GalleryArtifactVersionSource>,
+    #[doc = "This is the OS disk image."]
     #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_image: Option<GalleryOsDiskImage>,
+    #[doc = "A list of data disk images."]
     #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disk_images: Vec<GalleryDataDiskImage>,
 }
@@ -1143,10 +1401,12 @@ impl GalleryImageVersionStorageProfile {
         Self::default()
     }
 }
+#[doc = "Specifies information about the gallery image version that you want to update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageVersionUpdate {
     #[serde(flatten)]
     pub update_resource_definition: UpdateResourceDefinition,
+    #[doc = "Describes the properties of a gallery image version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageVersionProperties>,
 }
@@ -1155,9 +1415,12 @@ impl GalleryImageVersionUpdate {
         Self::default()
     }
 }
+#[doc = "The List Galleries operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryList {
+    #[doc = "A list of galleries."]
     pub value: Vec<Gallery>,
+    #[doc = "The uri to fetch the next page of galleries. Call ListNext() with this to fetch the next page of galleries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1166,6 +1429,7 @@ impl GalleryList {
         Self { value, next_link: None }
     }
 }
+#[doc = "This is the OS disk image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryOsDiskImage {
     #[serde(flatten)]
@@ -1176,14 +1440,19 @@ impl GalleryOsDiskImage {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Shared Image Gallery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryProperties {
+    #[doc = "The description of this Shared Image Gallery resource. This property is updatable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Describes the gallery unique name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<GalleryIdentifier>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<gallery_properties::ProvisioningState>,
+    #[doc = "Profile for gallery sharing to subscription or tenant"]
     #[serde(rename = "sharingProfile", default, skip_serializing_if = "Option::is_none")]
     pub sharing_profile: Option<SharingProfile>,
 }
@@ -1194,6 +1463,7 @@ impl GalleryProperties {
 }
 pub mod gallery_properties {
     use super::*;
+    #[doc = "The provisioning state, which only appears in the response."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1204,10 +1474,12 @@ pub mod gallery_properties {
         Migrating,
     }
 }
+#[doc = "Specifies information about the Shared Image Gallery that you want to update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryUpdate {
     #[serde(flatten)]
     pub update_resource_definition: UpdateResourceDefinition,
+    #[doc = "Describes the properties of a Shared Image Gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryProperties>,
 }
@@ -1216,9 +1488,11 @@ impl GalleryUpdate {
         Self::default()
     }
 }
+#[doc = "Data used for requesting a SAS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GrantAccessData {
     pub access: grant_access_data::Access,
+    #[doc = "Time duration in seconds until the SAS access expires."]
     #[serde(rename = "durationInSeconds")]
     pub duration_in_seconds: i32,
 }
@@ -1239,9 +1513,12 @@ pub mod grant_access_data {
         Write,
     }
 }
+#[doc = "The source image used for creating the disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageDiskReference {
+    #[doc = "A relative uri containing either a Platform Image Repository or user image reference."]
     pub id: String,
+    #[doc = "If the disk is created from an image's data disk, this is an index that indicates which of the data disks in the image to use. For OS disks, this field is null."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
@@ -1250,12 +1527,16 @@ impl ImageDiskReference {
         Self { id, lun: None }
     }
 }
+#[doc = "Describes the gallery image definition purchase plan. This is used by marketplace images."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImagePurchasePlan {
+    #[doc = "The plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The publisher ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "The product ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
 }
@@ -1264,10 +1545,13 @@ impl ImagePurchasePlan {
         Self::default()
     }
 }
+#[doc = "Inner error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "The exception type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exceptiontype: Option<String>,
+    #[doc = "The internal error message or exception dump."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errordetail: Option<String>,
 }
@@ -1276,10 +1560,13 @@ impl InnerError {
         Self::default()
     }
 }
+#[doc = "Key Vault Key Url to be used for server side encryption of Managed Disks and Snapshots"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyForDiskEncryptionSet {
+    #[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
     #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
     pub source_vault: Option<SourceVault>,
+    #[doc = "Fully versioned Key Url pointing to a key in KeyVault"]
     #[serde(rename = "keyUrl")]
     pub key_url: String,
 }
@@ -1291,10 +1578,13 @@ impl KeyForDiskEncryptionSet {
         }
     }
 }
+#[doc = "Key Vault Key Url and vault id of KeK, KeK is optional and when provided is used to unwrap the encryptionKey"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultAndKeyReference {
+    #[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
     #[serde(rename = "sourceVault")]
     pub source_vault: SourceVault,
+    #[doc = "Url pointing to a key or secret in KeyVault"]
     #[serde(rename = "keyUrl")]
     pub key_url: String,
 }
@@ -1303,10 +1593,13 @@ impl KeyVaultAndKeyReference {
         Self { source_vault, key_url }
     }
 }
+#[doc = "Key Vault Secret Url and vault id of the encryption key "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultAndSecretReference {
+    #[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
     #[serde(rename = "sourceVault")]
     pub source_vault: SourceVault,
+    #[doc = "Url pointing to a key or secret in KeyVault"]
     #[serde(rename = "secretUrl")]
     pub secret_url: String,
 }
@@ -1315,8 +1608,10 @@ impl KeyVaultAndSecretReference {
         Self { source_vault, secret_url }
     }
 }
+#[doc = "The managed artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedArtifact {
+    #[doc = "The managed artifact id."]
     pub id: String,
 }
 impl ManagedArtifact {
@@ -1324,12 +1619,14 @@ impl ManagedArtifact {
         Self { id }
     }
 }
+#[doc = "Policy for accessing the disk via network."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NetworkAccessPolicy {
     AllowAll,
     AllowPrivate,
     DenyAll,
 }
+#[doc = "Contains encryption settings for an OS disk image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsDiskImageEncryption {
     #[serde(flatten)]
@@ -1340,10 +1637,13 @@ impl OsDiskImageEncryption {
         Self::default()
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PirResource {
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -1352,10 +1652,12 @@ impl PirResource {
         Self::default()
     }
 }
+#[doc = "Base information about the shared gallery resource in pir."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PirSharedGalleryResource {
     #[serde(flatten)]
     pub pir_resource: PirResource,
+    #[doc = "The identifier information of shared gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<SharedGalleryIdentifier>,
 }
@@ -1364,8 +1666,10 @@ impl PirSharedGalleryResource {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1374,14 +1678,19 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "The Private Endpoint Connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[doc = "Properties of the PrivateEndpointConnectProperties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+    #[doc = "private endpoint connection Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "private endpoint connection name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "private endpoint connection type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1390,10 +1699,13 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+    #[doc = "The uri to fetch the next page of snapshots. Call ListNext() with this to fetch the next page of snapshots."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1402,12 +1714,16 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the PrivateEndpointConnectProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The Private Endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
@@ -1420,6 +1736,7 @@ impl PrivateEndpointConnectionProperties {
         }
     }
 }
+#[doc = "The current provisioning state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
     Succeeded,
@@ -1427,20 +1744,26 @@ pub enum PrivateEndpointConnectionProvisioningState {
     Deleting,
     Failed,
 }
+#[doc = "The private endpoint connection status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
     Pending,
     Approved,
     Rejected,
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
+    #[doc = "private link resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "private link resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "private link resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1449,8 +1772,10 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
@@ -1459,12 +1784,16 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "The private link resource DNS zone name."]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
@@ -1473,12 +1802,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -1487,12 +1820,16 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "The ProxyOnly Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1501,11 +1838,16 @@ impl ProxyOnlyResource {
         Self::default()
     }
 }
+#[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PurchasePlan {
+    #[doc = "The plan ID."]
     pub name: String,
+    #[doc = "The publisher ID."]
     pub publisher: String,
+    #[doc = "Specifies the product of the image from the marketplace. This is the same value as Offer under the imageReference element."]
     pub product: String,
+    #[doc = "The Offer Promotion Code."]
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
 }
@@ -1519,10 +1861,13 @@ impl PurchasePlan {
         }
     }
 }
+#[doc = "The properties describe the recommended machine configuration for this Image Definition. These properties are updatable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedMachineConfiguration {
+    #[doc = "Describes the resource range."]
     #[serde(rename = "vCPUs", default, skip_serializing_if = "Option::is_none")]
     pub v_cp_us: Option<ResourceRange>,
+    #[doc = "Describes the resource range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<ResourceRange>,
 }
@@ -1531,14 +1876,19 @@ impl RecommendedMachineConfiguration {
         Self::default()
     }
 }
+#[doc = "This is the regional replication status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegionalReplicationStatus {
+    #[doc = "The region to which the gallery image version is being replicated to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+    #[doc = "This is the regional replication state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regional_replication_status::State>,
+    #[doc = "The details of the replication status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
+    #[doc = "It indicates progress of the replication job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<i32>,
 }
@@ -1549,6 +1899,7 @@ impl RegionalReplicationStatus {
 }
 pub mod regional_replication_status {
     use super::*;
+    #[doc = "This is the regional replication state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Unknown,
@@ -1557,10 +1908,13 @@ pub mod regional_replication_status {
         Failed,
     }
 }
+#[doc = "This is the replication status of the gallery image version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationStatus {
+    #[doc = "This is the aggregated replication status based on all the regional replication status flags."]
     #[serde(rename = "aggregatedState", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_state: Option<replication_status::AggregatedState>,
+    #[doc = "This is a summary of replication status for each region."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub summary: Vec<RegionalReplicationStatus>,
 }
@@ -1571,6 +1925,7 @@ impl ReplicationStatus {
 }
 pub mod replication_status {
     use super::*;
+    #[doc = "This is the aggregated replication status based on all the regional replication status flags."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AggregatedState {
         Unknown,
@@ -1579,15 +1934,21 @@ pub mod replication_status {
         Failed,
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1602,10 +1963,13 @@ impl Resource {
         }
     }
 }
+#[doc = "Describes the resource range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceRange {
+    #[doc = "The minimum number of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min: Option<i32>,
+    #[doc = "The maximum number of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<i32>,
 }
@@ -1614,9 +1978,12 @@ impl ResourceRange {
         Self::default()
     }
 }
+#[doc = "The List resources which are encrypted with the disk encryption set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceUriList {
+    #[doc = "A list of IDs or Owner IDs of resources which are encrypted with the disk encryption set."]
     pub value: Vec<String>,
+    #[doc = "The uri to fetch the next page of encrypted resources. Call ListNext() with this to fetch the next page of encrypted resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1627,6 +1994,7 @@ impl ResourceUriList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareInfoElement {
+    #[doc = "A relative URI containing the ID of the VM that has the disk attached."]
     #[serde(rename = "vmUri", default, skip_serializing_if = "Option::is_none")]
     pub vm_uri: Option<String>,
 }
@@ -1635,6 +2003,7 @@ impl ShareInfoElement {
         Self::default()
     }
 }
+#[doc = "Specifies information about the Shared Gallery that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGallery {
     #[serde(flatten)]
@@ -1645,8 +2014,10 @@ impl SharedGallery {
         Self::default()
     }
 }
+#[doc = "The identifier information of shared gallery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryIdentifier {
+    #[doc = "The unique id of this shared gallery."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
 }
@@ -1655,10 +2026,12 @@ impl SharedGalleryIdentifier {
         Self::default()
     }
 }
+#[doc = "Specifies information about the gallery image definition that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryImage {
     #[serde(flatten)]
     pub pir_shared_gallery_resource: PirSharedGalleryResource,
+    #[doc = "Describes the properties of a gallery image definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedGalleryImageProperties>,
 }
@@ -1667,9 +2040,12 @@ impl SharedGalleryImage {
         Self::default()
     }
 }
+#[doc = "The List Shared Gallery Images operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageList {
+    #[doc = "A list of shared gallery images."]
     pub value: Vec<SharedGalleryImage>,
+    #[doc = "The uri to fetch the next page of shared gallery images. Call ListNext() with this to fetch the next page of shared gallery images."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1678,23 +2054,33 @@ impl SharedGalleryImageList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a gallery image definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageProperties {
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk when creating a VM from a managed image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "osType")]
     pub os_type: shared_gallery_image_properties::OsType,
+    #[doc = "This property allows the user to specify whether the virtual machines created under this image are 'Generalized' or 'Specialized'."]
     #[serde(rename = "osState")]
     pub os_state: shared_gallery_image_properties::OsState,
+    #[doc = "The end of life date of the gallery image definition. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_life_date: Option<String>,
+    #[doc = "This is the gallery image definition identifier."]
     pub identifier: GalleryImageIdentifier,
+    #[doc = "The properties describe the recommended machine configuration for this Image Definition. These properties are updatable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommended: Option<RecommendedMachineConfiguration>,
+    #[doc = "Describes the disallowed disk types."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disallowed: Option<Disallowed>,
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<shared_gallery_image_properties::HyperVGeneration>,
+    #[doc = "A list of gallery image features."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<GalleryImageFeature>,
+    #[doc = "Describes the gallery image definition purchase plan. This is used by marketplace images."]
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<ImagePurchasePlan>,
 }
@@ -1719,26 +2105,31 @@ impl SharedGalleryImageProperties {
 }
 pub mod shared_gallery_image_properties {
     use super::*;
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk when creating a VM from a managed image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
+    #[doc = "This property allows the user to specify whether the virtual machines created under this image are 'Generalized' or 'Specialized'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsState {
         Generalized,
         Specialized,
     }
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HyperVGeneration {
         V1,
         V2,
     }
 }
+#[doc = "Specifies information about the gallery image version that you want to create or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryImageVersion {
     #[serde(flatten)]
     pub pir_shared_gallery_resource: PirSharedGalleryResource,
+    #[doc = "Describes the properties of a gallery image version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedGalleryImageVersionProperties>,
 }
@@ -1747,9 +2138,12 @@ impl SharedGalleryImageVersion {
         Self::default()
     }
 }
+#[doc = "The List Shared Gallery Image versions operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageVersionList {
+    #[doc = "A list of shared gallery images versions."]
     pub value: Vec<SharedGalleryImageVersion>,
+    #[doc = "The uri to fetch the next page of shared gallery image versions. Call ListNext() with this to fetch the next page of shared gallery image versions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1758,10 +2152,13 @@ impl SharedGalleryImageVersionList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a gallery image version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryImageVersionProperties {
+    #[doc = "The published date of the gallery image version Definition. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "publishedDate", default, skip_serializing_if = "Option::is_none")]
     pub published_date: Option<String>,
+    #[doc = "The end of life date of the gallery image version Definition. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_life_date: Option<String>,
 }
@@ -1770,9 +2167,12 @@ impl SharedGalleryImageVersionProperties {
         Self::default()
     }
 }
+#[doc = "The List Shared Galleries operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryList {
+    #[doc = "A list of shared galleries."]
     pub value: Vec<SharedGallery>,
+    #[doc = "The uri to fetch the next page of shared galleries. Call ListNext() with this to fetch the next page of shared galleries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1781,10 +2181,13 @@ impl SharedGalleryList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Profile for gallery sharing to subscription or tenant"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharingProfile {
+    #[doc = "This property allows you to specify the permission of sharing gallery. <br><br> Possible values are: <br><br> **Private** <br><br> **Groups**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<sharing_profile::Permissions>,
+    #[doc = "A list of sharing profile groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<SharingProfileGroup>,
 }
@@ -1795,16 +2198,20 @@ impl SharingProfile {
 }
 pub mod sharing_profile {
     use super::*;
+    #[doc = "This property allows you to specify the permission of sharing gallery. <br><br> Possible values are: <br><br> **Private** <br><br> **Groups**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
         Private,
         Groups,
     }
 }
+#[doc = "Group of the gallery sharing profile"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharingProfileGroup {
+    #[doc = "This property allows you to specify the type of sharing group. <br><br> Possible values are: <br><br> **Subscriptions** <br><br> **AADTenants**"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sharing_profile_group::Type>,
+    #[doc = "A list of subscription/tenant ids the gallery is aimed to be shared to."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ids: Vec<String>,
 }
@@ -1815,6 +2222,7 @@ impl SharingProfileGroup {
 }
 pub mod sharing_profile_group {
     use super::*;
+    #[doc = "This property allows you to specify the type of sharing group. <br><br> Possible values are: <br><br> **Subscriptions** <br><br> **AADTenants**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Subscriptions,
@@ -1822,10 +2230,13 @@ pub mod sharing_profile_group {
         AadTenants,
     }
 }
+#[doc = "Specifies information about the gallery sharing profile update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharingUpdate {
+    #[doc = "This property allows you to specify the operation type of gallery sharing update. <br><br> Possible values are: <br><br> **Add** <br><br> **Remove** <br><br> **Reset**"]
     #[serde(rename = "operationType")]
     pub operation_type: sharing_update::OperationType,
+    #[doc = "A list of sharing profile groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<SharingProfileGroup>,
 }
@@ -1839,6 +2250,7 @@ impl SharingUpdate {
 }
 pub mod sharing_update {
     use super::*;
+    #[doc = "This property allows you to specify the operation type of gallery sharing update. <br><br> Possible values are: <br><br> **Add** <br><br> **Remove** <br><br> **Reset**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationType {
         Add,
@@ -1846,16 +2258,21 @@ pub mod sharing_update {
         Reset,
     }
 }
+#[doc = "Snapshot resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Unused. Always Null."]
     #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
     pub managed_by: Option<String>,
+    #[doc = "The snapshots sku name. Can be Standard_LRS, Premium_LRS, or Standard_ZRS. This is an optional parameter for incremental snapshot and the default behavior is the SKU will be set to the same sku as the previous snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<SnapshotSku>,
+    #[doc = "The complex type of the extended location."]
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[doc = "Snapshot resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotProperties>,
 }
@@ -1870,9 +2287,12 @@ impl Snapshot {
         }
     }
 }
+#[doc = "The List Snapshots operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotList {
+    #[doc = "A list of snapshots."]
     pub value: Vec<Snapshot>,
+    #[doc = "The uri to fetch the next page of snapshots. Call ListNext() with this to fetch the next page of snapshots."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1881,36 +2301,52 @@ impl SnapshotList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Snapshot resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
+    #[doc = "The time when the snapshot was created."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "The Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<snapshot_properties::OsType>,
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<snapshot_properties::HyperVGeneration>,
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<PurchasePlan>,
+    #[doc = "Data used when creating a disk."]
     #[serde(rename = "creationData")]
     pub creation_data: CreationData,
+    #[doc = "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the disk to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "The size of the disk in bytes. This field is read only."]
     #[serde(rename = "diskSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_bytes: Option<i64>,
+    #[doc = "This enumerates the possible state of the disk."]
     #[serde(rename = "diskState", default, skip_serializing_if = "Option::is_none")]
     pub disk_state: Option<DiskState>,
+    #[doc = "Unique Guid identifying the resource."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
+    #[doc = "Encryption settings for disk or snapshot"]
     #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
+    #[doc = "The disk provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Whether a snapshot is incremental. Incremental snapshots on the same disk occupy less space than full snapshots and can be diffed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
+    #[doc = "Encryption at rest settings for disk or snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "Policy for accessing the disk via network."]
     #[serde(rename = "networkAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub network_access_policy: Option<NetworkAccessPolicy>,
+    #[doc = "ARM id of the DiskAccess resource for using private endpoints on disks."]
     #[serde(rename = "diskAccessId", default, skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
 }
@@ -1937,21 +2373,26 @@ impl SnapshotProperties {
 }
 pub mod snapshot_properties {
     use super::*;
+    #[doc = "The Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
+    #[doc = "The hypervisor generation of the Virtual Machine. Applicable to OS disks only."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HyperVGeneration {
         V1,
         V2,
     }
 }
+#[doc = "The snapshots sku name. Can be Standard_LRS, Premium_LRS, or Standard_ZRS. This is an optional parameter for incremental snapshot and the default behavior is the SKU will be set to the same sku as the previous snapshot"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotSku {
+    #[doc = "The sku name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<snapshot_sku::Name>,
+    #[doc = "The sku tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
@@ -1962,6 +2403,7 @@ impl SnapshotSku {
 }
 pub mod snapshot_sku {
     use super::*;
+    #[doc = "The sku name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "Standard_LRS")]
@@ -1972,12 +2414,16 @@ pub mod snapshot_sku {
         StandardZrs,
     }
 }
+#[doc = "Snapshot update resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdate {
+    #[doc = "Snapshot resource update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotUpdateProperties>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The snapshots sku name. Can be Standard_LRS, Premium_LRS, or Standard_ZRS. This is an optional parameter for incremental snapshot and the default behavior is the SKU will be set to the same sku as the previous snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<SnapshotSku>,
 }
@@ -1986,18 +2432,25 @@ impl SnapshotUpdate {
         Self::default()
     }
 }
+#[doc = "Snapshot resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdateProperties {
+    #[doc = "the Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<snapshot_update_properties::OsType>,
+    #[doc = "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the disk to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Encryption settings for disk or snapshot"]
     #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
+    #[doc = "Encryption at rest settings for disk or snapshot"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "Policy for accessing the disk via network."]
     #[serde(rename = "networkAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub network_access_policy: Option<NetworkAccessPolicy>,
+    #[doc = "ARM id of the DiskAccess resource for using private endpoints on disks."]
     #[serde(rename = "diskAccessId", default, skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
 }
@@ -2008,14 +2461,17 @@ impl SnapshotUpdateProperties {
 }
 pub mod snapshot_update_properties {
     use super::*;
+    #[doc = "the Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceVault {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -2024,13 +2480,18 @@ impl SourceVault {
         Self::default()
     }
 }
+#[doc = "Describes the target region information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetRegion {
+    #[doc = "The name of the region."]
     pub name: String,
+    #[doc = "The number of replicas of the Image Version to be created per region. This property is updatable."]
     #[serde(rename = "regionalReplicaCount", default, skip_serializing_if = "Option::is_none")]
     pub regional_replica_count: Option<i32>,
+    #[doc = "Specifies the storage account type to be used to store the image. This property is not updatable."]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<target_region::StorageAccountType>,
+    #[doc = "Optional. Allows users to provide customer managed keys for encrypting the OS and data disks in the gallery artifact."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<EncryptionImages>,
 }
@@ -2046,6 +2507,7 @@ impl TargetRegion {
 }
 pub mod target_region {
     use super::*;
+    #[doc = "Specifies the storage account type to be used to store the image. This property is not updatable."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageAccountType {
         #[serde(rename = "Standard_LRS")]
@@ -2056,14 +2518,19 @@ pub mod target_region {
         PremiumLrs,
     }
 }
+#[doc = "The Update Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateResourceDefinition {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -2074,8 +2541,11 @@ impl UpdateResourceDefinition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserArtifactManage {
+    #[doc = "Required. The path and arguments to install the gallery application. This is limited to 4096 characters."]
     pub install: String,
+    #[doc = "Required. The path and arguments to remove the gallery application. This is limited to 4096 characters."]
     pub remove: String,
+    #[doc = "Optional. The path and arguments to update the gallery application. If not present, then update operation will invoke remove command on the previous version and install command on the current version of the gallery application. This is limited to 4096 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub update: Option<String>,
 }
@@ -2088,10 +2558,13 @@ impl UserArtifactManage {
         }
     }
 }
+#[doc = "The source image from which the Image Version is going to be created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserArtifactSource {
+    #[doc = "Required. The mediaLink of the artifact, must be a readable storage page blob."]
     #[serde(rename = "mediaLink")]
     pub media_link: String,
+    #[doc = "Optional. The defaultConfigurationLink of the artifact, must be a readable storage page blob."]
     #[serde(rename = "defaultConfigurationLink", default, skip_serializing_if = "Option::is_none")]
     pub default_configuration_link: Option<String>,
 }

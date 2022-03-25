@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Azure Monitor PrivateLinkScope definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScope {
     #[serde(flatten)]
     pub private_link_scopes_resource: PrivateLinkScopesResource,
+    #[doc = "Properties that define a Azure Monitor PrivateLinkScope resource."]
     pub properties: AzureMonitorPrivateLinkScopeProperties,
 }
 impl AzureMonitorPrivateLinkScope {
@@ -16,9 +18,12 @@ impl AzureMonitorPrivateLinkScope {
         }
     }
 }
+#[doc = "Describes the list of Azure Monitor PrivateLinkScope resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScopeListResult {
+    #[doc = "List of Azure Monitor PrivateLinkScope definitions."]
     pub value: Vec<AzureMonitorPrivateLinkScope>,
+    #[doc = "The URI to get the next set of Azure Monitor PrivateLinkScope definitions if too many PrivateLinkScopes where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -27,10 +32,13 @@ impl AzureMonitorPrivateLinkScopeListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Properties that define a Azure Monitor PrivateLinkScope resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMonitorPrivateLinkScopeProperties {
+    #[doc = "Current state of this PrivateLinkScope: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Provisioning ,Succeeded, Canceled and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "List of private endpoint connections."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
@@ -39,10 +47,13 @@ impl AzureMonitorPrivateLinkScopeProperties {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -51,10 +62,13 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -63,12 +77,15 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The resource management error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseCommon {
     #[serde(flatten)]
     pub error_response: ErrorResponse,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseCommon>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -77,18 +94,25 @@ impl ErrorResponseCommon {
         Self::default()
     }
 }
+#[doc = "The status of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
+    #[doc = "The operation Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Start time of the job in standard ISO8601 format."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time of the job in standard ISO8601 format."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The status of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseCommon>,
 }
@@ -97,10 +121,12 @@ impl OperationStatus {
         Self::default()
     }
 }
+#[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -109,10 +135,13 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "A list of private endpoint connections."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -121,12 +150,16 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "Private endpoint which the connection belongs to."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpointProperty>,
+    #[doc = "State of the private endpoint connection."]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionStateProperty>,
+    #[doc = "State of the private endpoint connection."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -135,8 +168,10 @@ impl PrivateEndpointConnectionProperties {
         Self::default()
     }
 }
+#[doc = "Private endpoint which the connection belongs to."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointProperty {
+    #[doc = "Resource id of the private endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -145,10 +180,12 @@ impl PrivateEndpointProperty {
         Self::default()
     }
 }
+#[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -157,10 +194,13 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -169,10 +209,13 @@ impl PrivateLinkResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "The private link resource group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "The private link resource required member names."]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
 }
@@ -181,15 +224,21 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkScopesResource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -204,10 +253,14 @@ impl PrivateLinkScopesResource {
         }
     }
 }
+#[doc = "State of the private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkServiceConnectionStateProperty {
+    #[doc = "The private link service connection status."]
     pub status: String,
+    #[doc = "The private link service connection description."]
     pub description: String,
+    #[doc = "The actions required for private link service connection."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -220,12 +273,16 @@ impl PrivateLinkServiceConnectionStateProperty {
         }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -234,10 +291,12 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "A private link scoped resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a private link scoped resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopedResourceProperties>,
 }
@@ -246,10 +305,13 @@ impl ScopedResource {
         Self::default()
     }
 }
+#[doc = "A list of scoped resources in a private link scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResourceListResult {
+    #[doc = "Array of results."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScopedResource>,
+    #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -258,10 +320,13 @@ impl ScopedResourceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of a private link scoped resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResourceProperties {
+    #[doc = "The resource id of the scoped Azure monitor resource."]
     #[serde(rename = "linkedResourceId", default, skip_serializing_if = "Option::is_none")]
     pub linked_resource_id: Option<String>,
+    #[doc = "State of the private endpoint connection."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -270,8 +335,10 @@ impl ScopedResourceProperties {
         Self::default()
     }
 }
+#[doc = "A container holding only the Tags for a resource, allowing the user to update the tags on a PrivateLinkScope instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

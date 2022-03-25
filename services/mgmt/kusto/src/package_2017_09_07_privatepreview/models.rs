@@ -4,10 +4,14 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCapacity {
+    #[doc = "Scale type."]
     #[serde(rename = "scaleType")]
     pub scale_type: azure_capacity::ScaleType,
+    #[doc = "Minimum allowed capacity."]
     pub minimum: i64,
+    #[doc = "Maximum allowed capacity."]
     pub maximum: i64,
+    #[doc = "The default capacity that would be used."]
     pub default: i64,
 }
 impl AzureCapacity {
@@ -22,6 +26,7 @@ impl AzureCapacity {
 }
 pub mod azure_capacity {
     use super::*;
+    #[doc = "Scale type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
         #[serde(rename = "automatic")]
@@ -34,6 +39,7 @@ pub mod azure_capacity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceSku {
+    #[doc = "Resource Namespace and Type."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -48,9 +54,12 @@ impl AzureResourceSku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSku {
+    #[doc = "SKU name."]
     pub name: azure_sku::Name,
+    #[doc = "SKU capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
+    #[doc = "SKU tier."]
     pub tier: azure_sku::Tier,
 }
 impl AzureSku {
@@ -64,6 +73,7 @@ impl AzureSku {
 }
 pub mod azure_sku {
     use super::*;
+    #[doc = "SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "KC8")]
@@ -81,6 +91,7 @@ pub mod azure_sku {
         L8,
         L16,
     }
+    #[doc = "SKU tier."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Standard,
@@ -88,10 +99,13 @@ pub mod azure_sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameResult {
+    #[doc = "Specifies a Boolean value that indicates if the name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The name that was checked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Message indicating an unavailable name due to a conflict, or a description of the naming rules that are violated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -100,8 +114,10 @@ impl CheckNameResult {
         Self::default()
     }
 }
+#[doc = "An error response from Kusto."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from Kusto."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -110,14 +126,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from Kusto."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for displaying in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -126,13 +147,16 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Class representing a Kusto cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Cluster {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "An ETag of the resource created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     pub sku: AzureSku,
+    #[doc = "Class representing the Kusto cluster properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterProperties>,
 }
@@ -148,7 +172,9 @@ impl Cluster {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterCheckNameRequest {
+    #[doc = "Cluster name."]
     pub name: String,
+    #[doc = "The type of resource, Microsoft.Kusto/clusters."]
     #[serde(rename = "type")]
     pub type_: cluster_check_name_request::Type,
 }
@@ -159,14 +185,17 @@ impl ClusterCheckNameRequest {
 }
 pub mod cluster_check_name_request {
     use super::*;
+    #[doc = "The type of resource, Microsoft.Kusto/clusters."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters")]
         MicrosoftKustoClusters,
     }
 }
+#[doc = "The list Kusto clusters operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterListResult {
+    #[doc = "The list of Kusto clusters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cluster>,
 }
@@ -175,16 +204,22 @@ impl ClusterListResult {
         Self::default()
     }
 }
+#[doc = "Class representing the Kusto cluster properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
+    #[doc = "The state of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<cluster_properties::State>,
+    #[doc = "The provisioned state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
+    #[doc = "The cluster URI."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "The cluster data ingestion URI."]
     #[serde(rename = "dataIngestionUri", default, skip_serializing_if = "Option::is_none")]
     pub data_ingestion_uri: Option<String>,
+    #[doc = "The cluster's external tenants."]
     #[serde(rename = "trustedExternalTenants", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_external_tenants: Vec<TrustedExternalTenant>,
 }
@@ -195,6 +230,7 @@ impl ClusterProperties {
 }
 pub mod cluster_properties {
     use super::*;
+    #[doc = "The state of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Creating,
@@ -206,6 +242,7 @@ pub mod cluster_properties {
         Stopped,
         Starting,
     }
+    #[doc = "The provisioned state of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Running,
@@ -215,18 +252,23 @@ pub mod cluster_properties {
         Failed,
     }
 }
+#[doc = "Class representing an update to a Kusto cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpdate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "An ETag of the resource updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<AzureSku>,
+    #[doc = "Class representing the Kusto cluster properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterProperties>,
 }
@@ -235,12 +277,15 @@ impl ClusterUpdate {
         Self::default()
     }
 }
+#[doc = "Class representing a Kusto database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Database {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "An ETag of the resource created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Class representing the Kusto database properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -255,7 +300,9 @@ impl Database {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseCheckNameRequest {
+    #[doc = "Database name."]
     pub name: String,
+    #[doc = "The type of resource, Microsoft.Kusto/clusters/databases."]
     #[serde(rename = "type")]
     pub type_: database_check_name_request::Type,
 }
@@ -266,14 +313,17 @@ impl DatabaseCheckNameRequest {
 }
 pub mod database_check_name_request {
     use super::*;
+    #[doc = "The type of resource, Microsoft.Kusto/clusters/databases."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Kusto/clusters/databases")]
         MicrosoftKustoClustersDatabases,
     }
 }
+#[doc = "The list Kusto databases operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseListResult {
+    #[doc = "The list of Kusto databases."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Database>,
 }
@@ -284,14 +334,20 @@ impl DatabaseListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabasePrincipal {
+    #[doc = "Database principal role."]
     pub role: database_principal::Role,
+    #[doc = "Database principal name."]
     pub name: String,
+    #[doc = "Database principal type."]
     #[serde(rename = "type")]
     pub type_: database_principal::Type,
+    #[doc = "Database principal fully qualified name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqn: Option<String>,
+    #[doc = "Database principal email if exists."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[doc = "Application id - relevant only for application principal type."]
     #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
 }
@@ -309,6 +365,7 @@ impl DatabasePrincipal {
 }
 pub mod database_principal {
     use super::*;
+    #[doc = "Database principal role."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
         Admin,
@@ -318,6 +375,7 @@ pub mod database_principal {
         UnrestrictedViewers,
         Viewer,
     }
+    #[doc = "Database principal type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         App,
@@ -325,8 +383,10 @@ pub mod database_principal {
         User,
     }
 }
+#[doc = "The list Kusto database principals operation request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabasePrincipalListRequest {
+    #[doc = "The list of Kusto database principals."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabasePrincipal>,
 }
@@ -335,8 +395,10 @@ impl DatabasePrincipalListRequest {
         Self::default()
     }
 }
+#[doc = "The list Kusto database principals operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabasePrincipalListResult {
+    #[doc = "The list of Kusto database principals."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabasePrincipal>,
 }
@@ -345,12 +407,16 @@ impl DatabasePrincipalListResult {
         Self::default()
     }
 }
+#[doc = "Class representing the Kusto database properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseProperties {
+    #[doc = "The provisioned state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<database_properties::ProvisioningState>,
+    #[doc = "The number of days data should be kept before it stops being accessible to queries."]
     #[serde(rename = "softDeletePeriodInDays")]
     pub soft_delete_period_in_days: i64,
+    #[doc = "The number of days of data that should be kept in cache for fast queries."]
     #[serde(rename = "hotCachePeriodInDays", default, skip_serializing_if = "Option::is_none")]
     pub hot_cache_period_in_days: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -368,6 +434,7 @@ impl DatabaseProperties {
 }
 pub mod database_properties {
     use super::*;
+    #[doc = "The provisioned state of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Running,
@@ -379,6 +446,7 @@ pub mod database_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseStatistics {
+    #[doc = "The database size - the total size of compressed data and index in bytes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<f64>,
 }
@@ -387,14 +455,18 @@ impl DatabaseStatistics {
         Self::default()
     }
 }
+#[doc = "Class representing an update to a Kusto database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseUpdate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "An ETag of the resource updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Class representing the Kusto database properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -403,12 +475,15 @@ impl DatabaseUpdate {
         Self::default()
     }
 }
+#[doc = "Class representing an event hub connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Class representing the Kusto event hub connection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubConnectionProperties>,
 }
@@ -417,8 +492,10 @@ impl EventHubConnection {
         Self::default()
     }
 }
+#[doc = "The list Kusto event hub connections operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnectionListResult {
+    #[doc = "The list of Kusto event hub connections."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventHubConnection>,
 }
@@ -427,16 +504,22 @@ impl EventHubConnectionListResult {
         Self::default()
     }
 }
+#[doc = "Class representing the Kusto event hub connection properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubConnectionProperties {
+    #[doc = "The resource ID of the event hub to be used to create a data connection."]
     #[serde(rename = "eventHubResourceId")]
     pub event_hub_resource_id: String,
+    #[doc = "The event hub consumer group."]
     #[serde(rename = "consumerGroup")]
     pub consumer_group: String,
+    #[doc = "The table where the data should be ingested. Optionally the table information can be added to each message."]
     #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<String>,
+    #[doc = "The mapping rule to be used to ingest the data. Optionally the mapping information can be added to each message."]
     #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
     pub mapping_rule_name: Option<String>,
+    #[doc = "The data format of the message. Optionally the data format can be added to each message."]
     #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
     pub data_format: Option<event_hub_connection_properties::DataFormat>,
 }
@@ -453,6 +536,7 @@ impl EventHubConnectionProperties {
 }
 pub mod event_hub_connection_properties {
     use super::*;
+    #[doc = "The data format of the message. Optionally the data format can be added to each message."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataFormat {
         #[serde(rename = "MULTIJSON")]
@@ -463,12 +547,15 @@ pub mod event_hub_connection_properties {
         Csv,
     }
 }
+#[doc = "Class representing an update to event hub connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnectionUpdate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Class representing the Kusto event hub connection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubConnectionProperties>,
 }
@@ -477,10 +564,13 @@ impl EventHubConnectionUpdate {
         Self::default()
     }
 }
+#[doc = "Class representing an event hub connection validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnectionValidation {
+    #[doc = "The name of the event hub connection."]
     #[serde(rename = "eventhubConnectionName", default, skip_serializing_if = "Option::is_none")]
     pub eventhub_connection_name: Option<String>,
+    #[doc = "Class representing the Kusto event hub connection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubConnectionProperties>,
 }
@@ -489,8 +579,10 @@ impl EventHubConnectionValidation {
         Self::default()
     }
 }
+#[doc = "The list Kusto event hub connection validation result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnectionValidationListResult {
+    #[doc = "The list of Kusto event hub connection validation errors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventHubConnectionValidationResult>,
 }
@@ -501,6 +593,7 @@ impl EventHubConnectionValidationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnectionValidationResult {
+    #[doc = "A message which indicates a problem in event hub connection validation."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
@@ -509,8 +602,10 @@ impl EventHubConnectionValidationResult {
         Self::default()
     }
 }
+#[doc = "List of available SKUs for an existing Kusto Cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListResourceSkusResult {
+    #[doc = "The collection of available SKUs for an existing resource."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureResourceSku>,
 }
@@ -519,8 +614,10 @@ impl ListResourceSkusResult {
         Self::default()
     }
 }
+#[doc = "List of available SKUs for a new Kusto Cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListSkusResult {
+    #[doc = "The collection of available SKUs for new resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureSku>,
 }
@@ -531,6 +628,7 @@ impl ListSkusResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "This is of the format {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -551,6 +649,7 @@ pub mod operation {
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "For example: read, write, delete."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -576,6 +675,7 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -586,12 +686,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -600,12 +704,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {
@@ -619,6 +726,7 @@ impl TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrustedExternalTenant {
+    #[doc = "GUID representing an external tenant."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }

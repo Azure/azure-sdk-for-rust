@@ -1,5 +1,4 @@
-use azure_core::AddAsHeader;
-use http::request::Builder;
+use azure_core::headers::{self, Header};
 
 use azure_storage::core::headers::{CONTENT_CRC64, CONTENT_MD5};
 
@@ -9,29 +8,21 @@ pub enum Hash {
     CRC64(u64),
 }
 
-impl AddAsHeader for Hash {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+impl Header for Hash {
+    fn name(&self) -> headers::HeaderName {
         match self {
-            Hash::MD5(md5) => builder.header(CONTENT_MD5, base64::encode(md5)),
-            Hash::CRC64(crc64) => builder.header(CONTENT_CRC64, &format!("{}", crc64)),
+            Hash::MD5(_) => CONTENT_MD5,
+            Hash::CRC64(_) => CONTENT_CRC64,
         }
+        .into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        let (header_name, header_value) = match self {
-            Hash::MD5(md5) => (CONTENT_MD5, base64::encode(md5)),
-            Hash::CRC64(crc64) => (CONTENT_CRC64, crc64.to_string()),
-        };
-
-        request.headers_mut().append(
-            header_name,
-            http::header::HeaderValue::from_str(&header_value)?,
-        );
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        match self {
+            Hash::MD5(md5) => base64::encode(md5),
+            Hash::CRC64(crc64) => format!("{}", crc64),
+        }
+        .into()
     }
 }
 

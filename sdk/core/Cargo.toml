@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -32,6 +32,7 @@ serde_json = "1.0"
 thiserror = "1.0"
 url = "2.2"
 uuid = { version = "0.8" }
+pin-project = "1.0.10"
 
 # Add dependency to getrandom to enable WASM support
 [target.'cfg(target_arch = "wasm32")'.dependencies]

@@ -40,12 +40,12 @@ pub trait Resource {
     fn uri(&self) -> &str;
 
     /// Get the read permissions for the resource
-    fn read_permission(&self) -> PermissionMode<'_> {
+    fn read_permission(&self) -> PermissionMode {
         PermissionMode::read(self)
     }
 
     /// Get all permissions for the resource
-    fn all_permission(&self) -> PermissionMode<'_> {
+    fn all_permission(&self) -> PermissionMode {
         PermissionMode::all(self)
     }
 }

@@ -1,8 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 
 mod setup;
 
@@ -13,18 +12,18 @@ mod setup;
 // We do not need to define the "id" field here, it will be
 // specified in the Document struct below.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -42,7 +41,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -64,83 +63,85 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
             excluded_paths: vec![],
         };
 
-        let options = CreateCollectionOptions::new("/id")
+        database
+            .create_collection(COLLECTION_NAME, "/id")
             .offer(Offer::Throughput(400))
-            .indexing_policy(ip);
-        database_client
-            .create_collection(Context::new(), COLLECTION_NAME, options)
+            .indexing_policy(ip)
+            .into_future()
             .await
             .unwrap()
     };
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     let id = format!("unique_id{}", 100);
 
     let doc = MySampleStruct {
-        id: Cow::Borrowed(&id),
-        a_string: Cow::Borrowed("Something here"),
+        id: id.clone(),
+        a_string: "Something here".into(),
         a_number: 100,
         a_timestamp: chrono::Utc::now().timestamp(),
     };
 
     // let's add an entity.
-    let session_token: ConsistencyLevel = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+    let session_token: ConsistencyLevel = collection
+        .create_document(doc.clone())
+        .into_future()
         .await?
         .into();
 
-    let document_client = collection_client.into_document_client(id.clone(), &doc.id)?;
+    let document = collection.document_client(id.clone(), &doc.id)?;
 
     // list attachments, there must be none.
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .consistency_level(session_token.clone())
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(0, ret.attachments.len());
 
     // create reference attachment
-    let attachment_client = document_client.clone().into_attachment_client("reference");
-    let resp = attachment_client
-        .create_reference()
+    let attachment = document.attachment_client("reference");
+    let resp = attachment
+        .create_attachment("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
-        .execute("https://www.bing.com", "image/jpeg")
+        .into_future()
         .await?;
 
     // replace reference attachment
-    let resp = attachment_client
-        .replace_reference()
+    let resp = attachment
+        .replace_attachment("https://www.microsoft.com", "image/jpeg")
         .consistency_level(&resp)
-        .execute("https://www.microsoft.com", "image/jpeg")
+        .into_future()
         .await?;
 
     // create slug attachment
-    let attachment_client = document_client.clone().into_attachment_client("slug");
-    let resp = attachment_client
-        .create_slug()
+    let attachment = document.attachment_client("slug");
+    let resp = attachment
+        .create_slug("something cool here".into())
         .consistency_level(&resp)
         .content_type("text/plain")
-        .execute("something cool here")
+        .into_future()
         .await?;
 
     // list attachments, there must be two.
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .consistency_level(&resp)
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(2, ret.attachments.len());
 
     // get reference attachment, it must have the updated media link
-    let reference_attachment = document_client
-        .clone()
-        .into_attachment_client("reference")
+    let reference_attachment = document
+        .attachment_client("reference")
         .get()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
     assert_eq!(
         "https://www.microsoft.com",
@@ -149,35 +150,34 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
 
     // get slug attachment, it must have the text/plain content type
     println!("getting slug attachment");
-    let slug_attachment = document_client
-        .clone()
-        .into_attachment_client("slug")
+    let slug_attachment = document
+        .attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
-        .execute()
+        .into_future()
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
 
     // delete slug attachment
-    let resp_delete = attachment_client
+    let resp_delete = attachment
         .delete()
         .consistency_level(&slug_attachment)
-        .execute()
+        .into_future()
         .await?;
 
     // list attachments, there must be one.
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .consistency_level(&resp_delete)
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(1, ret.attachments.len());
 
     // delete the database
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await?;
+    database.delete_database().into_future().await?;
 
     Ok(())
 }

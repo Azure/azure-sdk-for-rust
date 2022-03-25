@@ -2,14 +2,18 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Information about appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Appliance {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
+    #[doc = "The appliance properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplianceProperties>,
+    #[doc = "Plan for the appliance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
+    #[doc = "The kind of the appliance. Allowed values are MarketPlace and ServiceCatalog."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -18,12 +22,16 @@ impl Appliance {
         Self::default()
     }
 }
+#[doc = "Appliance artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceArtifact {
+    #[doc = "The appliance artifact name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The appliance artifact blob uri."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+    #[doc = "The appliance artifact type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ApplianceArtifactType>,
 }
@@ -32,15 +40,18 @@ impl ApplianceArtifact {
         Self::default()
     }
 }
+#[doc = "The appliance artifact type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplianceArtifactType {
     Template,
     Custom,
 }
+#[doc = "Information about appliance definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceDefinition {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
+    #[doc = "The appliance definition properties."]
     pub properties: ApplianceDefinitionProperties,
 }
 impl ApplianceDefinition {
@@ -51,10 +62,13 @@ impl ApplianceDefinition {
         }
     }
 }
+#[doc = "List of appliance definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceDefinitionListResult {
+    #[doc = "The array of appliance definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplianceDefinition>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -63,17 +77,24 @@ impl ApplianceDefinitionListResult {
         Self::default()
     }
 }
+#[doc = "The appliance definition properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceDefinitionProperties {
+    #[doc = "The appliance lock level."]
     #[serde(rename = "lockLevel")]
     pub lock_level: ApplianceLockLevel,
+    #[doc = "The appliance definition display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The appliance provider authorizations."]
     pub authorizations: Vec<ApplianceProviderAuthorization>,
+    #[doc = "The collection of appliance artifacts. The portal will use the files specified as artifacts to construct the user experience of creating an appliance from an appliance definition."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub artifacts: Vec<ApplianceArtifact>,
+    #[doc = "The appliance definition description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The appliance definition package file Uri."]
     #[serde(rename = "packageFileUri")]
     pub package_file_uri: String,
 }
@@ -89,10 +110,13 @@ impl ApplianceDefinitionProperties {
         }
     }
 }
+#[doc = "List of appliances."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceListResult {
+    #[doc = "The array of appliances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Appliance>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -101,20 +125,25 @@ impl ApplianceListResult {
         Self::default()
     }
 }
+#[doc = "The appliance lock level."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplianceLockLevel {
     CanNotDelete,
     ReadOnly,
     None,
 }
+#[doc = "Information about appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppliancePatchable {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
+    #[doc = "The appliance properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppliancePropertiesPatchable>,
+    #[doc = "Plan for the appliance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PlanPatchable>,
+    #[doc = "The kind of the appliance. Allowed values are MarketPlace and ServiceCatalog."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -123,18 +152,25 @@ impl AppliancePatchable {
         Self::default()
     }
 }
+#[doc = "The appliance properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceProperties {
+    #[doc = "The managed resource group Id."]
     #[serde(rename = "managedResourceGroupId")]
     pub managed_resource_group_id: String,
+    #[doc = "The fully qualified path of appliance definition Id."]
     #[serde(rename = "applianceDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub appliance_definition_id: Option<String>,
+    #[doc = "Name and value pairs that define the appliance parameters. It can be a JObject or a well formed JSON string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Name and value pairs that define the appliance outputs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
+    #[doc = "Provisioning status of the appliance."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "The blob URI where the UI definition file is located."]
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_uri: Option<String>,
 }
@@ -150,18 +186,25 @@ impl ApplianceProperties {
         }
     }
 }
+#[doc = "The appliance properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppliancePropertiesPatchable {
+    #[doc = "The managed resource group Id."]
     #[serde(rename = "managedResourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_group_id: Option<String>,
+    #[doc = "The fully qualified path of appliance definition Id."]
     #[serde(rename = "applianceDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub appliance_definition_id: Option<String>,
+    #[doc = "Name and value pairs that define the appliance parameters. It can be a JObject or a well formed JSON string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Name and value pairs that define the appliance outputs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
+    #[doc = "Provisioning status of the appliance."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "The blob URI where the UI definition file is located."]
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_uri: Option<String>,
 }
@@ -170,10 +213,13 @@ impl AppliancePropertiesPatchable {
         Self::default()
     }
 }
+#[doc = "The appliance provider authorization."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceProviderAuthorization {
+    #[doc = "The provider's principal identifier. This is the identity that the provider will use to call ARM to manage the appliance resources."]
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[doc = "The provider's role definition identifier. This role will define all the permissions that the provider must have on the appliance's container resource group. This role definition cannot have permission to delete the resource group."]
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
 }
@@ -185,12 +231,16 @@ impl ApplianceProviderAuthorization {
         }
     }
 }
+#[doc = "Error response indicates ARM appliance is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Http status code."]
     #[serde(rename = "httpStatus", default, skip_serializing_if = "Option::is_none")]
     pub http_status: Option<String>,
+    #[doc = "Error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
@@ -199,14 +249,18 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Resource information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenericResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "ID of the resource that manages this resource."]
     #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
     pub managed_by: Option<String>,
+    #[doc = "SKU for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
@@ -215,12 +269,16 @@ impl GenericResource {
         Self::default()
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -231,15 +289,19 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "Microsoft.Solutions operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -250,12 +312,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Solutions"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Profile, endpoint, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -265,10 +331,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Microsoft.Solutions operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Microsoft.Solutions operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -277,13 +346,19 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Plan for the appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
+    #[doc = "The plan name."]
     pub name: String,
+    #[doc = "The publisher ID."]
     pub publisher: String,
+    #[doc = "The product code."]
     pub product: String,
+    #[doc = "The promotion code."]
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
+    #[doc = "The plan's version."]
     pub version: String,
 }
 impl Plan {
@@ -297,16 +372,22 @@ impl Plan {
         }
     }
 }
+#[doc = "Plan for the appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlanPatchable {
+    #[doc = "The plan name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The publisher ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "The product code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
+    #[doc = "The promotion code."]
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
+    #[doc = "The plan's version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -315,6 +396,7 @@ impl PlanPatchable {
         Self::default()
     }
 }
+#[doc = "Provisioning status of the appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Accepted,
@@ -329,16 +411,22 @@ pub enum ProvisioningState {
     Succeeded,
     Updating,
 }
+#[doc = "Resource information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -347,17 +435,24 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "SKU for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The SKU name."]
     pub name: String,
+    #[doc = "The SKU tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "The SKU size."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
+    #[doc = "The SKU family."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
+    #[doc = "The SKU model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
+    #[doc = "The SKU capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }

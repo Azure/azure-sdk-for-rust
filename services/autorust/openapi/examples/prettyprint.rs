@@ -1,8 +1,8 @@
 use autorust_openapi::OpenAPI;
+use camino::{Utf8Path, Utf8PathBuf};
 use std::{
     fs::{self, create_dir_all, File},
     io::Write,
-    path::{Path, PathBuf},
     process::exit,
 };
 
@@ -19,7 +19,7 @@ fn main() -> Result<()> {
             exit(1);
         }
         Some(file_in) => {
-            let file_in = Path::new(&file_in);
+            let file_in = Utf8Path::new(&file_in);
             // reading the whole file upfront is much faster than using a BufReader
             // https://github.com/serde-rs/json/issues/160
             let bytes = fs::read(file_in)?;
@@ -29,7 +29,7 @@ fn main() -> Result<()> {
             match std::env::args().nth(2) {
                 Some(dir_out) => {
                     create_dir_all(&dir_out)?;
-                    let mut file_out = PathBuf::new();
+                    let mut file_out = Utf8PathBuf::new();
                     file_out.push(&dir_out);
                     file_out.push(&file_in.file_name().unwrap());
                     let mut file = File::create(file_out)?;

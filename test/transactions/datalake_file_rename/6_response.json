@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "headers": {
+    "accept-ranges": "bytes",
+    "content-length": "0",
+    "content-type": "application/octet-stream",
+    "date": "Tue, 08 Feb 2022 19:19:36 GMT",
+    "etag": "\"0x8D9EB37F14CCF17\"",
+    "last-modified": "Tue, 08 Feb 2022 19:19:35 GMT",
+    "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
+    "x-ms-content-crc64": "AAAAAAAAAAA=",
+    "x-ms-group": "$superuser",
+    "x-ms-lease-state": "available",
+    "x-ms-lease-status": "unlocked",
+    "x-ms-owner": "$superuser",
+    "x-ms-permissions": "rw-r-----",
+    "x-ms-properties": "AddedVia=QXp1cmUgU0RLIGZvciBSdXN0",
+    "x-ms-request-id": "3cedf81b-c01f-003f-0720-1d4f78000000",
+    "x-ms-resource-type": "file",
+    "x-ms-server-encrypted": "true",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

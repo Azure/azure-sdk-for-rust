@@ -1,29 +1,64 @@
 use crate::prelude::*;
 use crate::{headers::from_headers::*, ResourceQuota};
 use azure_core::headers::{content_type_from_headers, session_token_from_headers};
-use azure_core::{Request as HttpRequest, Response as HttpResponse};
+use azure_core::{Context, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct DeleteCollectionOptions {
+pub struct DeleteCollectionBuilder {
+    client: CollectionClient,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl DeleteCollectionOptions {
-    pub fn new() -> Self {
+impl DeleteCollectionBuilder {
+    pub fn new(client: CollectionClient) -> Self {
         Self {
+            client,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
+    pub fn into_future(self) -> DeleteCollection {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_with_collection_name(http::Method::DELETE);
 
-        Ok(())
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Collections),
+                    &mut request,
+                )
+                .await?;
+
+            DeleteCollectionResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type DeleteCollection =
+    futures::future::BoxFuture<'static, crate::Result<DeleteCollectionResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for DeleteCollectionBuilder {
+    type IntoFuture = DeleteCollection;
+    type Output = <DeleteCollection as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
     }
 }
 

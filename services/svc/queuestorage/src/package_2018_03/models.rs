@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Access policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
+    #[doc = "the date-time the policy is active"]
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
+    #[doc = "the date-time the policy expires"]
     #[serde(rename = "Expiry", default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
+    #[doc = "the permissions for the acl policy"]
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 }
@@ -16,16 +20,22 @@ impl AccessPolicy {
         Self::default()
     }
 }
+#[doc = "CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain. Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
+    #[doc = "The origin domains that are permitted to make a request against the storage service via CORS. The origin domain is the domain from which the request originates. Note that the origin must be an exact case-sensitive match with the origin that the user age sends to the service. You can also use the wildcard character '*' to allow all origin domains to make requests via CORS."]
     #[serde(rename = "AllowedOrigins")]
     pub allowed_origins: String,
+    #[doc = "The methods (HTTP request verbs) that the origin domain may use for a CORS request. (comma separated)"]
     #[serde(rename = "AllowedMethods")]
     pub allowed_methods: String,
+    #[doc = "the request headers that the origin domain may specify on the CORS request."]
     #[serde(rename = "AllowedHeaders")]
     pub allowed_headers: String,
+    #[doc = "The response headers that may be sent in the response to the CORS request and exposed by the browser to the request issuer"]
     #[serde(rename = "ExposedHeaders")]
     pub exposed_headers: String,
+    #[doc = "The maximum amount time that a browser should cache the preflight OPTIONS request."]
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
@@ -46,20 +56,28 @@ impl CorsRule {
         }
     }
 }
+#[doc = "The object returned in the QueueMessageList array when calling Get Messages on a Queue."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DequeuedMessageItem {
+    #[doc = "The Id of the Message."]
     #[serde(rename = "MessageId")]
     pub message_id: String,
+    #[doc = "The time the Message was inserted into the Queue."]
     #[serde(rename = "InsertionTime")]
     pub insertion_time: String,
+    #[doc = "The time that the Message will expire and be automatically deleted."]
     #[serde(rename = "ExpirationTime")]
     pub expiration_time: String,
+    #[doc = "This value is required to delete the Message. If deletion fails using this popreceipt then the message has been dequeued by another client."]
     #[serde(rename = "PopReceipt")]
     pub pop_receipt: String,
+    #[doc = "The time that the message will again become visible in the Queue."]
     #[serde(rename = "TimeNextVisible")]
     pub time_next_visible: String,
+    #[doc = "The number of times the message has been dequeued."]
     #[serde(rename = "DequeueCount")]
     pub dequeue_count: i64,
+    #[doc = "The content of the Message."]
     #[serde(rename = "MessageText")]
     pub message_text: String,
 }
@@ -85,16 +103,22 @@ impl DequeuedMessageItem {
     }
 }
 pub type DequeuedMessagesList = Vec<DequeuedMessageItem>;
+#[doc = "The object returned in the QueueMessageList array when calling Put Message on a Queue"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnqueuedMessage {
+    #[doc = "The Id of the Message."]
     #[serde(rename = "MessageId")]
     pub message_id: String,
+    #[doc = "The time the Message was inserted into the Queue."]
     #[serde(rename = "InsertionTime")]
     pub insertion_time: String,
+    #[doc = "The time that the Message will expire and be automatically deleted."]
     #[serde(rename = "ExpirationTime")]
     pub expiration_time: String,
+    #[doc = "This value is required to delete the Message. If deletion fails using this popreceipt then the message has been dequeued by another client."]
     #[serde(rename = "PopReceipt")]
     pub pop_receipt: String,
+    #[doc = "The time that the message will again become visible in the Queue."]
     #[serde(rename = "TimeNextVisible")]
     pub time_next_visible: String,
 }
@@ -116,6 +140,7 @@ impl EnqueuedMessage {
     }
 }
 pub type EnqueuedMessageList = Vec<EnqueuedMessage>;
+#[doc = "Error codes returned by the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
     AccountAlreadyExists,
@@ -179,8 +204,10 @@ pub enum ErrorCode {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoReplication {
+    #[doc = "The status of the secondary location"]
     #[serde(rename = "Status")]
     pub status: geo_replication::Status,
+    #[doc = "A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read operations at the secondary. Primary writes after this point in time may or may not be available for reads."]
     #[serde(rename = "LastSyncTime")]
     pub last_sync_time: String,
 }
@@ -191,6 +218,7 @@ impl GeoReplication {
 }
 pub mod geo_replication {
     use super::*;
+    #[doc = "The status of the secondary location"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "live")]
@@ -201,6 +229,7 @@ pub mod geo_replication {
         Unavailable,
     }
 }
+#[doc = "The object returned when calling List Queues on a Queue Service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListQueuesSegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -228,16 +257,22 @@ impl ListQueuesSegmentResponse {
         }
     }
 }
+#[doc = "Azure Analytics Logging settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Logging {
+    #[doc = "The version of Storage Analytics to configure."]
     #[serde(rename = "Version")]
     pub version: String,
+    #[doc = "Indicates whether all delete requests should be logged."]
     #[serde(rename = "Delete")]
     pub delete: bool,
+    #[doc = "Indicates whether all read requests should be logged."]
     #[serde(rename = "Read")]
     pub read: bool,
+    #[doc = "Indicates whether all write requests should be logged."]
     #[serde(rename = "Write")]
     pub write: bool,
+    #[doc = "the retention policy"]
     #[serde(rename = "RetentionPolicy")]
     pub retention_policy: RetentionPolicy,
 }
@@ -259,14 +294,19 @@ impl Metadata {
         Self::default()
     }
 }
+#[doc = "a summary of request statistics grouped by API in hour or minute aggregates for queues"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
+    #[doc = "The version of Storage Analytics to configure."]
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Indicates whether metrics are enabled for the Queue service."]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "Indicates whether metrics should generate summary statistics for called API operations."]
     #[serde(rename = "IncludeAPIs", default, skip_serializing_if = "Option::is_none")]
     pub include_ap_is: Option<bool>,
+    #[doc = "the retention policy"]
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
@@ -280,16 +320,22 @@ impl Metrics {
         }
     }
 }
+#[doc = "The object returned in the QueueMessageList array when calling Peek Messages on a Queue"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeekedMessageItem {
+    #[doc = "The Id of the Message."]
     #[serde(rename = "MessageId")]
     pub message_id: String,
+    #[doc = "The time the Message was inserted into the Queue."]
     #[serde(rename = "InsertionTime")]
     pub insertion_time: String,
+    #[doc = "The time that the Message will expire and be automatically deleted."]
     #[serde(rename = "ExpirationTime")]
     pub expiration_time: String,
+    #[doc = "The number of times the message has been dequeued."]
     #[serde(rename = "DequeueCount")]
     pub dequeue_count: i64,
+    #[doc = "The content of the Message."]
     #[serde(rename = "MessageText")]
     pub message_text: String,
 }
@@ -305,8 +351,10 @@ impl PeekedMessageItem {
     }
 }
 pub type PeekedMessagesList = Vec<PeekedMessageItem>;
+#[doc = "An Azure Storage Queue."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueItem {
+    #[doc = "The name of the Queue."]
     #[serde(rename = "Name")]
     pub name: String,
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
@@ -317,8 +365,10 @@ impl QueueItem {
         Self { name, metadata: None }
     }
 }
+#[doc = "A Message object which can be stored in a Queue"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueMessage {
+    #[doc = "The content of the message"]
     #[serde(rename = "MessageText")]
     pub message_text: String,
 }
@@ -327,10 +377,13 @@ impl QueueMessage {
         Self { message_text }
     }
 }
+#[doc = "the retention policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
+    #[doc = "Indicates whether a retention policy is enabled for the storage service"]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "Indicates the number of days that metrics or logging or soft-deleted data should be retained. All data older than this value will be deleted"]
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
 }
@@ -339,10 +392,13 @@ impl RetentionPolicy {
         Self { enabled, days: None }
     }
 }
+#[doc = "signed identifier"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
+    #[doc = "a unique id"]
     #[serde(rename = "Id")]
     pub id: String,
+    #[doc = "An Access policy"]
     #[serde(rename = "AccessPolicy")]
     pub access_policy: AccessPolicy,
 }
@@ -362,14 +418,19 @@ impl StorageError {
         Self::default()
     }
 }
+#[doc = "Storage Service Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
+    #[doc = "Azure Analytics Logging settings."]
     #[serde(rename = "Logging", default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<Logging>,
+    #[doc = "a summary of request statistics grouped by API in hour or minute aggregates for queues"]
     #[serde(rename = "HourMetrics", default, skip_serializing_if = "Option::is_none")]
     pub hour_metrics: Option<Metrics>,
+    #[doc = "a summary of request statistics grouped by API in hour or minute aggregates for queues"]
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
+    #[doc = "The set of CORS rules."]
     #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
     pub cors: Vec<CorsRule>,
 }
@@ -378,6 +439,7 @@ impl StorageServiceProperties {
         Self::default()
     }
 }
+#[doc = "Stats for the storage service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]

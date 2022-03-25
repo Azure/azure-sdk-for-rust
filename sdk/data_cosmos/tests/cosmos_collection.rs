@@ -1,10 +1,9 @@
 #![cfg(all(test, feature = "test_e2e"))]
 mod setup;
 
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::collection::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 
 #[tokio::test]
 async fn create_and_delete_collection() {
@@ -19,60 +18,45 @@ async fn create_and_delete_collection() {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
-    let collection = database_client
-        .create_collection(
-            Context::new(),
-            COLLECTION_NAME,
-            CreateCollectionOptions::new("/id"),
-        )
+    let collection = database
+        .create_collection(COLLECTION_NAME, "/id")
+        .into_future()
         .await
         .unwrap();
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let rid = collection.collection.rid;
+    let collection = database.collection_client(COLLECTION_NAME);
 
-    let collection_after_get = collection_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
-        .await
-        .unwrap();
-    assert!(collection.collection.rid == collection_after_get.collection.rid);
+    let collection_after_get = collection.get_collection().into_future().await.unwrap();
+    assert!(rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
-    collection_client
+    collection
         .get_partition_key_ranges()
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     // delete the collection
-    collection_client
-        .delete_collection(Context::new(), DeleteCollectionOptions::new())
+    collection.delete_collection().into_future().await.unwrap();
+    let collections = Box::pin(database.list_collections().into_stream())
+        .next()
         .await
+        .unwrap()
         .unwrap();
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
     assert!(collections.collections.len() == 0);
 
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }
 
 #[tokio::test]
@@ -87,7 +71,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -96,20 +80,20 @@ async fn replace_collection() {
         included_paths: vec![],
         excluded_paths: vec![],
     };
-    let options = CreateCollectionOptions::new("/id")
+
+    let collection = database
+        .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::S2)
-        .indexing_policy(indexing_policy);
-    let collection = database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .indexing_policy(indexing_policy)
+        .into_future()
         .await
         .unwrap();
 
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(collections.collections.len(), 1);
     assert_eq!(
         collection.collection.indexing_policy,
@@ -139,24 +123,19 @@ async fn replace_collection() {
         .excluded_paths
         .push("/\"excludeme\"/?".to_owned().into());
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
-
-    let _replace_collection_response = collection_client
-        .replace_collection(
-            Context::new(),
-            ReplaceCollectionOptions::new("/id").indexing_policy(new_ip),
-        )
+    let _replace_collection_response = database
+        .collection_client(COLLECTION_NAME)
+        .replace_collection("/id")
+        .indexing_policy(new_ip)
+        .into_future()
         .await
         .unwrap();
 
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(collections.collections.len(), 1);
     let eps: Vec<&ExcludedPath> = collections.collections[0]
         .indexing_policy
@@ -166,8 +145,5 @@ async fn replace_collection() {
         .collect();
     assert!(eps.len() > 0);
 
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }

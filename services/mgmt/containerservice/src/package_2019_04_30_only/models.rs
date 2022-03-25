@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An error response from the Container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the Container service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -12,14 +14,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the Container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -28,12 +35,16 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Represents the OpenShift networking configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
+    #[doc = "CIDR for the OpenShift Vnet."]
     #[serde(rename = "vnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub vnet_cidr: Option<String>,
+    #[doc = "CIDR of the Vnet to peer."]
     #[serde(rename = "peerVnetId", default, skip_serializing_if = "Option::is_none")]
     pub peer_vnet_id: Option<String>,
+    #[doc = "ID of the Vnet created for OSA cluster."]
     #[serde(rename = "vnetId", default, skip_serializing_if = "Option::is_none")]
     pub vnet_id: Option<String>,
 }
@@ -42,6 +53,7 @@ impl NetworkProfile {
         Self::default()
     }
 }
+#[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
     Linux,
@@ -52,6 +64,7 @@ impl Default for OsType {
         Self::Linux
     }
 }
+#[doc = "OpenShiftAgentPoolProfileRole represents the role of the AgentPoolProfile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftAgentPoolProfileRole {
     #[serde(rename = "compute")]
@@ -59,6 +72,7 @@ pub enum OpenShiftAgentPoolProfileRole {
     #[serde(rename = "infra")]
     Infra,
 }
+#[doc = "Size of OpenShift VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftContainerServiceVmSize {
     #[serde(rename = "Standard_D2s_v3")]
@@ -128,12 +142,15 @@ pub enum OpenShiftContainerServiceVmSize {
     #[serde(rename = "Standard_L32s")]
     StandardL32s,
 }
+#[doc = "OpenShift Managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PurchasePlan>,
+    #[doc = "Properties of the OpenShift managed cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenShiftManagedClusterProperties>,
 }
@@ -146,16 +163,21 @@ impl OpenShiftManagedCluster {
         }
     }
 }
+#[doc = "Defines the Identity provider for MS AAD."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAadIdentityProvider {
     #[serde(flatten)]
     pub open_shift_managed_cluster_base_identity_provider: OpenShiftManagedClusterBaseIdentityProvider,
+    #[doc = "The clientId password associated with the provider."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "The secret password associated with the provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
+    #[doc = "The tenantId associated with the provider."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The groupId to be granted cluster admin role."]
     #[serde(rename = "customerAdminGroupId", default, skip_serializing_if = "Option::is_none")]
     pub customer_admin_group_id: Option<String>,
 }
@@ -170,16 +192,23 @@ impl OpenShiftManagedClusterAadIdentityProvider {
         }
     }
 }
+#[doc = "Defines the configuration of the OpenShift cluster VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAgentPoolProfile {
+    #[doc = "Unique name of the pool profile in the context of the subscription and resource group."]
     pub name: String,
+    #[doc = "Number of agents (VMs) to host docker containers."]
     pub count: i32,
+    #[doc = "Size of OpenShift VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: OpenShiftContainerServiceVmSize,
+    #[doc = "Subnet CIDR for the peering."]
     #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "OpenShiftAgentPoolProfileRole represents the role of the AgentPoolProfile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<OpenShiftAgentPoolProfileRole>,
 }
@@ -195,8 +224,10 @@ impl OpenShiftManagedClusterAgentPoolProfile {
         }
     }
 }
+#[doc = "Defines all possible authentication profiles for the OpenShift cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterAuthProfile {
+    #[doc = "Type of authentication profile to use."]
     #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
 }
@@ -205,8 +236,10 @@ impl OpenShiftManagedClusterAuthProfile {
         Self::default()
     }
 }
+#[doc = "Structure for any Identity provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterBaseIdentityProvider {
+    #[doc = "The kind of the provider."]
     pub kind: String,
 }
 impl OpenShiftManagedClusterBaseIdentityProvider {
@@ -214,10 +247,13 @@ impl OpenShiftManagedClusterBaseIdentityProvider {
         Self { kind }
     }
 }
+#[doc = "Defines the configuration of the identity providers to be used in the OpenShift cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterIdentityProvider {
+    #[doc = "Name of the provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Structure for any Identity provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
@@ -226,10 +262,13 @@ impl OpenShiftManagedClusterIdentityProvider {
         Self::default()
     }
 }
+#[doc = "The response from the List OpenShift Managed Clusters operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterListResult {
+    #[doc = "The list of OpenShift managed clusters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OpenShiftManagedCluster>,
+    #[doc = "The URL to get the next set of OpenShift managed cluster results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -238,15 +277,21 @@ impl OpenShiftManagedClusterListResult {
         Self::default()
     }
 }
+#[doc = "OpenShiftManagedClusterMaterPoolProfile contains configuration for OpenShift master VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterMasterPoolProfile {
+    #[doc = "Unique name of the master pool profile in the context of the subscription and resource group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Number of masters (VMs) to host docker containers. The default value is 3."]
     pub count: i32,
+    #[doc = "Size of OpenShift VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: OpenShiftContainerServiceVmSize,
+    #[doc = "Subnet CIDR for the peering."]
     #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
@@ -261,26 +306,37 @@ impl OpenShiftManagedClusterMasterPoolProfile {
         }
     }
 }
+#[doc = "Properties of the OpenShift managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterProperties {
+    #[doc = "The current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Version of OpenShift specified when creating the cluster."]
     #[serde(rename = "openShiftVersion")]
     pub open_shift_version: String,
+    #[doc = "Version of OpenShift specified when creating the cluster."]
     #[serde(rename = "clusterVersion", default, skip_serializing_if = "Option::is_none")]
     pub cluster_version: Option<String>,
+    #[doc = "Service generated FQDN for OpenShift API server."]
     #[serde(rename = "publicHostname", default, skip_serializing_if = "Option::is_none")]
     pub public_hostname: Option<String>,
+    #[doc = "Service generated FQDN for OpenShift API server loadbalancer internal hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Represents the OpenShift networking configuration"]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
+    #[doc = "Configuration for OpenShift router(s)."]
     #[serde(rename = "routerProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub router_profiles: Vec<OpenShiftRouterProfile>,
+    #[doc = "OpenShiftManagedClusterMaterPoolProfile contains configuration for OpenShift master VMs."]
     #[serde(rename = "masterPoolProfile", default, skip_serializing_if = "Option::is_none")]
     pub master_pool_profile: Option<OpenShiftManagedClusterMasterPoolProfile>,
+    #[doc = "Configuration of OpenShift cluster VMs."]
     #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<OpenShiftManagedClusterAgentPoolProfile>,
+    #[doc = "Defines all possible authentication profiles for the OpenShift cluster."]
     #[serde(rename = "authProfile", default, skip_serializing_if = "Option::is_none")]
     pub auth_profile: Option<OpenShiftManagedClusterAuthProfile>,
 }
@@ -300,12 +356,16 @@ impl OpenShiftManagedClusterProperties {
         }
     }
 }
+#[doc = "Represents an OpenShift router"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftRouterProfile {
+    #[doc = "Name of the router profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "DNS subdomain for OpenShift router."]
     #[serde(rename = "publicSubdomain", default, skip_serializing_if = "Option::is_none")]
     pub public_subdomain: Option<String>,
+    #[doc = "Auto-allocated FQDN for the OpenShift router."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
@@ -314,14 +374,19 @@ impl OpenShiftRouterProfile {
         Self::default()
     }
 }
+#[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PurchasePlan {
+    #[doc = "The plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the product of the image from the marketplace. This is the same value as Offer under the imageReference element."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
+    #[doc = "The promotion code."]
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
+    #[doc = "The plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
 }
@@ -330,15 +395,21 @@ impl PurchasePlan {
         Self::default()
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -353,8 +424,10 @@ impl Resource {
         }
     }
 }
+#[doc = "Tags object for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

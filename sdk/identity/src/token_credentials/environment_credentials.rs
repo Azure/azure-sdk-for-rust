@@ -27,11 +27,13 @@ pub struct EnvironmentCredential {
 }
 
 impl EnvironmentCredential {
+    /// Creates a new `EnvironmentCredential` with the given `TokenCredentialOptions`.
     pub fn new(options: TokenCredentialOptions) -> Self {
         Self { options }
     }
 }
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum EnvironmentCredentialError {
@@ -39,16 +41,16 @@ pub enum EnvironmentCredentialError {
         "Missing tenant id set in {} environment variable",
         AZURE_TENANT_ID_ENV_KEY
     )]
-    MissingTenantId(std::env::VarError),
+    MissingTenantId(#[source] std::env::VarError),
     #[error(
         "Missing client id set in {} environment variable",
         AZURE_CLIENT_ID_ENV_KEY
     )]
-    MissingClientId(std::env::VarError),
+    MissingClientId(#[source] std::env::VarError),
     #[error("No valid environment credential providers")]
     NoValid,
     #[error(transparent)]
-    ClientSecretCredentialError(super::ClientSecretCredentialError),
+    ClientSecretCredential(super::ClientSecretCredentialError),
 }
 
 #[async_trait::async_trait]
@@ -76,7 +78,7 @@ impl TokenCredential for EnvironmentCredential {
             return credential
                 .get_token(resource)
                 .await
-                .map_err(EnvironmentCredentialError::ClientSecretCredentialError);
+                .map_err(EnvironmentCredentialError::ClientSecretCredential);
         } else if username.is_ok() && password.is_ok() {
             // Could use multiple if-let with #![feature(let_chains)] once stabilised - see https://github.com/rust-lang/rust/issues/53667
             // TODO: username & password credential

@@ -24,6 +24,7 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Represents an ingestion configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IngestionConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -31,15 +32,19 @@ pub struct IngestionConfiguration {
     #[serde(rename = "boundingBoxCenter", default, skip_serializing_if = "Option::is_none")]
     pub bounding_box_center: Option<Vector3>,
     pub gravity: Vector3,
+    #[doc = "Indices of Key Frames."]
     #[serde(rename = "keyFrameIndexes", default, skip_serializing_if = "Vec::is_empty")]
     pub key_frame_indexes: Vec<i32>,
+    #[doc = "Ground truth trajectory."]
     #[serde(rename = "gtTrajectory", default, skip_serializing_if = "Vec::is_empty")]
     pub gt_trajectory: Vec<Pose>,
     #[serde(rename = "principalAxis", default, skip_serializing_if = "Option::is_none")]
     pub principal_axis: Option<Quaternion>,
+    #[doc = "Scale of transformation of asset units into meter space."]
     pub scale: f32,
     #[serde(rename = "supportingPlane", default, skip_serializing_if = "Option::is_none")]
     pub supporting_plane: Option<Vector4>,
+    #[doc = "Test Trajectory."]
     #[serde(rename = "testTrajectory", default, skip_serializing_if = "Vec::is_empty")]
     pub test_trajectory: Vec<Pose>,
 }
@@ -58,24 +63,33 @@ impl IngestionConfiguration {
         }
     }
 }
+#[doc = "Represents the status of an AOA ingestion job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionProperties {
+    #[doc = "Information about the cause of a ClientError JobStatus."]
     #[serde(rename = "clientErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub client_error_details: Option<String>,
+    #[doc = "Information about the cause of a ServerError JobStatus."]
     #[serde(rename = "serverErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub server_error_details: Option<String>,
+    #[doc = "Identifier for the AOA Ingestion Job."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
+    #[doc = "The URI for downloading the generated AOA Model"]
     #[serde(rename = "outputModelUri", default, skip_serializing_if = "Option::is_none")]
     pub output_model_uri: Option<String>,
     #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
     pub job_status: Option<JobStatus>,
+    #[doc = "The file type of the original 3D asset. Examples include: \"ply\", \"obj\", \"fbx\", \"glb\", \"gltf\", etc."]
     #[serde(rename = "assetFileType", default, skip_serializing_if = "Option::is_none")]
     pub asset_file_type: Option<String>,
+    #[doc = "The Uri to the Asset to be ingested by the AOA Ingestion Service. This asset needs to have been uploaded to the service using an endpoint provided from a call to the GetUploadUri API."]
     #[serde(rename = "inputAssetUri", default, skip_serializing_if = "Option::is_none")]
     pub input_asset_uri: Option<String>,
+    #[doc = "Identifier for the Account owning the AOA Ingestion Job."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
+    #[doc = "Represents an ingestion configuration."]
     #[serde(rename = "ingestionConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_configuration: Option<IngestionConfiguration>,
 }
@@ -124,6 +138,7 @@ impl Quaternion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UploadLocation {
+    #[doc = "The blob upload URI where a model should be uploaded to the service for ingestion."]
     #[serde(rename = "inputAssetUri")]
     pub input_asset_uri: String,
 }

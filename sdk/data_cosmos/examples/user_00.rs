@@ -1,6 +1,5 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -26,38 +25,27 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database_name);
-    let user_client = database_client.clone().into_user_client(user_name.clone());
+    let database = client.database_client(database_name);
+    let user = database.user_client(user_name.clone());
 
-    let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::new())
-        .await?;
+    let create_user_response = user.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
-    let users = Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
-        .next()
-        .await
-        .unwrap()?;
+    let users = database.list_users().into_stream().next().await.unwrap()?;
 
     println!("list_users_response == {:#?}", users);
 
-    let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
-        .await?;
+    let get_user_response = user.get_user().into_future().await?;
     println!("get_user_response == {:#?}", get_user_response);
 
     let new_user = format!("{}replaced", user_name);
 
-    let replace_user_response = user_client
-        .replace_user(Context::new(), &new_user, ReplaceUserOptions::new())
-        .await?;
+    let replace_user_response = user.replace_user(new_user.clone()).into_future().await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 
-    let user_client = database_client.into_user_client(new_user);
+    let user = database.user_client(new_user);
 
-    let delete_user_response = user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
-        .await?;
+    let delete_user_response = user.delete_user().into_future().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

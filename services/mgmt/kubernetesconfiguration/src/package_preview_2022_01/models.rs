@@ -2,20 +2,28 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Parameters to reconcile to the GitRepository source kind type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BucketDefinition {
+    #[doc = "The URL to sync for the flux configuration S3 bucket."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "The bucket name to sync from the url endpoint for the flux configuration."]
     #[serde(rename = "bucketName", default, skip_serializing_if = "Option::is_none")]
     pub bucket_name: Option<String>,
+    #[doc = "Specify whether to use insecure communication when puling data from the S3 bucket."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub insecure: Option<bool>,
+    #[doc = "The maximum time to attempt to reconcile the cluster git repository source with the remote."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the cluster git repository source with the remote."]
     #[serde(rename = "syncIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub sync_interval_in_seconds: Option<i64>,
+    #[doc = "Plaintext access key used to securely access the S3 bucket"]
     #[serde(rename = "accessKey", default, skip_serializing_if = "Option::is_none")]
     pub access_key: Option<String>,
+    #[doc = "Name of a local secret on the Kubernetes cluster to use as the authentication secret rather than the managed or user-provided configuration secrets."]
     #[serde(rename = "localAuthRef", default, skip_serializing_if = "Option::is_none")]
     pub local_auth_ref: Option<String>,
 }
@@ -24,20 +32,28 @@ impl BucketDefinition {
         Self::default()
     }
 }
+#[doc = "Parameters to reconcile to the GitRepository source kind type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BucketPatchDefinition {
+    #[doc = "The URL to sync for the flux configuration S3 bucket."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "The bucket name to sync from the url endpoint for the flux configuration."]
     #[serde(rename = "bucketName", default, skip_serializing_if = "Option::is_none")]
     pub bucket_name: Option<String>,
+    #[doc = "Specify whether to use insecure communication when puling data from the S3 bucket."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub insecure: Option<bool>,
+    #[doc = "The maximum time to attempt to reconcile the cluster git repository source with the remote."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the cluster git repository source with the remote."]
     #[serde(rename = "syncIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub sync_interval_in_seconds: Option<i64>,
+    #[doc = "Plaintext access key used to securely access the S3 bucket"]
     #[serde(rename = "accessKey", default, skip_serializing_if = "Option::is_none")]
     pub access_key: Option<String>,
+    #[doc = "Name of a local secret on the Kubernetes cluster to use as the authentication secret rather than the managed or user-provided configuration secrets."]
     #[serde(rename = "localAuthRef", default, skip_serializing_if = "Option::is_none")]
     pub local_auth_ref: Option<String>,
 }
@@ -48,10 +64,12 @@ impl BucketPatchDefinition {
 }
 pub type ChartValues = String;
 pub type ChartVersion = String;
+#[doc = "Extension scope settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterScopeSettings {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Extension scope settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<cluster_scope_settings::Properties>,
 }
@@ -62,10 +80,13 @@ impl ClusterScopeSettings {
 }
 pub mod cluster_scope_settings {
     use super::*;
+    #[doc = "Extension scope settings"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Describes if multiple instances of the extension are allowed"]
         #[serde(rename = "allowMultipleInstances", default, skip_serializing_if = "Option::is_none")]
         pub allow_multiple_instances: Option<bool>,
+        #[doc = "Default extension release namespace"]
         #[serde(rename = "defaultReleaseNamespace", default, skip_serializing_if = "Option::is_none")]
         pub default_release_namespace: Option<String>,
     }
@@ -75,14 +96,19 @@ pub mod cluster_scope_settings {
         }
     }
 }
+#[doc = "Compliance Status details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceStatus {
+    #[doc = "The compliance state of the configuration."]
     #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<compliance_status::ComplianceState>,
+    #[doc = "Datetime the configuration was last applied."]
     #[serde(rename = "lastConfigApplied", default, skip_serializing_if = "Option::is_none")]
     pub last_config_applied: Option<String>,
+    #[doc = "Message from when the configuration was applied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Level of the message."]
     #[serde(rename = "messageLevel", default, skip_serializing_if = "Option::is_none")]
     pub message_level: Option<compliance_status::MessageLevel>,
 }
@@ -93,6 +119,7 @@ impl ComplianceStatus {
 }
 pub mod compliance_status {
     use super::*;
+    #[doc = "The compliance state of the configuration."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComplianceState {
         Pending,
@@ -101,6 +128,7 @@ pub mod compliance_status {
         Installed,
         Failed,
     }
+    #[doc = "Level of the message."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MessageLevel {
         Error,
@@ -108,6 +136,7 @@ pub mod compliance_status {
         Information,
     }
 }
+#[doc = "Name-value pairs of protected configuration settings for the configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProtectedSettings {}
 impl ConfigurationProtectedSettings {
@@ -115,8 +144,10 @@ impl ConfigurationProtectedSettings {
         Self::default()
     }
 }
+#[doc = "Specify which kustomizations must succeed reconciliation on the cluster prior to reconciling this kustomization"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DependsOnDefinition {
+    #[doc = "Name of the kustomization to claim dependency on"]
     #[serde(rename = "kustomizationName", default, skip_serializing_if = "Option::is_none")]
     pub kustomization_name: Option<String>,
 }
@@ -125,10 +156,13 @@ impl DependsOnDefinition {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -137,16 +171,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -155,8 +195,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -165,14 +207,18 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The Extension object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an Extension resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<extension::Properties>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -183,32 +229,46 @@ impl Extension {
 }
 pub mod extension {
     use super::*;
+    #[doc = "Properties of an Extension resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Type of the Extension, of which this resource is an instance of.  It must be one of the Extension Types registered with Microsoft.KubernetesConfiguration by the Extension publisher."]
         #[serde(rename = "extensionType", default, skip_serializing_if = "Option::is_none")]
         pub extension_type: Option<String>,
+        #[doc = "Flag to note if this extension participates in auto upgrade of minor version, or not."]
         #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_minor_version: Option<bool>,
+        #[doc = "ReleaseTrain this extension participates in for auto-upgrade (e.g. Stable, Preview, etc.) - only if autoUpgradeMinorVersion is 'true'."]
         #[serde(rename = "releaseTrain", default, skip_serializing_if = "Option::is_none")]
         pub release_train: Option<String>,
+        #[doc = "Version of the extension for this extension, if it is 'pinned' to a specific version. autoUpgradeMinorVersion must be 'false'."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<String>,
+        #[doc = "Scope of the extension. It can be either Cluster or Namespace; but not both."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub scope: Option<Scope>,
+        #[doc = "Configuration settings, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_settings: Option<serde_json::Value>,
+        #[doc = "Configuration settings that are sensitive, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
+        #[doc = "The provisioning state of the resource."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningStateDefinition>,
+        #[doc = "Status from this extension."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub statuses: Vec<ExtensionStatus>,
+        #[doc = "The error detail."]
         #[serde(rename = "errorInfo", default, skip_serializing_if = "Option::is_none")]
         pub error_info: Option<ErrorDetail>,
+        #[doc = "Custom Location settings properties."]
         #[serde(rename = "customLocationSettings", default, skip_serializing_if = "Option::is_none")]
         pub custom_location_settings: Option<serde_json::Value>,
+        #[doc = "Uri of the Helm package"]
         #[serde(rename = "packageUri", default, skip_serializing_if = "Option::is_none")]
         pub package_uri: Option<String>,
+        #[doc = "Identity of the Extension resource in an AKS cluster"]
         #[serde(rename = "aksAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
         pub aks_assigned_identity: Option<properties::AksAssignedIdentity>,
     }
@@ -219,12 +279,16 @@ pub mod extension {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Identity of the Extension resource in an AKS cluster"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct AksAssignedIdentity {
+            #[doc = "The principal ID of resource identity."]
             #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
             pub principal_id: Option<String>,
+            #[doc = "The tenant ID of resource."]
             #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
             pub tenant_id: Option<String>,
+            #[doc = "The identity type."]
             #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
             pub type_: Option<aks_assigned_identity::Type>,
         }
@@ -235,6 +299,7 @@ pub mod extension {
         }
         pub mod aks_assigned_identity {
             use super::*;
+            #[doc = "The identity type."]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             pub enum Type {
                 SystemAssigned,
@@ -242,16 +307,22 @@ pub mod extension {
         }
     }
 }
+#[doc = "Status from the extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionStatus {
+    #[doc = "Status code provided by the Extension"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Short description of status of the extension."]
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
+    #[doc = "Level of the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<extension_status::Level>,
+    #[doc = "Detailed message of the status from the Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "DateLiteral (per ISO8601) noting the time of installation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
 }
@@ -262,6 +333,7 @@ impl ExtensionStatus {
 }
 pub mod extension_status {
     use super::*;
+    #[doc = "Level of the status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
         Error,
@@ -274,9 +346,12 @@ pub mod extension_status {
         }
     }
 }
+#[doc = "Represents an Extension Type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionType {
+    #[doc = "Properties of the connected cluster."]
     pub properties: ExtensionTypeProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -288,10 +363,13 @@ impl ExtensionType {
         }
     }
 }
+#[doc = "List Extension Types"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionTypeList {
+    #[doc = "The list of Extension Types"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExtensionType>,
+    #[doc = "The link to fetch the next page of Extension Types"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -300,12 +378,16 @@ impl ExtensionTypeList {
         Self::default()
     }
 }
+#[doc = "Properties of the connected cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionTypeProperties {
+    #[doc = "Extension release train: preview or stable"]
     #[serde(rename = "releaseTrains", default, skip_serializing_if = "Vec::is_empty")]
     pub release_trains: Vec<String>,
+    #[doc = "Cluster types"]
     #[serde(rename = "clusterTypes", default, skip_serializing_if = "Option::is_none")]
     pub cluster_types: Option<extension_type_properties::ClusterTypes>,
+    #[doc = "Extension scopes"]
     #[serde(rename = "supportedScopes", default, skip_serializing_if = "Option::is_none")]
     pub supported_scopes: Option<SupportedScopes>,
 }
@@ -316,6 +398,7 @@ impl ExtensionTypeProperties {
 }
 pub mod extension_type_properties {
     use super::*;
+    #[doc = "Cluster types"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ClusterTypes {
         #[serde(rename = "connectedClusters")]
@@ -324,12 +407,16 @@ pub mod extension_type_properties {
         ManagedClusters,
     }
 }
+#[doc = "List versions for an Extension"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionVersionList {
+    #[doc = "Versions available for this Extension Type"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub versions: Vec<serde_json::Value>,
+    #[doc = "The link to fetch the next page of Extension Types"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -338,10 +425,13 @@ impl ExtensionVersionList {
         Self::default()
     }
 }
+#[doc = "Result of the request to list Extensions.  It contains a list of Extension objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionsList {
+    #[doc = "List of Extensions within a Kubernetes cluster."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Extension>,
+    #[doc = "URL to get the next set of extension objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -350,6 +440,7 @@ impl ExtensionsList {
         Self::default()
     }
 }
+#[doc = "Compliance state of the cluster object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FluxComplianceStateDefinition {
     Compliant,
@@ -364,12 +455,15 @@ impl Default for FluxComplianceStateDefinition {
         Self::Unknown
     }
 }
+#[doc = "The Flux Configuration object returned in Get & Put response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties to create a Flux Configuration resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<flux_configuration::Properties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -380,36 +474,52 @@ impl FluxConfiguration {
 }
 pub mod flux_configuration {
     use super::*;
+    #[doc = "Properties to create a Flux Configuration resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Scope at which the configuration will be installed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub scope: Option<ScopeDefinition>,
+        #[doc = "The namespace to which this configuration is installed to. Maximum of 253 lower case alphanumeric characters, hyphen and period only."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub namespace: Option<String>,
+        #[doc = "Source Kind to pull the configuration data from."]
         #[serde(rename = "sourceKind", default, skip_serializing_if = "Option::is_none")]
         pub source_kind: Option<SourceKindDefinition>,
+        #[doc = "Whether this configuration should suspend its reconciliation of its kustomizations and sources."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub suspend: Option<bool>,
+        #[doc = "Parameters to reconcile to the GitRepository source kind type."]
         #[serde(rename = "gitRepository", default, skip_serializing_if = "Option::is_none")]
         pub git_repository: Option<GitRepositoryDefinition>,
+        #[doc = "Parameters to reconcile to the GitRepository source kind type."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub bucket: Option<BucketDefinition>,
+        #[doc = "Array of kustomizations used to reconcile the artifact pulled by the source type on the cluster."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub kustomizations: Option<serde_json::Value>,
+        #[doc = "Key-value pairs of protected configuration settings for the configuration"]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
+        #[doc = "Statuses of the Flux Kubernetes resources created by the fluxConfiguration or created by the managed objects provisioned by the fluxConfiguration."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub statuses: Vec<ObjectStatusDefinition>,
+        #[doc = "Public Key associated with this fluxConfiguration (either generated within the cluster or provided by the user)."]
         #[serde(rename = "repositoryPublicKey", default, skip_serializing_if = "Option::is_none")]
         pub repository_public_key: Option<String>,
+        #[doc = "Branch and SHA of the last source commit synced with the cluster."]
         #[serde(rename = "lastSourceUpdatedCommitId", default, skip_serializing_if = "Option::is_none")]
         pub last_source_updated_commit_id: Option<String>,
+        #[doc = "Datetime the fluxConfiguration last synced its source on the cluster."]
         #[serde(rename = "lastSourceUpdatedAt", default, skip_serializing_if = "Option::is_none")]
         pub last_source_updated_at: Option<String>,
+        #[doc = "Compliance state of the cluster object."]
         #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
         pub compliance_state: Option<FluxComplianceStateDefinition>,
+        #[doc = "The provisioning state of the resource."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningStateDefinition>,
+        #[doc = "Error message returned to the user in the case of provisioning failure."]
         #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
         pub error_message: Option<String>,
     }
@@ -419,8 +529,10 @@ pub mod flux_configuration {
         }
     }
 }
+#[doc = "The Flux Configuration Patch Request object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfigurationPatch {
+    #[doc = "Updatable properties of an Flux Configuration Patch Request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<flux_configuration_patch::Properties>,
 }
@@ -431,18 +543,25 @@ impl FluxConfigurationPatch {
 }
 pub mod flux_configuration_patch {
     use super::*;
+    #[doc = "Updatable properties of an Flux Configuration Patch Request"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Source Kind to pull the configuration data from."]
         #[serde(rename = "sourceKind", default, skip_serializing_if = "Option::is_none")]
         pub source_kind: Option<SourceKindDefinition>,
+        #[doc = "Whether this configuration should suspend its reconciliation of its kustomizations and sources."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub suspend: Option<bool>,
+        #[doc = "Parameters to reconcile to the GitRepository source kind type."]
         #[serde(rename = "gitRepository", default, skip_serializing_if = "Option::is_none")]
         pub git_repository: Option<GitRepositoryPatchDefinition>,
+        #[doc = "Parameters to reconcile to the GitRepository source kind type."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub bucket: Option<BucketDefinition>,
+        #[doc = "Array of kustomizations used to reconcile the artifact pulled by the source type on the cluster."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub kustomizations: Option<serde_json::Value>,
+        #[doc = "Key-value pairs of protected configuration settings for the configuration"]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
     }
@@ -452,10 +571,13 @@ pub mod flux_configuration_patch {
         }
     }
 }
+#[doc = "Result of the request to list Flux Configurations.  It contains a list of FluxConfiguration objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfigurationsList {
+    #[doc = "List of Flux Configurations within a Kubernetes cluster."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FluxConfiguration>,
+    #[doc = "URL to get the next set of configuration objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -464,22 +586,31 @@ impl FluxConfigurationsList {
         Self::default()
     }
 }
+#[doc = "Parameters to reconcile to the GitRepository source kind type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitRepositoryDefinition {
+    #[doc = "The URL to sync for the flux configuration git repository."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "The maximum time to attempt to reconcile the cluster git repository source with the remote."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the cluster git repository source with the remote."]
     #[serde(rename = "syncIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub sync_interval_in_seconds: Option<i64>,
+    #[doc = "The source reference for the GitRepository object."]
     #[serde(rename = "repositoryRef", default, skip_serializing_if = "Option::is_none")]
     pub repository_ref: Option<RepositoryRefDefinition>,
+    #[doc = "Base64-encoded known_hosts value containing public SSH keys required to access private git repositories over SSH"]
     #[serde(rename = "sshKnownHosts", default, skip_serializing_if = "Option::is_none")]
     pub ssh_known_hosts: Option<String>,
+    #[doc = "Plaintext HTTPS username used to access private git repositories over HTTPS"]
     #[serde(rename = "httpsUser", default, skip_serializing_if = "Option::is_none")]
     pub https_user: Option<String>,
+    #[doc = "Base64-encoded HTTPS certificate authority contents used to access git private git repositories over HTTPS"]
     #[serde(rename = "httpsCACert", default, skip_serializing_if = "Option::is_none")]
     pub https_ca_cert: Option<String>,
+    #[doc = "Name of a local secret on the Kubernetes cluster to use as the authentication secret rather than the managed or user-provided configuration secrets."]
     #[serde(rename = "localAuthRef", default, skip_serializing_if = "Option::is_none")]
     pub local_auth_ref: Option<String>,
 }
@@ -488,22 +619,31 @@ impl GitRepositoryDefinition {
         Self::default()
     }
 }
+#[doc = "Parameters to reconcile to the GitRepository source kind type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitRepositoryPatchDefinition {
+    #[doc = "The URL to sync for the flux configuration git repository."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "The maximum time to attempt to reconcile the cluster git repository source with the remote."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the cluster git repository source with the remote."]
     #[serde(rename = "syncIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub sync_interval_in_seconds: Option<i64>,
+    #[doc = "The source reference for the GitRepository object."]
     #[serde(rename = "repositoryRef", default, skip_serializing_if = "Option::is_none")]
     pub repository_ref: Option<RepositoryRefDefinition>,
+    #[doc = "Base64-encoded known_hosts value containing public SSH keys required to access private git repositories over SSH"]
     #[serde(rename = "sshKnownHosts", default, skip_serializing_if = "Option::is_none")]
     pub ssh_known_hosts: Option<String>,
+    #[doc = "Plaintext HTTPS username used to access private git repositories over HTTPS"]
     #[serde(rename = "httpsUser", default, skip_serializing_if = "Option::is_none")]
     pub https_user: Option<String>,
+    #[doc = "Base64-encoded HTTPS certificate authority contents used to access git private git repositories over HTTPS"]
     #[serde(rename = "httpsCACert", default, skip_serializing_if = "Option::is_none")]
     pub https_ca_cert: Option<String>,
+    #[doc = "Name of a local secret on the Kubernetes cluster to use as the authentication secret rather than the managed or user-provided configuration secrets."]
     #[serde(rename = "localAuthRef", default, skip_serializing_if = "Option::is_none")]
     pub local_auth_ref: Option<String>,
 }
@@ -512,10 +652,13 @@ impl GitRepositoryPatchDefinition {
         Self::default()
     }
 }
+#[doc = "Properties for Helm operator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HelmOperatorProperties {
+    #[doc = "Version of the operator Helm chart."]
     #[serde(rename = "chartVersion", default, skip_serializing_if = "Option::is_none")]
     pub chart_version: Option<ChartVersion>,
+    #[doc = "Values override for the operator Helm chart."]
     #[serde(rename = "chartValues", default, skip_serializing_if = "Option::is_none")]
     pub chart_values: Option<ChartValues>,
 }
@@ -526,14 +669,19 @@ impl HelmOperatorProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HelmReleasePropertiesDefinition {
+    #[doc = "The revision number of the last released object change"]
     #[serde(rename = "lastRevisionApplied", default, skip_serializing_if = "Option::is_none")]
     pub last_revision_applied: Option<i64>,
+    #[doc = "Object reference to a Kubernetes object on a cluster"]
     #[serde(rename = "helmChartRef", default, skip_serializing_if = "Option::is_none")]
     pub helm_chart_ref: Option<ObjectReferenceDefinition>,
+    #[doc = "Total number of times that the HelmRelease failed to install or upgrade"]
     #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
     pub failure_count: Option<i64>,
+    #[doc = "Number of times that the HelmRelease failed to install"]
     #[serde(rename = "installFailureCount", default, skip_serializing_if = "Option::is_none")]
     pub install_failure_count: Option<i64>,
+    #[doc = "Number of times that the HelmRelease failed to upgrade"]
     #[serde(rename = "upgradeFailureCount", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_failure_count: Option<i64>,
 }
@@ -542,12 +690,16 @@ impl HelmReleasePropertiesDefinition {
         Self::default()
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -558,25 +710,34 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "The Kustomization defining how to reconcile the artifact pulled by the source type on the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KustomizationDefinition {
+    #[doc = "The path in the source reference to reconcile on the cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "Specifies other Kustomizations that this Kustomization depends on. This Kustomization will not reconcile until all dependencies have completed their reconciliation."]
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<DependsOnDefinition>,
+    #[doc = "The maximum time to attempt to reconcile the Kustomization on the cluster."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the Kustomization on the cluster."]
     #[serde(rename = "syncIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub sync_interval_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the Kustomization on the cluster in the event of failure on reconciliation."]
     #[serde(rename = "retryIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub retry_interval_in_seconds: Option<i64>,
+    #[doc = "Enable/disable garbage collections of Kubernetes objects created by this Kustomization."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prune: Option<bool>,
+    #[doc = "Enable/disable re-creating Kubernetes resources on the cluster when patching fails due to an immutable field change."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub force: Option<bool>,
 }
@@ -585,20 +746,28 @@ impl KustomizationDefinition {
         Self::default()
     }
 }
+#[doc = "The Kustomization defining how to reconcile the artifact pulled by the source type on the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KustomizationPatchDefinition {
+    #[doc = "The path in the source reference to reconcile on the cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "Specifies other Kustomizations that this Kustomization depends on. This Kustomization will not reconcile until all dependencies have completed their reconciliation."]
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<DependsOnDefinition>,
+    #[doc = "The maximum time to attempt to reconcile the Kustomization on the cluster."]
     #[serde(rename = "timeoutInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the Kustomization on the cluster."]
     #[serde(rename = "syncIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub sync_interval_in_seconds: Option<i64>,
+    #[doc = "The interval at which to re-reconcile the Kustomization on the cluster in the event of failure on reconciliation."]
     #[serde(rename = "retryIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub retry_interval_in_seconds: Option<i64>,
+    #[doc = "Enable/disable garbage collections of Kubernetes objects created by this Kustomization."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prune: Option<bool>,
+    #[doc = "Enable/disable re-creating Kubernetes resources on the cluster when patching fails due to an immutable field change."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub force: Option<bool>,
 }
@@ -607,6 +776,7 @@ impl KustomizationPatchDefinition {
         Self::default()
     }
 }
+#[doc = "Specify whether to validate the Kubernetes objects referenced in the Kustomization before applying them to the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum KustomizationValidationDefinition {
     #[serde(rename = "none")]
@@ -621,10 +791,13 @@ impl Default for KustomizationValidationDefinition {
         Self::None
     }
 }
+#[doc = "Object reference to a Kubernetes object on a cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectReferenceDefinition {
+    #[doc = "Name of the object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Namespace of the object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
 }
@@ -633,16 +806,22 @@ impl ObjectReferenceDefinition {
         Self::default()
     }
 }
+#[doc = "Status condition of Kubernetes object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectStatusConditionDefinition {
+    #[doc = "Last time this status condition has changed"]
     #[serde(rename = "lastTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub last_transition_time: Option<String>,
+    #[doc = "A more verbose description of the object status condition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Reason for the specified status condition type status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "Status of the Kubernetes object condition type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Object status condition type for this object"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -651,18 +830,25 @@ impl ObjectStatusConditionDefinition {
         Self::default()
     }
 }
+#[doc = "Statuses of objects deployed by the user-specified kustomizations from the git repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectStatusDefinition {
+    #[doc = "Name of the applied object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Namespace of the applied object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    #[doc = "Kind of the applied object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Compliance state of the cluster object."]
     #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<FluxComplianceStateDefinition>,
+    #[doc = "Object reference to a Kubernetes object on a cluster"]
     #[serde(rename = "appliedBy", default, skip_serializing_if = "Option::is_none")]
     pub applied_by: Option<ObjectReferenceDefinition>,
+    #[doc = "List of Kubernetes object status conditions present on the cluster"]
     #[serde(rename = "statusConditions", default, skip_serializing_if = "Vec::is_empty")]
     pub status_conditions: Vec<ObjectStatusConditionDefinition>,
     #[serde(rename = "helmReleaseProperties", default, skip_serializing_if = "Option::is_none")]
@@ -673,10 +859,13 @@ impl ObjectStatusDefinition {
         Self::default()
     }
 }
+#[doc = "The async operations in progress, in the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusList {
+    #[doc = "List of async operations in progress, in the cluster."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationStatusResult>,
+    #[doc = "URL to get the next set of Operation Result objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -685,15 +874,21 @@ impl OperationStatusList {
         Self::default()
     }
 }
+#[doc = "The current status of an async operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusResult {
+    #[doc = "Fully qualified ID for the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Operation status."]
     pub status: String,
+    #[doc = "Additional information, if available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -708,6 +903,7 @@ impl OperationStatusResult {
         }
     }
 }
+#[doc = "Scope at which the operator will be installed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperatorScopeDefinition {
     #[serde(rename = "cluster")]
@@ -720,10 +916,12 @@ impl Default for OperatorScopeDefinition {
         Self::Cluster
     }
 }
+#[doc = "Type of the operator"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperatorTypeDefinition {
     Flux,
 }
+#[doc = "The provisioning state of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningStateDefinition {
     Succeeded,
@@ -733,6 +931,7 @@ pub enum ProvisioningStateDefinition {
     Updating,
     Deleting,
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -743,14 +942,19 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "The source reference for the GitRepository object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RepositoryRefDefinition {
+    #[doc = "The git repository branch name to checkout."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[doc = "The git repository tag name to checkout. This takes precedence over branch."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+    #[doc = "The semver range used to match against git repository tags. This takes precedence over tag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub semver: Option<String>,
+    #[doc = "The commit SHA to checkout. This value must be combined with the branch name to be valid. This takes precedence over semver."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
 }
@@ -759,12 +963,16 @@ impl RepositoryRefDefinition {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -773,14 +981,19 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Supported operation of this resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperation {
+    #[doc = "Operation name, in format of {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
+    #[doc = "The flag that indicates whether the operation applies to data plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -791,14 +1004,19 @@ impl ResourceProviderOperation {
 }
 pub mod resource_provider_operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Resource provider: Microsoft KubernetesConfiguration."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of this operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -808,10 +1026,13 @@ pub mod resource_provider_operation {
         }
     }
 }
+#[doc = "Result of the request to list operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
+    #[doc = "List of operations supported by this resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
+    #[doc = "URL to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -820,10 +1041,13 @@ impl ResourceProviderOperationList {
         Self::default()
     }
 }
+#[doc = "Scope of the extension. It can be either Cluster or Namespace; but not both."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Scope {
+    #[doc = "Specifies that the scope of the extension is Cluster"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cluster: Option<ScopeCluster>,
+    #[doc = "Specifies that the scope of the extension is Namespace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<ScopeNamespace>,
 }
@@ -832,8 +1056,10 @@ impl Scope {
         Self::default()
     }
 }
+#[doc = "Specifies that the scope of the extension is Cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeCluster {
+    #[doc = "Namespace where the extension Release must be placed, for a Cluster scoped extension.  If this namespace does not exist, it will be created"]
     #[serde(rename = "releaseNamespace", default, skip_serializing_if = "Option::is_none")]
     pub release_namespace: Option<String>,
 }
@@ -842,6 +1068,7 @@ impl ScopeCluster {
         Self::default()
     }
 }
+#[doc = "Scope at which the configuration will be installed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScopeDefinition {
     #[serde(rename = "cluster")]
@@ -854,8 +1081,10 @@ impl Default for ScopeDefinition {
         Self::Cluster
     }
 }
+#[doc = "Specifies that the scope of the extension is Namespace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeNamespace {
+    #[doc = "Namespace where the extension will be created for an Namespace scoped extension.  If this namespace does not exist, it will be created"]
     #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
     pub target_namespace: Option<String>,
 }
@@ -864,12 +1093,15 @@ impl ScopeNamespace {
         Self::default()
     }
 }
+#[doc = "The SourceControl Configuration object returned in Get & Put response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControlConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties to create a Source Control Configuration resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<source_control_configuration::Properties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -880,32 +1112,46 @@ impl SourceControlConfiguration {
 }
 pub mod source_control_configuration {
     use super::*;
+    #[doc = "Properties to create a Source Control Configuration resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Url of the SourceControl Repository."]
         #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
         pub repository_url: Option<String>,
+        #[doc = "The namespace to which this operator is installed to. Maximum of 253 lower case alphanumeric characters, hyphen and period only."]
         #[serde(rename = "operatorNamespace", default, skip_serializing_if = "Option::is_none")]
         pub operator_namespace: Option<String>,
+        #[doc = "Instance name of the operator - identifying the specific configuration."]
         #[serde(rename = "operatorInstanceName", default, skip_serializing_if = "Option::is_none")]
         pub operator_instance_name: Option<String>,
+        #[doc = "Type of the operator"]
         #[serde(rename = "operatorType", default, skip_serializing_if = "Option::is_none")]
         pub operator_type: Option<OperatorTypeDefinition>,
+        #[doc = "Any Parameters for the Operator instance in string format."]
         #[serde(rename = "operatorParams", default, skip_serializing_if = "Option::is_none")]
         pub operator_params: Option<String>,
+        #[doc = "Name-value pairs of protected configuration settings for the configuration"]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<ConfigurationProtectedSettings>,
+        #[doc = "Scope at which the operator will be installed."]
         #[serde(rename = "operatorScope", default, skip_serializing_if = "Option::is_none")]
         pub operator_scope: Option<OperatorScopeDefinition>,
+        #[doc = "Public Key associated with this SourceControl configuration (either generated within the cluster or provided by the user)."]
         #[serde(rename = "repositoryPublicKey", default, skip_serializing_if = "Option::is_none")]
         pub repository_public_key: Option<String>,
+        #[doc = "Base64-encoded known_hosts contents containing public SSH keys required to access private Git instances"]
         #[serde(rename = "sshKnownHostsContents", default, skip_serializing_if = "Option::is_none")]
         pub ssh_known_hosts_contents: Option<String>,
+        #[doc = "Option to enable Helm Operator for this git configuration."]
         #[serde(rename = "enableHelmOperator", default, skip_serializing_if = "Option::is_none")]
         pub enable_helm_operator: Option<bool>,
+        #[doc = "Properties for Helm operator."]
         #[serde(rename = "helmOperatorProperties", default, skip_serializing_if = "Option::is_none")]
         pub helm_operator_properties: Option<HelmOperatorProperties>,
+        #[doc = "The provisioning state of the resource provider."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "Compliance Status details"]
         #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
         pub compliance_status: Option<ComplianceStatus>,
     }
@@ -916,6 +1162,7 @@ pub mod source_control_configuration {
     }
     pub mod properties {
         use super::*;
+        #[doc = "The provisioning state of the resource provider."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProvisioningState {
             Accepted,
@@ -926,10 +1173,13 @@ pub mod source_control_configuration {
         }
     }
 }
+#[doc = "Result of the request to list Source Control Configurations.  It contains a list of SourceControlConfiguration objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControlConfigurationList {
+    #[doc = "List of Source Control Configurations within a Kubernetes cluster."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SourceControlConfiguration>,
+    #[doc = "URL to get the next set of configuration objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -938,15 +1188,19 @@ impl SourceControlConfigurationList {
         Self::default()
     }
 }
+#[doc = "Source Kind to pull the configuration data from."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SourceKindDefinition {
     GitRepository,
     Bucket,
 }
+#[doc = "Extension scopes"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedScopes {
+    #[doc = "Default extension scopes: cluster or namespace"]
     #[serde(rename = "defaultScope", default, skip_serializing_if = "Option::is_none")]
     pub default_scope: Option<String>,
+    #[doc = "Extension scope settings"]
     #[serde(rename = "clusterScopeSettings", default, skip_serializing_if = "Option::is_none")]
     pub cluster_scope_settings: Option<ClusterScopeSettings>,
 }
@@ -955,8 +1209,10 @@ impl SupportedScopes {
         Self::default()
     }
 }
+#[doc = "The Extension Patch Request object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchExtension {
+    #[doc = "Updatable properties of an Extension Patch Request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<patch_extension::Properties>,
 }
@@ -967,16 +1223,22 @@ impl PatchExtension {
 }
 pub mod patch_extension {
     use super::*;
+    #[doc = "Updatable properties of an Extension Patch Request"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Flag to note if this extension participates in auto upgrade of minor version, or not."]
         #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_minor_version: Option<bool>,
+        #[doc = "ReleaseTrain this extension participates in for auto-upgrade (e.g. Stable, Preview, etc.) - only if autoUpgradeMinorVersion is 'true'."]
         #[serde(rename = "releaseTrain", default, skip_serializing_if = "Option::is_none")]
         pub release_train: Option<String>,
+        #[doc = "Version of the extension for this extension, if it is 'pinned' to a specific version. autoUpgradeMinorVersion must be 'false'."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<String>,
+        #[doc = "Configuration settings, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_settings: Option<serde_json::Value>,
+        #[doc = "Configuration settings that are sensitive, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
     }
@@ -986,18 +1248,25 @@ pub mod patch_extension {
         }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1008,6 +1277,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1015,6 +1285,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

@@ -2,18 +2,25 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An API key used for authenticating with a configuration store endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiKey {
+    #[doc = "The key ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "A name for the key describing its usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The value of the key that is used for authentication purposes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "A connection string that can be used by supporting clients for authentication."]
     #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
+    #[doc = "The last time any of the key's properties were modified."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "Whether this key can only be used for read operations."]
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
 }
@@ -22,10 +29,13 @@ impl ApiKey {
         Self::default()
     }
 }
+#[doc = "The result of a request to list API keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiKeyListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApiKey>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -34,9 +44,12 @@ impl ApiKeyListResult {
         Self::default()
     }
 }
+#[doc = "Parameters used for checking whether a resource name is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {
+    #[doc = "The name to check for availability."]
     pub name: String,
+    #[doc = "The resource type to check for name availability."]
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
@@ -47,20 +60,24 @@ impl CheckNameAvailabilityParameters {
 }
 pub mod check_name_availability_parameters {
     use super::*;
+    #[doc = "The resource type to check for name availability."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.AppConfiguration/configurationStores")]
         MicrosoftAppConfigurationConfigurationStores,
     }
 }
+#[doc = "The configuration store along with all resource properties. The Configuration Store will have all information to begin utilizing it."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationStore {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "The properties of a configuration store."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationStoreProperties>,
+    #[doc = "Describes a configuration store SKU."]
     pub sku: Sku,
 }
 impl ConfigurationStore {
@@ -73,10 +90,13 @@ impl ConfigurationStore {
         }
     }
 }
+#[doc = "The result of a request to list configuration stores."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationStoreListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationStore>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -85,12 +105,16 @@ impl ConfigurationStoreListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a configuration store."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationStoreProperties {
+    #[doc = "The provisioning state of the configuration store."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<configuration_store_properties::ProvisioningState>,
+    #[doc = "The creation date of configuration store."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The DNS endpoint where the configuration store API will be available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
@@ -101,6 +125,7 @@ impl ConfigurationStoreProperties {
 }
 pub mod configuration_store_properties {
     use super::*;
+    #[doc = "The provisioning state of the configuration store."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -111,6 +136,7 @@ pub mod configuration_store_properties {
         Canceled,
     }
 }
+#[doc = "The properties for updating a configuration store."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationStorePropertiesUpdateParameters {}
 impl ConfigurationStorePropertiesUpdateParameters {
@@ -118,14 +144,18 @@ impl ConfigurationStorePropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters for updating a configuration store."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationStoreUpdateParameters {
+    #[doc = "The properties for updating a configuration store."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationStorePropertiesUpdateParameters>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "Describes a configuration store SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "The ARM resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -134,10 +164,13 @@ impl ConfigurationStoreUpdateParameters {
         Self::default()
     }
 }
+#[doc = "AppConfiguration error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -146,22 +179,31 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "The result of a request to retrieve a key-value from the specified configuration store."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyValue {
+    #[doc = "The primary identifier of a key-value.\r\nThe key is used in unison with the label to uniquely identify a key-value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "A value used to group key-values.\r\nThe label is used in unison with the key to uniquely identify a key-value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "The value of the key-value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The content type of the key-value's value.\r\nProviding a proper content-type can enable transformations of values when they are retrieved by applications."]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "An ETag indicating the state of a key-value within a configuration store."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "The last time a modifying operation was performed on the given key-value."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "A value indicating whether the key-value is locked.\r\nA locked key-value may not be modified until it is unlocked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locked: Option<bool>,
+    #[doc = "A dictionary of tags that can help identify what a key-value may be applicable for."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -170,9 +212,12 @@ impl KeyValue {
         Self::default()
     }
 }
+#[doc = "The parameters used to list a configuration store key-value"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListKeyValueParameters {
+    #[doc = "The key to retrieve."]
     pub key: String,
+    #[doc = "The label of the key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -181,12 +226,16 @@ impl ListKeyValueParameters {
         Self { key, label: None }
     }
 }
+#[doc = "The result of a request to check the availability of a resource name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NameAvailabilityStatus {
+    #[doc = "The value indicating whether the resource name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "If any, the error message that provides more detail for the reason that the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "If any, the reason that the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
@@ -195,10 +244,13 @@ impl NameAvailabilityStatus {
         Self::default()
     }
 }
+#[doc = "The definition of a configuration store operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDefinition {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The display information for a configuration store operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDefinitionDisplay>,
 }
@@ -207,14 +259,19 @@ impl OperationDefinition {
         Self::default()
     }
 }
+#[doc = "The display information for a configuration store operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDefinitionDisplay {
+    #[doc = "The resource provider name: Microsoft App Configuration.\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The operation that users can perform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The description for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -223,10 +280,13 @@ impl OperationDefinitionDisplay {
         Self::default()
     }
 }
+#[doc = "The result of a request to list configuration store operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDefinitionListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDefinition>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -235,8 +295,10 @@ impl OperationDefinitionListResult {
         Self::default()
     }
 }
+#[doc = "The parameters used to regenerate an API key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeyParameters {
+    #[doc = "The id of the key to regenerate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -245,15 +307,21 @@ impl RegenerateKeyParameters {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The location of the resource. This cannot be changed after the resource is created."]
     pub location: String,
+    #[doc = "The tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -270,12 +338,16 @@ impl Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdentity {
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_identity::Type>,
+    #[doc = "The list of user-assigned identities associated with the resource. The user-assigned identity dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+    #[doc = "The principal id of the identity. This property will only be provided for a system-assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the resource's identity. This property will only be provided for a system-assigned identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -286,6 +358,7 @@ impl ResourceIdentity {
 }
 pub mod resource_identity {
     use super::*;
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
@@ -295,8 +368,10 @@ pub mod resource_identity {
         SystemAssignedUserAssigned,
     }
 }
+#[doc = "Describes a configuration store SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The SKU name of the configuration store."]
     pub name: String,
 }
 impl Sku {
@@ -306,8 +381,10 @@ impl Sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentity {
+    #[doc = "The principal ID of the user-assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The client ID of the user-assigned identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }

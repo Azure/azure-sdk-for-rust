@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Aks {
     #[serde(flatten)]
     pub compute: Compute,
+    #[doc = "AKS properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<aks::Properties>,
 }
@@ -16,18 +18,25 @@ impl Aks {
 }
 pub mod aks {
     use super::*;
+    #[doc = "AKS properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Cluster full qualified domain name"]
         #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
         pub cluster_fqdn: Option<String>,
+        #[doc = "System services"]
         #[serde(rename = "systemServices", default, skip_serializing_if = "Vec::is_empty")]
         pub system_services: Vec<SystemService>,
+        #[doc = "Number of agents"]
         #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
         pub agent_count: Option<i64>,
+        #[doc = "Agent virtual machine size"]
         #[serde(rename = "agentVMSize", default, skip_serializing_if = "Option::is_none")]
         pub agent_vm_size: Option<String>,
+        #[doc = "The ssl configuration for scoring"]
         #[serde(rename = "sslConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub ssl_configuration: Option<SslConfiguration>,
+        #[doc = "Advance configuration for AKS networking"]
         #[serde(rename = "aksNetworkingConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub aks_networking_configuration: Option<AksNetworkingConfiguration>,
     }
@@ -37,14 +46,18 @@ pub mod aks {
         }
     }
 }
+#[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
+    #[doc = "Content of kubeconfig file that can be used to connect to the Kubernetes cluster."]
     #[serde(rename = "userKubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub user_kube_config: Option<String>,
+    #[doc = "Content of kubeconfig file that can be used to connect to the Kubernetes cluster."]
     #[serde(rename = "adminKubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub admin_kube_config: Option<String>,
+    #[doc = "Image registry pull secret."]
     #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
     pub image_pull_secret_name: Option<String>,
 }
@@ -58,14 +71,19 @@ impl AksComputeSecrets {
         }
     }
 }
+#[doc = "Advance configuration for AKS networking"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AksNetworkingConfiguration {
+    #[doc = "Virtual network subnet resource ID the compute nodes belong to"]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
+    #[doc = "A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges."]
     #[serde(rename = "serviceCidr", default, skip_serializing_if = "Option::is_none")]
     pub service_cidr: Option<String>,
+    #[doc = "An IP address assigned to the Kubernetes DNS service. It must be within the Kubernetes service address range specified in serviceCidr."]
     #[serde(rename = "dnsServiceIP", default, skip_serializing_if = "Option::is_none")]
     pub dns_service_ip: Option<String>,
+    #[doc = "A CIDR notation IP range assigned to the Docker bridge network. It must not overlap with any Subnet IP ranges or the Kubernetes service address range."]
     #[serde(rename = "dockerBridgeCidr", default, skip_serializing_if = "Option::is_none")]
     pub docker_bridge_cidr: Option<String>,
 }
@@ -74,10 +92,12 @@ impl AksNetworkingConfiguration {
         Self::default()
     }
 }
+#[doc = "An Azure Machine Learning compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmlCompute {
     #[serde(flatten)]
     pub compute: Compute,
+    #[doc = "AML Compute properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<aml_compute::Properties>,
 }
@@ -88,30 +108,43 @@ impl AmlCompute {
 }
 pub mod aml_compute {
     use super::*;
+    #[doc = "AML Compute properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Virtual Machine Size"]
         #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
         pub vm_size: Option<String>,
+        #[doc = "Virtual Machine priority"]
         #[serde(rename = "vmPriority", default, skip_serializing_if = "Option::is_none")]
         pub vm_priority: Option<properties::VmPriority>,
+        #[doc = "scale settings for AML Compute"]
         #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
         pub scale_settings: Option<ScaleSettings>,
+        #[doc = "Settings for user account that gets created on each on the nodes of a compute."]
         #[serde(rename = "userAccountCredentials", default, skip_serializing_if = "Option::is_none")]
         pub user_account_credentials: Option<UserAccountCredentials>,
+        #[doc = "Represents a resource ID. For example, for a subnet, it is the resource URL for the subnet."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub subnet: Option<ResourceId>,
+        #[doc = "State of the public SSH port. Possible values are: Disabled - Indicates that the public ssh port is closed on all nodes of the cluster. Enabled - Indicates that the public ssh port is open on all nodes of the cluster. NotSpecified - Indicates that the public ssh port is closed on all nodes of the cluster if VNet is defined, else is open all public nodes. It can be default only during cluster creation time, after creation it will be either enabled or disabled."]
         #[serde(rename = "remoteLoginPortPublicAccess", default, skip_serializing_if = "Option::is_none")]
         pub remote_login_port_public_access: Option<properties::RemoteLoginPortPublicAccess>,
+        #[doc = "Allocation state of the compute. Possible values are: steady - Indicates that the compute is not resizing. There are no changes to the number of compute nodes in the compute in progress. A compute enters this state when it is created and when no operations are being performed on the compute to change the number of compute nodes. resizing - Indicates that the compute is resizing; that is, compute nodes are being added to or removed from the compute."]
         #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
         pub allocation_state: Option<properties::AllocationState>,
+        #[doc = "The time at which the compute entered its current allocation state."]
         #[serde(rename = "allocationStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
         pub allocation_state_transition_time: Option<String>,
+        #[doc = "Collection of errors encountered by various compute nodes during node setup."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub errors: Vec<MachineLearningServiceError>,
+        #[doc = "The number of compute nodes currently assigned to the compute."]
         #[serde(rename = "currentNodeCount", default, skip_serializing_if = "Option::is_none")]
         pub current_node_count: Option<i32>,
+        #[doc = "The target number of compute nodes for the compute. If the allocationState is resizing, this property denotes the target node count for the ongoing resize operation. If the allocationState is steady, this property denotes the target node count for the previous resize operation."]
         #[serde(rename = "targetNodeCount", default, skip_serializing_if = "Option::is_none")]
         pub target_node_count: Option<i32>,
+        #[doc = "Counts of various compute node states on the amlCompute."]
         #[serde(rename = "nodeStateCounts", default, skip_serializing_if = "Option::is_none")]
         pub node_state_counts: Option<NodeStateCounts>,
     }
@@ -122,11 +155,13 @@ pub mod aml_compute {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Virtual Machine priority"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum VmPriority {
             Dedicated,
             LowPriority,
         }
+        #[doc = "State of the public SSH port. Possible values are: Disabled - Indicates that the public ssh port is closed on all nodes of the cluster. Enabled - Indicates that the public ssh port is open on all nodes of the cluster. NotSpecified - Indicates that the public ssh port is closed on all nodes of the cluster if VNet is defined, else is open all public nodes. It can be default only during cluster creation time, after creation it will be either enabled or disabled."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum RemoteLoginPortPublicAccess {
             Enabled,
@@ -138,6 +173,7 @@ pub mod aml_compute {
                 Self::NotSpecified
             }
         }
+        #[doc = "Allocation state of the compute. Possible values are: steady - Indicates that the compute is not resizing. There are no changes to the number of compute nodes in the compute in progress. A compute enters this state when it is created and when no operations are being performed on the compute to change the number of compute nodes. resizing - Indicates that the compute is resizing; that is, compute nodes are being added to or removed from the compute."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum AllocationState {
             Steady,
@@ -145,18 +181,25 @@ pub mod aml_compute {
         }
     }
 }
+#[doc = "Compute node information related to a AmlCompute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmlComputeNodeInformation {
+    #[doc = "ID of the compute node."]
     #[serde(rename = "nodeId", default, skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
+    #[doc = "Private IP address of the compute node."]
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+    #[doc = "Public IP address of the compute node."]
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
+    #[doc = "SSH port number of the node."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<f64>,
+    #[doc = "State of the compute node. Values are idle, running, preparing, unusable, leaving and preempted."]
     #[serde(rename = "nodeState", default, skip_serializing_if = "Option::is_none")]
     pub node_state: Option<aml_compute_node_information::NodeState>,
+    #[doc = "ID of the Experiment running on the node, if any else null."]
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
 }
@@ -167,6 +210,7 @@ impl AmlComputeNodeInformation {
 }
 pub mod aml_compute_node_information {
     use super::*;
+    #[doc = "State of the compute node. Values are idle, running, preparing, unusable, leaving and preempted."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeState {
         #[serde(rename = "idle")]
@@ -183,10 +227,12 @@ pub mod aml_compute_node_information {
         Preempted,
     }
 }
+#[doc = "Compute node information related to a AmlCompute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmlComputeNodesInformation {
     #[serde(flatten)]
     pub compute_nodes_information: ComputeNodesInformation,
+    #[doc = "The collection of returned AmlCompute nodes details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub nodes: Vec<AmlComputeNodeInformation>,
 }
@@ -198,8 +244,10 @@ impl AmlComputeNodesInformation {
         }
     }
 }
+#[doc = "AmlCompute update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpdateParameters {
+    #[doc = "The properties of a amlCompute that need to be updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterUpdateProperties>,
 }
@@ -208,8 +256,10 @@ impl ClusterUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of a amlCompute that need to be updated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpdateProperties {
+    #[doc = "scale settings for AML Compute"]
     #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
 }
@@ -218,24 +268,34 @@ impl ClusterUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Machine Learning compute object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
+    #[doc = "The type of compute"]
     #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
+    #[doc = "Location for the underlying compute"]
     #[serde(rename = "computeLocation", default, skip_serializing_if = "Option::is_none")]
     pub compute_location: Option<String>,
+    #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<compute::ProvisioningState>,
+    #[doc = "The description of the Machine Learning compute."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The date and time when the compute was created."]
     #[serde(rename = "createdOn", default, skip_serializing_if = "Option::is_none")]
     pub created_on: Option<String>,
+    #[doc = "The date and time when the compute was last modified."]
     #[serde(rename = "modifiedOn", default, skip_serializing_if = "Option::is_none")]
     pub modified_on: Option<String>,
+    #[doc = "ARM resource id of the underlying compute"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Errors during provisioning"]
     #[serde(rename = "provisioningErrors", default, skip_serializing_if = "Vec::is_empty")]
     pub provisioning_errors: Vec<MachineLearningServiceError>,
+    #[doc = "Indicating whether the compute was provisioned by user and brought from outside if true, or machine learning service provisioned it if false."]
     #[serde(rename = "isAttachedCompute", default, skip_serializing_if = "Option::is_none")]
     pub is_attached_compute: Option<bool>,
 }
@@ -256,6 +316,7 @@ impl Compute {
 }
 pub mod compute {
     use super::*;
+    #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Unknown,
@@ -267,10 +328,13 @@ pub mod compute {
         Canceled,
     }
 }
+#[doc = "Compute nodes information related to a Machine Learning compute. Might differ for every type of compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeNodesInformation {
+    #[doc = "The type of compute"]
     #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
+    #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -282,10 +346,12 @@ impl ComputeNodesInformation {
         }
     }
 }
+#[doc = "Machine Learning compute object wrapped into ARM resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Machine Learning compute object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Compute>,
 }
@@ -294,8 +360,10 @@ impl ComputeResource {
         Self::default()
     }
 }
+#[doc = "Secrets related to a Machine Learning compute. Might differ for every type of compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeSecrets {
+    #[doc = "The type of compute"]
     #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
 }
@@ -304,6 +372,7 @@ impl ComputeSecrets {
         Self { compute_type }
     }
 }
+#[doc = "The type of compute"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComputeType {
     #[serde(rename = "AKS")]
@@ -316,6 +385,7 @@ pub enum ComputeType {
     Databricks,
     DataLakeAnalytics,
 }
+#[doc = "A DataFactory compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFactory {
     #[serde(flatten)]
@@ -326,6 +396,7 @@ impl DataFactory {
         Self { compute }
     }
 }
+#[doc = "A DataLakeAnalytics compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeAnalytics {
     #[serde(flatten)]
@@ -342,6 +413,7 @@ pub mod data_lake_analytics {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "DataLake Store Account Name"]
         #[serde(rename = "dataLakeStoreAccountName", default, skip_serializing_if = "Option::is_none")]
         pub data_lake_store_account_name: Option<String>,
     }
@@ -351,6 +423,7 @@ pub mod data_lake_analytics {
         }
     }
 }
+#[doc = "A DataFactory compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Databricks {
     #[serde(flatten)]
@@ -367,6 +440,7 @@ pub mod databricks {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Databricks access token"]
         #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
         pub databricks_access_token: Option<String>,
     }
@@ -376,10 +450,12 @@ pub mod databricks {
         }
     }
 }
+#[doc = "Secrets related to a Machine Learning compute based on Databricks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
+    #[doc = "access token for databricks account."]
     #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub databricks_access_token: Option<String>,
 }
@@ -391,9 +467,12 @@ impl DatabricksComputeSecrets {
         }
     }
 }
+#[doc = "Error detail information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
+    #[doc = "Error code."]
     pub code: String,
+    #[doc = "Error message."]
     pub message: String,
 }
 impl ErrorDetail {
@@ -401,12 +480,16 @@ impl ErrorDetail {
         Self { code, message }
     }
 }
+#[doc = "Error response information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "An array of error detail objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
@@ -415,6 +498,7 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "A HDInsight compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HdInsight {
     #[serde(flatten)]
@@ -431,10 +515,13 @@ pub mod hd_insight {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Port open for ssh connections on the master node of the cluster."]
         #[serde(rename = "sshPort", default, skip_serializing_if = "Option::is_none")]
         pub ssh_port: Option<i64>,
+        #[doc = "Public IP address of the master node of the cluster."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub address: Option<String>,
+        #[doc = "Admin credentials for virtual machine"]
         #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
         pub administrator_account: Option<VirtualMachineSshCredentials>,
     }
@@ -444,12 +531,16 @@ pub mod hd_insight {
         }
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -460,15 +551,19 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "The List Usages operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListUsagesResult {
+    #[doc = "The list of AML resource usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+    #[doc = "The URI to fetch the next page of AML resource usage information. Call ListNext() with this to fetch the next page of AML resource usage information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -493,10 +588,13 @@ impl ListWorkspaceKeysResult {
         Self::default()
     }
 }
+#[doc = "The List WorkspaceQuotasByVMFamily operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListWorkspaceQuotas {
+    #[doc = "The list of Workspace Quotas by VM Family"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceQuota>,
+    #[doc = "The URI to fetch the next page of workspace quota information by VM Family. Call ListNext() with this to fetch the next page of Workspace Quota information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -505,8 +603,10 @@ impl ListWorkspaceQuotas {
         Self::default()
     }
 }
+#[doc = "Wrapper for error response to follow ARM guidelines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServiceError {
+    #[doc = "Error response information."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -515,18 +615,25 @@ impl MachineLearningServiceError {
         Self::default()
     }
 }
+#[doc = "Counts of various compute node states on the amlCompute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeStateCounts {
+    #[doc = "Number of compute nodes in idle state."]
     #[serde(rename = "idleNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub idle_node_count: Option<i32>,
+    #[doc = "Number of compute nodes which are running jobs."]
     #[serde(rename = "runningNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub running_node_count: Option<i32>,
+    #[doc = "Number of compute nodes which are being prepared."]
     #[serde(rename = "preparingNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub preparing_node_count: Option<i32>,
+    #[doc = "Number of compute nodes which are in unusable state."]
     #[serde(rename = "unusableNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub unusable_node_count: Option<i32>,
+    #[doc = "Number of compute nodes which are leaving the amlCompute."]
     #[serde(rename = "leavingNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub leaving_node_count: Option<i32>,
+    #[doc = "Number of compute nodes which are in preempted state."]
     #[serde(rename = "preemptedNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub preempted_node_count: Option<i32>,
 }
@@ -535,10 +642,13 @@ impl NodeStateCounts {
         Self::default()
     }
 }
+#[doc = "Azure Machine Learning workspace REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -549,14 +659,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Display name of operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "The resource provider name: Microsoft.MachineLearningExperimentation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "The resource on which the operation is performed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "The operation that users can perform."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "The description for the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -566,8 +681,10 @@ pub mod operation {
         }
     }
 }
+#[doc = "An array of operations supported by the resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of AML workspace operations supported by the AML workspace resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -576,10 +693,13 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Paginated list of Machine Learning compute objects wrapped in ARM resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedComputeResourcesList {
+    #[doc = "An array of Machine Learning compute objects wrapped in ARM resource envelope."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ComputeResource>,
+    #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -600,14 +720,19 @@ impl Password {
         Self::default()
     }
 }
+#[doc = "The properties for Quota update or retrieval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaBaseProperties {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The maximum permitted quota of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "An enum describing the unit of quota measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
 }
@@ -618,13 +743,16 @@ impl QuotaBaseProperties {
 }
 pub mod quota_base_properties {
     use super::*;
+    #[doc = "An enum describing the unit of quota measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
     }
 }
+#[doc = "Quota update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaUpdateParameters {
+    #[doc = "The list for update quota."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<QuotaBaseProperties>,
 }
@@ -647,18 +775,25 @@ impl RegistryListCredentialsResult {
         Self::default()
     }
 }
+#[doc = "Azure Resource Manager resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "Specifies the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Specifies the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Contains resource tags defined as key/value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -667,8 +802,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Represents a resource ID. For example, for a subnet, it is the resource URL for the subnet."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceId {
+    #[doc = "The ID of the resource"]
     pub id: String,
 }
 impl ResourceId {
@@ -676,10 +813,13 @@ impl ResourceId {
         Self { id }
     }
 }
+#[doc = "The Resource Name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceName {
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The localized name of the resource."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -688,16 +828,22 @@ impl ResourceName {
         Self::default()
     }
 }
+#[doc = "The quota assigned to a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceQuota {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ResourceName>,
+    #[doc = "The maximum permitted quota of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "An enum describing the unit of quota measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<resource_quota::Unit>,
 }
@@ -708,17 +854,22 @@ impl ResourceQuota {
 }
 pub mod resource_quota {
     use super::*;
+    #[doc = "An enum describing the unit of quota measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
     }
 }
+#[doc = "scale settings for AML Compute"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleSettings {
+    #[doc = "Max number of nodes to use"]
     #[serde(rename = "maxNodeCount")]
     pub max_node_count: i64,
+    #[doc = "Min number of nodes to use"]
     #[serde(rename = "minNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub min_node_count: Option<i64>,
+    #[doc = "Node Idle Time before scaling down amlCompute"]
     #[serde(rename = "nodeIdleTimeBeforeScaleDown", default, skip_serializing_if = "Option::is_none")]
     pub node_idle_time_before_scale_down: Option<String>,
 }
@@ -731,10 +882,13 @@ impl ScaleSettings {
         }
     }
 }
+#[doc = "Service principal credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCredentials {
+    #[doc = "Client Id"]
     #[serde(rename = "clientId")]
     pub client_id: String,
+    #[doc = "Client secret"]
     #[serde(rename = "clientSecret")]
     pub client_secret: String,
 }
@@ -743,14 +897,19 @@ impl ServicePrincipalCredentials {
         Self { client_id, client_secret }
     }
 }
+#[doc = "The ssl configuration for scoring"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
+    #[doc = "Enable or disable ssl for scoring"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ssl_configuration::Status>,
+    #[doc = "Cert data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
+    #[doc = "Key data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "CNAME of the cert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
@@ -761,18 +920,23 @@ impl SslConfiguration {
 }
 pub mod ssl_configuration {
     use super::*;
+    #[doc = "Enable or disable ssl for scoring"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
         Enabled,
     }
 }
+#[doc = "A system service running on a compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemService {
+    #[doc = "The type of this system service."]
     #[serde(rename = "systemServiceType", default, skip_serializing_if = "Option::is_none")]
     pub system_service_type: Option<String>,
+    #[doc = "Public IP address"]
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
+    #[doc = "The version for this type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -781,16 +945,22 @@ impl SystemService {
         Self::default()
     }
 }
+#[doc = "The properties for update Quota response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateWorkspaceQuotas {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The maximum permitted quota of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "An enum describing the unit of quota measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<update_workspace_quotas::Unit>,
+    #[doc = "Status of update workspace quota."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<update_workspace_quotas::Status>,
 }
@@ -801,10 +971,12 @@ impl UpdateWorkspaceQuotas {
 }
 pub mod update_workspace_quotas {
     use super::*;
+    #[doc = "An enum describing the unit of quota measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
     }
+    #[doc = "Status of update workspace quota."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Undefined,
@@ -816,10 +988,13 @@ pub mod update_workspace_quotas {
         InvalidVmFamilyName,
     }
 }
+#[doc = "The result of update workspace quota."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateWorkspaceQuotasResult {
+    #[doc = "The list of workspace quota update result."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UpdateWorkspaceQuotas>,
+    #[doc = "The URI to fetch the next page of workspace quota update result. Call ListNext() with this to fetch the next page of Workspace Quota update result."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -828,18 +1003,25 @@ impl UpdateWorkspaceQuotasResult {
         Self::default()
     }
 }
+#[doc = "Describes AML Resource Usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "An enum describing the unit of usage measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
+    #[doc = "The current usage of the resource."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
+    #[doc = "The maximum permitted usage of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "The Usage Names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
@@ -850,15 +1032,19 @@ impl Usage {
 }
 pub mod usage {
     use super::*;
+    #[doc = "An enum describing the unit of usage measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
     }
 }
+#[doc = "The Usage Names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The localized name of the resource."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -867,12 +1053,16 @@ impl UsageName {
         Self::default()
     }
 }
+#[doc = "Settings for user account that gets created on each on the nodes of a compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAccountCredentials {
+    #[doc = "Name of the administrator user account which can be used to SSH to nodes."]
     #[serde(rename = "adminUserName")]
     pub admin_user_name: String,
+    #[doc = "SSH public key of the administrator user account."]
     #[serde(rename = "adminUserSshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_ssh_public_key: Option<String>,
+    #[doc = "Password of the administrator user account."]
     #[serde(rename = "adminUserPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_password: Option<String>,
 }
@@ -885,6 +1075,7 @@ impl UserAccountCredentials {
         }
     }
 }
+#[doc = "A Machine Learning compute based on Azure Virtual Machines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
     #[serde(flatten)]
@@ -901,12 +1092,16 @@ pub mod virtual_machine {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Virtual Machine size"]
         #[serde(rename = "virtualMachineSize", default, skip_serializing_if = "Option::is_none")]
         pub virtual_machine_size: Option<String>,
+        #[doc = "Port open for ssh connections."]
         #[serde(rename = "sshPort", default, skip_serializing_if = "Option::is_none")]
         pub ssh_port: Option<i64>,
+        #[doc = "Public IP address of the virtual machine."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub address: Option<String>,
+        #[doc = "Admin credentials for virtual machine"]
         #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
         pub administrator_account: Option<VirtualMachineSshCredentials>,
     }
@@ -916,10 +1111,12 @@ pub mod virtual_machine {
         }
     }
 }
+#[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
+    #[doc = "Admin credentials for virtual machine"]
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
@@ -931,24 +1128,34 @@ impl VirtualMachineSecrets {
         }
     }
 }
+#[doc = "Describes the properties of a VM size."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSize {
+    #[doc = "The name of the virtual machine size."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The family name of the virtual machine size."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
+    #[doc = "The number of vCPUs supported by the virtual machine size."]
     #[serde(rename = "vCPUs", default, skip_serializing_if = "Option::is_none")]
     pub v_cp_us: Option<i32>,
+    #[doc = "The number of gPUs supported by the virtual machine size."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gpus: Option<i32>,
+    #[doc = "The OS VHD disk size, in MB, allowed by the virtual machine size."]
     #[serde(rename = "osVhdSizeMB", default, skip_serializing_if = "Option::is_none")]
     pub os_vhd_size_mb: Option<i32>,
+    #[doc = "The resource volume size, in MB, allowed by the virtual machine size."]
     #[serde(rename = "maxResourceVolumeMB", default, skip_serializing_if = "Option::is_none")]
     pub max_resource_volume_mb: Option<i32>,
+    #[doc = "The amount of memory, in GB, supported by the virtual machine size."]
     #[serde(rename = "memoryGB", default, skip_serializing_if = "Option::is_none")]
     pub memory_gb: Option<f64>,
+    #[doc = "Specifies if the virtual machine size supports low priority VMs."]
     #[serde(rename = "lowPriorityCapable", default, skip_serializing_if = "Option::is_none")]
     pub low_priority_capable: Option<bool>,
+    #[doc = "Specifies if the virtual machine size supports premium IO."]
     #[serde(rename = "premiumIO", default, skip_serializing_if = "Option::is_none")]
     pub premium_io: Option<bool>,
 }
@@ -957,8 +1164,10 @@ impl VirtualMachineSize {
         Self::default()
     }
 }
+#[doc = "The List Virtual Machine size operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSizeListResult {
+    #[doc = "The list of virtual machine sizes supported by AmlCompute."]
     #[serde(rename = "amlCompute", default, skip_serializing_if = "Vec::is_empty")]
     pub aml_compute: Vec<VirtualMachineSize>,
 }
@@ -967,14 +1176,19 @@ impl VirtualMachineSizeListResult {
         Self::default()
     }
 }
+#[doc = "Admin credentials for virtual machine"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSshCredentials {
+    #[doc = "Username of admin account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "Password of admin account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "Public key data"]
     #[serde(rename = "publicKeyData", default, skip_serializing_if = "Option::is_none")]
     pub public_key_data: Option<String>,
+    #[doc = "Private key data"]
     #[serde(rename = "privateKeyData", default, skip_serializing_if = "Option::is_none")]
     pub private_key_data: Option<String>,
 }
@@ -983,10 +1197,12 @@ impl VirtualMachineSshCredentials {
         Self::default()
     }
 }
+#[doc = "An object that represents a machine learning workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of a machine learning workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
 }
@@ -995,10 +1211,13 @@ impl Workspace {
         Self::default()
     }
 }
+#[doc = "The result of a request to list machine learning workspaces."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
+    #[doc = "The list of machine learning workspaces. Since this list may be incomplete, the nextLink field should be used to request the next list of machine learning workspaces."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
+    #[doc = "The URI that can be used to request the next list of machine learning workspaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1007,26 +1226,37 @@ impl WorkspaceListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a machine learning workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceProperties {
+    #[doc = "The immutable id associated with this workspace."]
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[doc = "The description of this workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The friendly name for this workspace. This name in mutable"]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
+    #[doc = "The creation time of the machine learning workspace in ISO8601 format."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "ARM id of the key vault associated with this workspace. This cannot be changed once the workspace has been created"]
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<String>,
+    #[doc = "ARM id of the application insights associated with this workspace. This cannot be changed once the workspace has been created"]
     #[serde(rename = "applicationInsights", default, skip_serializing_if = "Option::is_none")]
     pub application_insights: Option<String>,
+    #[doc = "ARM id of the container registry associated with this workspace. This cannot be changed once the workspace has been created"]
     #[serde(rename = "containerRegistry", default, skip_serializing_if = "Option::is_none")]
     pub container_registry: Option<String>,
+    #[doc = "ARM id of the storage account associated with this workspace. This cannot be changed once the workspace has been created"]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<String>,
+    #[doc = "Url for the discovery service to identify regional endpoints for machine learning experimentation services"]
     #[serde(rename = "discoveryUrl", default, skip_serializing_if = "Option::is_none")]
     pub discovery_url: Option<String>,
+    #[doc = "The current deployment state of workspace resource. The provisioningState is to indicate states for resource provisioning."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
 }
@@ -1037,6 +1267,7 @@ impl WorkspaceProperties {
 }
 pub mod workspace_properties {
     use super::*;
+    #[doc = "The current deployment state of workspace resource. The provisioningState is to indicate states for resource provisioning."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Unknown,
@@ -1048,10 +1279,13 @@ pub mod workspace_properties {
         Canceled,
     }
 }
+#[doc = "The parameters for updating the properties of a machine learning workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspacePropertiesUpdateParameters {
+    #[doc = "The description of this workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The friendly name for this workspace."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
@@ -1060,10 +1294,13 @@ impl WorkspacePropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters for updating a machine learning workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpdateParameters {
+    #[doc = "The resource tags for the machine learning workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The parameters for updating the properties of a machine learning workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspacePropertiesUpdateParameters>,
 }

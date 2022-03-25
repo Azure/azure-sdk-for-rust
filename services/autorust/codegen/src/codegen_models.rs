@@ -5,15 +5,13 @@ use crate::{
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
 use autorust_openapi::{DataType, Reference, ReferenceOr, Schema};
+use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::{
-    collections::HashSet,
-    path::{Path, PathBuf},
-};
+use std::collections::HashSet;
 
 #[derive(Clone)]
 struct PropertyGen {
@@ -27,15 +25,21 @@ struct SchemaGen {
     schema: Schema,
 
     // used for identifying workarounds
-    doc_file: PathBuf,
+    doc_file: Utf8PathBuf,
 
     // resolved
     properties: Vec<PropertyGen>,
     all_of: Vec<SchemaGen>,
 }
 
+#[derive(Clone)]
+struct EnumValue {
+    value: String,
+    description: Option<String>,
+}
+
 impl SchemaGen {
-    fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: PathBuf) -> Self {
+    fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: Utf8PathBuf) -> Self {
         Self {
             ref_key,
             schema,
@@ -88,8 +92,19 @@ impl SchemaGen {
         get_schema_array_items(&self.schema.common).map_err(Error::ArrayItems)
     }
 
-    fn enum_values_as_strings(&self) -> Vec<&str> {
-        enum_values_as_strings(&self.schema.common.enum_)
+    fn enum_values(&self) -> Vec<EnumValue> {
+        self.schema
+            .common
+            .enum_
+            .iter()
+            .filter_map(|v| match v {
+                Value::String(s) => Some(EnumValue {
+                    value: s.to_owned(),
+                    description: None,
+                }),
+                _ => None,
+            })
+            .collect()
     }
 
     fn properties(&self) -> Vec<&PropertyGen> {
@@ -97,7 +112,7 @@ impl SchemaGen {
     }
 
     fn default(&self) -> Option<&str> {
-        self.schema.common.default.as_ref().map(|v| v.as_str()).flatten()
+        self.schema.common.default.as_ref().and_then(|v| v.as_str())
     }
 
     /// If the type should implement Default
@@ -118,7 +133,7 @@ fn resolve_schema_properties(
     resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     spec: &Spec,
-    doc_file: &Path,
+    doc_file: &Utf8Path,
     schema: &SchemaGen,
 ) -> Result<SchemaGen, Error> {
     let mut properties: IndexMap<String, _> = IndexMap::new();
@@ -147,7 +162,7 @@ fn resolve_schema_property(
     resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     spec: &Spec,
-    doc_file: &Path,
+    doc_file: &Utf8Path,
     property_name: String,
     property: &ResolvedSchema,
 ) -> Result<PropertyGen, Error> {
@@ -208,16 +223,6 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
     schema.properties = properties;
     schema.all_of = all_of.into_iter().flatten().collect();
     Ok(schema)
-}
-
-fn enum_values_as_strings(values: &[Value]) -> Vec<&str> {
-    values
-        .iter()
-        .filter_map(|v| match v {
-            Value::String(s) => Some(s.as_str()),
-            _ => None,
-        })
-        .collect()
 }
 
 fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
@@ -333,7 +338,12 @@ fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<
 }
 
 // For create_models. Recursively adds schema refs.
-fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_file: &Path, schema_ref: &Reference) -> Result<(), Error> {
+fn add_schema_refs(
+    resolved: &mut IndexMap<RefKey, SchemaGen>,
+    spec: &Spec,
+    doc_file: &Utf8Path,
+    schema_ref: &Reference,
+) -> Result<(), Error> {
     let resolved_schema = spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = &resolved_schema.ref_key {
         if !resolved.contains_key(ref_key) && !spec.is_input_file(&ref_key.file_path) {
@@ -347,31 +357,40 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
 }
 
 fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
-    let enum_values = property.enum_values_as_strings();
+    let enum_values = property.enum_values();
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
     })?;
     let mut values = TokenStream::new();
-    for name in enum_values {
-        let nm = name.to_camel_case_ident().map_err(|source| Error::EnumName {
+    for enum_value in enum_values {
+        let value = &enum_value.value;
+        let nm = value.to_camel_case_ident().map_err(|source| Error::EnumName {
             source,
             property: property_name.to_owned(),
         })?;
-        let lower = name.to_lowercase();
-        let rename = if nm.to_string() == name {
-            quote! {}
-        } else if name != lower && lowercase_workaround {
-            quote! { #[serde(rename = #name, alias = #lower)] }
-        } else {
-            quote! { #[serde(rename = #name)] }
+        let doc_comment = match enum_value.description {
+            Some(description) => {
+                quote! { #[doc = #description] }
+            }
+            None => quote! {},
         };
-        let value = quote! {
+        let lower = value.to_lowercase();
+        let rename = if &nm.to_string() == value {
+            quote! {}
+        } else if value != &lower && lowercase_workaround {
+            quote! { #[serde(rename = #value, alias = #lower)] }
+        } else {
+            quote! { #[serde(rename = #value)] }
+        };
+        let value_token = quote! {
+            #doc_comment
             #rename
             #nm,
         };
-        values.extend(value);
+        values.extend(value_token);
     }
+
     let nm = property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
@@ -391,7 +410,16 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
     } else {
         quote! {}
     };
+
+    let doc_comment = match &property.schema.common.description {
+        Some(description) => {
+            quote! { #[doc = #description] }
+        }
+        None => quote! {},
+    };
+
     let code = quote! {
+        #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
             #values
@@ -490,7 +518,14 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         if should_box {
             type_name = quote! { Box<#type_name> };
         }
+
+        let doc_comment = match &property.schema.schema.common.description {
+            Some(description) => quote! { #[doc = #description] },
+            None => quote! {},
+        };
+
         props.extend(quote! {
+            #doc_comment
             #serde
             pub #field_name: #type_name,
         });
@@ -520,7 +555,13 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         quote! {}
     };
 
+    let doc_comment = match &schema.schema.common.description {
+        Some(description) => quote! { #[doc = #description] },
+        None => quote! {},
+    };
+
     let struct_code = quote! {
+        #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #default_code
         pub struct #struct_name_code {
@@ -598,17 +639,5 @@ fn create_struct_field_code(
                 })
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_enum_values_as_strings() {
-        let values = vec![json!("/"), json!("/keys")];
-        assert_eq!(enum_values_as_strings(&values), vec!["/", "/keys"]);
     }
 }

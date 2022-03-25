@@ -2,11 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Application Insights component definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponent {
     #[serde(flatten)]
     pub components_resource: ComponentsResource,
+    #[doc = "The kind of application that this component refers to, used to customize UI. This value is a freeform string, values should typically be one of the following: web, ios, other, store, java, phone."]
     pub kind: String,
+    #[doc = "Properties that define an Application Insights component resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationInsightsComponentProperties>,
 }
@@ -19,9 +22,12 @@ impl ApplicationInsightsComponent {
         }
     }
 }
+#[doc = "Describes the list of Application Insights Resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentListResult {
+    #[doc = "List of Application Insights component definitions."]
     pub value: Vec<ApplicationInsightsComponent>,
+    #[doc = "The URI to get the next set of Application Insights component definitions if too many components where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -30,16 +36,22 @@ impl ApplicationInsightsComponentListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "A ProactiveDetection configuration definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Properties that define a ProactiveDetection configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationInsightsComponentProactiveDetectionConfigurationProperties>,
 }
@@ -50,18 +62,25 @@ impl ApplicationInsightsComponentProactiveDetectionConfiguration {
 }
 pub type ApplicationInsightsComponentProactiveDetectionConfigurationListResult =
     Vec<ApplicationInsightsComponentProactiveDetectionConfiguration>;
+#[doc = "Properties that define a ProactiveDetection configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfigurationProperties {
+    #[doc = "The rule name"]
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A flag that indicates whether this rule is enabled by the user"]
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "A flag that indicated whether notifications on this rule should be sent to subscription owners"]
     #[serde(rename = "SendEmailsToSubscriptionOwners", default, skip_serializing_if = "Option::is_none")]
     pub send_emails_to_subscription_owners: Option<bool>,
+    #[doc = "Custom email addresses for this rule notifications"]
     #[serde(rename = "CustomEmails", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_emails: Vec<String>,
+    #[doc = "The last time this rule was updated"]
     #[serde(rename = "LastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Static definitions of the ProactiveDetection configuration rule (same values for all components)."]
     #[serde(rename = "RuleDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub rule_definitions: Option<application_insights_component_proactive_detection_configuration_properties::RuleDefinitions>,
 }
@@ -72,22 +91,31 @@ impl ApplicationInsightsComponentProactiveDetectionConfigurationProperties {
 }
 pub mod application_insights_component_proactive_detection_configuration_properties {
     use super::*;
+    #[doc = "Static definitions of the ProactiveDetection configuration rule (same values for all components)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RuleDefinitions {
+        #[doc = "The rule name"]
         #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
+        #[doc = "The rule name as it is displayed in UI"]
         #[serde(rename = "DisplayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
+        #[doc = "The rule description"]
         #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+        #[doc = "URL which displays additional info about the proactive detection rule"]
         #[serde(rename = "HelpUrl", default, skip_serializing_if = "Option::is_none")]
         pub help_url: Option<String>,
+        #[doc = "A flag indicating whether the rule is hidden (from the UI)"]
         #[serde(rename = "IsHidden", default, skip_serializing_if = "Option::is_none")]
         pub is_hidden: Option<bool>,
+        #[doc = "A flag indicating whether the rule is enabled by default"]
         #[serde(rename = "IsEnabledByDefault", default, skip_serializing_if = "Option::is_none")]
         pub is_enabled_by_default: Option<bool>,
+        #[doc = "A flag indicating whether the rule is in preview"]
         #[serde(rename = "IsInPreview", default, skip_serializing_if = "Option::is_none")]
         pub is_in_preview: Option<bool>,
+        #[doc = "A flag indicating whether email notifications are supported for detections for this rule"]
         #[serde(rename = "SupportsEmailNotifications", default, skip_serializing_if = "Option::is_none")]
         pub supports_email_notifications: Option<bool>,
     }
@@ -97,46 +125,67 @@ pub mod application_insights_component_proactive_detection_configuration_propert
         }
     }
 }
+#[doc = "Properties that define an Application Insights component resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProperties {
+    #[doc = "The unique ID of your application. This field mirrors the 'Name' field and cannot be changed."]
     #[serde(rename = "ApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+    #[doc = "Application Insights Unique ID for your Application."]
     #[serde(rename = "AppId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
+    #[doc = "Type of application being monitored."]
     #[serde(rename = "Application_Type")]
     pub application_type: application_insights_component_properties::ApplicationType,
+    #[doc = "Used by the Application Insights system to determine what kind of flow this component was created by. This is to be set to 'Bluefield' when creating/updating a component via the REST API."]
     #[serde(rename = "Flow_Type", default, skip_serializing_if = "Option::is_none")]
     pub flow_type: Option<application_insights_component_properties::FlowType>,
+    #[doc = "Describes what tool created this Application Insights component. Customers using this API should set this to the default 'rest'."]
     #[serde(rename = "Request_Source", default, skip_serializing_if = "Option::is_none")]
     pub request_source: Option<application_insights_component_properties::RequestSource>,
+    #[doc = "Application Insights Instrumentation key. A read-only value that applications can use to identify the destination for all telemetry sent to Azure Application Insights. This value will be supplied upon construction of each new Application Insights component."]
     #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
+    #[doc = "Creation Date for the Application Insights component, in ISO 8601 format."]
     #[serde(rename = "CreationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "Azure Tenant Id."]
     #[serde(rename = "TenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The unique application ID created when a new application is added to HockeyApp, used for communications with HockeyApp."]
     #[serde(rename = "HockeyAppId", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_id: Option<String>,
+    #[doc = "Token used to authenticate communications with between Application Insights and HockeyApp."]
     #[serde(rename = "HockeyAppToken", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_token: Option<String>,
+    #[doc = "Current state of this component: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Succeeded, Deploying, Canceled, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Percentage of the data produced by the application being monitored that is being sampled for Application Insights telemetry."]
     #[serde(rename = "SamplingPercentage", default, skip_serializing_if = "Option::is_none")]
     pub sampling_percentage: Option<f64>,
+    #[doc = "Application Insights component connection string."]
     #[serde(rename = "ConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
+    #[doc = "Retention period in days."]
     #[serde(rename = "RetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i64>,
+    #[doc = "Disable IP masking."]
     #[serde(rename = "DisableIpMasking", default, skip_serializing_if = "Option::is_none")]
     pub disable_ip_masking: Option<bool>,
+    #[doc = "Purge data immediately after 30 days."]
     #[serde(rename = "ImmediatePurgeDataOn30Days", default, skip_serializing_if = "Option::is_none")]
     pub immediate_purge_data_on30_days: Option<bool>,
+    #[doc = "List of linked private link scope resources."]
     #[serde(rename = "PrivateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
+    #[doc = "The network access type for operating on the Application Insights Component. By default it is Enabled"]
     #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
+    #[doc = "The network access type for operating on the Application Insights Component. By default it is Enabled"]
     #[serde(rename = "publicNetworkAccessForQuery", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
+    #[doc = "Indicates the flow of the ingestion."]
     #[serde(rename = "IngestionMode", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_mode: Option<application_insights_component_properties::IngestionMode>,
 }
@@ -168,6 +217,7 @@ impl ApplicationInsightsComponentProperties {
 }
 pub mod application_insights_component_properties {
     use super::*;
+    #[doc = "Type of application being monitored."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ApplicationType {
         #[serde(rename = "web")]
@@ -180,6 +230,7 @@ pub mod application_insights_component_properties {
             Self::Web
         }
     }
+    #[doc = "Used by the Application Insights system to determine what kind of flow this component was created by. This is to be set to 'Bluefield' when creating/updating a component via the REST API."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FlowType {
         Bluefield,
@@ -189,6 +240,7 @@ pub mod application_insights_component_properties {
             Self::Bluefield
         }
     }
+    #[doc = "Describes what tool created this Application Insights component. Customers using this API should set this to the default 'rest'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestSource {
         #[serde(rename = "rest")]
@@ -199,6 +251,7 @@ pub mod application_insights_component_properties {
             Self::Rest
         }
     }
+    #[doc = "Indicates the flow of the ingestion."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IngestionMode {
         ApplicationInsights,
@@ -211,9 +264,12 @@ pub mod application_insights_component_properties {
         }
     }
 }
+#[doc = "Describes the body of a purge request for an App Insights component"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentPurgeBody {
+    #[doc = "Table from which to purge data."]
     pub table: String,
+    #[doc = "The set of columns and filters (queries) to run over them to purge the resulting data."]
     pub filters: Vec<ComponentPurgeBodyFilters>,
 }
 impl ComponentPurgeBody {
@@ -221,14 +277,19 @@ impl ComponentPurgeBody {
         Self { table, filters }
     }
 }
+#[doc = "User-defined filters to return data which will be purged from the table."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentPurgeBodyFilters {
+    #[doc = "The column of the table over which the given query should run"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub column: Option<String>,
+    #[doc = "A query operator to evaluate over the provided column and value(s). Supported operators are ==, =~, in, in~, >, >=, <, <=, between, and have the same behavior as they would in a KQL query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<String>,
+    #[doc = "the value for the operator to function over. This can be a number (e.g., > 100), a string (timestamp >= '2017-09-01') or array of values."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
+    #[doc = "When filtering over custom dimensions, this key will be used as the name of the custom dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
@@ -237,8 +298,10 @@ impl ComponentPurgeBodyFilters {
         Self::default()
     }
 }
+#[doc = "Response containing operationId for a specific purge action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentPurgeResponse {
+    #[doc = "Id to use when querying for status for a particular purge operation."]
     #[serde(rename = "operationId")]
     pub operation_id: String,
 }
@@ -247,8 +310,10 @@ impl ComponentPurgeResponse {
         Self { operation_id }
     }
 }
+#[doc = "Response containing status for a specific purge operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentPurgeStatusResponse {
+    #[doc = "Status of the operation represented by the requested Id."]
     pub status: component_purge_status_response::Status,
 }
 impl ComponentPurgeStatusResponse {
@@ -258,6 +323,7 @@ impl ComponentPurgeStatusResponse {
 }
 pub mod component_purge_status_response {
     use super::*;
+    #[doc = "Status of the operation represented by the requested Id."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "pending")]
@@ -266,15 +332,21 @@ pub mod component_purge_status_response {
         Completed,
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentsResource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -289,10 +361,13 @@ impl ComponentsResource {
         }
     }
 }
+#[doc = "A header to add to the WebTest."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeaderField {
+    #[doc = "The name of the header."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "The value of the header."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -301,14 +376,19 @@ impl HeaderField {
         Self::default()
     }
 }
+#[doc = "Represents an operation returned by the GetOperations request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Information about an operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationInfo>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -317,14 +397,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Information about an operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationInfo {
+    #[doc = "Name of the provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Name of the resource type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -333,10 +418,13 @@ impl OperationInfo {
         Self::default()
     }
 }
+#[doc = "Result of the List Operations operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
+    #[doc = "A collection of operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -345,10 +433,13 @@ impl OperationsListResult {
         Self::default()
     }
 }
+#[doc = "The private link scope resource reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkScopedResource {
+    #[doc = "The full resource Id of the private link scope resource."]
     #[serde(rename = "ResourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The private link scope unique Identifier."]
     #[serde(rename = "ScopeId", default, skip_serializing_if = "Option::is_none")]
     pub scope_id: Option<String>,
 }
@@ -357,6 +448,7 @@ impl PrivateLinkScopedResource {
         Self::default()
     }
 }
+#[doc = "The network access type for operating on the Application Insights Component. By default it is Enabled"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PublicNetworkAccessType {
     Enabled,
@@ -367,8 +459,10 @@ impl Default for PublicNetworkAccessType {
         Self::Enabled
     }
 }
+#[doc = "A container holding only the Tags for a resource, allowing the user to update the tags on a WebTest instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -377,12 +471,15 @@ impl TagsResource {
         Self::default()
     }
 }
+#[doc = "An Application Insights WebTest definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebTest {
     #[serde(flatten)]
     pub webtests_resource: WebtestsResource,
+    #[doc = "The kind of WebTest that this web test watches. Choices are ping and multistep."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<web_test::Kind>,
+    #[doc = "Metadata describing a web test for an Azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebTestProperties>,
 }
@@ -397,6 +494,7 @@ impl WebTest {
 }
 pub mod web_test {
     use super::*;
+    #[doc = "The kind of WebTest that this web test watches. Choices are ping and multistep."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "ping")]
@@ -410,8 +508,10 @@ pub mod web_test {
         }
     }
 }
+#[doc = "Geo-physical location to run a WebTest from. You must specify one or more locations for the test to run from."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebTestGeolocation {
+    #[doc = "Location ID for the WebTest to run from."]
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -420,32 +520,46 @@ impl WebTestGeolocation {
         Self::default()
     }
 }
+#[doc = "Metadata describing a web test for an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebTestProperties {
+    #[doc = "Unique ID of this WebTest. This is typically the same value as the Name field."]
     #[serde(rename = "SyntheticMonitorId")]
     pub synthetic_monitor_id: String,
+    #[doc = "User defined name if this WebTest."]
     #[serde(rename = "Name")]
     pub name: String,
+    #[doc = "User defined description for this WebTest."]
     #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Is the test actively being monitored."]
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Interval in seconds between test runs for this WebTest. Default value is 300."]
     #[serde(rename = "Frequency", default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<i32>,
+    #[doc = "Seconds until this WebTest will timeout and fail. Default value is 30."]
     #[serde(rename = "Timeout", default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "The kind of web test this is, valid choices are ping, multistep, basic, and standard."]
     #[serde(rename = "Kind")]
     pub kind: web_test_properties::Kind,
+    #[doc = "Allow for retries should this WebTest fail."]
     #[serde(rename = "RetryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub retry_enabled: Option<bool>,
+    #[doc = "A list of where to physically run the tests from to give global coverage for accessibility of your application."]
     #[serde(rename = "Locations")]
     pub locations: Vec<WebTestGeolocation>,
+    #[doc = "An XML configuration specification for a WebTest."]
     #[serde(rename = "Configuration", default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<web_test_properties::Configuration>,
+    #[doc = "Current state of this component, whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Succeeded, Deploying, Canceled, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The collection of request properties"]
     #[serde(rename = "Request", default, skip_serializing_if = "Option::is_none")]
     pub request: Option<web_test_properties::Request>,
+    #[doc = "The collection of validation rule properties"]
     #[serde(rename = "ValidationRules", default, skip_serializing_if = "Option::is_none")]
     pub validation_rules: Option<web_test_properties::ValidationRules>,
 }
@@ -470,6 +584,7 @@ impl WebTestProperties {
 }
 pub mod web_test_properties {
     use super::*;
+    #[doc = "The kind of web test this is, valid choices are ping, multistep, basic, and standard."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "ping")]
@@ -486,8 +601,10 @@ pub mod web_test_properties {
             Self::Ping
         }
     }
+    #[doc = "An XML configuration specification for a WebTest."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Configuration {
+        #[doc = "The XML specification of a WebTest to run against an application."]
         #[serde(rename = "WebTest", default, skip_serializing_if = "Option::is_none")]
         pub web_test: Option<String>,
     }
@@ -496,18 +613,25 @@ pub mod web_test_properties {
             Self::default()
         }
     }
+    #[doc = "The collection of request properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Request {
+        #[doc = "Url location to test."]
         #[serde(rename = "RequestUrl", default, skip_serializing_if = "Option::is_none")]
         pub request_url: Option<String>,
+        #[doc = "List of headers and their values to add to the WebTest call."]
         #[serde(rename = "Headers", default, skip_serializing_if = "Vec::is_empty")]
         pub headers: Vec<HeaderField>,
+        #[doc = "Http verb to use for this web test."]
         #[serde(rename = "HttpVerb", default, skip_serializing_if = "Option::is_none")]
         pub http_verb: Option<String>,
+        #[doc = "Base64 encoded string body to send with this web test."]
         #[serde(rename = "RequestBody", default, skip_serializing_if = "Option::is_none")]
         pub request_body: Option<String>,
+        #[doc = "Parse Dependent request for this WebTest."]
         #[serde(rename = "ParseDependentRequests", default, skip_serializing_if = "Option::is_none")]
         pub parse_dependent_requests: Option<bool>,
+        #[doc = "Follow redirects for this web test."]
         #[serde(rename = "FollowRedirects", default, skip_serializing_if = "Option::is_none")]
         pub follow_redirects: Option<bool>,
     }
@@ -516,16 +640,22 @@ pub mod web_test_properties {
             Self::default()
         }
     }
+    #[doc = "The collection of validation rule properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ValidationRules {
+        #[doc = "The collection of content validation properties"]
         #[serde(rename = "ContentValidation", default, skip_serializing_if = "Option::is_none")]
         pub content_validation: Option<validation_rules::ContentValidation>,
+        #[doc = "Checks to see if the SSL cert is still valid."]
         #[serde(rename = "SSLCheck", default, skip_serializing_if = "Option::is_none")]
         pub ssl_check: Option<bool>,
+        #[doc = "A number of days to check still remain before the the existing SSL cert expires.  Value must be positive and the SSLCheck must be set to true."]
         #[serde(rename = "SSLCertRemainingLifetimeCheck", default, skip_serializing_if = "Option::is_none")]
         pub ssl_cert_remaining_lifetime_check: Option<i32>,
+        #[doc = "Validate that the WebTest returns the http status code provided."]
         #[serde(rename = "ExpectedHttpStatusCode", default, skip_serializing_if = "Option::is_none")]
         pub expected_http_status_code: Option<i32>,
+        #[doc = "When set, validation will ignore the status code."]
         #[serde(rename = "IgnoreHttpsStatusCode", default, skip_serializing_if = "Option::is_none")]
         pub ignore_https_status_code: Option<bool>,
     }
@@ -536,12 +666,16 @@ pub mod web_test_properties {
     }
     pub mod validation_rules {
         use super::*;
+        #[doc = "The collection of content validation properties"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ContentValidation {
+            #[doc = "Content to look for in the return of the WebTest.  Must not be null or empty."]
             #[serde(rename = "ContentMatch", default, skip_serializing_if = "Option::is_none")]
             pub content_match: Option<String>,
+            #[doc = "When set, this value makes the ContentMatch validation case insensitive."]
             #[serde(rename = "IgnoreCase", default, skip_serializing_if = "Option::is_none")]
             pub ignore_case: Option<bool>,
+            #[doc = "When true, validation will pass if there is a match for the ContentMatch string.  If false, validation will fail if there is a match"]
             #[serde(rename = "PassIfTextFound", default, skip_serializing_if = "Option::is_none")]
             pub pass_if_text_found: Option<bool>,
         }
@@ -552,15 +686,21 @@ pub mod web_test_properties {
         }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebtestsResource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -575,9 +715,12 @@ impl WebtestsResource {
         }
     }
 }
+#[doc = "A list of 0 or more Application Insights WebTest definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebTestListResult {
+    #[doc = "Set of Application Insights WebTest definitions."]
     pub value: Vec<WebTest>,
+    #[doc = "The link to get the next part of the returned list of WebTest, should the return set be too large for a single request. May be null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

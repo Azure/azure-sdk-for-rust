@@ -31,6 +31,7 @@ impl BlobHierarchyListSegment {
         }
     }
 }
+#[doc = "An Azure Storage blob"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
     #[serde(rename = "Name")]
@@ -43,6 +44,7 @@ pub struct BlobItemInternal {
     pub version_id: Option<String>,
     #[serde(rename = "IsCurrentVersion", default, skip_serializing_if = "Option::is_none")]
     pub is_current_version: Option<bool>,
+    #[doc = "Properties of a blob"]
     #[serde(rename = "Properties")]
     pub properties: BlobPropertiesInternal,
     #[serde(rename = "DeletionId", default, skip_serializing_if = "Option::is_none")]
@@ -71,6 +73,7 @@ impl BlobPrefix {
         Self { name }
     }
 }
+#[doc = "Properties of a blob"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
     #[serde(rename = "Creation-Time", default, skip_serializing_if = "Option::is_none")]
@@ -79,6 +82,7 @@ pub struct BlobPropertiesInternal {
     pub last_modified: String,
     #[serde(rename = "Etag")]
     pub etag: String,
+    #[doc = "Size in bytes"]
     #[serde(rename = "Content-Length", default, skip_serializing_if = "Option::is_none")]
     pub content_length: Option<i64>,
     #[serde(rename = "Content-Type", default, skip_serializing_if = "Option::is_none")]
@@ -119,6 +123,7 @@ pub struct BlobPropertiesInternal {
     pub access_tier_inferred: Option<bool>,
     #[serde(rename = "CustomerProvidedKeySha256", default, skip_serializing_if = "Option::is_none")]
     pub customer_provided_key_sha256: Option<String>,
+    #[doc = "The name of the encryption scope under which the blob is encrypted."]
     #[serde(rename = "EncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
     #[serde(rename = "AccessTierChangeTime", default, skip_serializing_if = "Option::is_none")]
@@ -194,6 +199,7 @@ impl FileSystemList {
         Self::default()
     }
 }
+#[doc = "An enumeration of blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -245,6 +251,7 @@ pub struct Path {
     pub group: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<String>,
+    #[doc = "The name of the encryption scope under which the blob is encrypted."]
     #[serde(rename = "EncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
 }
@@ -281,6 +288,7 @@ impl SetAccessControlRecursiveResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
+    #[doc = "The service error response object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<storage_error::Error>,
 }
@@ -291,10 +299,13 @@ impl StorageError {
 }
 pub mod storage_error {
     use super::*;
+    #[doc = "The service error response object."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
+        #[doc = "The service error code."]
         #[serde(rename = "Code", default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "The service error message."]
         #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }

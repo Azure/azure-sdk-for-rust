@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerService {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the container service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerServiceProperties>,
 }
@@ -17,14 +19,20 @@ impl ContainerService {
         }
     }
 }
+#[doc = "Profile for the container service agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceAgentPoolProfile {
+    #[doc = "Unique name of the agent pool profile in the context of the subscription and resource group."]
     pub name: String,
+    #[doc = "Number of agents (VMs) to host docker containers. Allowed values must be in the range of 1 to 100 (inclusive). The default value is 1. "]
     pub count: i32,
+    #[doc = "Size of agent VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: container_service_agent_pool_profile::VmSize,
+    #[doc = "DNS prefix to be used to create the FQDN for the agent pool."]
     #[serde(rename = "dnsPrefix")]
     pub dns_prefix: String,
+    #[doc = "FQDN for the agent pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
@@ -41,6 +49,7 @@ impl ContainerServiceAgentPoolProfile {
 }
 pub mod container_service_agent_pool_profile {
     use super::*;
+    #[doc = "Size of agent VMs."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSize {
         #[serde(rename = "Standard_A0")]
@@ -139,8 +148,10 @@ pub mod container_service_agent_pool_profile {
         StandardGs5,
     }
 }
+#[doc = "Properties to configure a custom container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceCustomProfile {
+    #[doc = "The name of the custom orchestrator to use."]
     pub orchestrator: String,
 }
 impl ContainerServiceCustomProfile {
@@ -150,6 +161,7 @@ impl ContainerServiceCustomProfile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceDiagnosticsProfile {
+    #[doc = "Profile for diagnostics on the container service VMs."]
     #[serde(rename = "vmDiagnostics")]
     pub vm_diagnostics: ContainerServiceVmDiagnostics,
 }
@@ -158,10 +170,13 @@ impl ContainerServiceDiagnosticsProfile {
         Self { vm_diagnostics }
     }
 }
+#[doc = "Profile for Linux VMs in the container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceLinuxProfile {
+    #[doc = "The administrator username to use for Linux VMs."]
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
+    #[doc = "SSH configuration for Linux-based VMs running on Azure."]
     pub ssh: ContainerServiceSshConfiguration,
 }
 impl ContainerServiceLinuxProfile {
@@ -169,10 +184,13 @@ impl ContainerServiceLinuxProfile {
         Self { admin_username, ssh }
     }
 }
+#[doc = "The response from the List Container Services operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
+    #[doc = "the list of container services."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
+    #[doc = "The URL to get the next set of container service results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -181,12 +199,16 @@ impl ContainerServiceListResult {
         Self::default()
     }
 }
+#[doc = "Profile for the container service master."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceMasterProfile {
+    #[doc = "Number of masters (VMs) in the container service cluster. Allowed values are 1, 3, and 5. The default value is 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<container_service_master_profile::Count>,
+    #[doc = "DNS prefix to be used to create the FQDN for master."]
     #[serde(rename = "dnsPrefix")]
     pub dns_prefix: String,
+    #[doc = "FQDN for the master."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
@@ -201,11 +223,14 @@ impl ContainerServiceMasterProfile {
 }
 pub mod container_service_master_profile {
     use super::*;
+    #[doc = "Number of masters (VMs) in the container service cluster. Allowed values are 1, 3, and 5. The default value is 1."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Count {}
 }
+#[doc = "Profile for the container service orchestrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceOrchestratorProfile {
+    #[doc = "The orchestrator to use to manage container service cluster resources. Valid values are Swarm, DCOS, and Custom."]
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
 }
@@ -216,6 +241,7 @@ impl ContainerServiceOrchestratorProfile {
 }
 pub mod container_service_orchestrator_profile {
     use super::*;
+    #[doc = "The orchestrator to use to manage container service cluster resources. Valid values are Swarm, DCOS, and Custom."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrchestratorType {
         Swarm,
@@ -225,22 +251,31 @@ pub mod container_service_orchestrator_profile {
         Kubernetes,
     }
 }
+#[doc = "Properties of the container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceProperties {
+    #[doc = "the current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Profile for the container service orchestrator."]
     #[serde(rename = "orchestratorProfile", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_profile: Option<ContainerServiceOrchestratorProfile>,
+    #[doc = "Properties to configure a custom container service cluster."]
     #[serde(rename = "customProfile", default, skip_serializing_if = "Option::is_none")]
     pub custom_profile: Option<ContainerServiceCustomProfile>,
+    #[doc = "Information about a service principal identity for the cluster to use for manipulating Azure APIs."]
     #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
+    #[doc = "Profile for the container service master."]
     #[serde(rename = "masterProfile")]
     pub master_profile: ContainerServiceMasterProfile,
+    #[doc = "Properties of the agent pool."]
     #[serde(rename = "agentPoolProfiles")]
     pub agent_pool_profiles: Vec<ContainerServiceAgentPoolProfile>,
+    #[doc = "Profile for Windows VMs in the container service cluster."]
     #[serde(rename = "windowsProfile", default, skip_serializing_if = "Option::is_none")]
     pub windows_profile: Option<ContainerServiceWindowsProfile>,
+    #[doc = "Profile for Linux VMs in the container service cluster."]
     #[serde(rename = "linuxProfile")]
     pub linux_profile: ContainerServiceLinuxProfile,
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
@@ -265,10 +300,13 @@ impl ContainerServiceProperties {
         }
     }
 }
+#[doc = "Information about a service principal identity for the cluster to use for manipulating Azure APIs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceServicePrincipalProfile {
+    #[doc = "The ID for the service principal."]
     #[serde(rename = "clientId")]
     pub client_id: String,
+    #[doc = "The secret password associated with the service principal."]
     pub secret: String,
 }
 impl ContainerServiceServicePrincipalProfile {
@@ -276,8 +314,10 @@ impl ContainerServiceServicePrincipalProfile {
         Self { client_id, secret }
     }
 }
+#[doc = "SSH configuration for Linux-based VMs running on Azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshConfiguration {
+    #[doc = "the list of SSH public keys used to authenticate with Linux-based VMs."]
     #[serde(rename = "publicKeys")]
     pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
@@ -286,8 +326,10 @@ impl ContainerServiceSshConfiguration {
         Self { public_keys }
     }
 }
+#[doc = "Contains information about SSH certificate public key data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshPublicKey {
+    #[doc = "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."]
     #[serde(rename = "keyData")]
     pub key_data: String,
 }
@@ -296,9 +338,12 @@ impl ContainerServiceSshPublicKey {
         Self { key_data }
     }
 }
+#[doc = "Profile for diagnostics on the container service VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceVmDiagnostics {
+    #[doc = "Whether the VM diagnostic agent is provisioned on the VM."]
     pub enabled: bool,
+    #[doc = "The URI of the storage account where diagnostics are stored."]
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
@@ -310,10 +355,13 @@ impl ContainerServiceVmDiagnostics {
         }
     }
 }
+#[doc = "Profile for Windows VMs in the container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceWindowsProfile {
+    #[doc = "The administrator username to use for Windows VMs."]
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
+    #[doc = "The administrator password to use for Windows VMs."]
     #[serde(rename = "adminPassword")]
     pub admin_password: String,
 }
@@ -325,15 +373,21 @@ impl ContainerServiceWindowsProfile {
         }
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

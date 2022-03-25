@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -32,7 +31,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified account.
-    let databases = Box::pin(client.list_databases().into_stream())
+    let databases = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()?;
@@ -47,9 +48,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     if let Some(db) = databases.databases.first() {
         println!("getting info of database {}", &db.id);
         let db = client
-            .clone()
-            .into_database_client(db.id.clone())
-            .get_database(Context::new(), GetDatabaseOptions::default())
+            .database_client(db.id.clone())
+            .get_database()
+            .into_future()
             .await?;
         println!("db {} found == {:?}", &db.database.id, &db);
     }
@@ -58,13 +59,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // list_collection method.
 
     for db in databases.databases {
-        let database_client = client.clone().into_database_client(db.id.clone());
-        let collections = Box::pin(
-            database_client.list_collections(Context::new(), ListCollectionsOptions::new()),
-        )
-        .next()
-        .await
-        .unwrap()?;
+        let database = client.database_client(db.id.clone());
+        let collections = database
+            .list_collections()
+            .into_stream()
+            .next()
+            .await
+            .unwrap()?;
         println!(
             "database {} has {} collection(s)",
             db.id,
@@ -74,10 +75,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         for collection in collections.collections {
             println!("\tcollection {}", collection.id);
 
-            let collection_response = database_client
-                .clone()
-                .into_collection_client(collection.id)
-                .get_collection(Context::new(), GetCollectionOptions::new())
+            let collection_response = database
+                .collection_client(collection.id)
+                .get_collection()
+                .into_future()
                 .await?;
 
             println!("\tcollection_response {:?}", collection_response);

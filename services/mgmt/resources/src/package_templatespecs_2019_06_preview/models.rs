@@ -2,14 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Common properties for all Azure resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceBase {
+    #[doc = "String Id used to locate any resource on Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of this resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -18,10 +23,13 @@ impl AzureResourceBase {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -30,16 +38,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -48,13 +62,17 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Template Spec object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpec {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "The location of the Template Spec. It cannot be changed after Template Spec creation. It must be one of the supported Azure locations."]
     pub location: String,
+    #[doc = "Template Spec properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TemplateSpecProperties>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -68,9 +86,12 @@ impl TemplateSpec {
         }
     }
 }
+#[doc = "Represents a Template Spec artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpecArtifact {
+    #[doc = "A filesystem safe relative path of the artifact."]
     pub path: String,
+    #[doc = "The kind of artifact."]
     pub kind: template_spec_artifact::Kind,
 }
 impl TemplateSpecArtifact {
@@ -80,18 +101,23 @@ impl TemplateSpecArtifact {
 }
 pub mod template_spec_artifact {
     use super::*;
+    #[doc = "The kind of artifact."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "template")]
         Template,
     }
 }
+#[doc = "Template Spec properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecProperties {
+    #[doc = "Template Spec description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Template Spec display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "High-level information about the versions within this Template Spec. The keys are the version names. Only populated if the $expand query parameter is set to 'versions'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub versions: Option<serde_json::Value>,
 }
@@ -100,10 +126,12 @@ impl TemplateSpecProperties {
         Self::default()
     }
 }
+#[doc = "Represents a Template Spec artifact containing an embedded Azure Resource Manager template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpecTemplateArtifact {
     #[serde(flatten)]
     pub template_spec_artifact: TemplateSpecArtifact,
+    #[doc = "The Azure Resource Manager template."]
     pub template: serde_json::Value,
 }
 impl TemplateSpecTemplateArtifact {
@@ -114,10 +142,12 @@ impl TemplateSpecTemplateArtifact {
         }
     }
 }
+#[doc = "Template Spec properties to be updated (only tags are currently supported)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecUpdateModel {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -126,12 +156,16 @@ impl TemplateSpecUpdateModel {
         Self::default()
     }
 }
+#[doc = "Template Spec Version object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpecVersion {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "The location of the Template Spec Version. It must match the location of the parent Template Spec."]
     pub location: String,
+    #[doc = "Template Spec Version properties."]
     pub properties: TemplateSpecVersionProperties,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -145,12 +179,16 @@ impl TemplateSpecVersion {
         }
     }
 }
+#[doc = "High-level information about a Template Spec version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionInfo {
+    #[doc = "Template Spec version description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The timestamp of when the version was created."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "The timestamp of when the version was last modified."]
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
 }
@@ -159,12 +197,16 @@ impl TemplateSpecVersionInfo {
         Self::default()
     }
 }
+#[doc = "Template Spec Version properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionProperties {
+    #[doc = "An array of Template Spec artifacts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub artifacts: Vec<TemplateSpecArtifact>,
+    #[doc = "Template Spec version description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The Azure Resource Manager template content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<serde_json::Value>,
 }
@@ -173,10 +215,12 @@ impl TemplateSpecVersionProperties {
         Self::default()
     }
 }
+#[doc = "Template Spec Version properties to be updated (only tags are currently supported)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionUpdateModel {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -185,10 +229,13 @@ impl TemplateSpecVersionUpdateModel {
         Self::default()
     }
 }
+#[doc = "List of Template Specs versions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionsListResult {
+    #[doc = "An array of Template Spec versions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TemplateSpecVersion>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -197,8 +244,10 @@ impl TemplateSpecVersionsListResult {
         Self::default()
     }
 }
+#[doc = "Template Specs error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecsError {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -207,10 +256,13 @@ impl TemplateSpecsError {
         Self::default()
     }
 }
+#[doc = "List of Template Specs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecsListResult {
+    #[doc = "An array of Template Specs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TemplateSpec>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -219,18 +271,25 @@ impl TemplateSpecsListResult {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -241,6 +300,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -248,6 +308,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

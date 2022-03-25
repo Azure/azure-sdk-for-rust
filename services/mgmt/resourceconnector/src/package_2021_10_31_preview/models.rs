@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -14,16 +17,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -32,8 +41,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -42,14 +53,19 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Contains the REP (rendezvous endpoint) and “Listener” access token from notification service (NS)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridConnectionConfig {
+    #[doc = "Timestamp when this token will be expired."]
     #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time: Option<i64>,
+    #[doc = "Name of the connection"]
     #[serde(rename = "hybridConnectionName", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_connection_name: Option<String>,
+    #[doc = "Name of the notification service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relay: Option<String>,
+    #[doc = "Listener access token"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
@@ -58,12 +74,16 @@ impl HybridConnectionConfig {
         Self::default()
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -74,18 +94,23 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
         None,
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -94,12 +119,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {
@@ -111,14 +139,18 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Appliances definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Appliance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "Properties for an appliance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplianceProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -132,10 +164,13 @@ impl Appliance {
         }
     }
 }
+#[doc = "Cluster User Credential appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceCredentialKubeconfig {
+    #[doc = "Name which contains the role of the kubeconfig."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<appliance_credential_kubeconfig::Name>,
+    #[doc = "Contains the kubeconfig value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -146,16 +181,20 @@ impl ApplianceCredentialKubeconfig {
 }
 pub mod appliance_credential_kubeconfig {
     use super::*;
+    #[doc = "Name which contains the role of the kubeconfig."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "clusterUser")]
         ClusterUser,
     }
 }
+#[doc = "The List Cluster User Credential appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceListCredentialResults {
+    #[doc = "Contains the REP (rendezvous endpoint) and “Listener” access token from notification service (NS)."]
     #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_connection_config: Option<HybridConnectionConfig>,
+    #[doc = "The list of appliance kubeconfigs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kubeconfigs: Vec<ApplianceCredentialKubeconfig>,
 }
@@ -164,10 +203,13 @@ impl ApplianceListCredentialResults {
         Self::default()
     }
 }
+#[doc = "The List Appliances operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceListResult {
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "The list of Appliances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Appliance>,
 }
@@ -176,14 +218,19 @@ impl ApplianceListResult {
         Self::default()
     }
 }
+#[doc = "Appliances operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceOperation {
+    #[doc = "Describes the properties of an Appliances Operation Value Display."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<ApplianceOperationValueDisplay>,
+    #[doc = "Is this Operation a data plane operation"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "The name of the compute operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The origin of the compute operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -192,14 +239,19 @@ impl ApplianceOperation {
         Self::default()
     }
 }
+#[doc = "Describes the properties of an Appliances Operation Value Display."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceOperationValueDisplay {
+    #[doc = "The description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name of the compute operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The resource provider for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The display name of the resource the operation applies to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -208,10 +260,13 @@ impl ApplianceOperationValueDisplay {
         Self::default()
     }
 }
+#[doc = "Lists of Appliances operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceOperationsList {
+    #[doc = "Next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of applianceOperation"]
     pub value: Vec<ApplianceOperation>,
 }
 impl ApplianceOperationsList {
@@ -219,18 +274,25 @@ impl ApplianceOperationsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Properties for an appliance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceProperties {
+    #[doc = "Represents a supported Fabric/Infra. (AKSEdge etc...)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub distro: Option<appliance_properties::Distro>,
+    #[doc = "Contains infrastructure information about the Appliance"]
     #[serde(rename = "infrastructureConfig", default, skip_serializing_if = "Option::is_none")]
     pub infrastructure_config: Option<appliance_properties::InfrastructureConfig>,
+    #[doc = "The current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Certificates pair used to download MSI certificate from HIS"]
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
+    #[doc = "Appliance’s health and state of connection to on-prem"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<appliance_properties::Status>,
+    #[doc = "Version of the Appliance"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -241,6 +303,7 @@ impl ApplianceProperties {
 }
 pub mod appliance_properties {
     use super::*;
+    #[doc = "Represents a supported Fabric/Infra. (AKSEdge etc...)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Distro {
         #[serde(rename = "AKSEdge")]
@@ -251,8 +314,10 @@ pub mod appliance_properties {
             Self::AksEdge
         }
     }
+    #[doc = "Contains infrastructure information about the Appliance"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct InfrastructureConfig {
+        #[doc = "Information about the connected appliance."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<infrastructure_config::Provider>,
     }
@@ -263,6 +328,7 @@ pub mod appliance_properties {
     }
     pub mod infrastructure_config {
         use super::*;
+        #[doc = "Information about the connected appliance."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum Provider {
             #[serde(rename = "VMWare")]
@@ -273,6 +339,7 @@ pub mod appliance_properties {
             Scvmm,
         }
     }
+    #[doc = "Appliance’s health and state of connection to on-prem"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         WaitingForHeartbeat,
@@ -281,8 +348,10 @@ pub mod appliance_properties {
         Running,
     }
 }
+#[doc = "The Appliances patchable resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchableAppliance {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -291,18 +360,25 @@ impl PatchableAppliance {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -313,6 +389,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -320,6 +397,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
