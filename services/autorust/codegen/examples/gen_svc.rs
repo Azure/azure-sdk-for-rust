@@ -247,7 +247,8 @@ fn gen_crate(spec: &SpecReadme, skip_service_tags: &HashSet<&(&str, &str)>) -> R
             ..Config::default()
         })?;
         operation_totals.insert(tag.name(), cg.spec.operations()?.len());
-        let versions = cg.spec.api_versions();
+        let mut versions = cg.spec.api_versions();
+        versions.sort();
         api_version_totals.insert(tag.name(), versions.len());
         api_versions.insert(
             tag.name(),
