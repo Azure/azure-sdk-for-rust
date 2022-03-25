@@ -21,6 +21,8 @@ There are a few examples:
 - azure_mgmt_vmware
     - [private_cloud_list](mgmt/vmware/examples/private_cloud_list.rs)
 - azure_svc_batch
+    - [create_task](svc/batch/examples/create_task.rs)
+    - [create_task_thiserror](svc/batch/examples/create_task_thiserror.rs)
     - [list_pools](svc/batch/examples/list_pools.rs)
 
 These services are in their own [Rust workspace](Cargo.toml), so you need to change to the `services` directory to run these examples.

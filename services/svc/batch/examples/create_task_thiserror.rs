@@ -11,21 +11,27 @@ use azure_identity::token_credentials::AzureCliCredential;
 use azure_svc_batch::models::{JobAddParameter, PoolInformation, TaskAddParameter};
 use std::sync::Arc;
 
-#[tokio::main]
-async fn main() {
-    match run().await {
-        Ok(_) => (),
-        Err(error) => {
-            print_error_chain(error);
-            std::process::exit(1);
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("please specify batch account")]
+    AccountNameRequired,
+    #[error("please specify region")]
+    RegionRequired,
+    #[error("please specify pool id")]
+    PoolIdRequired,
+    #[error("please specify job id")]
+    JobIdRequired,
+    #[error("please specify task id")]
+    TaskIdRequired,
+    #[error("batch error")]
+    Batch(#[source] azure_svc_batch::Error),
 }
 
-fn print_error_chain(error: impl std::error::Error) {
-    println!("- {}", error.to_string());
-    if let Some(source) = error.source() {
-        print_error_chain(source);
+/// Any azure_svc_batch error ths is not mapped to a specific error
+/// is mapped to Error::Batch by default with a `?`, which performs an `into()`.
+impl<T: Into<azure_svc_batch::Error>> From<T> for Error {
+    fn from(error: T) -> Self {
+        Self::Batch(error.into())
     }
 }
 
@@ -61,26 +67,30 @@ async fn run() -> Result<(), Error> {
     Ok(())
 }
 
-/// Any azure_svc_batch error ths is not mapped to a specific error
-/// is mapped to Error::Batch by default with a `?`, which performs an `into()`.
-impl<T: Into<azure_svc_batch::Error>> From<T> for Error {
-    fn from(error: T) -> Self {
-        Self::Batch(error.into())
+/*
+The eyre crate is recommended for printing the report with the full error chain.
+You can use it instead of the below print_error_chain.
+
+#[tokio::main]
+async fn main() -> eyre::Result<()> {
+    Ok(run().await?)
+}
+*/
+
+#[tokio::main]
+async fn main() {
+    match run().await {
+        Ok(_) => (),
+        Err(error) => {
+            print_error_chain(error);
+            std::process::exit(1);
+        }
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("please specify batch account")]
-    AccountNameRequired,
-    #[error("please specify region")]
-    RegionRequired,
-    #[error("please specify pool id")]
-    PoolIdRequired,
-    #[error("please specify job id")]
-    JobIdRequired,
-    #[error("please specify task id")]
-    TaskIdRequired,
-    #[error("batch error")]
-    Batch(#[source] azure_svc_batch::Error),
+fn print_error_chain(error: impl std::error::Error) {
+    println!("- {}", error.to_string());
+    if let Some(source) = error.source() {
+        print_error_chain(source);
+    }
 }
