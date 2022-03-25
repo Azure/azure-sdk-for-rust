@@ -39,7 +39,7 @@ pub enum Error {
     #[error(transparent)]
     Stream(#[from] StreamError),
     #[error("JSON error")]
-    Json(#[source] serde_json::Error),
+    Json(#[from] serde_json::Error),
     #[error("authorization policy error")]
     AuthorizationPolicy(String),
     #[error("Other error")]

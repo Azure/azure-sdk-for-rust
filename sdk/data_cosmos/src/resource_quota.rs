@@ -1,3 +1,5 @@
+use azure_core::error::{Error, ErrorKind, Result};
+
 /// A resource quota for the given resource kind
 ///
 /// A collection of this type is often returned in responses allowing you to
@@ -37,28 +39,16 @@ const INTEROP_USERS: &str = "interopUsers=";
 const AUTH_POLICY_ELEMENTS: &str = "authPolicyElements=";
 
 /// Parse a collection of [`ResourceQuota`] from a string
-pub(crate) fn resource_quotas_from_str(
-    s: &str,
-) -> Result<Vec<ResourceQuota>, ResourceQuotaParseError> {
-    debug!("resource_quotas_from_str(\"{}\") called", s);
-    let tokens: Vec<&str> = s.split(';').collect();
+pub(crate) fn resource_quotas_from_str(full_string: &str) -> Result<Vec<ResourceQuota>> {
+    debug!("resource_quotas_from_str(\"{}\") called", full_string);
+    let tokens: Vec<&str> = full_string.split(';').collect();
     let mut v = Vec::with_capacity(tokens.len());
 
-    let parseu64 = |s| {
-        str::parse(s).map_err(|e| ResourceQuotaParseError::NumberParseError {
-            string: s.to_owned(),
-            error: e,
-        })
-    };
-    let parsei64 = |s| {
-        str::parse(s).map_err(|e| ResourceQuotaParseError::NumberParseError {
-            string: s.to_owned(),
-            error: e,
-        })
-    };
+    let parseu64 = |s| str::parse(s).map_err(|e| parse_int_error(e, s, full_string));
+    let parsei64 = |s| str::parse(s).map_err(|e| parse_int_error(e, s, full_string));
 
     for token in tokens.into_iter().filter(|token| !token.is_empty()) {
-        debug!("processing token == {}", token);
+        trace!("processing token == {}", token);
 
         if let Some(stripped) = token.strip_prefix(DATABASES) {
             v.push(ResourceQuota::Databases(parseu64(stripped)?));
@@ -89,36 +79,30 @@ pub(crate) fn resource_quotas_from_str(
         } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
             v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
         } else {
-            return Err(ResourceQuotaParseError::UnrecognizedPart {
-                part: token.to_string(),
-                full_string: s.to_owned(),
-            });
+            return Err(Error::with_message(
+                ErrorKind::DataConversion,
+                format!(
+                    "resource quota has an unrecognized part - part: \"{}\" full string: \"{}\"",
+                    token, full_string
+                ),
+            ));
         }
 
-        debug!("v == {:#?}", v);
+        trace!("v == {:#?}", v);
     }
 
     Ok(v)
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum ResourceQuotaParseError {
-    #[error(
-        "resource quota has an unrecognized part - part: \"{}\" full string: \"{}\"",
-        part,
-        full_string
-    )]
-    UnrecognizedPart { part: String, full_string: String },
-    #[error(
-        "failed to parse resource quota string '{}' as number: {}",
-        string,
-        error
-    )]
-    NumberParseError {
-        string: String,
-        #[source]
-        error: std::num::ParseIntError,
-    },
+fn parse_int_error(e: std::num::ParseIntError, n: &str, resource_quota: &str) -> Error {
+    Error::full(
+        ErrorKind::DataConversion,
+        e,
+        format!(
+            "failed to convert '{}' as int when parsing resource quote '{}'",
+            n, resource_quota
+        ),
+    )
 }
 
 #[cfg(test)]

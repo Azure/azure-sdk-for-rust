@@ -59,8 +59,6 @@ impl From<http::Error> for Error {
 pub enum ParseError {
     #[error(transparent)]
     Core(azure_core::ParseError),
-    #[error("Resource quota parsing error: {0}")]
-    ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParseError),
 }
 
 impl<T: Into<azure_core::ParseError>> From<T> for ParseError {
