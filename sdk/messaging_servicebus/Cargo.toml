@@ -12,7 +12,7 @@ documentation = "https://docs.rs/azure_messaging_servicebus"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.1" }

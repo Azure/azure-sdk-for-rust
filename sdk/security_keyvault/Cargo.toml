@@ -10,7 +10,7 @@ keywords = ["azure", "microsoft", "sdk", "keyvault", "cloud"]
 categories = ["api-bindings"]
 readme = "README.md"
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 base64 = "0.13"
