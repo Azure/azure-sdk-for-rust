@@ -6,7 +6,7 @@ use autorust_codegen::{
     Config, Error, PropertyName, Result, SpecReadme,
 };
 use camino::Utf8PathBuf;
-use std::{collections::HashSet, fs};
+use std::{collections::{HashSet, HashMap}, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
