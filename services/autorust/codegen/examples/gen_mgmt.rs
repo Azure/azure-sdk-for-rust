@@ -6,7 +6,10 @@ use autorust_codegen::{
     Config, Error, PropertyName, Result, SpecReadme,
 };
 use camino::Utf8PathBuf;
-use std::{collections::HashSet, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
@@ -348,6 +351,9 @@ fn gen_crate(spec: &SpecReadme, skip_service_tags: &HashSet<&(&str, &str)>) -> R
         });
     }
 
+    let mut operation_totals = HashMap::new();
+    let mut api_version_totals = HashMap::new();
+    let mut api_versions = HashMap::new();
     for tag in tags {
         println!("  {}", tag.name());
         let mod_output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
@@ -357,7 +363,7 @@ fn gen_crate(spec: &SpecReadme, skip_service_tags: &HashSet<&(&str, &str)>) -> R
             .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
             .collect();
         let input_files = input_files?;
-        autorust_codegen::run(Config {
+        let cg = autorust_codegen::run(Config {
             output_folder: mod_output_folder,
             input_files,
             box_properties: box_properties.clone(),
@@ -365,6 +371,13 @@ fn gen_crate(spec: &SpecReadme, skip_service_tags: &HashSet<&(&str, &str)>) -> R
             print_writing_file: false,
             ..Config::default()
         })?;
+        operation_totals.insert(tag.name(), cg.spec.operations()?.len());
+        let versions = cg.spec.api_versions();
+        api_version_totals.insert(tag.name(), versions.len());
+        api_versions.insert(
+            tag.name(),
+            versions.iter().map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(", "),
+        );
     }
 
     let default_tag = cargo_toml::get_default_tag(tags, config.tag());
@@ -375,6 +388,9 @@ fn gen_crate(spec: &SpecReadme, skip_service_tags: &HashSet<&(&str, &str)>) -> R
         readme_url: readme_md::url(spec.readme().as_str()),
         tags,
         default_tag,
+        operation_totals,
+        api_version_totals,
+        api_versions,
     };
     readme.create(&io::join(output_folder, "README.md")?)?;
 

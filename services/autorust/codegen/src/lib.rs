@@ -39,6 +39,8 @@ pub enum Error {
     ReadmeMd(#[from] readme_md::Error),
     #[error(transparent)]
     LibRs(#[from] lib_rs::Error),
+    #[error(transparent)]
+    Spec(#[from] spec::Error),
 }
 impl<T: Into<io::Error>> From<T> for Error {
     fn from(error: T) -> Self {
@@ -93,24 +95,24 @@ impl Default for Config {
     }
 }
 
-pub fn run(config: Config) -> Result<(), Error> {
+pub fn run(config: Config) -> Result<CodeGen, Error> {
     let directory = &config.output_folder;
     fs::create_dir_all(directory).map_err(|source| io::Error::CreateOutputDirectory {
         source,
         directory: directory.into(),
     })?;
-    let cg = &CodeGen::new(config.clone())?;
+    let cg = CodeGen::new(config.clone())?;
 
     // create models from schemas
     if config.should_run(&Runs::Models) {
-        let models = codegen_models::create_models(cg)?;
+        let models = codegen_models::create_models(&cg)?;
         let models_path = io::join(&config.output_folder, "models.rs")?;
         write_file(&models_path, &models, config.print_writing_file)?;
     }
 
     // create api client from operations
     if config.should_run(&Runs::Operations) {
-        let operations = codegen_operations::create_operations(cg)?;
+        let operations = codegen_operations::create_operations(&cg)?;
         let operations_path = io::join(&config.output_folder, "operations.rs")?;
         write_file(&operations_path, &operations, config.print_writing_file)?;
 
@@ -119,7 +121,7 @@ pub fn run(config: Config) -> Result<(), Error> {
         write_file(&operations_path, &operations, config.print_writing_file)?;
     }
 
-    Ok(())
+    Ok(cg)
 }
 
 fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<(), io::Error> {

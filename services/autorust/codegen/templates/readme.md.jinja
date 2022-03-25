@@ -4,7 +4,7 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 {{ readme_url }}
 
-Code was generated for {{tags.len()}} `Tag`s. The default `Tag` is {{default_tag.name()}}.
+Code was generated for {{tags.len()}} `Tag`s. The default `Tag` is `{{default_tag.name()}}`.
 
 {% for tag in tags %}
-- {{tag.name()}}{% endfor %}
+- `{{tag.name()}}` has {{self.operation_total(tag)}} operations from {{self.api_version_total(tag)}} API versions: {{self.api_versions(tag)}}{% endfor %}
