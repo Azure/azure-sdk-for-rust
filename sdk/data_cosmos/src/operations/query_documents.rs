@@ -197,7 +197,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(self) -> crate::Result<QueryDocumentsResponseDocuments<T>> {
+    pub fn into_documents(self) -> azure_core::error::Result<QueryDocumentsResponseDocuments<T>> {
         self.try_into()
     }
 }
@@ -372,7 +372,7 @@ pub struct QueryDocumentsResponseDocuments<T> {
 }
 
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -384,8 +384,9 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
                     QueryResult::Document(document) => Ok(document),
                     QueryResult::Raw(_) => {
                         // Bail if there is a raw document
-                        Err(crate::Error::ElementIsRaw(
-                            "QueryDocumentsResponseDocuments".to_owned(),
+                        Err(azure_core::error::Error::with_message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            "error when converting from a QueryDocumentsResponse to structured documents - expected no raw documents but a raw document was found."
                         ))
                     }
                 })
