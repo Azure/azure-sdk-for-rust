@@ -112,7 +112,6 @@ pub mod resources;
 mod authorization_policy;
 mod consistency_level;
 mod cosmos_entity;
-mod errors;
 mod headers;
 mod resource_quota;
 mod time_nonce;
@@ -123,7 +122,5 @@ pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
 pub(crate) use time_nonce::TimeNonce;
-
-pub use errors::{Error, Result};
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

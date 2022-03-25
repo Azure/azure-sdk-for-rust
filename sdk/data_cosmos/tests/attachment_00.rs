@@ -28,7 +28,7 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 }
 
 #[tokio::test]
-async fn attachment() -> Result<(), azure_data_cosmos::Error> {
+async fn attachment() -> azure_core::error::Result<()> {
     const DATABASE_NAME: &str = "test-cosmos-db-attachment";
     const COLLECTION_NAME: &str = "test-collection-attachment";
 

@@ -26,7 +26,7 @@ async fn create_and_delete_collection() {
         .into_future()
         .await
         .unwrap();
-    let collections = Box::pin(database.list_collections().into_stream())
+    let collections = database.list_collections().into_stream()
         .next()
         .await
         .unwrap()
@@ -49,7 +49,7 @@ async fn create_and_delete_collection() {
 
     // delete the collection
     collection.delete_collection().into_future().await.unwrap();
-    let collections = Box::pin(database.list_collections().into_stream())
+    let collections = database.list_collections().into_stream()
         .next()
         .await
         .unwrap()
@@ -89,7 +89,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections = Box::pin(database.list_collections().into_stream())
+    let collections = database.list_collections().into_stream()
         .next()
         .await
         .unwrap()
@@ -131,7 +131,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections = Box::pin(database.list_collections().into_stream())
+    let collections = database.list_collections().into_stream()
         .next()
         .await
         .unwrap()

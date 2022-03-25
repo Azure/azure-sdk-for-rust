@@ -1,8 +1,7 @@
-use crate::permission::AuthorizationTokenParseError;
 use azure_data_cosmos::prelude::*;
 
 #[cfg(not(feature = "mock_transport_framework"))]
-pub fn initialize() -> Result<CosmosClient, azure_data_cosmos::Error> {
+pub fn initialize() -> azure_core::error::Result<CosmosClient> {
     let account = get_account();
     let authorization_token = get_authorization_token()?;
 
@@ -15,7 +14,7 @@ fn get_account() -> String {
     std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!")
 }
 
-fn get_authorization_token() -> Result<AuthorizationToken, AuthorizationTokenParseError> {
+fn get_authorization_token() -> azure_core::error::Result<AuthorizationToken> {
     let key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
@@ -25,7 +24,7 @@ fn get_authorization_token() -> Result<AuthorizationToken, AuthorizationTokenPar
 #[cfg(feature = "mock_transport_framework")]
 pub fn initialize(
     transaction_name: impl Into<String>,
-) -> Result<CosmosClient, azure_data_cosmos::Error> {
+) -> azure_core::error::Result<CosmosClient> {
     let account_name = (std::env::var(azure_core::mock::TESTING_MODE_KEY).as_deref()
         == Ok(azure_core::mock::TESTING_MODE_RECORD))
     .then(get_account)

@@ -55,7 +55,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
     pub fn partition_key<PK: Serialize>(
         mut self,
         partition_key: &PK,
-    ) -> Result<Self, serde_json::Error> {
+    ) -> azure_core::error::Result<Self> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(self)
     }

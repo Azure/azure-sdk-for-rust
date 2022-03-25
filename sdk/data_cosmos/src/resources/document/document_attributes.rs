@@ -56,14 +56,14 @@ impl std::convert::TryFrom<&bytes::Bytes> for DocumentAttributes {
     type Error = azure_core::error::Error;
 
     fn try_from(body: &bytes::Bytes) -> Result<Self, Self::Error> {
-        let str = std::str::from_utf8(&body).unwrap_or("<NON-UTF8>");
-        Ok(serde_json::from_slice(&body).map_err(|e| {
+        let str = std::str::from_utf8(body).unwrap_or("<NON-UTF8>");
+        serde_json::from_slice(body).map_err(|e| {
             azure_core::error::Error::full(
                 azure_core::error::ErrorKind::DataConversion,
                 e,
                 format!("failed to convert json '{}' into DocumentAttributes", str),
             )
-        })?)
+        })
     }
 }
 

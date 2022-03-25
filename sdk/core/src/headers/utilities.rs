@@ -31,12 +31,12 @@ pub fn get_option_str_from_headers<'a>(
 }
 
 pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a str> {
-    Ok(get_option_str_from_headers(headers, key)?.ok_or_else(|| {
+    get_option_str_from_headers(headers, key)?.ok_or_else(|| {
         Error::with_message(
             ErrorKind::DataConversion,
             format!("could not find '{}' in headers", key),
         )
-    })?)
+    })
 }
 
 pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>

@@ -60,7 +60,7 @@ impl QueryDocumentsBuilder {
         context: Context => context,
     }
 
-    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> azure_core::error::Result<Self> {
         Ok(Self {
             partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
             ..self
@@ -141,10 +141,19 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(response.body())?)
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(response.body()).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
     }
 }
 
