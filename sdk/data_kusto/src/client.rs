@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-/// Options for specifying how a OpenMetadata client will behave
+/// Options for specifying how a Kusto client will behave
 #[derive(Clone, Default)]
 pub struct KustoClientOptions {
     options: ClientOptions,

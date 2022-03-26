@@ -96,6 +96,10 @@ pub enum ConnectionStringError {
     ParsingError { msg: String },
 }
 
+/// Build a connection string to connect to a Kusto service instance.
+///
+/// For more information on Kusto connection strings visit:
+/// https://docs.microsoft.com/en-us/azure/data-explorer/kusto/api/connection-strings/kusto
 #[derive(Default)]
 pub struct ConnectionStringBuilder<'a>(ConnectionString<'a>);
 
@@ -179,9 +183,9 @@ impl<'a> ConnectionStringBuilder<'a> {
     }
 }
 
-/// A kusto service connection string.
+/// A Kusto service connection string.
 ///
-/// The key are a subset of what is defined in the
+/// For more information on Kusto connection strings visit:
 /// https://docs.microsoft.com/en-us/azure/kusto/api/connection-strings/kusto
 #[derive(Debug, Default)]
 pub struct ConnectionString<'a> {
@@ -256,12 +260,7 @@ impl<'a> ConnectionString<'a> {
 
         for kv_pair_str in kv_str_pairs {
             let mut kv = kv_pair_str.trim().split('=');
-            let k = match kv.next() {
-                Some(k) if k.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::ParsingError {
-                        msg: "No key found".to_owned(),
-                    })
-                }
+            let k = match kv.next().filter(|k| !k.chars().all(char::is_whitespace)) {
                 None => {
                     return Err(ConnectionStringError::ParsingError {
                         msg: "No key found".to_owned(),
@@ -269,10 +268,7 @@ impl<'a> ConnectionString<'a> {
                 }
                 Some(k) => k,
             };
-            let v = match kv.next() {
-                Some(v) if v.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::MissingValue { key: k.to_owned() })
-                }
+            let v = match kv.next().filter(|k| !k.chars().all(char::is_whitespace)) {
                 None => return Err(ConnectionStringError::MissingValue { key: k.to_owned() }),
                 Some(v) => v,
             };
