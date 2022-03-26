@@ -1,5 +1,5 @@
 use crate::authorization_policy::AuthorizationPolicy;
-use crate::connection_string::ConnectionString;
+use crate::connection_string::{ConnectionString, ConnectionStringBuilder};
 use crate::error::Result;
 use crate::operations::query::ExecuteQueryBuilder;
 use azure_core::auth::TokenCredential;
@@ -152,6 +152,15 @@ impl TryFrom<String> for KustoClient {
 
     fn try_from(value: String) -> Result<Self> {
         let connection_string = ConnectionString::new(value.as_str())?;
+        Self::try_from(connection_string)
+    }
+}
+
+impl<'a> TryFrom<ConnectionStringBuilder<'a>> for KustoClient {
+    type Error = crate::error::Error;
+
+    fn try_from(value: ConnectionStringBuilder) -> Result<Self> {
+        let connection_string = value.build();
         Self::try_from(connection_string)
     }
 }

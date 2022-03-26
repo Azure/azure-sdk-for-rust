@@ -68,7 +68,6 @@ impl ExecuteQueryBuilder {
             let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
 
             request.insert_headers(&Accept::from("application/json"));
-            request.insert_headers(&AcceptEncoding::from("gzip,deflate"));
             request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
 
             if let Some(request_id) = &this.client_request_id {
