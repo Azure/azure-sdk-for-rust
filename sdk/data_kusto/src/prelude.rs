@@ -13,3 +13,4 @@
 
 pub use crate::client::{KustoClient, KustoClientOptions};
 pub use crate::connection_string::ConnectionStringBuilder;
+pub use crate::operations::query::ResultTable;

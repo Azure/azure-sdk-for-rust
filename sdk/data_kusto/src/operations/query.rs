@@ -61,15 +61,6 @@ impl ExecuteQueryBuilder {
             let url = this.client.query_url();
             let mut request = this.client.prepare_request(url, http::Method::POST);
 
-            let body = QueryBody {
-                db: this.database.clone(),
-                csl: this.query.clone(),
-            };
-            let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
-
-            request.insert_headers(&Accept::from("application/json"));
-            request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
-
             if let Some(request_id) = &this.client_request_id {
                 request.insert_headers(request_id);
             };
@@ -80,6 +71,11 @@ impl ExecuteQueryBuilder {
                 request.insert_headers(user);
             };
 
+            let body = QueryBody {
+                db: this.database,
+                csl: this.query,
+            };
+            let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
             request.insert_headers(&ContentLength::new(bytes.len() as i32));
             request.set_body(bytes.into());
 

@@ -3,6 +3,7 @@ use crate::connection_string::{ConnectionString, ConnectionStringBuilder};
 use crate::error::Result;
 use crate::operations::query::ExecuteQueryBuilder;
 use azure_core::auth::TokenCredential;
+use azure_core::prelude::*;
 use azure_core::{ClientOptions, Context, Pipeline, Request};
 use azure_identity::token_credentials::{
     AzureCliCredential, ClientSecretCredential, DefaultAzureCredential,
@@ -11,6 +12,8 @@ use azure_identity::token_credentials::{
 use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::sync::Arc;
+
+const API_VERSION: &str = "2019-02-13";
 
 /// Options for specifying how a Kusto client will behave
 #[derive(Clone, Default)]
@@ -86,7 +89,7 @@ impl KustoClient {
         })
     }
 
-    pub fn query_url(&self) -> &str {
+    pub(crate) fn query_url(&self) -> &str {
         &self.query_url
     }
 
@@ -99,14 +102,27 @@ impl KustoClient {
     ///
     /// # Arguments
     ///
-    /// * `database` - Database against query will be executed.
-    /// * `query` - Query to be executed.
-    pub fn execute_query(&self, database: &str, query: &str) -> ExecuteQueryBuilder {
+    /// * `database` - Name of the database in scope that is the target of the query
+    /// * `query` - Text of the query to execute
+    pub fn execute_query<DB, Q>(&self, database: DB, query: Q) -> ExecuteQueryBuilder
+    where
+        DB: Into<String>,
+        Q: Into<String>,
+    {
         ExecuteQueryBuilder::new(self.clone(), database.into(), query.into(), Context::new())
     }
 
     pub(crate) fn prepare_request(&self, uri: &str, http_method: http::Method) -> Request {
-        Request::new(uri.parse().unwrap(), http_method)
+        let mut request = Request::new(uri.parse().unwrap(), http_method);
+        request.insert_headers(&Version::from(API_VERSION));
+        request.insert_headers(&Accept::from("application/json"));
+        request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
+        request.insert_headers(&AcceptEncoding::from("gzip"));
+        request.insert_headers(&ClientVersion::from(format!(
+            "Kusto.Rust.Client:{}",
+            env!("CARGO_PKG_VERSION"),
+        )));
+        request
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {

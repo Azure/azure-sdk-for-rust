@@ -104,21 +104,30 @@ pub enum ConnectionStringError {
 pub struct ConnectionStringBuilder<'a>(ConnectionString<'a>);
 
 impl<'a> ConnectionStringBuilder<'a> {
+    /// Creates a ConnectionStringBuilder with no configuration options set
     pub fn new() -> Self {
         Self(ConnectionString::default())
     }
 
+    /// Creates a ConnectionStringBuilder that will authenticate with AAD application and key.
+    ///
+    /// # Arguments
+    ///
+    /// * `service_url` - Kusto service url should be of the format: https://<clusterName>.kusto.windows.net
+    /// * `authority_id` - Authority id (aka Tenant id) must be provided
+    /// * `client_id` - AAD application ID.
+    /// * `client_secret` - Corresponding key of the AAD application.
     pub fn new_with_aad_application_key_authentication(
         service_url: &'a str,
         authority_id: &'a str,
-        application_client_id: &'a str,
-        application_key: &'a str,
+        client_id: &'a str,
+        client_secret: &'a str,
     ) -> Self {
         Self(ConnectionString {
             data_source: Some(service_url),
             federated_security: Some(true),
-            application_client_id: Some(application_client_id),
-            application_key: Some(application_key),
+            application_client_id: Some(client_id),
+            application_key: Some(client_secret),
             authority_id: Some(authority_id),
             ..ConnectionString::default()
         })

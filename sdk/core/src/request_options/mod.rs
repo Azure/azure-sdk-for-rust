@@ -33,6 +33,7 @@ mod source_lease_id;
 mod timeout;
 mod user;
 mod user_agent;
+mod version;
 
 pub use accept::Accept;
 pub use accept_encoding::AcceptEncoding;
@@ -69,3 +70,4 @@ pub use source_lease_id::SourceLeaseId;
 pub use timeout::Timeout;
 pub use user::User;
 pub use user_agent::UserAgent;
+pub use version::Version;

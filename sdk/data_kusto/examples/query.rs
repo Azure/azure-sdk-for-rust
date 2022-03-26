@@ -32,12 +32,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = KustoClient::try_from(kcsb).unwrap();
 
     let response = client
-        .execute_query(&database, &query)
+        .execute_query(database, query)
         .into_future()
         .await
         .unwrap();
 
-    println!("{:?}", response);
+    for table in response.tables {
+        match table {
+            ResultTable::DataSetHeader(header) => println!("header: {:?}", header),
+            ResultTable::DataTable(table) => println!("table: {:?}", table),
+            ResultTable::DataSetCompletion(completion) => println!("completion: {:?}", completion),
+        }
+    }
 
     Ok(())
 }
