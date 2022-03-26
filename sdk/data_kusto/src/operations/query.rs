@@ -3,12 +3,15 @@ use azure_core::prelude::*;
 use azure_core::setters;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use futures::future::BoxFuture;
+use serde::{Deserialize, Serialize};
 
 type ExecuteQuery = BoxFuture<'static, crate::error::Result<KustoResponseDataSetV2>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct QueryBody {
+    /// Name of the database in scope that is the target of the query or control command
     db: String,
+    /// Text of the query or control command to execute
     csl: String,
 }
 
