@@ -1,24 +1,34 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Accept<'a>(&'a str);
+/// Advertises which content types the client is able to understand.
+///
+/// The Accept request HTTP header advertises which content types, expressed
+/// as MIME types, the client is able to understand. Using content
+/// negotiation, the server then selects one of the proposals, uses it and
+/// informs the client of its choice with the Content-Type response header.
+/// Browsers set adequate values for this header depending of the context
+/// where the request is done: when fetching a CSS stylesheet a different
+/// value is set for the request than when fetching an image, video or a
+/// script.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Accept(String);
 
-impl<'a> Accept<'a> {
-    pub fn new(s: &'a str) -> Self {
+impl Accept {
+    pub fn new(s: String) -> Self {
         Self(s)
     }
 }
 
-impl<'a, S> From<S> for Accept<'a>
+impl<S> From<S> for Accept
 where
-    S: Into<&'a str>,
+    S: Into<String>,
 {
     fn from(s: S) -> Self {
         Self(s.into())
     }
 }
 
-impl<'a> Header for Accept<'a> {
+impl Header for Accept {
     fn name(&self) -> headers::HeaderName {
         http::header::ACCEPT.into()
     }

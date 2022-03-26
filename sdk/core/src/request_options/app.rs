@@ -1,5 +1,6 @@
 use crate::headers::{self, Header};
 
+/// The (friendly) name of the application making the request
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App(String);
 

@@ -1,5 +1,6 @@
 use crate::headers::{self, Header};
 
+/// The (friendly) name of the user making the request
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct User(String);
 
@@ -18,7 +19,7 @@ where
     }
 }
 
-impl<'a> Header for User {
+impl Header for User {
     fn name(&self) -> headers::HeaderName {
         headers::USER.into()
     }

@@ -220,6 +220,7 @@ pub const BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";
 pub const BLOB_TYPE: &str = "x-ms-blob-type";
 pub const CACHE_CONTROL: &str = "x-ms-blob-cache-control";
 pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id";
+pub const CLIENT_VERSION: &str = "x-ms-client-version";
 pub const CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 pub const CONTINUATION: &str = "x-ms-continuation";
 pub const COPY_COMPLETION_TIME: &str = "x-ms-copy-completion-time";
