@@ -37,13 +37,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await
         .unwrap();
 
-    for table in response.tables {
+    for table in &response.tables {
         match table {
             ResultTable::DataSetHeader(header) => println!("header: {:?}", header),
             ResultTable::DataTable(table) => println!("table: {:?}", table),
             ResultTable::DataSetCompletion(completion) => println!("completion: {:?}", completion),
         }
     }
+
+    let primary_results = response.into_primary_results().collect::<Vec<_>>();
+    println!("primary results: {:?}", primary_results);
 
     Ok(())
 }

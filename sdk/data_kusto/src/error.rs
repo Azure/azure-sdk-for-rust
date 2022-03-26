@@ -39,3 +39,9 @@ impl From<azure_core::error::Error> for Error {
         Self::AzureError(err.into())
     }
 }
+
+impl From<azure_core::StreamError> for Error {
+    fn from(error: azure_core::StreamError) -> Self {
+        Self::AzureError(azure_core::Error::Stream(error))
+    }
+}
