@@ -1,4 +1,5 @@
 use crate::client::KustoClient;
+use async_convert::{async_trait, TryFrom};
 use azure_core::prelude::*;
 use azure_core::setters;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
@@ -36,7 +37,7 @@ impl ExecuteQueryBuilder {
         Self {
             client,
             database,
-            query,
+            query: query.trim().into(),
             client_request_id: None,
             app: None,
             user: None,
@@ -85,7 +86,7 @@ impl ExecuteQueryBuilder {
                 .send(&mut ctx.clone(), &mut request)
                 .await?;
 
-            KustoResponseDataSetV2::try_from(response).await
+            <KustoResponseDataSetV2 as TryFrom<HttpResponse>>::try_from(response).await
         })
     }
 }
@@ -104,14 +105,19 @@ pub struct KustoResponseDataSetV2 {
     pub tables: Vec<ResultTable>,
 }
 
-impl KustoResponseDataSetV2 {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::error::Error> {
+#[async_trait]
+impl TryFrom<HttpResponse> for KustoResponseDataSetV2 {
+    type Error = crate::error::Error;
+
+    async fn try_from(response: HttpResponse) -> Result<Self, crate::error::Error> {
         let (_status_code, _header_map, pinned_stream) = response.deconstruct();
         let data = collect_pinned_stream(pinned_stream).await.unwrap();
         let tables: Vec<ResultTable> = serde_json::from_slice(&data.to_vec()).unwrap();
         Ok(Self { tables })
     }
+}
 
+impl KustoResponseDataSetV2 {
     pub fn table_count(&self) -> usize {
         self.tables.len()
     }
