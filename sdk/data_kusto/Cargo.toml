@@ -12,6 +12,7 @@ keywords = ["sdk", "azure", "kusto", "azure-data-explorer"]
 categories = ["api-bindings"]
 
 [dependencies]
+arrow = { version = "9", optional = true }
 azure_core = { path = "../core", version = "0.1", features = [
   "enable_reqwest",
   "enable_reqwest_gzip",
@@ -33,6 +34,7 @@ env_logger = "0.9"
 tokio = { version = "1", features = ["macros"] }
 
 [features]
+default = ["arrow"]
 mock_transport_framework = ["azure_core/mock_transport_framework"]
 into_future = []
 test_e2e = []

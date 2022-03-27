@@ -1,3 +1,5 @@
+#[cfg(feature = "arrow")]
+mod arrow;
 pub mod authorization_policy;
 pub mod client;
 pub mod connection_string;

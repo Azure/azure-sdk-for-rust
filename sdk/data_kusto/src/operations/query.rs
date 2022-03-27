@@ -1,4 +1,8 @@
+#[cfg(feature = "arrow")]
+use crate::arrow::convert_table;
 use crate::client::KustoClient;
+#[cfg(feature = "arrow")]
+use arrow::record_batch::RecordBatch;
 use async_convert::TryFrom;
 use azure_core::prelude::*;
 use azure_core::setters;
@@ -134,6 +138,11 @@ impl KustoResponseDataSetV2 {
                 ResultTable::DataTable(tbl) => tbl,
                 _ => unreachable!("All other variants are excluded by filter"),
             })
+    }
+
+    #[cfg(feature = "arrow")]
+    pub fn into_record_batches(self) -> impl Iterator<Item = RecordBatch> {
+        self.into_primary_results().map(|tbl| convert_table(tbl))
     }
 }
 

@@ -1,0 +1,194 @@
+{
+    "Tables": [
+        {
+            "TableName": "Table_0",
+            "Columns": [
+                {
+                    "ColumnName": "DatabaseName",
+                    "DataType": "String"
+                },
+                {
+                    "ColumnName": "TableName",
+                    "DataType": "String"
+                }
+            ],
+            "Rows": [
+                ["Kuskus", "KustoLogs"],
+                ["Kuskus", "LiorTmp"]
+            ]
+        },
+        {
+            "TableName": "Table_1",
+            "Columns": [
+                {
+                    "ColumnName": "Value",
+                    "DataType": "String"
+                }
+            ],
+            "Rows": [
+                [
+                    "{\"Visualization\": null,\"Title\": null,\"XColumn\": null,\"Series\": null,\"YColumns\": null,\"XTitle\": null,\"YTitle\": null,\"XAxis\": null,\"YAxis\": null,\"Legend\": null,\"YSplit\": null,\"Accumulate\": false,\"IsQuerySorted\": false,\"Kind\": null}"
+                ]
+            ]
+        },
+        {
+            "TableName": "Table_2",
+            "Columns": [
+                {
+                    "ColumnName": "Timestamp",
+                    "DataType": "DateTime"
+                },
+                {
+                    "ColumnName": "Severity",
+                    "DataType": "Int32"
+                },
+                {
+                    "ColumnName": "SeverityName",
+                    "DataType": "String"
+                },
+                {
+                    "ColumnName": "StatusCode",
+                    "DataType": "Int32"
+                },
+                {
+                    "ColumnName": "StatusDescription",
+                    "DataType": "String"
+                },
+                {
+                    "ColumnName": "Count",
+                    "DataType": "Int32"
+                },
+                {
+                    "ColumnName": "RequestId",
+                    "DataType": "Guid"
+                },
+                {
+                    "ColumnName": "ActivityId",
+                    "DataType": "Guid"
+                },
+                {
+                    "ColumnName": "SubActivityId",
+                    "DataType": "Guid"
+                },
+                {
+                    "ColumnName": "ClientActivityId",
+                    "DataType": "String"
+                }
+            ],
+            "Rows": [
+                [
+                    "2018-08-12T09:13:19.5200972Z",
+                    4,
+                    "Info",
+                    0,
+                    "Querycompletedsuccessfully",
+                    1,
+                    "b6651693-9325-41c8-a5bf-dcc21202cdf2",
+                    "b6651693-9325-41c8-a5bf-dcc21202cdf2",
+                    "1cfa59c2-7f29-4e58-aef8-590d4609818f",
+                    "KPC.execute;721add30-f61a-44d0-ad89-812d06736260"
+                ],
+                [
+                    "2018-08-12T09:13:19.5200972Z",
+                    6,
+                    "Stats",
+                    0,
+                    {
+                        "ExecutionTime": 0.0,
+                        "resource_usage": {
+                            "cache": {
+                                "memory": {
+                                    "hits": 0,
+                                    "misses": 0,
+                                    "total": 0
+                                },
+                                "disk": {
+                                    "hits": 0,
+                                    "misses": 0,
+                                    "total": 0
+                                }
+                            },
+                            "cpu": {
+                                "user": "00:00:00",
+                                "kernel": "00:00:00",
+                                "total cpu": "00:00:00"
+                            },
+                            "memory": {
+                                "peak_per_node": 0
+                            }
+                        },
+                        "input_dataset_statistics": {
+                            "extents": {
+                                "total": 0,
+                                "scanned": 0
+                            },
+                            "rows": {
+                                "total": 0,
+                                "scanned": 0
+                            }
+                        },
+                        "dataset_statistics": [
+                            {
+                                "table_row_count": 2,
+                                "table_size": 46
+                            }
+                        ]
+                    },
+                    1,
+                    "b6651693-9325-41c8-a5bf-dcc21202cdf2",
+                    "b6651693-9325-41c8-a5bf-dcc21202cdf2",
+                    "1cfa59c2-7f29-4e58-aef8-590d4609818f",
+                    "KPC.execute;721add30-f61a-44d0-ad89-812d06736260"
+                ]
+            ]
+        },
+        {
+            "TableName": "Table_3",
+            "Columns": [
+                {
+                    "ColumnName": "Ordinal",
+                    "DataType": "Int64"
+                },
+                {
+                    "ColumnName": "Kind",
+                    "DataType": "String"
+                },
+                {
+                    "ColumnName": "Name",
+                    "DataType": "String"
+                },
+                {
+                    "ColumnName": "Id",
+                    "DataType": "String"
+                },
+                {
+                    "ColumnName": "PrettyName",
+                    "DataType": "String"
+                }
+            ],
+            "Rows": [
+                [
+                    0,
+                    "QueryResult",
+                    "PrimaryResult",
+                    "d6331ef2-d9f7-4d8c-8268-99f574babc82",
+                    ""
+                ],
+                [
+                    1,
+                    "QueryProperties",
+                    "@ExtendedProperties",
+                    "876ccb1a-818e-431f-9147-6b72547cca3d",
+                    ""
+                ],
+                [
+                    2,
+                    "QueryStatus",
+                    "QueryStatus",
+                    "00000000-0000-0000-0000-000000000000",
+                    ""
+                ]
+            ]
+        }
+    ]
+}
