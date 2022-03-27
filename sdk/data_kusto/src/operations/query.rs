@@ -1,14 +1,18 @@
 use crate::client::KustoClient;
+use async_convert::{async_trait, TryFrom};
 use azure_core::prelude::*;
 use azure_core::setters;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use futures::future::BoxFuture;
+use serde::{Deserialize, Serialize};
 
 type ExecuteQuery = BoxFuture<'static, crate::error::Result<KustoResponseDataSetV2>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct QueryBody {
+    /// Name of the database in scope that is the target of the query or control command
     db: String,
+    /// Text of the query or control command to execute
     csl: String,
 }
 
@@ -33,7 +37,7 @@ impl ExecuteQueryBuilder {
         Self {
             client,
             database,
-            query,
+            query: query.trim().into(),
             client_request_id: None,
             app: None,
             user: None,
@@ -58,16 +62,6 @@ impl ExecuteQueryBuilder {
             let url = this.client.query_url();
             let mut request = this.client.prepare_request(url, http::Method::POST);
 
-            let body = QueryBody {
-                db: this.database.clone(),
-                csl: this.query.clone(),
-            };
-            let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
-
-            request.insert_headers(&Accept::new("application/json"));
-            request.insert_headers(&AcceptEncoding::new("gzip,deflate"));
-            request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
-
             if let Some(request_id) = &this.client_request_id {
                 request.insert_headers(request_id);
             };
@@ -78,6 +72,11 @@ impl ExecuteQueryBuilder {
                 request.insert_headers(user);
             };
 
+            let body = QueryBody {
+                db: this.database,
+                csl: this.query,
+            };
+            let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
             request.insert_headers(&ContentLength::new(bytes.len() as i32));
             request.set_body(bytes.into());
 
@@ -87,7 +86,7 @@ impl ExecuteQueryBuilder {
                 .send(&mut ctx.clone(), &mut request)
                 .await?;
 
-            KustoResponseDataSetV2::try_from(response).await
+            <KustoResponseDataSetV2 as TryFrom<HttpResponse>>::try_from(response).await
         })
     }
 }
@@ -106,14 +105,19 @@ pub struct KustoResponseDataSetV2 {
     pub tables: Vec<ResultTable>,
 }
 
-impl KustoResponseDataSetV2 {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::error::Error> {
+#[async_trait]
+impl TryFrom<HttpResponse> for KustoResponseDataSetV2 {
+    type Error = crate::error::Error;
+
+    async fn try_from(response: HttpResponse) -> Result<Self, crate::error::Error> {
         let (_status_code, _header_map, pinned_stream) = response.deconstruct();
         let data = collect_pinned_stream(pinned_stream).await.unwrap();
         let tables: Vec<ResultTable> = serde_json::from_slice(&data.to_vec()).unwrap();
         Ok(Self { tables })
     }
+}
 
+impl KustoResponseDataSetV2 {
     pub fn table_count(&self) -> usize {
         self.tables.len()
     }

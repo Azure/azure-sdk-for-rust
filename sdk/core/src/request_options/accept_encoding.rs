@@ -1,24 +1,35 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct AcceptEncoding<'a>(&'a str);
+/// Advertises which content encoding the client is able to understand.
+///
+/// The Accept-Encoding request HTTP header advertises which content
+/// encoding, usually a compression algorithm, the client is able to
+/// understand. Using content negotiation, the server selects one of the
+/// proposals, uses it and informs the client of its choice with the
+/// Content-Encoding response header.
+///
+/// Even if both the client and the server supports the same compression
+/// algorithms, the server may choose not to compress the body of a
+/// response, if the identity value is also acceptable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AcceptEncoding(String);
 
-impl<'a> AcceptEncoding<'a> {
-    pub fn new(s: &'a str) -> Self {
+impl AcceptEncoding {
+    pub fn new(s: String) -> Self {
         Self(s)
     }
 }
 
-impl<'a, S> From<S> for AcceptEncoding<'a>
+impl<S> From<S> for AcceptEncoding
 where
-    S: Into<&'a str>,
+    S: Into<String>,
 {
     fn from(s: S) -> Self {
         Self(s.into())
     }
 }
 
-impl<'a> Header for AcceptEncoding<'a> {
+impl Header for AcceptEncoding {
     fn name(&self) -> headers::HeaderName {
         http::header::ACCEPT_ENCODING.into()
     }

@@ -1,16 +1,15 @@
 use crate::headers::{self, Header};
 
-/// The (friendly) name of the application making the request
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct App(String);
+pub struct Version(String);
 
-impl App {
+impl Version {
     pub fn new(s: String) -> Self {
         Self(s)
     }
 }
 
-impl<S> From<S> for App
+impl<S> From<S> for Version
 where
     S: Into<String>,
 {
@@ -19,9 +18,9 @@ where
     }
 }
 
-impl Header for App {
+impl Header for Version {
     fn name(&self) -> headers::HeaderName {
-        headers::APP.into()
+        headers::VERSION.into()
     }
 
     fn value(&self) -> headers::HeaderValue {

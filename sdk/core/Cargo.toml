@@ -23,9 +23,11 @@ http = "0.2"
 hyper = { version = "0.14", optional = true }
 hyper-rustls = { version = "0.23", optional = true }
 log = "0.4"
-oauth2 = { version = "4.0", default-features=false }
+oauth2 = { version = "4.0", default-features = false }
 rand = "0.8"
-reqwest = { version = "0.11", features = ["stream"], default-features=false, optional = true }
+reqwest = { version = "0.11", features = [
+  "stream",
+], default-features = false, optional = true }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
@@ -48,6 +50,7 @@ tokio = { version = "1", features = ["default"] }
 [features]
 default = ["enable_reqwest"]
 enable_reqwest = ["reqwest/default-tls", "oauth2/native-tls"]
+enable_reqwest_gzip = ["reqwest/gzip"]
 enable_reqwest_rustls = ["reqwest/rustls-tls", "oauth2/rustls-tls"]
 enable_hyper = ["hyper", "hyper-rustls"]
 test_e2e = []

@@ -1,17 +1,17 @@
 use crate::headers;
 use crate::Header;
 
-/// A unique identifier for the request
+/// The (friendly) version identifier for the client making the request
 #[derive(Debug, Clone)]
-pub struct ClientRequestId(String);
+pub struct ClientVersion(String);
 
-impl ClientRequestId {
+impl ClientVersion {
     pub fn new(client_request_id: String) -> Self {
         Self(client_request_id)
     }
 }
 
-impl<S> From<S> for ClientRequestId
+impl<S> From<S> for ClientVersion
 where
     S: Into<String>,
 {
@@ -20,9 +20,9 @@ where
     }
 }
 
-impl Header for ClientRequestId {
+impl Header for ClientVersion {
     fn name(&self) -> headers::HeaderName {
-        headers::CLIENT_REQUEST_ID.into()
+        headers::CLIENT_VERSION.into()
     }
 
     fn value(&self) -> headers::HeaderValue {

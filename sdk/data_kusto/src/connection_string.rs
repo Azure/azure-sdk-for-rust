@@ -131,25 +131,38 @@ pub enum ConnectionStringError {
     ParsingError { msg: String },
 }
 
+/// Build a connection string to connect to a Kusto service instance.
+///
+/// For more information on Kusto connection strings visit:
+/// https://docs.microsoft.com/en-us/azure/data-explorer/kusto/api/connection-strings/kusto
 #[derive(Default)]
 pub struct ConnectionStringBuilder<'a>(ConnectionString<'a>);
 
 impl<'a> ConnectionStringBuilder<'a> {
+    /// Creates a ConnectionStringBuilder with no configuration options set
     pub fn new() -> Self {
         Self(ConnectionString::default())
     }
 
+    /// Creates a ConnectionStringBuilder that will authenticate with AAD application and key.
+    ///
+    /// # Arguments
+    ///
+    /// * `service_url` - Kusto service url should be of the format: https://<clusterName>.kusto.windows.net
+    /// * `authority_id` - Authority id (aka Tenant id) must be provided
+    /// * `client_id` - AAD application ID.
+    /// * `client_secret` - Corresponding key of the AAD application.
     pub fn new_with_aad_application_key_authentication(
         service_url: &'a str,
         authority_id: &'a str,
-        application_client_id: &'a str,
-        application_key: &'a str,
+        client_id: &'a str,
+        client_secret: &'a str,
     ) -> Self {
         Self(ConnectionString {
             data_source: Some(service_url),
             federated_security: Some(true),
-            application_client_id: Some(application_client_id),
-            application_key: Some(application_key),
+            application_client_id: Some(client_id),
+            application_key: Some(client_secret),
             authority_id: Some(authority_id),
             ..ConnectionString::default()
         })
@@ -214,9 +227,9 @@ impl<'a> ConnectionStringBuilder<'a> {
     }
 }
 
-/// A kusto service connection string.
+/// A Kusto service connection string.
 ///
-/// The key are a subset of what is defined in the
+/// For more information on Kusto connection strings visit:
 /// https://docs.microsoft.com/en-us/azure/kusto/api/connection-strings/kusto
 #[derive(Debug, Default)]
 pub struct ConnectionString<'a> {
@@ -291,12 +304,7 @@ impl<'a> ConnectionString<'a> {
 
         for kv_pair_str in kv_str_pairs {
             let mut kv = kv_pair_str.trim().split('=');
-            let k = match kv.next() {
-                Some(k) if k.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::ParsingError {
-                        msg: "No key found".to_owned(),
-                    });
-                }
+            let k = match kv.next().filter(|k| !k.chars().all(char::is_whitespace)) {
                 None => {
                     return Err(ConnectionStringError::ParsingError {
                         msg: "No key found".to_owned(),
@@ -304,10 +312,7 @@ impl<'a> ConnectionString<'a> {
                 }
                 Some(k) => k,
             };
-            let v = match kv.next() {
-                Some(v) if v.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::MissingValue { key: k.to_owned() });
-                }
+            let v = match kv.next().filter(|k| !k.chars().all(char::is_whitespace)) {
                 None => return Err(ConnectionStringError::MissingValue { key: k.to_owned() }),
                 Some(v) => v,
             };
