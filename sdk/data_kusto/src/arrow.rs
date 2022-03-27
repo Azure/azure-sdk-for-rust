@@ -105,17 +105,17 @@ fn safe_map_f64(value: serde_json::Value) -> Option<f64> {
 }
 
 fn convert_array_float(values: Vec<serde_json::Value>) -> ArrayRef {
-    let reals: Vec<Option<f64>> = values.into_iter().map(|v| safe_map_f64(v)).collect();
+    let reals: Vec<Option<f64>> = values.into_iter().map(safe_map_f64).collect();
     Arc::new(Float64Array::from(reals))
 }
 
 fn convert_array_timespan(values: Vec<serde_json::Value>) -> ArrayRef {
     let strings: Vec<Option<String>> =
         serde_json::from_value(serde_json::Value::Array(values)).unwrap();
-    let strings: Vec<Option<&str>> = strings.iter().map(|opt| opt.as_deref()).collect();
     let durations: Vec<Option<i64>> = strings
-        .into_iter()
-        .map(|v| string_to_duration_i64(v))
+        .iter()
+        .map(|opt| opt.as_deref())
+        .map(string_to_duration_i64)
         .collect();
     Arc::new(DurationNanosecondArray::from(durations))
 }
