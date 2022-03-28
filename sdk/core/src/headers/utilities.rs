@@ -1,15 +1,120 @@
 use super::*;
+use crate::error::{Error, ErrorKind, Result};
 use crate::request_options::LeaseId;
-use crate::*;
 use crate::{RequestId, SessionToken};
+
 use chrono::{DateTime, FixedOffset, Utc};
 use http::header::{DATE, ETAG, LAST_MODIFIED, SERVER};
+use http::HeaderMap;
+use std::str::FromStr;
+
 #[cfg(feature = "enable_hyper")]
 use http::status::StatusCode;
-use http::HeaderMap;
 #[cfg(feature = "enable_hyper")]
 use hyper::{Body, Client, Request};
-use std::str::FromStr;
+
+pub fn get_option_str_from_headers<'a>(
+    headers: &'a HeaderMap,
+    key: &str,
+) -> Result<Option<&'a str>> {
+    let h = match headers.get(key) {
+        Some(h) => h,
+        None => return Ok(None),
+    };
+    Ok(Some(h.to_str().map_err(|e| {
+        Error::full(
+            ErrorKind::DataConversion,
+            e,
+            format!("could not convert header '{}' to string", key),
+        )
+    })?))
+}
+
+pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a str> {
+    get_option_str_from_headers(headers, key)?.ok_or_else(|| {
+        Error::with_message(
+            ErrorKind::DataConversion,
+            format!("could not find '{}' in headers", key),
+        )
+    })
+}
+
+pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>
+where
+    T: std::str::FromStr + 'static,
+    T::Err: std::error::Error + Send + Sync,
+{
+    let h = match get_option_str_from_headers(headers, key)? {
+        Some(h) => h,
+        None => return Ok(None),
+    };
+
+    Ok(Some(h.parse().map_err(|e| {
+        Error::full(
+            ErrorKind::DataConversion,
+            e,
+            format!(
+                "failed to parse header '{}' as {:?}",
+                key,
+                std::any::TypeId::of::<T>()
+            ),
+        )
+    })?))
+}
+
+pub fn get_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<T>
+where
+    T: std::str::FromStr + 'static,
+    T::Err: std::error::Error + Send + Sync,
+{
+    get_str_from_headers(headers, key)?.parse().map_err(|e| {
+        Error::full(
+            ErrorKind::DataConversion,
+            e,
+            format!(
+                "failed to parse header '{}' as {:?}",
+                key,
+                std::any::TypeId::of::<T>()
+            ),
+        )
+    })
+}
+
+pub fn parse_date_from_str(date: &str, fmt: &str) -> Result<DateTime<FixedOffset>> {
+    DateTime::parse_from_str(date, fmt).map_err(|e| {
+        Error::full(
+            ErrorKind::DataConversion,
+            e,
+            format!(
+                "failed to parse date '{}' with format string {:?}",
+                date, fmt
+            ),
+        )
+    })
+}
+
+pub fn parse_date_from_rfc2822(date: &str) -> Result<DateTime<FixedOffset>> {
+    DateTime::parse_from_rfc2822(date).map_err(|e| {
+        Error::full(
+            ErrorKind::DataConversion,
+            e,
+            format!("failed to parse date '{}' with as rfc2822", date),
+        )
+    })
+}
+
+pub fn parse_int<F>(s: &str) -> Result<F>
+where
+    F: FromStr<Err = std::num::ParseIntError>,
+{
+    FromStr::from_str(s).map_err(|e| {
+        Error::full(
+            ErrorKind::DataConversion,
+            e,
+            format!("failed to parse string '{}' as int", s),
+        )
+    })
+}
 
 pub fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId> {
     get_from_headers(headers, LEASE_ID)
@@ -20,14 +125,21 @@ pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId> {
 }
 
 pub fn client_request_id_from_headers_optional(headers: &HeaderMap) -> Option<String> {
-    headers
-        .get(CLIENT_REQUEST_ID)
-        .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_owned())
+    get_option_from_headers(headers, CLIENT_REQUEST_ID)
+        .ok()
+        .flatten()
 }
 
 pub fn last_modified_from_headers_optional(headers: &HeaderMap) -> Result<Option<DateTime<Utc>>> {
     get_option_from_headers(headers, LAST_MODIFIED.as_str())
+}
+
+pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>> {
+    rfc2822_from_headers_mandatory(headers, DATE.as_str())
+}
+
+pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>> {
+    rfc2822_from_headers_mandatory(headers, LAST_MODIFIED.as_str())
 }
 
 pub fn rfc2822_from_headers_mandatory(
@@ -35,23 +147,7 @@ pub fn rfc2822_from_headers_mandatory(
     header_name: &str,
 ) -> Result<DateTime<Utc>> {
     let date = get_str_from_headers(headers, header_name)?;
-    let date = parse_date_from_rfc2822(date)?;
-    let date = DateTime::from_utc(date.naive_utc(), Utc);
-    Ok(date)
-}
-
-pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>> {
-    rfc2822_from_headers_mandatory(headers, LAST_MODIFIED.as_str())
-}
-
-pub fn continuation_token_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>> {
-    if let Some(hc) = headers.get(CONTINUATION) {
-        Ok(Some(
-            hc.to_str().map_err(HttpHeaderError::ToStr)?.to_owned(),
-        ))
-    } else {
-        Ok(None)
-    }
+    utc_date_from_rfc2822(date)
 }
 
 pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>> {
@@ -59,33 +155,24 @@ pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>> {
     Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
 
-pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>> {
-    let date = get_str_from_headers(headers, DATE.as_str())?;
-    let date = parse_date_from_rfc2822(date)?;
-    let date = DateTime::from_utc(date.naive_utc(), Utc);
-    Ok(date)
+pub fn continuation_token_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>> {
+    Ok(get_option_str_from_headers(headers, CONTINUATION)?.map(String::from))
 }
 
 pub fn sku_name_from_headers(headers: &HeaderMap) -> Result<String> {
-    let sku_name = get_str_from_headers(headers, SKU_NAME)?;
-    Ok(sku_name.to_owned())
+    Ok(get_str_from_headers(headers, SKU_NAME)?.to_owned())
 }
 
 pub fn account_kind_from_headers(headers: &HeaderMap) -> Result<String> {
-    let account_kind = get_str_from_headers(headers, ACCOUNT_KIND)?;
-    Ok(account_kind.to_owned())
+    Ok(get_str_from_headers(headers, ACCOUNT_KIND)?.to_owned())
 }
 
 pub fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>> {
-    if headers.contains_key(ETAG) {
-        Ok(Some(etag_from_headers(headers)?))
-    } else {
-        Ok(None)
-    }
+    Ok(get_option_str_from_headers(headers, ETAG.as_str())?.map(String::from))
 }
 
 pub fn etag_from_headers(headers: &HeaderMap) -> Result<String> {
-    get_str_from_headers(headers, ETAG.as_str()).map(ToOwned::to_owned)
+    Ok(get_str_from_headers(headers, ETAG.as_str())?.to_owned())
 }
 
 pub fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8> {
@@ -128,73 +215,4 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str> {
 
 pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32> {
     get_from_headers(headers, ITEM_COUNT)
-}
-
-#[cfg(feature = "enable_hyper")]
-pub async fn perform_http_request(
-    client: &Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
-    req: Request<Body>,
-    expected_status: StatusCode,
-) -> Result<String> {
-    debug!("req == {:?}", req);
-    let res = client
-        .request(req)
-        .await
-        .map_err(HttpError::ExecuteRequest)?;
-    check_status_extract_body_2(res, expected_status).await
-}
-
-pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a str> {
-    Ok(headers
-        .get(key)
-        .ok_or_else(|| Error::HeaderNotFound(key.to_owned()))?
-        .to_str()
-        .map_err(HttpHeaderError::ToStr)?)
-}
-
-pub fn get_from_headers<T: std::str::FromStr>(headers: &HeaderMap, key: &str) -> Result<T>
-where
-    T: std::str::FromStr,
-    T::Err: Into<ParseError>,
-{
-    get_str_from_headers(headers, key)?
-        .parse()
-        .map_err(|e: T::Err| Error::Parse(e.into()))
-}
-
-pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>
-where
-    T: std::str::FromStr,
-    T::Err: Into<ParseError>,
-{
-    match headers.get(key) {
-        Some(header) => Ok(Some(
-            header
-                .to_str()
-                .map_err(HttpHeaderError::ToStr)?
-                .parse()
-                .map_err(|e: T::Err| Error::Parse(e.into()))?,
-        )),
-        None => Ok(None),
-    }
-}
-
-pub fn parse_date_from_str(
-    date: &str,
-    fmt: &str,
-) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
-    DateTime::parse_from_str(date, fmt).map_err(ParseError::DateTime)
-}
-
-pub fn parse_date_from_rfc2822(
-    date: &str,
-) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
-    DateTime::parse_from_rfc2822(date).map_err(ParseError::DateTime)
-}
-
-pub fn parse_int<F>(s: &str) -> std::result::Result<F, ParseError>
-where
-    F: FromStr<Err = std::num::ParseIntError>,
-{
-    FromStr::from_str(s).map_err(ParseError::Int)
 }

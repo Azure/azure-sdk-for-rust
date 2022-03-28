@@ -41,7 +41,7 @@ impl CollectionClient {
         &self,
         document_name: S,
         partition_key: &PK,
-    ) -> Result<DocumentClient, serde_json::Error> {
+    ) -> azure_core::error::Result<DocumentClient> {
         DocumentClient::new(self.clone(), document_name, partition_key)
     }
 

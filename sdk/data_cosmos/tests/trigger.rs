@@ -35,7 +35,7 @@ function updateMetadata() {
 }"#;
 
 #[tokio::test]
-async fn trigger() -> Result<(), azure_data_cosmos::Error> {
+async fn trigger() -> azure_core::error::Result<()> {
     const DATABASE_NAME: &str = "test-cosmos-db-trigger";
     const COLLECTION_NAME: &str = "test-udf";
     const TRIGGER_NAME: &str = "test";
