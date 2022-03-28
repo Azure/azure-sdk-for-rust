@@ -14,9 +14,9 @@ pub mod requests;
 pub mod responses;
 use crate::AccessTier;
 use azure_core::headers::{
-    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
-    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX,
-    SERVER_ENCRYPTED,
+    BLOB_ACCESS_TIER, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS,
+    COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
+    LEASE_STATUS, META_PREFIX, SERVER_ENCRYPTED,
 };
 use azure_core::parsing::from_azure_time;
 use azure_core::{Etag, LeaseDuration, LeaseState, LeaseStatus};
@@ -251,6 +251,15 @@ impl Blob {
             .parse::<BlobType>()?;
         trace!("blob_type == {:?}", blob_type);
 
+        let blob_type = h
+            .get_as_str(BLOB_TYPE)
+            .ok_or_else(|| crate::Error::HeaderNotFound(BLOB_TYPE.to_owned()))?
+            .parse::<BlobType>()?;
+        trace!("blob_type == {:?}", blob_type);
+
+        let access_tier = h.get_as_enum(BLOB_ACCESS_TIER)?;
+        trace!("blob_access_tier == {:?}", access_tier);
+
         let content_encoding = h.get_as_string(header::CONTENT_ENCODING);
         trace!("content_encoding == {:?}", content_encoding);
 
@@ -360,7 +369,7 @@ impl Blob {
                 content_disposition,
                 blob_sequence_number,
                 blob_type,
-                access_tier: None,
+                access_tier,
                 lease_status,
                 lease_state,
                 lease_duration,

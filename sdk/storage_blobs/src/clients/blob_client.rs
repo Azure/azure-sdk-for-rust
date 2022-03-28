@@ -91,6 +91,10 @@ impl BlobClient {
         SetBlobMetadataBuilder::new(self)
     }
 
+    pub fn set_blobtier(&self) -> SetBlobTierBuilder {
+        SetBlobTierBuilder::new(self)
+    }
+
     pub fn update_page(
         &self,
         ba512_range: BA512Range,
