@@ -40,6 +40,18 @@ impl<'a> SetBlobTierBuilder<'a> {
     pub async fn execute(
         self,
     ) -> Result<SetBlobTierResponse, Box<dyn std::error::Error + Send + Sync>> {
+        // Get the blob properties first. Need this to determine what HTTP status code to expect later.
+        let blob_properties = self.blob_client.get_properties().execute().await?;
+        let blob_tier = blob_properties.blob.properties.access_tier;
+        let blob_tier = match blob_tier {
+            Some(bt) => bt,
+            None => {
+                return Err(From::from(
+                    "Unable to determine current access tier for blob.",
+                ))
+            }
+        };
+
         let mut url = self.blob_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "tier");
@@ -63,10 +75,22 @@ impl<'a> SetBlobTierBuilder<'a> {
 
         info!("request == {:?}", request);
 
+        let expected_status: http::StatusCode;
+
+        match blob_tier {
+            AccessTier::Hot | AccessTier::Cool => expected_status = http::StatusCode::OK,
+            AccessTier::Archive => {
+                match &self.access_tier {
+                    AccessTier::Archive => expected_status = http::StatusCode::OK,
+                    _ => expected_status = http::StatusCode::ACCEPTED,
+                };
+            }
+        }
+
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(request, expected_status)
             .await?;
 
         Ok(response.headers().try_into()?)
