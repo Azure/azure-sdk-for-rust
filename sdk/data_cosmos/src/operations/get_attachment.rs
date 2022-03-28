@@ -73,7 +73,8 @@ impl std::future::IntoFuture for GetAttachmentBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type GetAttachment = futures::future::BoxFuture<'static, azure_core::error::Result<GetAttachmentResponse>>;
+pub type GetAttachment =
+    futures::future::BoxFuture<'static, azure_core::error::Result<GetAttachmentResponse>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAttachmentResponse {

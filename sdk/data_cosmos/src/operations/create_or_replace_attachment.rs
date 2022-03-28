@@ -87,8 +87,10 @@ impl CreateOrReplaceAttachmentBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceAttachment =
-    futures::future::BoxFuture<'static, azure_core::error::Result<CreateOrReplaceAttachmentResponse>>;
+pub type CreateOrReplaceAttachment = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<CreateOrReplaceAttachmentResponse>,
+>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceAttachmentBuilder {

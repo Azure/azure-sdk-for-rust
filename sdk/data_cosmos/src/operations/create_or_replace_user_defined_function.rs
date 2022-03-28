@@ -71,8 +71,10 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceUserDefinedFunction =
-    futures::future::BoxFuture<'static, azure_core::error::Result<CreateOrReplaceUserDefinedFunctionResponse>>;
+pub type CreateOrReplaceUserDefinedFunction = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<CreateOrReplaceUserDefinedFunctionResponse>,
+>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceUserDefinedFunctionBuilder {

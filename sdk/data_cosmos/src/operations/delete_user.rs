@@ -47,7 +47,8 @@ impl DeleteUserBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type DeleteUser = futures::future::BoxFuture<'static, azure_core::error::Result<DeleteUserResponse>>;
+pub type DeleteUser =
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteUserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteUserBuilder {

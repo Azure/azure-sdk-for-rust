@@ -48,7 +48,10 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
         context: Context => context,
     }
 
-    pub fn partition_key<T: Serialize>(&mut self, partition_key: &T) -> azure_core::error::Result<()> {
+    pub fn partition_key<T: Serialize>(
+        &mut self,
+        partition_key: &T,
+    ) -> azure_core::error::Result<()> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(())
     }
