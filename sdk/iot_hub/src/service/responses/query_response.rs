@@ -13,7 +13,7 @@ pub struct QueryResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

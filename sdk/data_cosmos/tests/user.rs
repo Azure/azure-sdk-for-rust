@@ -2,7 +2,6 @@
 
 use std::assert_eq;
 
-use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
 mod setup;

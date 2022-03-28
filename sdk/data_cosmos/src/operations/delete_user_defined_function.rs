@@ -64,8 +64,10 @@ impl std::future::IntoFuture for DeleteUserDefinedFunctionBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type DeleteUserDefinedFunction =
-    futures::future::BoxFuture<'static, crate::Result<DeleteUserDefinedFunctionResponse>>;
+pub type DeleteUserDefinedFunction = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<DeleteUserDefinedFunctionResponse>,
+>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteUserDefinedFunctionResponse {
@@ -96,7 +98,7 @@ pub struct DeleteUserDefinedFunctionResponse {
 }
 
 impl DeleteUserDefinedFunctionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

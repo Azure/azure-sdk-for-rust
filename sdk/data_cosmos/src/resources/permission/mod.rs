@@ -7,7 +7,6 @@ mod permission_response;
 mod permission_token;
 
 pub use authorization_token::AuthorizationToken;
-pub use authorization_token::AuthorizationTokenParseError;
 pub use permission::{Permission, PermissionMode};
 pub(crate) use permission_response::PermissionResponse;
 pub use permission_token::PermissionToken;
