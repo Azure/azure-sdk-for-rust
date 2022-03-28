@@ -698,7 +698,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 #[error("Failed to execute request")]
                 SendRequest(#[source] azure_core::Error),
                 #[error("Failed to get response bytes")]
-                ResponseBytes(#[source] azure_core::StreamError),
+                ResponseBytes(#[source] azure_core::error::Error),
                 #[error("Failed to deserialize response, body: {1:?}")]
                 Deserialize(#[source] serde_json::Error, bytes::Bytes),
             }
