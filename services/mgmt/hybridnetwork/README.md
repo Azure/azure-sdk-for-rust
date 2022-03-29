@@ -4,9 +4,10 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/hybridnetwork/resource-manager/readme.md
 
-Code was generated for 3 `Tag`s. The default `Tag` is package-2022-01-01-preview.
+The default `Tag` is `package-2022-01-01-preview`.
 
+The following `Tag`s are available:
 
-- package-2022-01-01-preview
-- package-2021-05-01
-- package-2020-01-01-preview
+- `package-2022-01-01-preview` has 39 operations from 1 API versions: `2022-01-01-preview`. Use crate feature `package-2022-01-01-preview` to enable. The operations will be in the `package_2022_01_01_preview` module.
+- `package-2021-05-01` has 37 operations from 1 API versions: `2021-05-01`. Use crate feature `package-2021-05-01` to enable. The operations will be in the `package_2021_05_01` module.
+- `package-2020-01-01-preview` has 37 operations from 1 API versions: `2020-01-01-preview`. Use crate feature `package-2020-01-01-preview` to enable. The operations will be in the `package_2020_01_01_preview` module.

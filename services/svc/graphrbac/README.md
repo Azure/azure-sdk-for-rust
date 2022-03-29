@@ -4,7 +4,8 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/graphrbac/data-plane/readme.md
 
-Code was generated for 1 `Tag`s. The default `Tag` is 1.6.
+The default `Tag` is `1.6`.
 
+The following `Tag`s are available:
 
-- 1.6
+- `1.6` has 9 operations from 1 API versions: `1.6`. Use crate feature `1_6` to enable. The operations will be in the `v1_6` module.

@@ -4,7 +4,8 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/applicationinsights/data-plane/readme.md
 
-Code was generated for 1 `Tag`s. The default `Tag` is v1.
+The default `Tag` is `v1`.
 
+The following `Tag`s are available:
 
-- v1
+- `v1` has 10 operations from 1 API versions: `v1`. Use crate feature `v1` to enable. The operations will be in the `v1` module.

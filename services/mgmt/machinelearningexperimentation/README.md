@@ -4,7 +4,8 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/machinelearningexperimentation/resource-manager/readme.md
 
-Code was generated for 1 `Tag`s. The default `Tag` is package-2017-05-preview.
+The default `Tag` is `package-2017-05-preview`.
 
+The following `Tag`s are available:
 
-- package-2017-05-preview
+- `package-2017-05-preview` has 17 operations from 1 API versions: `2017-05-01-preview`. Use crate feature `package-2017-05-preview` to enable. The operations will be in the `package_2017_05_preview` module.

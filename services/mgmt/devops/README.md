@@ -4,8 +4,9 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/devops/resource-manager/readme.md
 
-Code was generated for 2 `Tag`s. The default `Tag` is package-2019-07-01-preview.
+The default `Tag` is `package-2019-07-01-preview`.
 
+The following `Tag`s are available:
 
-- package-2020-07-13-preview
-- package-2019-07-01-preview
+- `package-2020-07-13-preview` has 8 operations from 1 API versions: `2020-07-13-preview`. Use crate feature `package-2020-07-13-preview` to enable. The operations will be in the `package_2020_07_13_preview` module.
+- `package-2019-07-01-preview` has 8 operations from 1 API versions: `2019-07-01-preview`. Use crate feature `package-2019-07-01-preview` to enable. The operations will be in the `package_2019_07_01_preview` module.
