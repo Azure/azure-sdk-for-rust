@@ -162,10 +162,7 @@ impl HttpClient for reqwest::Client {
                 .build()
                 .map_err(HttpError::BuildClientRequest)?,
             Body::SeekableStream(mut seekable_stream) => {
-                seekable_stream
-                    .reset()
-                    .await
-                    .map_err(HttpError::StreamReset)?;
+                seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
@@ -184,11 +181,14 @@ impl HttpClient for reqwest::Client {
             response.with_header(key, value.clone());
         }
 
-        let response = response.with_pinned_stream(Box::pin(
-            reqwest_response
-                .bytes_stream()
-                .map_err(crate::StreamError::Read),
-        ));
+        let response =
+            response.with_pinned_stream(Box::pin(reqwest_response.bytes_stream().map_err(|e| {
+                crate::error::Error::full(
+                    crate::error::ErrorKind::Io,
+                    e,
+                    "error converting `reqwest` request into a byte stream",
+                )
+            })));
 
         Ok(response)
     }

@@ -2,7 +2,6 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
-use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
 use chrono::{DateTime, Utc};
@@ -98,33 +97,23 @@ pub struct CreateDatabaseResponse {
 impl CreateDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await.context(
-            azure_core::error::ErrorKind::Io,
-            "an error occurred fetching the next part of the byte stream",
-        )?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
 
-        let res = || {
-            crate::Result::Ok(Self {
-                database: serde_json::from_slice(&body)?,
-                charge: request_charge_from_headers(&headers)?,
-                etag: etag_from_headers(&headers)?,
-                session_token: session_token_from_headers(&headers)?,
-                last_state_change: last_state_change_from_headers(&headers)?,
-                resource_quota: resource_quota_from_headers(&headers)?,
-                resource_usage: resource_usage_from_headers(&headers)?,
-                quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
-                current_write_quorum: current_write_quorum_from_headers(&headers)?,
-                current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
-                schema_version: schema_version_from_headers(&headers)?.to_owned(),
-                service_version: service_version_from_headers(&headers)?.to_owned(),
-                activity_id: activity_id_from_headers(&headers)?,
-                gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
-            })
-        };
-
-        res().context(
-            ErrorKind::DataConversion,
-            "error converting headers to CreateDatabaseResponse",
-        )
+        Ok(Self {
+            database: serde_json::from_slice(&body)?,
+            charge: request_charge_from_headers(&headers)?,
+            etag: etag_from_headers(&headers)?,
+            session_token: session_token_from_headers(&headers)?,
+            last_state_change: last_state_change_from_headers(&headers)?,
+            resource_quota: resource_quota_from_headers(&headers)?,
+            resource_usage: resource_usage_from_headers(&headers)?,
+            quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
+            current_write_quorum: current_write_quorum_from_headers(&headers)?,
+            current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
+            schema_version: schema_version_from_headers(&headers)?.to_owned(),
+            service_version: service_version_from_headers(&headers)?.to_owned(),
+            activity_id: activity_id_from_headers(&headers)?,
+            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+        })
     }
 }

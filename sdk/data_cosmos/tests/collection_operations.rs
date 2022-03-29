@@ -1,6 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::collection::*;
 use std::error::Error;
 

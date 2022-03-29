@@ -58,7 +58,7 @@ impl ListCollectionsBuilder {
     }
 }
 
-pub type ListCollections = Pageable<ListCollectionsResponse, crate::Error>;
+pub type ListCollections = Pageable<ListCollectionsResponse, azure_core::error::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListCollectionsResponse {
@@ -80,7 +80,7 @@ pub struct ListCollectionsResponse {
 }
 
 impl ListCollectionsResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

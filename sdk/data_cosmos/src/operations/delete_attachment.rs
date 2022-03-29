@@ -64,7 +64,7 @@ impl DeleteAttachmentBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteAttachment =
-    futures::future::BoxFuture<'static, crate::Result<DeleteAttachmentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteAttachmentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteAttachmentBuilder {
@@ -102,7 +102,7 @@ pub struct DeleteAttachmentResponse {
 }
 
 impl DeleteAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {

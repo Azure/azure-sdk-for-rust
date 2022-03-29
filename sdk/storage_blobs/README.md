@@ -1,3 +1,3 @@
-# Azure SDK for Rust - Azure Storage Blobs
+# Azure Blob Storage crate
 
-Azure Storage Blobs crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-for-rust). It supports [Azure Blob Storage](https://docs.microsoft.com/azure/storage/blobs/storage-blobs-overview). Here are [examples](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage_blobs/examples).

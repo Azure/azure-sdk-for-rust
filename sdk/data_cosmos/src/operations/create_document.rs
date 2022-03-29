@@ -55,7 +55,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
     pub fn partition_key<PK: Serialize>(
         mut self,
         partition_key: &PK,
-    ) -> Result<Self, serde_json::Error> {
+    ) -> azure_core::error::Result<Self> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(self)
     }
@@ -97,7 +97,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateDocument =
-    futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<CreateDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture
@@ -140,7 +140,7 @@ pub struct CreateDocumentResponse {
 }
 
 impl CreateDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 
@@ -171,7 +171,7 @@ impl CreateDocumentResponse {
             gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
             date: date_from_headers(&headers)?,
 
-            document_attributes: DocumentAttributes::try_from(body)?,
+            document_attributes: DocumentAttributes::try_from(&body)?,
         })
     }
 }

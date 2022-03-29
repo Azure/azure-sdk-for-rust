@@ -1,11 +1,10 @@
-use crate::StreamError;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
 use http::{header::HeaderName, HeaderMap, HeaderValue, StatusCode};
 use std::pin::Pin;
 
-type PinnedStream = Pin<Box<dyn Stream<Item = Result<Bytes, StreamError>> + Send + Sync>>;
+type PinnedStream = Pin<Box<dyn Stream<Item = crate::error::Result<Bytes>> + Send + Sync>>;
 
 #[allow(dead_code)]
 pub(crate) struct ResponseBuilder {
@@ -86,7 +85,7 @@ impl std::fmt::Debug for Response {
 }
 
 /// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
-pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<Bytes, StreamError> {
+pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::error::Result<Bytes> {
     let mut final_result = Vec::new();
 
     while let Some(res) = pinned_stream.next().await {

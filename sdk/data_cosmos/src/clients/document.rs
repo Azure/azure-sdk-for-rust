@@ -20,7 +20,7 @@ impl DocumentClient {
         collection: CollectionClient,
         document_name: S,
         partition_key: &PK,
-    ) -> Result<Self, serde_json::Error> {
+    ) -> azure_core::error::Result<Self> {
         Ok(Self {
             collection,
             document_name: document_name.into(),
