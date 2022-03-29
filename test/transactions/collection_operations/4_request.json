@@ -1,1 +1,11 @@
-{"uri":"/dbs/test-collection-operations/colls/sample_collection","method":"PUT","headers":{"authorization":"<<STRIPPED>>","user-agent":"azsdk-rust-data_cosmos/0.1.0 (1.59.0; linux; x86_64)","x-ms-date":"Tue, 29 Mar 2022 12:03:39 GMT","x-ms-version":"2018-12-31"},"body":"eyJpZCI6InNhbXBsZV9jb2xsZWN0aW9uIiwiaW5kZXhpbmdQb2xpY3kiOnsiYXV0b21hdGljIjp0cnVlLCJpbmRleGluZ01vZGUiOiJjb25zaXN0ZW50IiwiaW5jbHVkZWRQYXRocyI6W3sicGF0aCI6Ii8qIiwiaW5kZXhlcyI6W3siZGF0YVR5cGUiOiJTdHJpbmciLCJwcmVjaXNpb24iOjMsImtpbmQiOiJIYXNoIn1dfV0sImV4Y2x1ZGVkUGF0aHMiOlt7InBhdGgiOiIvXCJleGNsdWRlbWVcIi8/In1dfSwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ=="}
+{
+  "uri": "/dbs/test-collection-operations/colls/sample_collection",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-data_cosmos/0.1.0 (1.59.0; linux; x86_64)",
+    "x-ms-date": "Tue, 29 Mar 2022 12:03:39 GMT",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6InNhbXBsZV9jb2xsZWN0aW9uIiwiaW5kZXhpbmdQb2xpY3kiOnsiYXV0b21hdGljIjp0cnVlLCJpbmRleGluZ01vZGUiOiJjb25zaXN0ZW50IiwiaW5jbHVkZWRQYXRocyI6W3sicGF0aCI6Ii8qIiwiaW5kZXhlcyI6W3siZGF0YVR5cGUiOiJTdHJpbmciLCJwcmVjaXNpb24iOjMsImtpbmQiOiJIYXNoIn1dfV0sImV4Y2x1ZGVkUGF0aHMiOlt7InBhdGgiOiIvXCJleGNsdWRlbWVcIi8/In1dfSwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ=="
+}
