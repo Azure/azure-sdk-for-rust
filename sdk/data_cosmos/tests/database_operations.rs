@@ -7,10 +7,10 @@ use futures::StreamExt;
 pub type BoxedError = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::test]
-async fn create_and_delete_database() -> Result<(), BoxedError> {
+async fn database_operations() -> Result<(), BoxedError> {
     const DATABASE_NAME: &str = "cosmos-test-db-create-and-delete-database";
 
-    let client = setup::initialize("create_and_delete_database")?;
+    let client = setup::initialize("database_operations")?;
 
     // list existing databases and remember their number
     let databases = client

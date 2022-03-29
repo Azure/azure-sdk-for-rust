@@ -17,28 +17,23 @@ function tax(income) {
 }"#;
 
 #[tokio::test]
-async fn user_defined_function00() -> azure_core::error::Result<()> {
+async fn user_defined_function_operations() -> azure_core::error::Result<()> {
     const DATABASE_NAME: &str = "test-cosmos-db-udf";
     const COLLECTION_NAME: &str = "test-udf";
     const USER_DEFINED_FUNCTION_NAME: &str = "test";
 
-    let client = setup::initialize().unwrap();
+    let client = setup::initialize()?;
 
     // create a temp database
-    let _create_database_response = client
-        .create_database(DATABASE_NAME)
-        .into_future()
-        .await
-        .unwrap();
+    let _ = client.create_database(DATABASE_NAME).into_future().await?;
 
     let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
-    let _create_collection_response = database
+    let _ = database
         .create_collection(COLLECTION_NAME, "/id")
         .into_future()
-        .await
-        .unwrap();
+        .await?;
 
     let collection = database.collection_client(COLLECTION_NAME);
     let user_defined_function = collection.user_defined_function_client(USER_DEFINED_FUNCTION_NAME);
@@ -54,7 +49,7 @@ async fn user_defined_function00() -> azure_core::error::Result<()> {
         .consistency_level(&ret);
     let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
-        let ret = ret.unwrap();
+        let ret = ret?;
         assert_eq!(ret.item_count, 1);
     }
 
