@@ -4,7 +4,9 @@ The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crat
 
 {{ readme_url }}
 
-Code was generated for {{tags.len()}} `Tag`s. The default `Tag` is `{{default_tag.name()}}`.
+The default `Tag` is `{{default_tag.name()}}`.
 
-{% for tag in tags %}
-- `{{tag.name()}}` has {{self.operation_total(tag)}} operations from {{self.api_version_total(tag)}} API versions: {{self.api_versions(tag)}}. Use crate feature `{{tag.rust_feature_name()}}` to enable. The operations will be in the `{{tag.rust_mod_name()}}` module.{% endfor %}
+The following `Tag` are available:
+{%- for tag in tags -%}
+- `{{tag.name()}}` has {{self.operation_total(tag)}} operations from {{self.api_version_total(tag)}} API versions: {{self.api_versions(tag)}}. Use crate feature `{{tag.rust_feature_name()}}` to enable. The operations will be in the `{{tag.rust_mod_name()}}` module.
+{%- endfor -%}
