@@ -2,11 +2,10 @@
 
 use azure_data_cosmos::resources::collection::*;
 use futures::StreamExt;
-use std::error::Error;
 
 mod setup;
 
-type BoxedError = Box<dyn Error + Send + Sync>;
+type BoxedError = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::test]
 async fn collection_operations() -> Result<(), BoxedError> {
