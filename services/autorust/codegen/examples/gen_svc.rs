@@ -3,10 +3,9 @@
 use autorust_codegen::{
     self, cargo_toml, get_svc_readmes, io, lib_rs,
     readme_md::{self, ReadmeMd},
-    Config, Error, PropertyName, Result, SpecReadme,
+    CrateConfig, Error, Result, RunConfig, SpecReadme,
 };
-use camino::Utf8PathBuf;
-use std::{collections::HashSet, fs};
+use std::{collections::HashMap, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
@@ -168,29 +167,33 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
 ];
 
 fn main() -> Result<()> {
+    let run_config = &mut RunConfig::new("azure_svc_");
+    run_config.set_skip_service_tags(SKIP_SERVICE_TAGS);
+    run_config.set_fix_case_properties(FIX_CASE_PROPERTIES);
+    run_config.set_box_properties(BOX_PROPERTIES);
+    run_config.set_invalid_types(INVALID_TYPE_WORKAROUND);
+
     for (i, spec) in get_svc_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
-                gen_crate(spec)?;
+                gen_crate(spec, run_config)?;
             }
         } else if !SKIP_SERVICES.contains(&spec.spec()) {
             println!("{} {}", i + 1, spec.spec());
-            gen_crate(spec)?;
+            gen_crate(spec, run_config)?;
         }
     }
     Ok(())
 }
 
-fn gen_crate(spec: &SpecReadme) -> Result<()> {
-    let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
-    let config = spec.config()?;
-    let has_no_tags = config.tags().iter().all(|x| skip_service_tags.contains(&(spec.spec(), x.name())));
-    if has_no_tags {
-        println!("not generating {}", spec.spec());
+fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
+    let spec_config = spec.config()?;
+    let tags = &spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
+    if tags.is_empty() {
+        println!("not generating {} - no tags", spec.spec());
         return Ok(());
     }
-
     let service_name = &spec.service_name();
     let crate_name = &format!("azure_svc_{}", service_name);
     let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
@@ -200,66 +203,45 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         fs::remove_dir_all(&src_folder)?;
     }
 
-    let mut tags = Vec::new();
-
-    let mut fix_case_properties = HashSet::new();
-    for spec_title in FIX_CASE_PROPERTIES {
-        fix_case_properties.insert(spec_title.to_string());
-    }
-
-    let mut box_properties = HashSet::new();
-    for (file_path, schema_name, property_name) in BOX_PROPERTIES {
-        box_properties.insert(PropertyName {
-            file_path: Utf8PathBuf::from(file_path),
-            schema_name: schema_name.to_string(),
-            property_name: property_name.to_string(),
-        });
-    }
-
-    let mut invalid_types = HashSet::new();
-    for (file_path, schema_name, property_name) in INVALID_TYPE_WORKAROUND {
-        invalid_types.insert(PropertyName {
-            file_path: Utf8PathBuf::from(file_path),
-            schema_name: schema_name.to_string(),
-            property_name: property_name.to_string(),
-        });
-    }
-
-    for tag in config.tags() {
-        let tag_name = tag.name();
-        if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
-            // println!("  skipping {}", tag);
-            continue;
-        }
-        println!("  {}", tag_name);
-        let mod_name = tag.rust_mod_name();
-        let mod_output_folder = io::join(&src_folder, &mod_name)?;
-        tags.push(tag);
+    let mut operation_totals = HashMap::new();
+    let mut api_version_totals = HashMap::new();
+    let mut api_versions = HashMap::new();
+    for tag in tags {
+        println!("  {}", tag.name());
+        let output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
         let input_files: Result<Vec<_>> = tag
             .input_files()
             .iter()
             .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
             .collect();
         let input_files = input_files?;
-        autorust_codegen::run(Config {
-            output_folder: mod_output_folder,
+        let crate_config = &CrateConfig {
+            run_config,
+            output_folder,
             input_files,
-            box_properties: box_properties.clone(),
-            fix_case_properties: fix_case_properties.clone(),
-            invalid_types: invalid_types.clone(),
-            print_writing_file: false,
-            ..Config::default()
-        })?;
+        };
+        let cg = autorust_codegen::run(crate_config)?;
+        operation_totals.insert(tag.name(), cg.spec.operations()?.len());
+        let mut versions = cg.spec.api_versions();
+        versions.sort_unstable();
+        api_version_totals.insert(tag.name(), versions.len());
+        api_versions.insert(
+            tag.name(),
+            versions.iter().map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(", "),
+        );
     }
-    if tags.is_empty() {
-        return Ok(());
-    }
-    cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
-    lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
 
+    let default_tag = cargo_toml::get_default_tag(tags, spec_config.tag());
+    cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
+    lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
         crate_name,
         readme_url: readme_md::url(spec.readme().as_str()),
+        tags,
+        default_tag,
+        operation_totals,
+        api_version_totals,
+        api_versions,
     };
     readme.create(&io::join(output_folder, "README.md")?)?;
 

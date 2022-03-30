@@ -12,10 +12,10 @@ fn main() -> Result<()> {
         "../../../azure-rest-api-specs/specification/storage/resource-manager/Microsoft.Storage/preview/2020-08-01-preview/queue.json",
         "../../../azure-rest-api-specs/specification/storage/resource-manager/Microsoft.Storage/preview/2020-08-01-preview/table.json",
     ];
-    run(Config {
+    run(&CrateConfig {
+        run_config: &RunConfig::new("azure_mgmt_"),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        ..Config::default()
     })?;
 
     let output_folder = "../azure-sdk-for-rust/services/storage/mgmt/src/v2019_06_01";
@@ -26,10 +26,10 @@ fn main() -> Result<()> {
         "../../../azure-rest-api-specs/specification/storage/resource-manager/Microsoft.Storage/stable/2019-06-01/queue.json",
         "../../../azure-rest-api-specs/specification/storage/resource-manager/Microsoft.Storage/stable/2019-06-01/table.json",
     ];
-    run(Config {
+    run(&CrateConfig {
+        run_config: &RunConfig::new("azure_mgmt_"),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        ..Config::default()
     })?;
 
     Ok(())

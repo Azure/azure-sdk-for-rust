@@ -39,6 +39,8 @@ pub enum Error {
     ReadmeMd(#[from] readme_md::Error),
     #[error(transparent)]
     LibRs(#[from] lib_rs::Error),
+    #[error(transparent)]
+    Spec(#[from] spec::Error),
 }
 impl<T: Into<io::Error>> From<T> for Error {
     fn from(error: T) -> Self {
@@ -60,66 +62,111 @@ pub enum Runs {
     Operations,
 }
 
+/// Settings for the entire run, generating multiple crates
 #[derive(Clone, Debug, PartialEq)]
-pub struct Config {
-    pub input_files: Vec<Utf8PathBuf>,
-    pub output_folder: Utf8PathBuf,
+pub struct RunConfig {
+    pub crate_name_prefix: &'static str,
+    pub skip_service_tags: HashSet<&'static (&'static str, &'static str)>,
     pub box_properties: HashSet<PropertyName>,
     pub optional_properties: HashSet<PropertyName>,
-    pub fix_case_properties: HashSet<String>,
+    pub fix_case_properties: HashSet<&'static str>,
     pub invalid_types: HashSet<PropertyName>,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,
 }
 
-impl Config {
-    pub fn should_run(&self, runs: &Runs) -> bool {
-        self.runs.contains(runs)
+fn to_property(file_schema_property: &(&str, &str, &str)) -> PropertyName {
+    PropertyName {
+        file_path: Utf8PathBuf::from(file_schema_property.0),
+        schema_name: file_schema_property.1.to_string(),
+        property_name: file_schema_property.2.to_string(),
     }
 }
 
-impl Default for Config {
-    fn default() -> Self {
+impl RunConfig {
+    pub fn set_skip_service_tags(&mut self, skip_service_tags: &'static [(&str, &str)]) {
+        self.skip_service_tags = skip_service_tags.iter().collect();
+    }
+    pub fn skip_service_tags(&self) -> &HashSet<&(&str, &str)> {
+        &self.skip_service_tags
+    }
+
+    pub fn set_box_properties(&mut self, box_properties: &'static [(&str, &str, &str)]) {
+        self.box_properties = box_properties.iter().map(to_property).collect()
+    }
+
+    pub fn set_optional_properties(&mut self, optional_properties: &'static [(&str, &str, &str)]) {
+        self.optional_properties = optional_properties.iter().map(to_property).collect()
+    }
+
+    pub fn set_fix_case_properties(&mut self, fix_case_properties: &'static [&str]) {
+        self.fix_case_properties = fix_case_properties.iter().map(AsRef::as_ref).collect()
+    }
+
+    pub fn set_invalid_types(&mut self, invalid_types: &'static [(&str, &str, &str)]) {
+        self.invalid_types = invalid_types.iter().map(to_property).collect()
+    }
+}
+
+impl RunConfig {
+    pub fn new(crate_name_prefix: &'static str) -> Self {
         Self {
-            input_files: Vec::new(),
-            output_folder: ".".into(),
+            crate_name_prefix,
+            skip_service_tags: HashSet::new(),
             box_properties: HashSet::new(),
             optional_properties: HashSet::new(),
             fix_case_properties: HashSet::new(),
             invalid_types: HashSet::new(),
             runs: vec![Runs::Models, Runs::Operations],
-            print_writing_file: true,
+            print_writing_file: false,
         }
     }
 }
 
-pub fn run(config: Config) -> Result<(), Error> {
+/// Settings for generating of a single crate
+#[derive(Clone, Debug, PartialEq)]
+pub struct CrateConfig<'a> {
+    pub run_config: &'a RunConfig,
+    pub input_files: Vec<Utf8PathBuf>,
+    pub output_folder: Utf8PathBuf,
+}
+
+impl<'a> CrateConfig<'a> {
+    pub fn should_run(&self, runs: &Runs) -> bool {
+        self.run_config.runs.contains(runs)
+    }
+    pub fn print_writing_file(&self) -> bool {
+        self.run_config.print_writing_file
+    }
+}
+
+pub fn run<'a>(config: &'a CrateConfig) -> Result<CodeGen<'a>, Error> {
     let directory = &config.output_folder;
     fs::create_dir_all(directory).map_err(|source| io::Error::CreateOutputDirectory {
         source,
         directory: directory.into(),
     })?;
-    let cg = &CodeGen::new(config.clone())?;
+    let cg = CodeGen::new(config)?;
 
     // create models from schemas
     if config.should_run(&Runs::Models) {
-        let models = codegen_models::create_models(cg)?;
+        let models = codegen_models::create_models(&cg)?;
         let models_path = io::join(&config.output_folder, "models.rs")?;
-        write_file(&models_path, &models, config.print_writing_file)?;
+        write_file(&models_path, &models, config.print_writing_file())?;
     }
 
     // create api client from operations
     if config.should_run(&Runs::Operations) {
-        let operations = codegen_operations::create_operations(cg)?;
+        let operations = codegen_operations::create_operations(&cg)?;
         let operations_path = io::join(&config.output_folder, "operations.rs")?;
-        write_file(&operations_path, &operations, config.print_writing_file)?;
+        write_file(&operations_path, &operations, config.print_writing_file())?;
 
         let operations = create_mod();
         let operations_path = io::join(&config.output_folder, "mod.rs")?;
-        write_file(&operations_path, &operations, config.print_writing_file)?;
+        write_file(&operations_path, &operations, config.print_writing_file())?;
     }
 
-    Ok(())
+    Ok(cg)
 }
 
 fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<(), io::Error> {

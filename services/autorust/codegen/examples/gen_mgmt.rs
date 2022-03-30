@@ -3,10 +3,9 @@
 use autorust_codegen::{
     self, cargo_toml, get_mgmt_readmes, io, lib_rs,
     readme_md::{self, ReadmeMd},
-    Config, Error, PropertyName, Result, SpecReadme,
+    CrateConfig, Error, Result, RunConfig, SpecReadme,
 };
-use camino::Utf8PathBuf;
-use std::{collections::HashSet, fs};
+use std::{collections::HashMap, fs};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
@@ -299,23 +298,34 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
 ];
 
 fn main() -> Result<()> {
+    let run_config = &mut RunConfig::new("azure_mgmt_");
+    run_config.set_skip_service_tags(SKIP_SERVICE_TAGS);
+    run_config.set_box_properties(BOX_PROPERTIES);
+    run_config.set_optional_properties(OPTIONAL_PROPERTIES);
+
     for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
-                gen_crate(spec)?;
+                gen_crate(spec, run_config)?;
             }
         } else if !SKIP_SERVICES.contains(&spec.spec()) {
             println!("{} {}", i + 1, spec.spec());
-            gen_crate(spec)?;
+            gen_crate(spec, run_config)?;
         }
     }
     Ok(())
 }
 
-fn gen_crate(spec: &SpecReadme) -> Result<()> {
+fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
+    let spec_config = spec.config()?;
+    let tags = &spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
+    if tags.is_empty() {
+        println!("not generating {} - no tags", spec.spec());
+        return Ok(());
+    }
     let service_name = &spec.service_name();
-    let crate_name = &format!("azure_mgmt_{}", service_name);
+    let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
     let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
 
     let src_folder = io::join(output_folder, "src")?;
@@ -323,61 +333,45 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         fs::remove_dir_all(&src_folder)?;
     }
 
-    let mut tags = Vec::new();
-    let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
-
-    let mut box_properties = HashSet::new();
-    for (file_path, schema_name, property_name) in BOX_PROPERTIES {
-        box_properties.insert(PropertyName {
-            file_path: Utf8PathBuf::from(file_path),
-            schema_name: schema_name.to_string(),
-            property_name: property_name.to_string(),
-        });
-    }
-
-    let mut optional_properties = HashSet::new();
-    for (file_path, schema_name, property_name) in OPTIONAL_PROPERTIES {
-        optional_properties.insert(PropertyName {
-            file_path: Utf8PathBuf::from(file_path),
-            schema_name: schema_name.to_string(),
-            property_name: property_name.to_string(),
-        });
-    }
-
-    let config = spec.config()?;
-    for tag in config.tags() {
-        let tag_name = tag.name();
-        if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
-            // println!("  skipping {}", tag_name);
-            continue;
-        }
-        println!("  {}", tag_name);
-        let mod_output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
-        tags.push(tag);
+    let mut operation_totals = HashMap::new();
+    let mut api_version_totals = HashMap::new();
+    let mut api_versions = HashMap::new();
+    for tag in tags {
+        println!("  {}", tag.name());
+        let output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
         let input_files: Result<Vec<_>> = tag
             .input_files()
             .iter()
             .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
             .collect();
         let input_files = input_files?;
-        autorust_codegen::run(Config {
-            output_folder: mod_output_folder,
+        let crate_config = &CrateConfig {
+            run_config,
+            output_folder,
             input_files,
-            box_properties: box_properties.clone(),
-            optional_properties: optional_properties.clone(),
-            print_writing_file: false,
-            ..Config::default()
-        })?;
+        };
+        let cg = autorust_codegen::run(crate_config)?;
+        operation_totals.insert(tag.name(), cg.spec.operations()?.len());
+        let mut versions = cg.spec.api_versions();
+        versions.sort_unstable();
+        api_version_totals.insert(tag.name(), versions.len());
+        api_versions.insert(
+            tag.name(),
+            versions.iter().map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(", "),
+        );
     }
-    if tags.is_empty() {
-        return Ok(());
-    }
-    cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
-    lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
 
+    let default_tag = cargo_toml::get_default_tag(tags, spec_config.tag());
+    cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
+    lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
         crate_name,
         readme_url: readme_md::url(spec.readme().as_str()),
+        tags,
+        default_tag,
+        operation_totals,
+        api_version_totals,
+        api_versions,
     };
     readme.create(&io::join(output_folder, "README.md")?)?;
 

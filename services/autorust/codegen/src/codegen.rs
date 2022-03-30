@@ -1,7 +1,7 @@
 use crate::{
     identifier::ident,
     spec::{self, RefKey, TypeName},
-    Config, PropertyName, Spec,
+    CrateConfig, PropertyName, Spec,
 };
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
@@ -12,13 +12,13 @@ use quote::quote;
 use regex::Regex;
 
 /// code generation context
-pub struct CodeGen {
-    config: Config,
+pub struct CodeGen<'a> {
+    config: &'a CrateConfig<'a>,
     pub spec: Spec,
 }
 
-impl CodeGen {
-    pub fn new(config: Config) -> Result<Self, Error> {
+impl<'a> CodeGen<'a> {
+    pub fn new(config: &'a CrateConfig) -> Result<Self, Error> {
         let spec = Spec::read_files(&config.input_files).map_err(Error::Spec)?;
         Ok(Self { config, spec })
     }
@@ -33,22 +33,22 @@ impl CodeGen {
 
     pub fn should_workaround_case(&self) -> bool {
         if let Some(title) = self.spec.title() {
-            self.config.fix_case_properties.contains(title)
+            self.config.run_config.fix_case_properties.contains(title)
         } else {
             false
         }
     }
 
     pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
-        self.config.optional_properties.contains(prop_nm)
+        self.config.run_config.optional_properties.contains(prop_nm)
     }
 
     pub fn should_force_obj(&self, prop_nm: &PropertyName) -> bool {
-        self.config.invalid_types.contains(prop_nm)
+        self.config.run_config.invalid_types.contains(prop_nm)
     }
 
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
-        self.config.box_properties.contains(prop_nm)
+        self.config.run_config.box_properties.contains(prop_nm)
     }
 
     pub fn get_request_content_type_json(&self) -> String {
