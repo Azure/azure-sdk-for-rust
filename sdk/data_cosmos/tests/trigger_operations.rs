@@ -1,4 +1,4 @@
-#![cfg(all(test, feature = "test_e2e"))]
+#![cfg(feature = "mock_transport_framework")]
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -35,30 +35,23 @@ function updateMetadata() {
 }"#;
 
 #[tokio::test]
-async fn trigger() -> azure_core::error::Result<()> {
+async fn trigger_operations() -> azure_core::error::Result<()> {
     const DATABASE_NAME: &str = "test-cosmos-db-trigger";
     const COLLECTION_NAME: &str = "test-udf";
     const TRIGGER_NAME: &str = "test";
 
-    let client = setup::initialize().unwrap();
+    let client = setup::initialize("trigger_operations")?;
 
     // create a temp database
-    let _create_database_response = client
-        .create_database(DATABASE_NAME)
-        .into_future()
-        .await
-        .unwrap();
+    let _create_database_response = client.create_database(DATABASE_NAME).into_future().await?;
 
     let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
-    let _create_collection_response = {
-        database
-            .create_collection(COLLECTION_NAME, "/id")
-            .into_future()
-            .await
-            .unwrap()
-    };
+    let _ = database
+        .create_collection(COLLECTION_NAME, "/id")
+        .into_future()
+        .await?;
 
     let collection = database.collection_client(COLLECTION_NAME);
     let trigger = collection.trigger_client(TRIGGER_NAME);
@@ -90,13 +83,13 @@ async fn trigger() -> azure_core::error::Result<()> {
         .consistency_level(&ret);
     let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
-        let ret = ret.unwrap();
+        let ret = ret?;
         last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
     }
 
-    let _ret = trigger
+    let _ = trigger
         .delete_trigger()
-        .consistency_level(last_session_token.unwrap())
+        .consistency_level(last_session_token.expect("no triggers were found in collection"))
         .into_future()
         .await?;
 
