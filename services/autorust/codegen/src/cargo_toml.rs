@@ -17,10 +17,10 @@ impl<T: Into<crate::io::Error>> From<T> for Error {
     }
 }
 
-pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Utf8Path) -> Result<()> {
+pub fn create(crate_name: &str, tags: &[&Tag], default_tag: &Tag, path: &Utf8Path) -> Result<()> {
     let file = File::create(path)?;
     let mut file = LineWriter::new(file);
-    let default_feature = get_default_feature(tags, default_tag);
+    let default_feature = default_tag.rust_feature_name();
 
     // https://docs.rs/about/metadata
     let docs_rs_features = docs_rs_features(tags, &default_feature);
@@ -41,7 +41,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/{}"
 
 [dependencies]
-azure_core = {{ path = "../../../sdk/core", version = "0.1", default-features = false }}
+azure_core = {{ path = "../../../sdk/core", version = "0.2", default-features = false }}
 serde = {{ version = "1.0", features = ["derive"] }}
 serde_json = "1.0"
 bytes = "1.0"
@@ -74,19 +74,16 @@ no-default-version = []
     Ok(())
 }
 
-fn get_default_feature(tags: &[&Tag], default_tag: Option<&str>) -> String {
+pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a Tag {
     if let Some(default_tag) = default_tag {
         if let Some(tag) = tags.iter().find(|tag| tag.name() == default_tag) {
-            return tag.rust_feature_name();
+            return tag;
         }
     }
-    let feature = tags
-        .iter()
-        .map(|tag| tag.rust_feature_name())
-        .find(|feature| !feature.contains("preview"));
-    match feature {
-        Some(feature) => feature,
-        None => tags[0].rust_feature_name(),
+    let tag = tags.iter().find(|tag| !tag.name().contains("preview"));
+    match tag {
+        Some(tag) => tag,
+        None => tags[0],
     }
 }
 
