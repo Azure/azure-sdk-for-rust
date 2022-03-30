@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // create the first permission!
-    let permission = user.permission("matrix");
+    let permission = user.permission_client("matrix");
 
     let permission_mode = get_collection_response.collection.read_permission();
 

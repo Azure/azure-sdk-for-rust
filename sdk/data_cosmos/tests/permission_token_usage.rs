@@ -59,7 +59,7 @@ async fn permission_token_usage() {
     user.create_user().into_future().await.unwrap();
 
     // create the RO permission
-    let permission = user.permission(PERMISSION);
+    let permission = user.permission_client(PERMISSION);
     let permission_mode = create_collection_response.collection.read_permission();
 
     let create_permission_response = permission

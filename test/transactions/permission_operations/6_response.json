@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store, no-cache",
+    "content-location": "https://azuresdktesting2.documents.azure.com/dbs/cosmos-test-db-users/users/someone@cool.net/permissions",
+    "content-type": "application/json",
+    "date": "Wed, 30 Mar 2022 10:47:07 GMT",
+    "lsn": "76",
+    "pragma": "no-cache",
+    "server": "Microsoft-HTTPAPI/2.0",
+    "strict-transport-security": "max-age=31536000",
+    "transfer-encoding": "chunked",
+    "x-ms-activity-id": "219c9d23-4f9d-494e-86fc-ed52e6254416",
+    "x-ms-alt-content-path": "dbs/cosmos-test-db-users/users/someone@cool.net",
+    "x-ms-content-path": "YV1WAAP1LAA=",
+    "x-ms-cosmos-llsn": "76",
+    "x-ms-gatewayversion": "version=2.14.0",
+    "x-ms-global-committed-lsn": "76",
+    "x-ms-item-count": "1",
+    "x-ms-last-state-change-utc": "Wed, 23 Mar 2022 22:20:37.552 GMT",
+    "x-ms-number-of-read-regions": "0",
+    "x-ms-request-charge": "2",
+    "x-ms-request-duration-ms": "0.545",
+    "x-ms-resource-quota": "permissions=2000000;",
+    "x-ms-resource-usage": "permissions=2;",
+    "x-ms-schemaversion": "1.13",
+    "x-ms-serviceversion": "version=2.14.0.0",
+    "x-ms-session-token": "0:-1#76",
+    "x-ms-transport-request-id": "104974",
+    "x-ms-xp-role": "1"
+  },
+  "body": "eyJfcmlkIjoiWVYxV0FBUDFMQUE9IiwiUGVybWlzc2lvbnMiOlt7ImlkIjoiZ29kbW9kZSIsInBlcm1pc3Npb25Nb2RlIjoiQWxsIiwicmVzb3VyY2UiOiJkYnMvWVYxV0FBPT0vY29sbHMvWVYxV0FQN1JreEk9LyIsIl9yaWQiOiJZVjFXQUFQMUxBQThQOFNSeDZFVUFBPT0iLCJfc2VsZiI6ImRic1wvWVYxV0FBPT1cL3VzZXJzXC9ZVjFXQUFQMUxBQT1cL3Blcm1pc3Npb25zXC9ZVjFXQUFQMUxBQThQOFNSeDZFVUFBPT1cLyIsIl9ldGFnIjoiXCIwMDAwN2EwMS0wMDAwLTAxMDAtMDAwMC02MjQ0MzUyYjAwMDBcIiIsIl90cyI6MTY0ODYzNzIyNywiX3Rva2VuIjoidHlwZT1yZXNvdXJjZSZ2ZXI9MSZzaWc9MFVkK1dJak9NU0o4cmNySHlCUnl5QT09O0k2M000Tml4am8wTDE0UllxdW5WUnRGakxEOVwvUWdtamhLUndOVUF5MTRSS3dpdTVCUHgycWQ1RUlDTmliMEdpZWxRY29Mb2J6OVZzdHlYbVh5NnBCZFwvQmxLemlxMGxVNG5CNUYrVCtDMklHSEtKZjNlVjZKYnNoQjBPUDNDclE5N3c5Tk5qNnFSemIwbnhIUmh0eE1EZUgzbk1oOGJ0R2p1NkdNYXh1U2tkSDNQZDJ0WFZ0VG9sRGN0clU3S2daOyJ9XSwiX2NvdW50IjoxfQ=="
+}
