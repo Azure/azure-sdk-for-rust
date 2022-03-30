@@ -1,3 +1,12 @@
-# azure_core crate
+# Azure SDK for Rust - Core crate
 
-The azure_core crate is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate. It is a library that provides cross-cutting services to other client libraries. Please see the [general guidelines](https://azure.github.io/azure-sdk/general_azurecore.html). For changes in this version, see the [CHANGELOG.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/CHANGELOG.md). For open issues, filter with the [core label](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3Acore).
+Core crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+
+## Usage
+
+To set this crate as a dependency, add this to your Cargo.toml
+
+```toml
+[dependencies]
+azure_core = "0.1"
+```
