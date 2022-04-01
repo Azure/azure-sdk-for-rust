@@ -8,6 +8,7 @@
 mod auto_refreshing_credentials;
 mod cli_credentials;
 mod client_secret_credentials;
+mod client_certificate_credentials;
 mod default_credentials;
 mod environment_credentials;
 mod imds_managed_identity_credentials;
@@ -18,6 +19,7 @@ pub use client_secret_credentials::*;
 pub use default_credentials::*;
 pub use environment_credentials::*;
 pub use imds_managed_identity_credentials::*;
+pub use client_certificate_credentials::*;
 
 /// Represents a credential capable of providing an OAuth token.
 /// Same as [azure_core::auth::TokenCredential](azure_core::auth::TokenCredential), except a more specific error is returned.
