@@ -1,4 +1,4 @@
-use super::{TokenCredential, authority_hosts};
+use super::{authority_hosts, TokenCredential};
 use azure_core::auth::TokenResponse;
 use chrono::Utc;
 use oauth2::AccessToken;
@@ -27,7 +27,7 @@ pub struct CertificateCredentialOptions {
 impl Default for CertificateCredentialOptions {
     fn default() -> Self {
         Self {
-            authority_host: authority_hosts ::AZURE_PUBLIC_CLOUD.to_owned(),
+            authority_host: authority_hosts::AZURE_PUBLIC_CLOUD.to_owned(),
             send_certificate_chain: false,
         }
     }
@@ -212,7 +212,8 @@ impl TokenCredential for ClientCertificateCredential {
 
         Ok(TokenResponse::new(
             AccessToken::new(response.access_token.to_string()),
-            Utc::now() + chrono::Duration::from_std(Duration::from_secs(response.expires_in)).unwrap(),
+            Utc::now()
+                + chrono::Duration::from_std(Duration::from_secs(response.expires_in)).unwrap(),
         ))
     }
 }
