@@ -102,7 +102,7 @@ impl ClientCertificateCredential {
     fn sign(jwt: &str, pkey: &PKey<Private>) -> Result<Vec<u8>, ErrorStack> {
         let mut signer = Signer::new(MessageDigest::sha256(), pkey)?;
         signer.update(jwt.as_bytes())?;
-        Ok(signer.sign_to_vec()?)
+        signer.sign_to_vec()
     }
 
     fn get_thumbprint(cert: &X509) -> Result<DigestBytes, ErrorStack> {
@@ -113,9 +113,9 @@ impl ClientCertificateCredential {
 
     fn as_jwt_part(part: &[u8]) -> String {
         base64::encode(&part)
-            .replace("+", "-")
-            .replace("/", "_")
-            .replace("=", "")
+            .replace('+', "-")
+            .replace('/', "_")
+            .replace('=', "")
     }
 }
 
@@ -174,13 +174,13 @@ impl TokenCredential for ClientCertificateCredential {
             ),
             false => format!(r#"{{"alg":"RS256","typ":"JWT", "x5t":"{}"}}"#, x5t),
         };
-        let header = ClientCertificateCredential::as_jwt_part(&header.as_bytes());
+        let header = ClientCertificateCredential::as_jwt_part(header.as_bytes());
 
         let payload = format!(
             r#"{{"aud":"{}","exp":{},"iss": "{}", "jti": "{}", "nbf": {}, "sub": "{}"}}"#,
             url, expiry_time, self.client_id, uuid, current_time, self.client_id
         );
-        let payload = ClientCertificateCredential::as_jwt_part(&payload.as_bytes());
+        let payload = ClientCertificateCredential::as_jwt_part(payload.as_bytes());
 
         let jwt = format!("{}.{}", header, payload);
         let signature = ClientCertificateCredential::sign(&jwt, &certificate.pkey)
