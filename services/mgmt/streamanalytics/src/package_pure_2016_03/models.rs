@@ -392,7 +392,7 @@ impl BlobStreamInputDataSource {
 pub struct BlobStreamInputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
-    #[doc = "The partition count of the blob input data source. Range 1 - 256."]
+    #[doc = "The partition count of the blob input data source. Range 1 - 1024."]
     #[serde(rename = "sourcePartitionCount", default, skip_serializing_if = "Option::is_none")]
     pub source_partition_count: Option<i32>,
 }

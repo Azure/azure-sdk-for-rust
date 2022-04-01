@@ -665,9 +665,18 @@ pub mod azure_iaa_svm_protected_item {
 #[doc = "Additional information on Azure IaaS VM specific backup item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmProtectedItemExtendedInfo {
-    #[doc = "The oldest backup copy available for this backup item."]
+    #[doc = "The oldest backup copy available for this backup item across all tiers."]
     #[serde(rename = "oldestRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
     pub oldest_recovery_point: Option<String>,
+    #[doc = "The oldest backup copy available for this backup item in vault tier"]
+    #[serde(rename = "oldestRecoveryPointInVault", default, skip_serializing_if = "Option::is_none")]
+    pub oldest_recovery_point_in_vault: Option<String>,
+    #[doc = "The oldest backup copy available for this backup item in archive tier"]
+    #[serde(rename = "oldestRecoveryPointInArchive", default, skip_serializing_if = "Option::is_none")]
+    pub oldest_recovery_point_in_archive: Option<String>,
+    #[doc = "The latest backup copy available for this backup item in archive tier"]
+    #[serde(rename = "newestRecoveryPointInArchive", default, skip_serializing_if = "Option::is_none")]
+    pub newest_recovery_point_in_archive: Option<String>,
     #[doc = "Number of backup copies available for this backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_count: Option<i32>,
@@ -693,6 +702,9 @@ pub struct AzureIaaSvmProtectionPolicy {
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+    #[doc = "Tiering policy to automatically move RPs to another tier\r\nKey is Target Tier, defined in RecoveryPointTierType enum.\r\nTiering policy specifies the criteria to move RP to the target tier."]
+    #[serde(rename = "tieringPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub tiering_policy: Option<serde_json::Value>,
     #[doc = "Instant RP retention policy range in days"]
     #[serde(rename = "instantRpRetentionRangeInDays", default, skip_serializing_if = "Option::is_none")]
     pub instant_rp_retention_range_in_days: Option<i32>,
@@ -709,6 +721,7 @@ impl AzureIaaSvmProtectionPolicy {
             instant_rp_details: None,
             schedule_policy: None,
             retention_policy: None,
+            tiering_policy: None,
             instant_rp_retention_range_in_days: None,
             time_zone: None,
             policy_type: None,
@@ -1241,9 +1254,18 @@ pub mod azure_vm_workload_protected_item {
 #[doc = "Additional information on Azure Workload for SQL specific backup item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureVmWorkloadProtectedItemExtendedInfo {
-    #[doc = "The oldest backup copy available for this backup item."]
+    #[doc = "The oldest backup copy available for this backup item across all tiers."]
     #[serde(rename = "oldestRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
     pub oldest_recovery_point: Option<String>,
+    #[doc = "The oldest backup copy available for this backup item in vault tier"]
+    #[serde(rename = "oldestRecoveryPointInVault", default, skip_serializing_if = "Option::is_none")]
+    pub oldest_recovery_point_in_vault: Option<String>,
+    #[doc = "The oldest backup copy available for this backup item in archive tier"]
+    #[serde(rename = "oldestRecoveryPointInArchive", default, skip_serializing_if = "Option::is_none")]
+    pub oldest_recovery_point_in_archive: Option<String>,
+    #[doc = "The latest backup copy available for this backup item in archive tier"]
+    #[serde(rename = "newestRecoveryPointInArchive", default, skip_serializing_if = "Option::is_none")]
+    pub newest_recovery_point_in_archive: Option<String>,
     #[doc = "Number of backup copies available for this backup item."]
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_count: Option<i32>,
@@ -6126,6 +6148,11 @@ pub mod protection_container {
         SqlagWorkLoadContainer,
         StorageContainer,
         GenericContainer,
+        AzureWorkloadContainer,
+        #[serde(rename = "Microsoft.ClassicCompute/virtualMachines")]
+        MicrosoftClassicComputeVirtualMachines,
+        #[serde(rename = "Microsoft.Compute/virtualMachines")]
+        MicrosoftComputeVirtualMachines,
     }
 }
 #[doc = "Base class for container with backup items. Containers with specific workloads are derived from this class."]
@@ -7003,6 +7030,9 @@ pub struct SubProtectionPolicy {
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+    #[doc = "Tiering policy to automatically move RPs to another tier.\r\nKey is Target Tier, defined in RecoveryPointTierType enum.\r\nTiering policy specifies the criteria to move RP to the target tier."]
+    #[serde(rename = "tieringPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub tiering_policy: Option<serde_json::Value>,
 }
 impl SubProtectionPolicy {
     pub fn new() -> Self {
@@ -7066,6 +7096,44 @@ pub mod target_restore_info {
         Invalid,
         FailOnConflict,
         Overwrite,
+    }
+}
+#[doc = "Tiering Policy for a target tier.\r\nIf the policy is not specified for a given target tier, service retains the existing configured tiering policy for that tier"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TieringPolicy {
+    #[doc = "Tiering Mode to control automatic tiering of recovery points. Supported values are:\r\n1. TierRecommended: Tier all recovery points recommended to be tiered\r\n2. TierAfter: Tier all recovery points after a fixed period, as specified in duration + durationType below.\r\n3. DoNotTier: Do not tier any recovery points"]
+    #[serde(rename = "tieringMode", default, skip_serializing_if = "Option::is_none")]
+    pub tiering_mode: Option<tiering_policy::TieringMode>,
+    #[doc = "Number of days/weeks/months/years to retain backups in current tier before tiering.\r\nUsed only if TieringMode is set to TierAfter"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<i32>,
+    #[doc = "Retention duration type: days/weeks/months/years\r\nUsed only if TieringMode is set to TierAfter"]
+    #[serde(rename = "durationType", default, skip_serializing_if = "Option::is_none")]
+    pub duration_type: Option<tiering_policy::DurationType>,
+}
+impl TieringPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod tiering_policy {
+    use super::*;
+    #[doc = "Tiering Mode to control automatic tiering of recovery points. Supported values are:\r\n1. TierRecommended: Tier all recovery points recommended to be tiered\r\n2. TierAfter: Tier all recovery points after a fixed period, as specified in duration + durationType below.\r\n3. DoNotTier: Do not tier any recovery points"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TieringMode {
+        Invalid,
+        TierRecommended,
+        TierAfter,
+        DoNotTier,
+    }
+    #[doc = "Retention duration type: days/weeks/months/years\r\nUsed only if TieringMode is set to TierAfter"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DurationType {
+        Invalid,
+        Days,
+        Weeks,
+        Months,
+        Years,
     }
 }
 #[doc = "The token information details."]

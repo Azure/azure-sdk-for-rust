@@ -170,6 +170,12 @@ pub struct AzureMachineLearningServiceFunctionBindingProperties {
     #[doc = "The number of parallel requests that will be sent per partition of your job to the machine learning service. Default is 1."]
     #[serde(rename = "numberOfParallelRequests", default, skip_serializing_if = "Option::is_none")]
     pub number_of_parallel_requests: Option<i32>,
+    #[doc = "Label for the input request object."]
+    #[serde(rename = "inputRequestName", default, skip_serializing_if = "Option::is_none")]
+    pub input_request_name: Option<String>,
+    #[doc = "Label for the output request object."]
+    #[serde(rename = "outputResponseName", default, skip_serializing_if = "Option::is_none")]
+    pub output_response_name: Option<String>,
 }
 impl AzureMachineLearningServiceFunctionBindingProperties {
     pub fn new() -> Self {
@@ -473,9 +479,6 @@ pub struct AzureSqlReferenceInputDataSourceProperties {
     #[doc = "This element is associated with the datasource element. This is the password that will be used to connect to the SQL Database instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
-    #[doc = "This element is associated with the datasource element. The name of the table in the Azure SQL database.."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub table: Option<String>,
     #[doc = "Indicates the type of data refresh option."]
     #[serde(rename = "refreshType", default, skip_serializing_if = "Option::is_none")]
     pub refresh_type: Option<RefreshType>,
@@ -488,6 +491,9 @@ pub struct AzureSqlReferenceInputDataSourceProperties {
     #[doc = "This element is associated with the datasource element. This query is used to fetch incremental changes from the SQL database. To use this option, we recommend using temporal tables in Azure SQL Database."]
     #[serde(rename = "deltaSnapshotQuery", default, skip_serializing_if = "Option::is_none")]
     pub delta_snapshot_query: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureSqlReferenceInputDataSourceProperties {
     pub fn new() -> Self {
@@ -512,6 +518,9 @@ pub struct AzureSynapseDataSourceProperties {
     #[doc = "The password that will be used to connect to the Azure SQL database. Required on PUT (CreateOrReplace) requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureSynapseDataSourceProperties {
     pub fn new() -> Self {
@@ -642,6 +651,12 @@ impl BlobOutputDataSource {
 pub struct BlobOutputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
+    #[doc = "Blob path prefix."]
+    #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub blob_path_prefix: Option<String>,
+    #[doc = "Determines whether blob blocks are either committed automatically or appended."]
+    #[serde(rename = "blobWriteMode", default, skip_serializing_if = "Option::is_none")]
+    pub blob_write_mode: Option<BlobWriteMode>,
 }
 impl BlobOutputDataSourceProperties {
     pub fn new() -> Self {
@@ -670,6 +685,21 @@ impl BlobReferenceInputDataSource {
 pub struct BlobReferenceInputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
+    #[doc = "The name of the blob input."]
+    #[serde(rename = "blobName", default, skip_serializing_if = "Option::is_none")]
+    pub blob_name: Option<String>,
+    #[doc = "The path pattern of the delta snapshot."]
+    #[serde(rename = "deltaPathPattern", default, skip_serializing_if = "Option::is_none")]
+    pub delta_path_pattern: Option<String>,
+    #[doc = "The partition count of the blob input data source. Range 1 - 256."]
+    #[serde(rename = "sourcePartitionCount", default, skip_serializing_if = "Option::is_none")]
+    pub source_partition_count: Option<i32>,
+    #[doc = "The refresh interval of the blob input data source."]
+    #[serde(rename = "fullSnapshotRefreshRate", default, skip_serializing_if = "Option::is_none")]
+    pub full_snapshot_refresh_rate: Option<String>,
+    #[doc = "The interval that the user generates a delta snapshot of this reference blob input data source."]
+    #[serde(rename = "deltaSnapshotRefreshRate", default, skip_serializing_if = "Option::is_none")]
+    pub delta_snapshot_refresh_rate: Option<String>,
 }
 impl BlobReferenceInputDataSourceProperties {
     pub fn new() -> Self {
@@ -698,7 +728,7 @@ impl BlobStreamInputDataSource {
 pub struct BlobStreamInputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
-    #[doc = "The partition count of the blob input data source. Range 1 - 256."]
+    #[doc = "The partition count of the blob input data source. Range 1 - 1024."]
     #[serde(rename = "sourcePartitionCount", default, skip_serializing_if = "Option::is_none")]
     pub source_partition_count: Option<i32>,
 }
@@ -706,6 +736,12 @@ impl BlobStreamInputDataSourceProperties {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[doc = "Determines whether blob blocks are either committed automatically or appended."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum BlobWriteMode {
+    Append,
+    Once,
 }
 #[doc = "The binding to a CSharp function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -728,9 +764,6 @@ impl CSharpFunctionBinding {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CSharpFunctionBindingProperties {
     #[doc = "The Csharp code containing a single function definition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub script: Option<String>,
-    #[doc = "The Csharp code containing a single function definition."]
     #[serde(rename = "dllPath", default, skip_serializing_if = "Option::is_none")]
     pub dll_path: Option<String>,
     #[doc = "The Csharp code containing a single function definition."]
@@ -739,6 +772,9 @@ pub struct CSharpFunctionBindingProperties {
     #[doc = "The Csharp code containing a single function definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
+    #[doc = "Refresh modes for Stream Analytics functions."]
+    #[serde(rename = "updateMode", default, skip_serializing_if = "Option::is_none")]
+    pub update_mode: Option<UpdateMode>,
 }
 impl CSharpFunctionBindingProperties {
     pub fn new() -> Self {
@@ -1109,6 +1145,9 @@ pub struct DocumentDbOutputDataSourceProperties {
     #[doc = "The name of the field in output events used to specify the primary key which insert or update operations are based on."]
     #[serde(rename = "documentId", default, skip_serializing_if = "Option::is_none")]
     pub document_id: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl DocumentDbOutputDataSourceProperties {
     pub fn new() -> Self {
@@ -1190,6 +1229,50 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Supported Event Grid schema types."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EventGridEventSchemaType {
+    EventGridEventSchema,
+    CloudEventSchema,
+}
+#[doc = "Describes an event grid input data source that contains stream data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventGridStreamInputDataSource {
+    #[serde(flatten)]
+    pub stream_input_data_source: StreamInputDataSource,
+    #[doc = "The properties that are associated with an event grid input containing stream data."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EventGridStreamInputDataSourceProperties>,
+}
+impl EventGridStreamInputDataSource {
+    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
+        Self {
+            stream_input_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with an event grid input containing stream data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridStreamInputDataSourceProperties {
+    #[doc = "Describes an Event Hub input data source that contains stream data."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber: Option<EventHubV2StreamInputDataSource>,
+    #[doc = "Supported Event Grid schema types."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<EventGridEventSchemaType>,
+    #[doc = "A list of one or more Azure Storage accounts. Required on PUT (CreateOrReplace) requests."]
+    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    pub storage_accounts: Vec<StorageAccount>,
+    #[doc = "List of Event Types that are supported by the Event Grid adapter."]
+    #[serde(rename = "eventTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub event_types: Vec<String>,
+}
+impl EventGridStreamInputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The common properties that are associated with Event Hub data sources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubDataSourceProperties {
@@ -1198,6 +1281,9 @@ pub struct EventHubDataSourceProperties {
     #[doc = "The name of the Event Hub. Required on PUT (CreateOrReplace) requests."]
     #[serde(rename = "eventHubName", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_name: Option<String>,
+    #[doc = "The partition count of the event hub data source. Range 1 - 256."]
+    #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
+    pub partition_count: Option<i32>,
 }
 impl EventHubDataSourceProperties {
     pub fn new() -> Self {
@@ -1263,6 +1349,9 @@ pub struct EventHubStreamInputDataSourceProperties {
     #[doc = "The name of an Event Hub Consumer Group that should be used to read events from the Event Hub. Specifying distinct consumer group names for multiple inputs allows each of those inputs to receive the same events from the Event Hub. If not specified, the input uses the Event Hub’s default consumer group."]
     #[serde(rename = "consumerGroupName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_group_name: Option<String>,
+    #[doc = "The number of messages that the message receiver can simultaneously request."]
+    #[serde(rename = "prefetchCount", default, skip_serializing_if = "Option::is_none")]
+    pub prefetch_count: Option<i32>,
 }
 impl EventHubStreamInputDataSourceProperties {
     pub fn new() -> Self {
@@ -1324,10 +1413,15 @@ pub struct External {
     #[doc = "The properties that are associated with an Azure Storage account"]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccount>,
+    #[doc = "The UserCustomCode container."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub container: Option<String>,
+    #[doc = "The UserCustomCode path."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "The refresh parameters for any/all updatable user defined functions present in the job config."]
+    #[serde(rename = "refreshConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_configuration: Option<RefreshConfiguration>,
 }
 impl External {
     pub fn new() -> Self {
@@ -1451,6 +1545,74 @@ impl FunctionRetrieveDefaultDefinitionParameters {
         Self { binding_type }
     }
 }
+#[doc = "Describes a Gateway Message Bus output data source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayMessageBusOutputDataSource {
+    #[serde(flatten)]
+    pub output_data_source: OutputDataSource,
+    #[doc = "The properties that are associated with a Gateway Message Bus."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GatewayMessageBusOutputDataSourceProperties>,
+}
+impl GatewayMessageBusOutputDataSource {
+    pub fn new(output_data_source: OutputDataSource) -> Self {
+        Self {
+            output_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a Gateway Message Bus."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GatewayMessageBusOutputDataSourceProperties {
+    #[serde(flatten)]
+    pub gateway_message_bus_source_properties: GatewayMessageBusSourceProperties,
+}
+impl GatewayMessageBusOutputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties that are associated with a gateway message bus datasource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GatewayMessageBusSourceProperties {
+    #[doc = "The name of the Service Bus topic."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic: Option<String>,
+}
+impl GatewayMessageBusSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes a blob input data source that contains stream data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayMessageBusStreamInputDataSource {
+    #[serde(flatten)]
+    pub stream_input_data_source: StreamInputDataSource,
+    #[doc = "The properties that are associated with a gateway message bus input containing stream data."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GatewayMessageBusStreamInputDataSourceProperties>,
+}
+impl GatewayMessageBusStreamInputDataSource {
+    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
+        Self {
+            stream_input_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a gateway message bus input containing stream data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GatewayMessageBusStreamInputDataSourceProperties {
+    #[serde(flatten)]
+    pub gateway_message_bus_source_properties: GatewayMessageBusSourceProperties,
+}
+impl GatewayMessageBusStreamInputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Describes how identity is verified"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
@@ -1522,6 +1684,9 @@ pub struct InputProperties {
     #[doc = "partitionKey Describes a key in the input data which is used for partitioning the input data"]
     #[serde(rename = "partitionKey", default, skip_serializing_if = "Option::is_none")]
     pub partition_key: Option<String>,
+    #[doc = "Settings which determine whether to read watermark events."]
+    #[serde(rename = "watermarkSettings", default, skip_serializing_if = "Option::is_none")]
+    pub watermark_settings: Option<InputWatermarkProperties>,
 }
 impl InputProperties {
     pub fn new(type_: String) -> Self {
@@ -1532,7 +1697,26 @@ impl InputProperties {
             etag: None,
             compression: None,
             partition_key: None,
+            watermark_settings: None,
         }
+    }
+}
+#[doc = "The input watermark mode."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum InputWatermarkMode {
+    None,
+    ReadWatermark,
+}
+#[doc = "Settings which determine whether to read watermark events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InputWatermarkProperties {
+    #[doc = "The input watermark mode."]
+    #[serde(rename = "watermarkMode", default, skip_serializing_if = "Option::is_none")]
+    pub watermark_mode: Option<InputWatermarkMode>,
+}
+impl InputWatermarkProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Describes an IoT Hub input data source that contains stream data."]
@@ -1703,6 +1887,21 @@ impl JsonSerializationProperties {
         Self::default()
     }
 }
+#[doc = "An output event timestamp."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LastOutputEventTimestamp {
+    #[doc = "The last output event time."]
+    #[serde(rename = "lastOutputEventTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_output_event_time: Option<String>,
+    #[doc = "The time that the last update happened."]
+    #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_update_time: Option<String>,
+}
+impl LastOutputEventTimestamp {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The properties that are associated with data sources that use OAuth as their authentication model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuthBasedDataSourceProperties {
@@ -1846,6 +2045,12 @@ pub struct OutputProperties {
     #[doc = "The current entity tag for the output. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "A list of the last output event times for each output partition. The index of the array corresponds to the partition number."]
+    #[serde(rename = "lastOutputEventTimestamps", default, skip_serializing_if = "Vec::is_empty")]
+    pub last_output_event_timestamps: Vec<LastOutputEventTimestamp>,
+    #[doc = "Settings which determine whether to send watermarks to downstream."]
+    #[serde(rename = "watermarkSettings", default, skip_serializing_if = "Option::is_none")]
+    pub watermark_settings: Option<OutputWatermarkProperties>,
 }
 impl OutputProperties {
     pub fn new() -> Self {
@@ -1858,6 +2063,32 @@ pub enum OutputStartMode {
     JobStartTime,
     CustomTime,
     LastOutputEventTime,
+}
+#[doc = "The output watermark mode."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OutputWatermarkMode {
+    None,
+    SendCurrentPartitionWatermark,
+    SendLowestWatermarkAcrossPartitions,
+}
+#[doc = "Settings which determine whether to send watermarks to downstream."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OutputWatermarkProperties {
+    #[doc = "The output watermark mode."]
+    #[serde(rename = "watermarkMode", default, skip_serializing_if = "Option::is_none")]
+    pub watermark_mode: Option<OutputWatermarkMode>,
+    #[doc = "Describes the maximal delta between the fastest and slowest partitions, so the out of order window that catches all necessary events in downstream jobs is well defined."]
+    #[serde(
+        rename = "maxWatermarkDifferenceAcrossPartitions",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub max_watermark_difference_across_partitions: Option<String>,
+}
+impl OutputWatermarkProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Parquet format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1880,6 +2111,64 @@ impl ParquetSerialization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParquetSerializationProperties {}
 impl ParquetSerializationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties that are associated with an Azure SQL database data source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PostgreSqlDataSourceProperties {
+    #[doc = "The name of the SQL server containing the Azure SQL database. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<String>,
+    #[doc = "The name of the Azure SQL database. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<String>,
+    #[doc = "The name of the table in the Azure SQL database. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<String>,
+    #[doc = "The user name that will be used to connect to the Azure SQL database. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    #[doc = "The password that will be used to connect to the Azure SQL database. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[doc = "Max Writer count, currently only 1(single writer) and 0(based on query partition) are available. Optional on PUT requests."]
+    #[serde(rename = "maxWriterCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_writer_count: Option<f64>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
+}
+impl PostgreSqlDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes a PostgreSQL output data source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostgreSqlOutputDataSource {
+    #[serde(flatten)]
+    pub output_data_source: OutputDataSource,
+    #[doc = "The properties that are associated with a PostgreSQL output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PostgreSqlOutputDataSourceProperties>,
+}
+impl PostgreSqlOutputDataSource {
+    pub fn new(output_data_source: OutputDataSource) -> Self {
+        Self {
+            output_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a PostgreSQL output."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PostgreSqlOutputDataSourceProperties {
+    #[serde(flatten)]
+    pub postgre_sql_data_source_properties: PostgreSqlDataSourceProperties,
+}
+impl PostgreSqlOutputDataSourceProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2262,6 +2551,30 @@ impl ReferenceInputProperties {
         }
     }
 }
+#[doc = "The refresh parameters for any/all updatable user defined functions present in the job config."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefreshConfiguration {
+    #[doc = "The blob path pattern. Not a regular expression. It represents a pattern against which blob names will be matched to determine whether or not they should be included as input or output to the job. See https://docs.microsoft.com/en-us/rest/api/streamanalytics/stream-analytics-input or https://docs.microsoft.com/en-us/rest/api/streamanalytics/stream-analytics-output for a more detailed explanation and example."]
+    #[serde(rename = "pathPattern", default, skip_serializing_if = "Option::is_none")]
+    pub path_pattern: Option<String>,
+    #[doc = "The date format. Wherever {date} appears in pathPattern, the value of this property is used as the date format instead."]
+    #[serde(rename = "dateFormat", default, skip_serializing_if = "Option::is_none")]
+    pub date_format: Option<String>,
+    #[doc = "The time format. Wherever {time} appears in pathPattern, the value of this property is used as the time format instead."]
+    #[serde(rename = "timeFormat", default, skip_serializing_if = "Option::is_none")]
+    pub time_format: Option<String>,
+    #[doc = "The refresh interval."]
+    #[serde(rename = "refreshInterval", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_interval: Option<String>,
+    #[doc = "This property indicates which data refresh option to use, Blocking or Nonblocking."]
+    #[serde(rename = "refreshType", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_type: Option<UpdatableUdfRefreshType>,
+}
+impl RefreshConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Indicates the type of data refresh option."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RefreshType {
@@ -2527,6 +2840,9 @@ pub struct StorageAccount {
     #[doc = "The account key for the Azure Storage account. Required on PUT (CreateOrReplace) requests."]
     #[serde(rename = "accountKey", default, skip_serializing_if = "Option::is_none")]
     pub account_key: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl StorageAccount {
     pub fn new() -> Self {
@@ -2886,4 +3202,16 @@ impl TransformationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UdfType {
     Scalar,
+}
+#[doc = "This property indicates which data refresh option to use, Blocking or Nonblocking."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UpdatableUdfRefreshType {
+    Blocking,
+    Nonblocking,
+}
+#[doc = "Refresh modes for Stream Analytics functions."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UpdateMode {
+    Static,
+    Refreshable,
 }

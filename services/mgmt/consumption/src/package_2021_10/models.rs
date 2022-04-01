@@ -140,9 +140,6 @@ pub struct BudgetFilter {
     #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub and: Vec<BudgetFilterProperties>,
-    #[doc = "The Dimensions or Tags to filter a budget by."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Option<BudgetFilterProperties>,
     #[doc = "The comparison expression to be used in the budgets."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<BudgetComparisonExpression>,

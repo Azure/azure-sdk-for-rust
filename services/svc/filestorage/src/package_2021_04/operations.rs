@@ -4186,6 +4186,7 @@ pub mod file {
                 x_ms_file_permission: None,
                 x_ms_file_permission_key: None,
                 x_ms_meta: None,
+                x_ms_content_type: None,
             }
         }
     }
@@ -6245,6 +6246,7 @@ pub mod file {
             pub(crate) x_ms_file_permission: Option<String>,
             pub(crate) x_ms_file_permission_key: Option<String>,
             pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_content_type: Option<String>,
         }
         impl Builder {
             pub fn timeout(mut self, timeout: i64) -> Self {
@@ -6289,6 +6291,10 @@ pub mod file {
             }
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_content_type(mut self, x_ms_content_type: impl Into<String>) -> Self {
+                self.x_ms_content_type = Some(x_ms_content_type.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -6348,6 +6354,9 @@ pub mod file {
                     }
                     if let Some(x_ms_meta) = &self.x_ms_meta {
                         req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_content_type) = &self.x_ms_content_type {
+                        req_builder = req_builder.header("x-ms-content-type", x_ms_content_type);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());

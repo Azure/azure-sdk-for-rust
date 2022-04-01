@@ -937,7 +937,7 @@ pub struct ScheduleEntry {
     #[doc = "Start hour after which cache patching can start."]
     #[serde(rename = "startHourUtc")]
     pub start_hour_utc: i32,
-    #[doc = "ISO8601 timespan specifying how much time cache patching can take. "]
+    #[doc = "ISO8601 timespan specifying how much time cache patching can take."]
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<String>,
 }

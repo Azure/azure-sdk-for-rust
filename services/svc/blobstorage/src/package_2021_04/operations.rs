@@ -3954,6 +3954,7 @@ pub mod blob {
                 x_ms_legal_hold: None,
                 x_ms_copy_source_authorization: None,
                 x_ms_encryption_scope: None,
+                x_ms_copy_source_tag_option: None,
             }
         }
         pub fn abort_copy_from_url(
@@ -6618,6 +6619,7 @@ pub mod blob {
             pub(crate) x_ms_legal_hold: Option<bool>,
             pub(crate) x_ms_copy_source_authorization: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_copy_source_tag_option: Option<String>,
         }
         impl Builder {
             pub fn timeout(mut self, timeout: i64) -> Self {
@@ -6704,6 +6706,10 @@ pub mod blob {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            pub fn x_ms_copy_source_tag_option(mut self, x_ms_copy_source_tag_option: impl Into<String>) -> Self {
+                self.x_ms_copy_source_tag_option = Some(x_ms_copy_source_tag_option.into());
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/{}/{}?comp=copy&sync", self.client.endpoint(), &self.container_name, &self.blob);
@@ -6781,6 +6787,9 @@ pub mod blob {
                     }
                     if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
                         req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_copy_source_tag_option) = &self.x_ms_copy_source_tag_option {
+                        req_builder = req_builder.header("x-ms-copy-source-tag-option", x_ms_copy_source_tag_option);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
@@ -7757,6 +7766,8 @@ pub mod page_blob {
                 if_none_match: None,
                 x_ms_if_tags: None,
                 x_ms_client_request_id: None,
+                marker: None,
+                maxresults: None,
             }
         }
         pub fn get_page_ranges_diff(
@@ -7784,6 +7795,8 @@ pub mod page_blob {
                 if_none_match: None,
                 x_ms_if_tags: None,
                 x_ms_client_request_id: None,
+                marker: None,
+                maxresults: None,
             }
         }
         pub fn resize(
@@ -8864,6 +8877,8 @@ pub mod page_blob {
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
         }
         impl Builder {
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
@@ -8904,6 +8919,14 @@ pub mod page_blob {
             }
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageList, Error>> {
@@ -8950,6 +8973,12 @@ pub mod page_blob {
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
@@ -9020,6 +9049,8 @@ pub mod page_blob {
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
         }
         impl Builder {
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
@@ -9068,6 +9099,14 @@ pub mod page_blob {
             }
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageList, Error>> {
@@ -9125,6 +9164,12 @@ pub mod page_blob {
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
@@ -10701,6 +10746,7 @@ pub mod block_blob {
                 x_ms_tags: None,
                 x_ms_copy_source_blob_properties: None,
                 x_ms_copy_source_authorization: None,
+                x_ms_copy_source_tag_option: None,
             }
         }
         pub fn stage_block(
@@ -11170,6 +11216,7 @@ pub mod block_blob {
             pub(crate) x_ms_tags: Option<String>,
             pub(crate) x_ms_copy_source_blob_properties: Option<bool>,
             pub(crate) x_ms_copy_source_authorization: Option<String>,
+            pub(crate) x_ms_copy_source_tag_option: Option<String>,
         }
         impl Builder {
             pub fn timeout(mut self, timeout: i64) -> Self {
@@ -11292,6 +11339,10 @@ pub mod block_blob {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
+            pub fn x_ms_copy_source_tag_option(mut self, x_ms_copy_source_tag_option: impl Into<String>) -> Self {
+                self.x_ms_copy_source_tag_option = Some(x_ms_copy_source_tag_option.into());
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -11402,6 +11453,9 @@ pub mod block_blob {
                     }
                     if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
                         req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                    }
+                    if let Some(x_ms_copy_source_tag_option) = &self.x_ms_copy_source_tag_option {
+                        req_builder = req_builder.header("x-ms-copy-source-tag-option", x_ms_copy_source_tag_option);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());

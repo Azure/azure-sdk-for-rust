@@ -43,7 +43,3 @@ pub use package_2018_05::{models, operations, operations::Client, operations::Cl
 pub mod package_2018_05_preview;
 #[cfg(all(feature = "package-2018-05-preview", not(feature = "no-default-version")))]
 pub use package_2018_05_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-08-04-preview")]
-pub mod package_2020_08_04_preview;
-#[cfg(all(feature = "package-2020-08-04-preview", not(feature = "no-default-version")))]
-pub use package_2020_08_04_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

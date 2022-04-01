@@ -7610,6 +7610,8 @@ pub mod page_blob {
                 if_none_match: None,
                 x_ms_if_tags: None,
                 x_ms_client_request_id: None,
+                marker: None,
+                maxresults: None,
             }
         }
         pub fn get_page_ranges_diff(
@@ -7637,6 +7639,8 @@ pub mod page_blob {
                 if_none_match: None,
                 x_ms_if_tags: None,
                 x_ms_client_request_id: None,
+                marker: None,
+                maxresults: None,
             }
         }
         pub fn resize(
@@ -8717,6 +8721,8 @@ pub mod page_blob {
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
         }
         impl Builder {
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
@@ -8757,6 +8763,14 @@ pub mod page_blob {
             }
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageList, Error>> {
@@ -8803,6 +8817,12 @@ pub mod page_blob {
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
@@ -8873,6 +8893,8 @@ pub mod page_blob {
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
         }
         impl Builder {
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
@@ -8921,6 +8943,14 @@ pub mod page_blob {
             }
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageList, Error>> {
@@ -8978,6 +9008,12 @@ pub mod page_blob {
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());

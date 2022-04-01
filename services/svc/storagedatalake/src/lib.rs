@@ -11,3 +11,11 @@ pub use package_2020_06::{models, operations, operations::Client, operations::Cl
 pub mod package_2020_10;
 #[cfg(all(feature = "package-2020-10", not(feature = "no-default-version")))]
 pub use package_2020_10::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-2021-04")]
+pub mod package_2021_04;
+#[cfg(all(feature = "package-2021-04", not(feature = "no-default-version")))]
+pub use package_2021_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-2021-06")]
+pub mod package_2021_06;
+#[cfg(all(feature = "package-2021-06", not(feature = "no-default-version")))]
+pub use package_2021_06::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
