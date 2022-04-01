@@ -1,11 +1,11 @@
-#![cfg(all(test, feature = "test_e2e"))]
+#![cfg(feature = "mock_transport_framework")]
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 
 mod setup;
 
 #[tokio::test]
-async fn permissions() {
+async fn permission_operations() {
     const DATABASE_NAME: &str = "cosmos-test-db-users";
     const COLLECTION_NAME: &str = "cosmos-test-db-users";
     const USER_NAME1: &str = "someone@cool.net";
@@ -13,10 +13,10 @@ async fn permissions() {
     const PERMISSION1: &str = "godmode";
     const PERMISSION2: &str = "spyme";
 
-    let client = setup::initialize().unwrap();
+    let client = setup::initialize("permission_operations").unwrap();
 
     // create a temp database
-    let _create_database_response = client
+    let _ = client
         .create_database(DATABASE_NAME)
         .into_future()
         .await
@@ -38,17 +38,17 @@ async fn permissions() {
         .unwrap();
 
     // create two permissions
-    let permission_user1 = user1.permission(PERMISSION1);
-    let permission_user2 = user2.permission(PERMISSION2);
+    let permission_user1 = user1.permission_client(PERMISSION1);
+    let permission_user2 = user2.permission_client(PERMISSION2);
 
-    let _create_permission_user1_response = permission_user1
+    let _ = permission_user1
         .create_permission(create_collection_response.collection.all_permission())
         .expiry_seconds(18000u64) // 5 hours, max!
         .into_future()
         .await
         .unwrap();
 
-    let _create_permission_user2_response = permission_user2
+    let _ = permission_user2
         .create_permission(create_collection_response.collection.read_permission())
         .expiry_seconds(18000u64) // 5 hours, max!
         .into_future()

@@ -28,6 +28,14 @@ impl UserClient {
         &self.database
     }
 
+    /// Convert into a [`PermissionClient`]
+    pub fn permission_client<S: Into<ReadonlyString>>(
+        &self,
+        permission_name: S,
+    ) -> PermissionClient {
+        PermissionClient::new(self.clone(), permission_name)
+    }
+
     /// Get the user name
     pub fn user_name(&self) -> &str {
         &self.user_name
@@ -56,11 +64,6 @@ impl UserClient {
     /// List the user's permissions
     pub fn list_permissions(&self) -> ListPermissionsBuilder {
         ListPermissionsBuilder::new(self.clone())
-    }
-
-    /// Convert into a [`PermissionClient`]
-    pub fn permission<S: Into<ReadonlyString>>(&self, permission_name: S) -> PermissionClient {
-        PermissionClient::new(self.clone(), permission_name)
     }
 
     pub(crate) fn prepare_request_with_user_name(&self, method: http::Method) -> Request {
