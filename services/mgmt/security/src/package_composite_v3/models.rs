@@ -3483,6 +3483,9 @@ pub struct PricingProperties {
     #[doc = "The pricing tier value. Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[serde(rename = "pricingTier")]
     pub pricing_tier: pricing_properties::PricingTier,
+    #[doc = "The sub-plan selected for a Standard pricing configuration, when more than one sub-plan is available. Each sub-plan enables a set of security features. When not specified, full plan is applied."]
+    #[serde(rename = "subPlan", default, skip_serializing_if = "Option::is_none")]
+    pub sub_plan: Option<String>,
     #[doc = "The duration left for the subscriptions free trial period - in ISO 8601 format (e.g. P3Y6M4DT12H30M5S)."]
     #[serde(rename = "freeTrialRemainingTime", default, skip_serializing_if = "Option::is_none")]
     pub free_trial_remaining_time: Option<String>,
@@ -3491,6 +3494,7 @@ impl PricingProperties {
     pub fn new(pricing_tier: pricing_properties::PricingTier) -> Self {
         Self {
             pricing_tier,
+            sub_plan: None,
             free_trial_remaining_time: None,
         }
     }

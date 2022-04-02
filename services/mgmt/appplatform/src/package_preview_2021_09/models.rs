@@ -333,6 +333,8 @@ pub mod cluster_resource_properties {
     pub enum ProvisioningState {
         Creating,
         Updating,
+        Starting,
+        Stopping,
         Deleting,
         Deleted,
         Succeeded,

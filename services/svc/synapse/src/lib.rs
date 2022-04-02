@@ -27,6 +27,12 @@ pub use package_vnet_2021_06_01_preview::{models, operations, operations::Client
 pub mod package_kql_script_2021_06_preview;
 #[cfg(all(feature = "package-kql-script-2021-06-preview", not(feature = "no-default-version")))]
 pub use package_kql_script_2021_06_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-link-connection-2021-12-01-preview")]
+pub mod package_link_connection_2021_12_01_preview;
+#[cfg(all(feature = "package-link-connection-2021-12-01-preview", not(feature = "no-default-version")))]
+pub use package_link_connection_2021_12_01_preview::{
+    models, operations, operations::Client, operations::ClientBuilder, operations::Error,
+};
 #[cfg(feature = "package-artifacts-2020-12-01")]
 pub mod package_artifacts_2020_12_01;
 #[cfg(all(feature = "package-artifacts-2020-12-01", not(feature = "no-default-version")))]

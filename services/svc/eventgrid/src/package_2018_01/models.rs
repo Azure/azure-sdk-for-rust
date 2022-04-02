@@ -1507,6 +1507,225 @@ impl EventHubCaptureFileCreatedEventData {
         Self::default()
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareFhirResourceCreatedEventData {
+    #[serde(flatten)]
+    pub healthcare_fhir_resource_event_base_properties: HealthcareFhirResourceEventBaseProperties,
+}
+impl HealthcareFhirResourceCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareFhirResourceDeletedEventData {
+    #[serde(flatten)]
+    pub healthcare_fhir_resource_event_base_properties: HealthcareFhirResourceEventBaseProperties,
+}
+impl HealthcareFhirResourceDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of all FhirResource events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareFhirResourceEventBaseProperties {
+    #[doc = "Schema of FHIR resource type enumeration."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<HealthcareFhirResourceType>,
+    #[doc = "Domain name of FHIR account for this resource."]
+    #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
+    pub resource_fhir_account: Option<String>,
+    #[doc = "Id of HL7 FHIR resource."]
+    #[serde(rename = "resourceFhirId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_fhir_id: Option<String>,
+    #[doc = "VersionId of HL7 FHIR resource. It changes when the resource is created, updated, or deleted(soft-deletion)."]
+    #[serde(rename = "resourceVersionId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_version_id: Option<i64>,
+}
+impl HealthcareFhirResourceEventBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of FHIR resource type enumeration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HealthcareFhirResourceType {
+    Account,
+    ActivityDefinition,
+    AdverseEvent,
+    AllergyIntolerance,
+    Appointment,
+    AppointmentResponse,
+    AuditEvent,
+    Basic,
+    Binary,
+    BiologicallyDerivedProduct,
+    BodySite,
+    BodyStructure,
+    Bundle,
+    CapabilityStatement,
+    CarePlan,
+    CareTeam,
+    CatalogEntry,
+    ChargeItem,
+    ChargeItemDefinition,
+    Claim,
+    ClaimResponse,
+    ClinicalImpression,
+    CodeSystem,
+    Communication,
+    CommunicationRequest,
+    CompartmentDefinition,
+    Composition,
+    ConceptMap,
+    Condition,
+    Consent,
+    Contract,
+    Coverage,
+    CoverageEligibilityRequest,
+    CoverageEligibilityResponse,
+    DataElement,
+    DetectedIssue,
+    Device,
+    DeviceComponent,
+    DeviceDefinition,
+    DeviceMetric,
+    DeviceRequest,
+    DeviceUseStatement,
+    DiagnosticReport,
+    DocumentManifest,
+    DocumentReference,
+    DomainResource,
+    EffectEvidenceSynthesis,
+    EligibilityRequest,
+    EligibilityResponse,
+    Encounter,
+    Endpoint,
+    EnrollmentRequest,
+    EnrollmentResponse,
+    EpisodeOfCare,
+    EventDefinition,
+    Evidence,
+    EvidenceVariable,
+    ExampleScenario,
+    ExpansionProfile,
+    ExplanationOfBenefit,
+    FamilyMemberHistory,
+    Flag,
+    Goal,
+    GraphDefinition,
+    Group,
+    GuidanceResponse,
+    HealthcareService,
+    ImagingManifest,
+    ImagingStudy,
+    Immunization,
+    ImmunizationEvaluation,
+    ImmunizationRecommendation,
+    ImplementationGuide,
+    InsurancePlan,
+    Invoice,
+    Library,
+    Linkage,
+    List,
+    Location,
+    Measure,
+    MeasureReport,
+    Media,
+    Medication,
+    MedicationAdministration,
+    MedicationDispense,
+    MedicationKnowledge,
+    MedicationRequest,
+    MedicationStatement,
+    MedicinalProduct,
+    MedicinalProductAuthorization,
+    MedicinalProductContraindication,
+    MedicinalProductIndication,
+    MedicinalProductIngredient,
+    MedicinalProductInteraction,
+    MedicinalProductManufactured,
+    MedicinalProductPackaged,
+    MedicinalProductPharmaceutical,
+    MedicinalProductUndesirableEffect,
+    MessageDefinition,
+    MessageHeader,
+    MolecularSequence,
+    NamingSystem,
+    NutritionOrder,
+    Observation,
+    ObservationDefinition,
+    OperationDefinition,
+    OperationOutcome,
+    Organization,
+    OrganizationAffiliation,
+    Parameters,
+    Patient,
+    PaymentNotice,
+    PaymentReconciliation,
+    Person,
+    PlanDefinition,
+    Practitioner,
+    PractitionerRole,
+    Procedure,
+    ProcedureRequest,
+    ProcessRequest,
+    ProcessResponse,
+    Provenance,
+    Questionnaire,
+    QuestionnaireResponse,
+    ReferralRequest,
+    RelatedPerson,
+    RequestGroup,
+    ResearchDefinition,
+    ResearchElementDefinition,
+    ResearchStudy,
+    ResearchSubject,
+    Resource,
+    RiskAssessment,
+    RiskEvidenceSynthesis,
+    Schedule,
+    SearchParameter,
+    Sequence,
+    ServiceDefinition,
+    ServiceRequest,
+    Slot,
+    Specimen,
+    SpecimenDefinition,
+    StructureDefinition,
+    StructureMap,
+    Subscription,
+    Substance,
+    SubstanceNucleicAcid,
+    SubstancePolymer,
+    SubstanceProtein,
+    SubstanceReferenceInformation,
+    SubstanceSourceMaterial,
+    SubstanceSpecification,
+    SupplyDelivery,
+    SupplyRequest,
+    Task,
+    TerminologyCapabilities,
+    TestReport,
+    TestScript,
+    ValueSet,
+    VerificationResult,
+    VisionPrescription,
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareFhirResourceUpdatedEventData {
+    #[serde(flatten)]
+    pub healthcare_fhir_resource_event_base_properties: HealthcareFhirResourceEventBaseProperties,
+}
+impl HealthcareFhirResourceUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Event data for Microsoft.Devices.DeviceConnected event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDeviceConnectedEventData {
@@ -2141,6 +2360,7 @@ pub mod media_job_error {
         ConfigurationUnsupported,
         ContentMalformed,
         ContentUnsupported,
+        IdentityUnsupported,
     }
     #[doc = "Helps with categorization of errors."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2150,6 +2370,7 @@ pub mod media_job_error {
         Upload,
         Configuration,
         Content,
+        Account,
     }
     #[doc = "Indicates that it may be possible to retry the Job. If retry is unsuccessful, please contact Azure support via Azure Portal."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

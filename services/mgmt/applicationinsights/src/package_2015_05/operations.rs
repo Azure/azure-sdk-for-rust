@@ -4518,8 +4518,8 @@ pub mod web_tests {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            NoContent204,
             Ok200,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4573,8 +4573,8 @@ pub mod web_tests {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {

@@ -918,7 +918,9 @@ pub enum Error {
     #[error(transparent)]
     Databases_Delete(#[from] databases::delete::Error),
     #[error(transparent)]
-    Databases_ListByElasticPool(#[from] databases::list_by_elastic_pool::Error),
+    Databases_Failover(#[from] databases::failover::Error),
+    #[error(transparent)]
+    Databases_Rename(#[from] databases::rename::Error),
     #[error(transparent)]
     Databases_Pause(#[from] databases::pause::Error),
     #[error(transparent)]
@@ -926,11 +928,9 @@ pub enum Error {
     #[error(transparent)]
     Databases_UpgradeDataWarehouse(#[from] databases::upgrade_data_warehouse::Error),
     #[error(transparent)]
-    Databases_Rename(#[from] databases::rename::Error),
+    Databases_ListByElasticPool(#[from] databases::list_by_elastic_pool::Error),
     #[error(transparent)]
     Databases_ListInaccessibleByServer(#[from] databases::list_inaccessible_by_server::Error),
-    #[error(transparent)]
-    Databases_Failover(#[from] databases::failover::Error),
     #[error(transparent)]
     Servers_ListByResourceGroup(#[from] servers::list_by_resource_group::Error),
     #[error(transparent)]
@@ -3059,18 +3059,36 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
-        pub fn list_by_elastic_pool(
+        pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
             server_name: impl Into<String>,
-            elastic_pool_name: impl Into<String>,
+            database_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_elastic_pool::Builder {
-            list_by_elastic_pool::Builder {
+        ) -> failover::Builder {
+            failover::Builder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
-                elastic_pool_name: elastic_pool_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                replica_type: None,
+            }
+        }
+        pub fn rename(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            parameters: impl Into<models::ResourceMoveDefinition>,
+            subscription_id: impl Into<String>,
+        ) -> rename::Builder {
+            rename::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -3119,20 +3137,18 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
-        pub fn rename(
+        pub fn list_by_elastic_pool(
             &self,
             resource_group_name: impl Into<String>,
             server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            parameters: impl Into<models::ResourceMoveDefinition>,
+            elastic_pool_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> rename::Builder {
-            rename::Builder {
+        ) -> list_by_elastic_pool::Builder {
+            list_by_elastic_pool::Builder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
-                database_name: database_name.into(),
-                parameters: parameters.into(),
+                elastic_pool_name: elastic_pool_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -3147,22 +3163,6 @@ pub mod databases {
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 subscription_id: subscription_id.into(),
-            }
-        }
-        pub fn failover(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> failover::Builder {
-            failover::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                subscription_id: subscription_id.into(),
-                replica_type: None,
             }
         }
         pub fn export(
@@ -3700,7 +3700,85 @@ pub mod databases {
             }
         }
     }
-    pub mod list_by_elastic_pool {
+    pub mod failover {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) replica_type: Option<String>,
+        }
+        impl Builder {
+            pub fn replica_type(mut self, replica_type: impl Into<String>) -> Self {
+                self.replica_type = Some(replica_type.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/failover",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-06-01-preview");
+                    if let Some(replica_type) = &self.replica_type {
+                        url.query_pairs_mut().append_pair("replicaType", replica_type);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => Err(Error::DefaultResponse { status_code }),
+                    }
+                })
+            }
+        }
+    }
+    pub mod rename {
         use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3726,23 +3804,24 @@ pub mod databases {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
-            pub(crate) elastic_pool_name: String,
+            pub(crate) database_name: String,
+            pub(crate) parameters: models::ResourceMoveDefinition,
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabaseListResult, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/databases",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/move",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_name,
-                        &self.elastic_pool_name
+                        &self.database_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
+                    req_builder = req_builder.method(http::Method::POST);
                     let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
@@ -3750,18 +3829,14 @@ pub mod databases {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2019-06-01-preview");
-                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::DatabaseListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
-                        }
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(Error::DefaultResponse { status_code }),
                     }
                 })
@@ -3988,7 +4063,7 @@ pub mod databases {
             }
         }
     }
-    pub mod rename {
+    pub mod list_by_elastic_pool {
         use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4014,24 +4089,23 @@ pub mod databases {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) parameters: models::ResourceMoveDefinition,
+            pub(crate) elastic_pool_name: String,
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabaseListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/move",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/databases",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_name,
-                        &self.database_name
+                        &self.elastic_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
+                    req_builder = req_builder.method(http::Method::GET);
                     let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
@@ -4039,14 +4113,18 @@ pub mod databases {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2019-06-01-preview");
-                    req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(()),
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabaseListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
                         status_code => Err(Error::DefaultResponse { status_code }),
                     }
                 })
@@ -4113,84 +4191,6 @@ pub mod databases {
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
-                        status_code => Err(Error::DefaultResponse { status_code }),
-                    }
-                })
-            }
-        }
-    }
-    pub mod failover {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) subscription_id: String,
-            pub(crate) replica_type: Option<String>,
-        }
-        impl Builder {
-            pub fn replica_type(mut self, replica_type: impl Into<String>) -> Self {
-                self.replica_type = Some(replica_type.into());
-                self
-            }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/failover",
-                        self.client.endpoint(),
-                        &self.subscription_id,
-                        &self.resource_group_name,
-                        &self.server_name,
-                        &self.database_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2019-06-01-preview");
-                    if let Some(replica_type) = &self.replica_type {
-                        url.query_pairs_mut().append_pair("replicaType", replica_type);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => Err(Error::DefaultResponse { status_code }),
                     }
                 })

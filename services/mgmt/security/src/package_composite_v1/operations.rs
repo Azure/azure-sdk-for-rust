@@ -611,7 +611,7 @@ pub mod security_connectors {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-07-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -686,7 +686,7 @@ pub mod security_connectors {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-07-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -763,7 +763,7 @@ pub mod security_connectors {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-07-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -846,7 +846,7 @@ pub mod security_connectors {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-07-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.security_connector).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -931,7 +931,7 @@ pub mod security_connectors {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-07-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.security_connector).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -1014,7 +1014,7 @@ pub mod security_connectors {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-07-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
