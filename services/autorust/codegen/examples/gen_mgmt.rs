@@ -38,6 +38,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
     ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
+    ("databoxedge", "package-2022-03-01"), // duplicate SystemData https://github.com/Azure/azure-rest-api-specs/pull/18526
     ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
     // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
