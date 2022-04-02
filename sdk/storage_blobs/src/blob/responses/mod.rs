@@ -38,3 +38,5 @@ mod get_blob_metadata_response;
 pub use get_blob_metadata_response::GetBlobMetadataResponse;
 mod set_blob_metadata_response;
 pub use set_blob_metadata_response::SetBlobMetadataResponse;
+mod set_blob_tier_response;
+pub use set_blob_tier_response::SetBlobTierResponse;

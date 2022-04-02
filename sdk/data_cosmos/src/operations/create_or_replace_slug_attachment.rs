@@ -93,8 +93,10 @@ impl CreateOrReplaceSlugAttachmentBuilder {
     }
 }
 /// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceSlugAttachment =
-    futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceSlugAttachmentResponse>>;
+pub type CreateOrReplaceSlugAttachment = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<CreateOrReplaceSlugAttachmentResponse>,
+>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceSlugAttachmentBuilder {
@@ -133,7 +135,7 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
 }
 
 impl CreateOrReplaceSlugAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

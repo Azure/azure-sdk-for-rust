@@ -380,6 +380,107 @@ async fn put_block_blob_and_get_properties() {
     let _ = requires_send_future(blob.get_properties().execute());
 }
 
+#[tokio::test]
+async fn set_blobtier() {
+    let blob_name: &'static str = "m9";
+    let container_name: &'static str = "rust-set-blobtier-test";
+    let data = Bytes::from_static(b"abcdef");
+
+    let storage = initialize().as_storage_client();
+    let blob_service = storage.as_blob_service_client();
+    let container = storage.as_container_client(container_name);
+    let blob = container.as_blob_client(blob_name);
+
+    if blob_service
+        .list_containers()
+        .execute()
+        .await
+        .unwrap()
+        .incomplete_vector
+        .iter()
+        .find(|x| x.name == container_name)
+        .is_none()
+    {
+        container
+            .create()
+            .public_access(PublicAccess::None)
+            .execute()
+            .await
+            .unwrap();
+    }
+
+    // calculate md5 too!
+    let digest = md5::compute(&data[..]).into();
+
+    blob.put_block_blob(data)
+        .content_type("text/plain")
+        .hash(&digest)
+        .execute()
+        .await
+        .unwrap();
+
+    trace!("created {:?}", blob_name);
+
+    //
+    // Hot -> Cool
+    //
+    blob.set_blobtier()
+        .access_tier(AccessTier::Cool)
+        .execute()
+        .await
+        .unwrap();
+
+    trace!("blob access tier set to {:?}", AccessTier::Cool);
+
+    //
+    // Cool -> Hot
+    //
+    blob.set_blobtier()
+        .access_tier(AccessTier::Hot)
+        .execute()
+        .await
+        .unwrap();
+
+    trace!("blob access tier set to {:?}", AccessTier::Hot);
+
+    //
+    // Hot -> Archive
+    //
+    blob.set_blobtier()
+        .access_tier(AccessTier::Archive)
+        .execute()
+        .await
+        .unwrap();
+
+    trace!("blob access tier set to {:?}", AccessTier::Archive);
+
+    //
+    // Archive -> Cool
+    //
+    blob.set_blobtier()
+        .access_tier(AccessTier::Cool)
+        .execute()
+        .await
+        .unwrap();
+
+    trace!("blob access tier set to {:?}", AccessTier::Cool);
+
+    //
+    // Archive -> Cool (rehydrating)
+    //
+    blob.set_blobtier()
+        .access_tier(AccessTier::Cool)
+        .execute()
+        .await
+        .unwrap();
+
+    trace!("blob access tier set to {:?}", AccessTier::Cool);
+
+    // Clean-up test
+    container.delete().execute().await.unwrap();
+    println!("container {} deleted!", container_name);
+}
+
 #[allow(dead_code)]
 fn send_check() {
     let client = initialize();

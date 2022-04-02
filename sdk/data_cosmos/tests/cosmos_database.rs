@@ -2,7 +2,6 @@
 
 mod setup;
 
-use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
 #[tokio::test]
@@ -12,7 +11,9 @@ async fn create_and_delete_database() {
     let client = setup::initialize().unwrap();
 
     // list existing databases and remember their number
-    let databases = Box::pin(client.list_databases().into_stream())
+    let databases = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()
@@ -26,7 +27,9 @@ async fn create_and_delete_database() {
         .await
         .unwrap();
 
-    let databases = Box::pin(client.list_databases().into_stream())
+    let databases = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()
@@ -51,7 +54,9 @@ async fn create_and_delete_database() {
         .await
         .unwrap();
 
-    let databases = Box::pin(client.list_databases().into_stream())
+    let databases = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()

@@ -1,6 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 
@@ -37,7 +36,9 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     // list collections!
     log::info!("Listing all collections...");
-    let collections = Box::pin(database.list_collections().into_stream())
+    let collections = database
+        .list_collections()
+        .into_stream()
         .next()
         .await
         .expect("No collection page")?;

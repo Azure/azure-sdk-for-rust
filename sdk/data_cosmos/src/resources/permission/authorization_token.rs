@@ -18,8 +18,11 @@ impl AuthorizationToken {
     /// The token is *not* verified to be valid.
     pub fn primary_from_base64(
         base64_encoded: &str,
-    ) -> Result<AuthorizationToken, AuthorizationTokenParseError> {
-        let key = base64::decode(base64_encoded)?;
+    ) -> azure_core::error::Result<AuthorizationToken> {
+        let key = base64::decode(base64_encoded).map_err(|e| {
+            azure_core::error::Error::full(azure_core::error::ErrorKind::Credential, e,
+            "failed to base64 decode the primary credential - ensure that the credential is properly base64 encoded")
+        })?;
         Ok(AuthorizationToken::Primary(key))
     }
 
@@ -27,14 +30,6 @@ impl AuthorizationToken {
     pub fn new_resource(resource: String) -> AuthorizationToken {
         AuthorizationToken::Resource(resource)
     }
-}
-
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum AuthorizationTokenParseError {
-    #[error("the authorization token was not properly base64 encoded: {0}")]
-    InvalidBase64Encoding(#[from] base64::DecodeError),
 }
 
 impl fmt::Debug for AuthorizationToken {
