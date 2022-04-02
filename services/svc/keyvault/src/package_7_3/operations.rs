@@ -49,7 +49,7 @@ impl Client {
     pub(crate) fn scopes(&self) -> Vec<&str> {
         self.scopes.iter().map(String::as_str).collect()
     }
-    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> azure_core::error::Result<azure_core::Response> {
         let mut context = azure_core::Context::default();
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
@@ -1078,9 +1078,9 @@ pub mod full_backup {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1156,9 +1156,9 @@ pub mod full_backup_status {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1225,9 +1225,9 @@ pub mod full_restore_operation {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1303,9 +1303,9 @@ pub mod restore_status {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1372,9 +1372,9 @@ pub mod selective_key_restore_operation {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1451,9 +1451,9 @@ pub mod get_certificates {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1535,9 +1535,9 @@ pub mod delete_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1604,9 +1604,9 @@ pub mod get_certificate_contacts {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1672,9 +1672,9 @@ pub mod set_certificate_contacts {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1742,9 +1742,9 @@ pub mod delete_certificate_contacts {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1810,9 +1810,9 @@ pub mod get_certificate_issuers {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1886,9 +1886,9 @@ pub mod get_certificate_issuer {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -1955,9 +1955,9 @@ pub mod set_certificate_issuer {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2026,9 +2026,9 @@ pub mod update_certificate_issuer {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2097,9 +2097,9 @@ pub mod delete_certificate_issuer {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2166,9 +2166,9 @@ pub mod create_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2237,9 +2237,9 @@ pub mod import_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2308,9 +2308,9 @@ pub mod get_certificate_versions {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2385,9 +2385,9 @@ pub mod get_certificate_policy {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2454,9 +2454,9 @@ pub mod update_certificate_policy {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2525,9 +2525,9 @@ pub mod get_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2600,9 +2600,9 @@ pub mod update_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2677,9 +2677,9 @@ pub mod get_certificate_operation {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2746,9 +2746,9 @@ pub mod update_certificate_operation {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2817,9 +2817,9 @@ pub mod delete_certificate_operation {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2886,9 +2886,9 @@ pub mod merge_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -2957,9 +2957,9 @@ pub mod backup_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3027,9 +3027,9 @@ pub mod restore_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3097,9 +3097,9 @@ pub mod get_deleted_certificates {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3181,9 +3181,9 @@ pub mod get_deleted_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3250,9 +3250,9 @@ pub mod purge_deleted_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3314,9 +3314,9 @@ pub mod recover_deleted_certificate {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3384,9 +3384,9 @@ pub mod create_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3455,9 +3455,9 @@ pub mod rotate_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3525,9 +3525,9 @@ pub mod import_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3596,9 +3596,9 @@ pub mod delete_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3665,9 +3665,9 @@ pub mod get_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3735,9 +3735,9 @@ pub mod update_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3807,9 +3807,9 @@ pub mod get_key_versions {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3884,9 +3884,9 @@ pub mod get_keys {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -3960,9 +3960,9 @@ pub mod backup_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4030,9 +4030,9 @@ pub mod restore_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4100,9 +4100,9 @@ pub mod encrypt {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4172,9 +4172,9 @@ pub mod decrypt {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4244,9 +4244,9 @@ pub mod sign {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4316,9 +4316,9 @@ pub mod verify {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4388,9 +4388,9 @@ pub mod wrap_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4460,9 +4460,9 @@ pub mod unwrap_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4532,9 +4532,9 @@ pub mod release {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4604,9 +4604,9 @@ pub mod get_deleted_keys {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4680,9 +4680,9 @@ pub mod get_deleted_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4749,9 +4749,9 @@ pub mod purge_deleted_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4813,9 +4813,9 @@ pub mod recover_deleted_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4883,9 +4883,9 @@ pub mod get_key_rotation_policy {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -4952,9 +4952,9 @@ pub mod update_key_rotation_policy {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5023,9 +5023,9 @@ pub mod get_random_bytes {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5093,9 +5093,9 @@ pub mod set_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5164,9 +5164,9 @@ pub mod delete_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5233,9 +5233,9 @@ pub mod get_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5303,9 +5303,9 @@ pub mod update_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5375,9 +5375,9 @@ pub mod get_secrets {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5451,9 +5451,9 @@ pub mod get_secret_versions {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5528,9 +5528,9 @@ pub mod get_deleted_secrets {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5604,9 +5604,9 @@ pub mod get_deleted_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5673,9 +5673,9 @@ pub mod purge_deleted_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5737,9 +5737,9 @@ pub mod recover_deleted_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5807,9 +5807,9 @@ pub mod backup_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5877,9 +5877,9 @@ pub mod restore_secret {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -5947,9 +5947,9 @@ pub mod get_storage_accounts {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6023,9 +6023,9 @@ pub mod get_deleted_storage_accounts {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6099,9 +6099,9 @@ pub mod get_deleted_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6168,9 +6168,9 @@ pub mod purge_deleted_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6232,9 +6232,9 @@ pub mod recover_deleted_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6302,9 +6302,9 @@ pub mod backup_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6372,9 +6372,9 @@ pub mod restore_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6442,9 +6442,9 @@ pub mod get_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6511,9 +6511,9 @@ pub mod set_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6582,9 +6582,9 @@ pub mod update_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6653,9 +6653,9 @@ pub mod delete_storage_account {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6722,9 +6722,9 @@ pub mod regenerate_storage_account_key {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6793,9 +6793,9 @@ pub mod get_sas_definitions {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6870,9 +6870,9 @@ pub mod get_deleted_sas_definitions {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -6949,9 +6949,9 @@ pub mod get_deleted_sas_definition {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -7024,9 +7024,9 @@ pub mod recover_deleted_sas_definition {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -7100,9 +7100,9 @@ pub mod get_sas_definition {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -7175,9 +7175,9 @@ pub mod set_sas_definition {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -7252,9 +7252,9 @@ pub mod update_sas_definition {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -7329,9 +7329,9 @@ pub mod delete_sas_definition {
         #[error("Failed to get access token")]
         GetToken(#[source] azure_core::Error),
         #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
+        SendRequest(#[source] azure_core::error::Error),
         #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
+        ResponseBytes(#[source] azure_core::error::Error),
         #[error("Failed to deserialize response, body: {1:?}")]
         Deserialize(#[source] serde_json::Error, bytes::Bytes),
     }
@@ -7443,9 +7443,9 @@ pub mod role_definitions {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -7518,9 +7518,9 @@ pub mod role_definitions {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -7595,9 +7595,9 @@ pub mod role_definitions {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -7670,9 +7670,9 @@ pub mod role_definitions {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -7791,9 +7791,9 @@ pub mod role_assignments {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -7866,9 +7866,9 @@ pub mod role_assignments {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -7943,9 +7943,9 @@ pub mod role_assignments {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -8018,9 +8018,9 @@ pub mod role_assignments {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -8126,9 +8126,9 @@ pub mod hsm_security_domain {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -8195,9 +8195,9 @@ pub mod hsm_security_domain {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -8265,9 +8265,9 @@ pub mod hsm_security_domain {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -8338,9 +8338,9 @@ pub mod hsm_security_domain {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
@@ -8408,9 +8408,9 @@ pub mod hsm_security_domain {
             #[error("Failed to get access token")]
             GetToken(#[source] azure_core::Error),
             #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::Error),
+            SendRequest(#[source] azure_core::error::Error),
             #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::StreamError),
+            ResponseBytes(#[source] azure_core::error::Error),
             #[error("Failed to deserialize response, body: {1:?}")]
             Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
