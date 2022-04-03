@@ -1,12 +1,12 @@
 # azure_mgmt_botservice crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/botservice/resource-manager/readme.md
 
-The default `Tag` is `package-preview-2021-05`.
+The default tag is `package-preview-2021-05`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-preview-2021-05` has 29 operations from 1 API versions: `2021-05-01-preview`. Use crate feature `package-preview-2021-05` to enable. The operations will be in the `package_preview_2021_05` module.
 - `package-2021-03-01` has 23 operations from 1 API versions: `2021-03-01`. Use crate feature `package-2021-03-01` to enable. The operations will be in the `package_2021_03_01` module.

@@ -1,12 +1,12 @@
 # azure_mgmt_netapp crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/netapp/resource-manager/readme.md
 
-The default `Tag` is `package-netapp-2021-10-01`.
+The default tag is `package-netapp-2021-10-01`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-netapp-2021-10-01` has 68 operations from 1 API versions: `2021-10-01`. Use crate feature `package-netapp-2021-10-01` to enable. The operations will be in the `package_netapp_2021_10_01` module.
 - `package-netapp-2021-08-01` has 61 operations from 1 API versions: `2021-08-01`. Use crate feature `package-netapp-2021-08-01` to enable. The operations will be in the `package_netapp_2021_08_01` module.

@@ -1,12 +1,12 @@
 # azure_mgmt_containerinstance crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/containerinstance/resource-manager/readme.md
 
-The default `Tag` is `package-2021-10`.
+The default tag is `package-2021-10`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-10` has 17 operations from 1 API versions: `2021-10-01`. Use crate feature `package-2021-10` to enable. The operations will be in the `package_2021_10` module.
 - `package-2021-09` has 17 operations from 1 API versions: `2021-09-01`. Use crate feature `package-2021-09` to enable. The operations will be in the `package_2021_09` module.

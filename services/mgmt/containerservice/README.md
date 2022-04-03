@@ -1,13 +1,15 @@
 # azure_mgmt_containerservice crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/containerservice/resource-manager/readme.md
 
-The default `Tag` is `package-2022-01`.
+The default tag is `package-2022-02`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2022-02` has 44 operations from 1 API versions: `2022-02-01`. Use crate feature `package-2022-02` to enable. The operations will be in the `package_2022_02` module.
+- `package-preview-2022-02` has 50 operations from 1 API versions: `2022-02-02-preview`. Use crate feature `package-preview-2022-02` to enable. The operations will be in the `package_preview_2022_02` module.
 - `package-2022-01` has 44 operations from 1 API versions: `2022-01-01`. Use crate feature `package-2022-01` to enable. The operations will be in the `package_2022_01` module.
 - `package-preview-2022-01` has 44 operations from 1 API versions: `2022-01-02-preview`. Use crate feature `package-preview-2022-01` to enable. The operations will be in the `package_preview_2022_01` module.
 - `package-preview-2021-11` has 44 operations from 1 API versions: `2021-11-01-preview`. Use crate feature `package-preview-2021-11` to enable. The operations will be in the `package_preview_2021_11` module.
@@ -41,18 +43,8 @@ The following `Tag`s are available:
 - `package-2017-09` has 14 operations from 3 API versions: `2017-07-01`, `2017-08-31`, `2017-09-30`. Use crate feature `package-2017-09` to enable. The operations will be in the `package_2017_09` module.
 - `package-2017-08` has 13 operations from 2 API versions: `2017-07-01`, `2017-08-31`. Use crate feature `package-2017-08` to enable. The operations will be in the `package_2017_08` module.
 - `package-2017-07` has 5 operations from 1 API versions: `2017-07-01`. Use crate feature `package-2017-07` to enable. The operations will be in the `package_2017_07` module.
-- `package-2022-01-01-only` has 44 operations from 1 API versions: `2022-01-01`. Use crate feature `package-2022-01-01-only` to enable. The operations will be in the `package_2022_01_01_only` module.
-- `package-2022-01-02-preview-only` has 44 operations from 1 API versions: `2022-01-02-preview`. Use crate feature `package-2022-01-02-preview-only` to enable. The operations will be in the `package_2022_01_02_preview_only` module.
-- `package-2021-11-01-preview-only` has 44 operations from 1 API versions: `2021-11-01-preview`. Use crate feature `package-2021-11-01-preview-only` to enable. The operations will be in the `package_2021_11_01_preview_only` module.
-- `package-2021-10-01-only` has 44 operations from 1 API versions: `2021-10-01`. Use crate feature `package-2021-10-01-only` to enable. The operations will be in the `package_2021_10_01_only` module.
-- `package-2021-09-01-only` has 44 operations from 1 API versions: `2021-09-01`. Use crate feature `package-2021-09-01-only` to enable. The operations will be in the `package_2021_09_01_only` module.
-- `package-2021-08-01-only` has 44 operations from 1 API versions: `2021-08-01`. Use crate feature `package-2021-08-01-only` to enable. The operations will be in the `package_2021_08_01_only` module.
-- `package-2021-07-01-only` has 38 operations from 1 API versions: `2021-07-01`. Use crate feature `package-2021-07-01-only` to enable. The operations will be in the `package_2021_07_01_only` module.
-- `package-2021-05-01-only` has 38 operations from 1 API versions: `2021-05-01`. Use crate feature `package-2021-05-01-only` to enable. The operations will be in the `package_2021_05_01_only` module.
-- `package-2021-03-01-only` has 37 operations from 1 API versions: `2021-03-01`. Use crate feature `package-2021-03-01-only` to enable. The operations will be in the `package_2021_03_01_only` module.
-- `package-2021-02-01-only` has 34 operations from 1 API versions: `2021-02-01`. Use crate feature `package-2021-02-01-only` to enable. The operations will be in the `package_2021_02_01_only` module.
-- `package-2020-12-01-only` has 34 operations from 1 API versions: `2020-12-01`. Use crate feature `package-2020-12-01-only` to enable. The operations will be in the `package_2020_12_01_only` module.
-- `package-2020-11-01-only` has 30 operations from 1 API versions: `2020-11-01`. Use crate feature `package-2020-11-01-only` to enable. The operations will be in the `package_2020_11_01_only` module.
+- `package-2019-09-preview-only` has 6 operations from 1 API versions: `2019-09-30-preview`. Use crate feature `package-2019-09-preview-only` to enable. The operations will be in the `package_2019_09_preview_only` module.
+- `package-2017-07-only-extended` has 6 operations from 2 API versions: `2017-07-01`, `2019-04-01`. Use crate feature `package-2017-07-only-extended` to enable. The operations will be in the `package_2017_07_only_extended` module.
 - `package-2020-09-01-only` has 30 operations from 1 API versions: `2020-09-01`. Use crate feature `package-2020-09-01-only` to enable. The operations will be in the `package_2020_09_01_only` module.
 - `package-2020-07-01-only` has 26 operations from 1 API versions: `2020-07-01`. Use crate feature `package-2020-07-01-only` to enable. The operations will be in the `package_2020_07_01_only` module.
 - `package-2020-06-01-only` has 25 operations from 1 API versions: `2020-06-01`. Use crate feature `package-2020-06-01-only` to enable. The operations will be in the `package_2020_06_01_only` module.
@@ -68,13 +60,11 @@ The following `Tag`s are available:
 - `package-2019-04-30-only` has 6 operations from 1 API versions: `2019-04-30`. Use crate feature `package-2019-04-30-only` to enable. The operations will be in the `package_2019_04_30_only` module.
 - `package-2019-04-01-only` has 17 operations from 1 API versions: `2019-04-01`. Use crate feature `package-2019-04-01-only` to enable. The operations will be in the `package_2019_04_01_only` module.
 - `package-2019-02-only` has 17 operations from 1 API versions: `2019-02-01`. Use crate feature `package-2019-02-only` to enable. The operations will be in the `package_2019_02_only` module.
-- `package-2018-08-preview-only` has 13 operations from 1 API versions: `2018-08-01-preview`. Use crate feature `package-2018-08-preview-only` to enable. The operations will be in the `package_2018_08_preview_only` module.
 - `package-2018-09-preview-only` has 6 operations from 1 API versions: `2018-09-30-preview`. Use crate feature `package-2018-09-preview-only` to enable. The operations will be in the `package_2018_09_preview_only` module.
-- `package-2019-09-preview-only` has 6 operations from 1 API versions: `2019-09-30-preview`. Use crate feature `package-2019-09-preview-only` to enable. The operations will be in the `package_2019_09_preview_only` module.
+- `package-2018-08-preview-only` has 13 operations from 1 API versions: `2018-08-01-preview`. Use crate feature `package-2018-08-preview-only` to enable. The operations will be in the `package_2018_08_preview_only` module.
 - `package-2018-03-only` has 13 operations from 1 API versions: `2018-03-31`. Use crate feature `package-2018-03-only` to enable. The operations will be in the `package_2018_03_only` module.
-- `package-2017-07-only-extended` has 6 operations from 2 API versions: `2017-07-01`, `2019-04-01`. Use crate feature `package-2017-07-only-extended` to enable. The operations will be in the `package_2017_07_only_extended` module.
-- `package-2017-08-only` has 8 operations from 1 API versions: `2017-08-31`. Use crate feature `package-2017-08-only` to enable. The operations will be in the `package_2017_08_only` module.
 - `package-2017-09-only` has 1 operations from 1 API versions: `2017-09-30`. Use crate feature `package-2017-09-only` to enable. The operations will be in the `package_2017_09_only` module.
+- `package-2017-08-only` has 8 operations from 1 API versions: `2017-08-31`. Use crate feature `package-2017-08-only` to enable. The operations will be in the `package_2017_08_only` module.
 - `package-2017-01-only` has 5 operations from 1 API versions: `2017-01-31`. Use crate feature `package-2017-01-only` to enable. The operations will be in the `package_2017_01_only` module.
 - `package-2016-09-only` has 5 operations from 1 API versions: `2016-09-30`. Use crate feature `package-2016-09-only` to enable. The operations will be in the `package_2016_09_only` module.
 - `package-2016-03-only` has 5 operations from 1 API versions: `2016-03-30`. Use crate feature `package-2016-03-only` to enable. The operations will be in the `package_2016_03_only` module.

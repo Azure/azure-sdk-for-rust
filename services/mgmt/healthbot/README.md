@@ -1,12 +1,12 @@
 # azure_mgmt_healthbot crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/healthbot/resource-manager/readme.md
 
-The default `Tag` is `package-2021-06-10`.
+The default tag is `package-2021-06-10`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-08-24` has 7 operations from 1 API versions: `2021-08-24`. Use crate feature `package-2021-08-24` to enable. The operations will be in the `package_2021_08_24` module.
 - `package-2021-06-10` has 7 operations from 1 API versions: `2021-06-10`. Use crate feature `package-2021-06-10` to enable. The operations will be in the `package_2021_06_10` module.

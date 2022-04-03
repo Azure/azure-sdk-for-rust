@@ -1,13 +1,14 @@
 # azure_svc_imds crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/imds/data-plane/readme.md
 
-The default `Tag` is `package-2021-05-01`.
+The default tag is `package-2021-10-01`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2018-02-1` has 3 operations from 1 API versions: `2018-02-01`. Use crate feature `package-2018-02-1` to enable. The operations will be in the `package_2018_02_1` module.
 - `package-2018-04-02` has 3 operations from 1 API versions: `2018-04-02`. Use crate feature `package-2018-04-02` to enable. The operations will be in the `package_2018_04_02` module.
 - `package-2018-10-01` has 4 operations from 1 API versions: `2018-10-01`. Use crate feature `package-2018-10-01` to enable. The operations will be in the `package_2018_10_01` module.
 - `package-2019-02-01` has 4 operations from 1 API versions: `2019-02-01`. Use crate feature `package-2019-02-01` to enable. The operations will be in the `package_2019_02_01` module.
@@ -27,3 +28,4 @@ The following `Tag`s are available:
 - `package-2021-02-01` has 4 operations from 1 API versions: `2021-02-01`. Use crate feature `package-2021-02-01` to enable. The operations will be in the `package_2021_02_01` module.
 - `package-2021-03-01` has 4 operations from 1 API versions: `2021-03-01`. Use crate feature `package-2021-03-01` to enable. The operations will be in the `package_2021_03_01` module.
 - `package-2021-05-01` has 4 operations from 1 API versions: `2021-05-01`. Use crate feature `package-2021-05-01` to enable. The operations will be in the `package_2021_05_01` module.
+- `package-2021-10-01` has 4 operations from 1 API versions: `2021-10-01`. Use crate feature `package-2021-10-01` to enable. The operations will be in the `package_2021_10_01` module.

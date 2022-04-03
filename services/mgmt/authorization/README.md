@@ -1,13 +1,15 @@
 # azure_mgmt_authorization crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/authorization/resource-manager/readme.md
 
-The default `Tag` is `profile-hybrid-2020-09-01`.
+The default tag is `package-2020-10-01`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2020-10-01` has 48 operations from 2 API versions: `2015-07-01`, `2020-10-01`. Use crate feature `package-2020-10-01` to enable. The operations will be in the `package_2020_10_01` module.
+- `package-2020-10-01-only` has 27 operations from 1 API versions: `2020-10-01`. Use crate feature `package-2020-10-01-only` to enable. The operations will be in the `package_2020_10_01_only` module.
 - `package-2022-04-01-preview-only` has 10 operations from 1 API versions: `2022-04-01-preview`. Use crate feature `package-2022-04-01-preview-only` to enable. The operations will be in the `package_2022_04_01_preview_only` module.
 - `package-2021-01-01-preview-only` has 13 operations from 1 API versions: `2021-01-01-preview`. Use crate feature `package-2021-01-01-preview-only` to enable. The operations will be in the `package_2021_01_01_preview_only` module.
 - `package-2020-10-01-preview-only` has 37 operations from 1 API versions: `2020-10-01-preview`. Use crate feature `package-2020-10-01-preview-only` to enable. The operations will be in the `package_2020_10_01_preview_only` module.

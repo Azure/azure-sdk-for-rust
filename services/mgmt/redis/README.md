@@ -1,12 +1,12 @@
 # azure_mgmt_redis crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/redis/resource-manager/readme.md
 
-The default `Tag` is `package-2021-06`.
+The default tag is `package-2021-06`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-06` has 32 operations from 1 API versions: `2021-06-01`. Use crate feature `package-2021-06` to enable. The operations will be in the `package_2021_06` module.
 - `package-2020-12` has 31 operations from 1 API versions: `2020-12-01`. Use crate feature `package-2020-12` to enable. The operations will be in the `package_2020_12` module.

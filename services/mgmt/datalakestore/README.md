@@ -1,12 +1,12 @@
 # azure_mgmt_datalakestore crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/datalake-store/resource-manager/readme.md
 
-The default `Tag` is `package-2016-11`.
+The default tag is `package-2016-11`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2016-11` has 26 operations from 1 API versions: `2016-11-01`. Use crate feature `package-2016-11` to enable. The operations will be in the `package_2016_11` module.
 - `package-2015-10-preview` has 11 operations from 1 API versions: `2015-10-01-preview`. Use crate feature `package-2015-10-preview` to enable. The operations will be in the `package_2015_10_preview` module.

@@ -1,12 +1,12 @@
 # azure_mgmt_postgresql crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/postgresql/resource-manager/readme.md
 
-The default `Tag` is `package-flexibleserver-2021-06`.
+The default tag is `package-flexibleserver-2021-06`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-06-15-privatepreview` has 27 operations from 1 API versions: `2021-06-15-privatepreview`. Use crate feature `package-2021-06-15-privatepreview` to enable. The operations will be in the `package_2021_06_15_privatepreview` module.
 - `package-flexibleserver-2021-06` has 26 operations from 1 API versions: `2021-06-01`. Use crate feature `package-flexibleserver-2021-06` to enable. The operations will be in the `package_flexibleserver_2021_06` module.

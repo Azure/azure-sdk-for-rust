@@ -1,12 +1,12 @@
 # azure_mgmt_hybridcompute crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/hybridcompute/resource-manager/readme.md
 
-The default `Tag` is `package-preview-2021-12`.
+The default tag is `package-preview-2021-12`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-preview-2021-12` has 27 operations from 1 API versions: `2021-12-10-preview`. Use crate feature `package-preview-2021-12` to enable. The operations will be in the `package_preview_2021_12` module.
 - `package-preview-2021-06` has 27 operations from 1 API versions: `2021-06-10-preview`. Use crate feature `package-preview-2021-06` to enable. The operations will be in the `package_preview_2021_06` module.

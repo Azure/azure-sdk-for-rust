@@ -1,13 +1,14 @@
 # azure_mgmt_recoveryservicesbackup crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/recoveryservicesbackup/resource-manager/readme.md
 
-The default `Tag` is `package-2021-12`.
+The default tag is `package-2021-12`.
 
-The following `Tag`s are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2022-01` has 76 operations from 1 API versions: `2022-01-01`. Use crate feature `package-2022-01` to enable. The operations will be in the `package_2022_01` module.
 - `package-2021-12` has 76 operations from 1 API versions: `2021-12-01`. Use crate feature `package-2021-12` to enable. The operations will be in the `package_2021_12` module.
 - `package-passivestamp-2021-11-15` has 13 operations from 1 API versions: `2021-11-15`. Use crate feature `package-passivestamp-2021-11-15` to enable. The operations will be in the `package_passivestamp_2021_11_15` module.
 - `package-passivestamp-2018-12-20` has 13 operations from 1 API versions: `2018-12-20`. Use crate feature `package-passivestamp-2018-12-20` to enable. The operations will be in the `package_passivestamp_2018_12_20` module.
