@@ -1,12 +1,14 @@
 # azure_mgmt_kusto crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/azure-kusto/resource-manager/readme.md
 
-The default `Tag` is `package-2022-02`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `package-2022-02`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2022-02` has 1 operations from 1 API versions: `2022-02-01`. Use crate feature `package-2022-02` to enable. The operations will be in the `package_2022_02` module.
 - `package-2021-08-27` has 69 operations from 1 API versions: `2021-08-27`. Use crate feature `package-2021-08-27` to enable. The operations will be in the `package_2021_08_27` module.

@@ -1,12 +1,14 @@
 # azure_mgmt_streamanalytics crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/streamanalytics/resource-manager/readme.md
 
-The default `Tag` is `package-pure-2020-03`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `package-pure-2020-03`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-10-preview` has 49 operations from 2 API versions: `2020-03-01-preview`, `2021-10-01-preview`. Use crate feature `package-2021-10-preview` to enable. The operations will be in the `package_2021_10_preview` module.
 - `package-2020-03-preview` has 48 operations from 2 API versions: `2017-04-01-preview`, `2020-03-01-preview`. Use crate feature `package-2020-03-preview` to enable. The operations will be in the `package_2020_03_preview` module.

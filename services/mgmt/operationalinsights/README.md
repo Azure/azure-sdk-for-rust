@@ -1,12 +1,14 @@
 # azure_mgmt_operationalinsights crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/operationalinsights/resource-manager/readme.md
 
-The default `Tag` is `package-2015-03`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `package-2015-03`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2015-11-preview` has 22 operations from 1 API versions: `2015-11-01-preview`. Use crate feature `package-2015-11-preview` to enable. The operations will be in the `package_2015_11_preview` module.
 - `package-2015-03` has 17 operations from 1 API versions: `2015-03-20`. Use crate feature `package-2015-03` to enable. The operations will be in the `package_2015_03` module.
@@ -18,3 +20,4 @@ The following `Tag`s are available:
 - `package-2020-10-only` has 18 operations from 1 API versions: `2020-10-01`. Use crate feature `package-2020-10-only` to enable. The operations will be in the `package_2020_10_only` module.
 - `package-2020-10` has 55 operations from 2 API versions: `2020-08-01`, `2020-10-01`. Use crate feature `package-2020-10` to enable. The operations will be in the `package_2020_10` module.
 - `package-2021-06` has 55 operations from 3 API versions: `2020-08-01`, `2020-10-01`, `2021-06-01`. Use crate feature `package-2021-06` to enable. The operations will be in the `package_2021_06` module.
+- `package-2022-02` has 70 operations from 4 API versions: `2019-09-01`, `2020-08-01`, `2021-06-01`, `2021-12-01-preview`. Use crate feature `package-2022-02` to enable. The operations will be in the `package_2022_02` module.

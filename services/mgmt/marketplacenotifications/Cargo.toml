@@ -24,12 +24,12 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["no-default-version", "package-composite-v1"]
+features = ["no-default-tag", "package-composite-v1"]
 
 [features]
 default = ["package-2021-03-03", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
 "package-composite-v1" = []
 "package-2021-03-03" = []

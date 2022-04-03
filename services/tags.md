@@ -1,6 +1,10 @@
-# API Versions
+# Configuration Tags for Azure REST API Specifications
 
-A `Configuration` section `Tag` in a `readme.md` represents a set of operations for an Azure service for generating a client SDK. Ideally, there is a single tag representing an API version for a service.
+A `Configuration` section `Tag` in a `readme.md` represents a set of operations for an Azure service for generating a client SDK. Ideally, there is a single tag representing an API version for a service. It is a markdown file with embedded blocks of yaml.
+
+https://github.com/Azure/azure-rest-api-specs/blob/main/README.md explains the directory structure for the service specifications. Each `readme.md` for a service is a [AutoRest Literate Configuration](https://github.com/Azure/autorest/blob/main/docs/user/literate-file-formats/configuration.md). It will contain a `## Configuration` markdown heading. That section will contain headings that begin with `### Tag: `. Each tag will contain a set of OpenAPI specifications which define a set of service operations. A Rust module will be produced for each tag.
+
+A `### Basic Information` section may contain a `Tag: ` to define the default tag to use. If not defined, the first tag not containing `preview` will be used.
 
 Unfortunately, some services use [multiple API versions](https://github.com/Azure/azure-sdk-for-rust/issues/563) in their tags. In this case, different service operations will use different API versions of the same service.
 
