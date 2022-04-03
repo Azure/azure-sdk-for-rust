@@ -1,0 +1,16 @@
+name: publish all service crates
+
+on:
+  workflow_dispatch:
+
+jobs:
+{% for package in packages %}
+  {{package}}:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: {{package}}
+    secrets:
+      CARGO_REGISTRY_TOKEN: {% raw %}${{ secrets.CARGO_REGISTRY_TOKEN }}{% endraw %}
+{% endfor %}

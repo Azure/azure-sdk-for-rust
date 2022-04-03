@@ -5,12 +5,282 @@ on:
 
 jobs:
 
-  azure_mgmt_vmware:
+  azure_mgmt_activedirectory:
     if: always()
     uses: ./.github/workflows/publish.yml
     with:
       directory: services
-      package: azure_mgmt_vmware
+      package: azure_mgmt_activedirectory
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_addons:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_addons
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_adhybridhealthservice:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_adhybridhealthservice
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_adp:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_adp
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_advisor:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_advisor
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_agrifood:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_agrifood
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_alertsmanagement:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_alertsmanagement
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_analysisservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_analysisservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_apimanagement:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_apimanagement
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_app:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_app
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_appconfiguration:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_appconfiguration
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_applicationinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_applicationinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_appplatform:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_appplatform
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_arcdata:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_arcdata
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_attestation:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_attestation
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_authorization:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_authorization
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_automanage:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_automanage
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_automation:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_automation
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_baremetalinfrastructure:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_baremetalinfrastructure
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_batch:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_batch
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_billing:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_billing
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_blockchain:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_blockchain
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_blueprint:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_blueprint
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_botservice:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_botservice
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_cdn:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_cdn
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_changeanalysis:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_changeanalysis
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_chaos:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_chaos
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_cloudshell:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_cloudshell
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_cognitiveservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_cognitiveservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_commerce:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_commerce
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_communication:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_communication
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -20,5 +290,1760 @@ jobs:
     with:
       directory: services
       package: azure_mgmt_compute
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_confidentialledger:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_confidentialledger
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_confluent:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_confluent
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_connectedvmware:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_connectedvmware
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_consumption:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_consumption
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_containerinstance:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_containerinstance
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_containerregistry:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_containerregistry
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_containerservice:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_containerservice
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_cosmosdb:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_cosmosdb
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_costmanagement:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_costmanagement
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_cpim:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_cpim
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_customerinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_customerinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_customerlockbox:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_customerlockbox
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_customproviders:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_customproviders
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_dashboard:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_dashboard
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_data:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_data
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_databox:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_databox
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_databoxedge:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_databoxedge
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_databricks:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_databricks
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_datacatalog:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_datacatalog
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_datadog:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_datadog
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_datafactory:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_datafactory
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_datalakeanalytics:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_datalakeanalytics
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_datalakestore:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_datalakestore
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_dataprotection:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_dataprotection
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_datashare:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_datashare
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_deploymentmanager:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_deploymentmanager
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_desktopvirtualization:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_desktopvirtualization
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_deviceupdate:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_deviceupdate
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_devops:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_devops
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_devspaces:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_devspaces
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_devtestlabs:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_devtestlabs
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_dfp:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_dfp
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_digitaltwins:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_digitaltwins
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_dns:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_dns
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_dnsresolver:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_dnsresolver
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_domainservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_domainservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_edgeorder:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_edgeorder
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_edgeorderpartner:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_edgeorderpartner
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_elastic:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_elastic
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_engagementfabric:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_engagementfabric
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_enterpriseknowledgegraph:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_enterpriseknowledgegraph
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_eventgrid:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_eventgrid
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_eventhub:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_eventhub
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_extendedlocation:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_extendedlocation
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_fluidrelay:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_fluidrelay
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_frontdoor:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_frontdoor
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_guestconfiguration:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_guestconfiguration
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hanaon:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hanaon
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hardwaresecuritymodules:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hardwaresecuritymodules
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hdinsight:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hdinsight
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_healthbot:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_healthbot
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_healthcareapis:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_healthcareapis
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hybridcompute:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hybridcompute
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hybridconnectivity:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hybridconnectivity
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hybriddatamanager:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hybriddatamanager
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hybridkubernetes:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hybridkubernetes
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_hybridnetwork:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_hybridnetwork
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_imagebuilder:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_imagebuilder
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_intune:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_intune
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_iotcentral:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_iotcentral
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_iothub:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_iothub
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_keyvault:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_keyvault
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_kubernetesconfiguration:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_kubernetesconfiguration
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_kusto:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_kusto
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_labservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_labservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_loadtestservice:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_loadtestservice
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_logic:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_logic
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_logz:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_logz
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_machinelearning:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_machinelearning
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_machinelearningcompute:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_machinelearningcompute
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_machinelearningexperimentation:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_machinelearningexperimentation
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_machinelearningservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_machinelearningservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_maintenance:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_maintenance
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_managednetwork:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_managednetwork
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_managedservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_managedservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_managementgroups:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_managementgroups
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_managementpartner:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_managementpartner
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_maps:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_maps
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_mariadb:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_mariadb
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_marketplacenotifications:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_marketplacenotifications
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_marketplaceordering:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_marketplaceordering
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_mediaservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_mediaservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_migrate:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_migrate
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_migrateprojects:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_migrateprojects
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_mobilenetwork:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_mobilenetwork
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_monitor:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_monitor
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_msi:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_msi
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_mysql:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_mysql
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_netapp:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_netapp
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_network:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_network
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_notificationhubs:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_notificationhubs
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_oep:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_oep
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_operationalinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_operationalinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_operationsmanagement:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_operationsmanagement
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_orbital:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_orbital
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_peering:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_peering
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_policyinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_policyinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_portal:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_portal
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_postgresql:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_postgresql
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_postgresqlhsc:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_postgresqlhsc
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_powerbidedicated:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_powerbidedicated
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_powerbiembedded:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_powerbiembedded
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_powerbiprivatelinks:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_powerbiprivatelinks
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_powerplatform:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_powerplatform
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_privatedns:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_privatedns
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_providerhub:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_providerhub
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_purview:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_purview
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_quantum:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_quantum
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_quota:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_quota
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_recommendationsservice:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_recommendationsservice
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_recoveryservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_recoveryservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_recoveryservicesbackup:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_recoveryservicesbackup
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_recoveryservicessiterecovery:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_recoveryservicessiterecovery
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_redhatopenshift:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_redhatopenshift
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_redis:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_redis
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_redisenterprise:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_redisenterprise
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_relay:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_relay
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_reservations:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_reservations
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_resourceconnector:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_resourceconnector
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_resourcegraph:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_resourcegraph
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_resourcehealth:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_resourcehealth
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_resourcemover:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_resourcemover
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_resources:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_resources
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_saas:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_saas
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_scheduler:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_scheduler
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_search:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_search
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_security:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_security
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_securityandcompliance:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_securityandcompliance
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_securityinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_securityinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_serialconsole:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_serialconsole
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_servicebus:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_servicebus
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_servicefabricmesh:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_servicefabricmesh
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_servicelinker:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_servicelinker
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_signalr:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_signalr
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_softwareplan:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_softwareplan
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_solutions:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_solutions
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_sql:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_sql
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_sqlvirtualmachine:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_sqlvirtualmachine
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_stack:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_stack
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storage:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storage
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storagecache:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storagecache
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storageimportexport:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storageimportexport
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storagepool:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storagepool
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storagesync:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storagesync
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storsimple1200series:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storsimple1200series
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_storsimple8000series:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_storsimple8000series
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_streamanalytics:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_streamanalytics
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_subscription:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_subscription
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_support:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_support
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_synapse:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_synapse
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_testbase:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_testbase
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_timeseriesinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_timeseriesinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_trafficmanager:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_trafficmanager
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_vi:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_vi
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_videoanalyzer:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_videoanalyzer
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_visualstudio:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_visualstudio
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_vmware:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_vmware
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_vmwarecloudsimple:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_vmwarecloudsimple
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_web:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_web
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_webpubsub:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_webpubsub
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_windowsesu:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_windowsesu
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_windowsiot:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_windowsiot
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_mgmt_workloadmonitor:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_mgmt_workloadmonitor
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_appconfiguration:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_appconfiguration
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_applicationinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_applicationinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_attestation:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_attestation
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_batch:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_batch
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_blobstorage:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_blobstorage
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_confidentialledger:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_confidentialledger
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_containerregistry:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_containerregistry
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_cosmosdb:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_cosmosdb
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_datalakeanalytics:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_datalakeanalytics
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_deviceprovisioningservices:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_deviceprovisioningservices
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_deviceupdate:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_deviceupdate
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_digitaltwins:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_digitaltwins
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_eventgrid:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_eventgrid
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_filestorage:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_filestorage
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_graphrbac:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_graphrbac
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_imds:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_imds
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_iotcentral:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_iotcentral
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_keyvault:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_keyvault
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_loadtestservice:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_loadtestservice
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_marketplacecatalog:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_marketplacecatalog
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_mixedreality:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_mixedreality
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_monitor:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_monitor
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_operationalinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_operationalinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_purview:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_purview
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_quantum:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_quantum
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_queuestorage:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_queuestorage
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_schemaregistry:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_schemaregistry
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_servicefabric:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_servicefabric
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_storagedatalake:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_storagedatalake
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_synapse:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_synapse
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_timeseriesinsights:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_timeseriesinsights
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  azure_svc_webpubsub:
+    if: always()
+    uses: ./.github/workflows/publish.yml
+    with:
+      directory: services
+      package: azure_svc_webpubsub
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

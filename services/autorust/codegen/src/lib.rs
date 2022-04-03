@@ -6,6 +6,7 @@ pub mod config_parser;
 pub mod identifier;
 pub mod io;
 pub mod lib_rs;
+pub mod publish_services_yml;
 pub mod readme_md;
 pub mod spec;
 mod status_codes;

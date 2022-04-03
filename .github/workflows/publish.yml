@@ -29,4 +29,4 @@ jobs:
         run: |
           cd ${{ inputs.directory }}
           cargo publish -p ${{ inputs.package }}
-      - run: sleep 5m
+      - run: sleep 7m
