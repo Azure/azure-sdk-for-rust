@@ -12,6 +12,10 @@ on:
         description: The package to publish
         required: true
         type: string
+    secrets:
+      CARGO_REGISTRY_TOKEN:
+        description: The crates.io registry token
+        required: true
 
 jobs:
   publish:
