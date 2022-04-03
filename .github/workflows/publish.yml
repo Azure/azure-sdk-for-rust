@@ -12,6 +12,17 @@ on:
         description: The package to publish
         required: true
         type: string
+  workflow_call:
+    inputs:
+      directory:
+        description: The directory to run from
+        required: true
+        default: .
+        type: string
+      package:
+        description: The package to publish
+        required: true
+        type: string
 
 jobs:
   publish:
