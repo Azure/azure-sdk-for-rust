@@ -1,0 +1,27 @@
+name: publish crate
+
+on:
+  workflow_dispatch:
+    inputs:
+      directory:
+        description: The directory to run from
+        required: true
+        default: '.'
+        type: string
+      package:
+        description: The package to publish
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          cd {{ github.event.inputs.directory }}
+          cargo publish -p {{ github.event.inputs.package }} --verbose
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+
