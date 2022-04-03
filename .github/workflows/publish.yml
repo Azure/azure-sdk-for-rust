@@ -6,7 +6,7 @@ on:
       directory:
         description: The directory to run from
         required: true
-        default: '.'
+        default: .
         type: string
       package:
         description: The package to publish
@@ -15,6 +15,8 @@ on:
 
 jobs:
   publish:
+    concurrency: publish
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,3 +26,4 @@ jobs:
         run: |
           cd ${{ github.event.inputs.directory }}
           cargo publish -p ${{ github.event.inputs.package }}
+      - run: sleep 5m
