@@ -4,6 +4,8 @@ This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/azurearcdata/resource-manager/readme.md
 
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
+
 The default tag is `package-preview-2022-03`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
