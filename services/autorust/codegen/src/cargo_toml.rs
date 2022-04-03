@@ -88,7 +88,7 @@ pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a T
 }
 
 const MAX_DOCS_RS_FEATURES: usize = 4;
-const NO_DEFAULT_VERSION: &str = "no-default-version";
+const NO_DEFAULT_TAG: &str = "no-default-tag";
 
 /// Get a list of features to document at docs.rs in addition the default
 fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
@@ -104,6 +104,6 @@ fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
         })
         .collect();
     features.truncate(MAX_DOCS_RS_FEATURES);
-    features.insert(0, NO_DEFAULT_VERSION.to_owned());
+    features.insert(0, NO_DEFAULT_TAG.to_owned());
     features
 }
