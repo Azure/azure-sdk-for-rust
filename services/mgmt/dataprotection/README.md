@@ -1,13 +1,16 @@
 # azure_mgmt_dataprotection crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/dataprotection/resource-manager/readme.md
 
-The default `Tag` is `package-2022-01`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `package-preview-2022-02`.
 
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
+
+- `package-preview-2022-02` has 58 operations from 1 API versions: `2022-02-01-preview`. Use crate feature `package-preview-2022-02` to enable. The operations will be in the `package_preview_2022_02` module.
 - `package-2022-01` has 58 operations from 1 API versions: `2022-01-01`. Use crate feature `package-2022-01` to enable. The operations will be in the `package_2022_01` module.
 - `package-2021-10-preview` has 50 operations from 1 API versions: `2021-10-01-preview`. Use crate feature `package-2021-10-preview` to enable. The operations will be in the `package_2021_10_preview` module.
 - `package-2021-07` has 50 operations from 1 API versions: `2021-07-01`. Use crate feature `package-2021-07` to enable. The operations will be in the `package_2021_07` module.

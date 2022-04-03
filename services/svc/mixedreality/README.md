@@ -1,12 +1,14 @@
 # azure_svc_mixedreality crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/mixedreality/data-plane/readme.md
 
-The default `Tag` is `package-2021-01-01`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `package-2021-01-01`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-0.3-preview.0` has 3 operations from 1 API versions: `0.3-preview.0`. Use crate feature `package-0_3-preview_0` to enable. The operations will be in the `package_0_3_preview_0` module.
 - `package-0.2-preview.1` has 3 operations from 1 API versions: `0.2-preview.1`. Use crate feature `package-0_2-preview_1` to enable. The operations will be in the `package_0_2_preview_1` module.

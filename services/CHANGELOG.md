@@ -4,6 +4,7 @@
 - [#675](https://github.com/Azure/azure-sdk-for-rust/pull/675) use Basic Information tag for default version
 - [#634](https://github.com/Azure/azure-sdk-for-rust/issues/634) limit docs.rs to 5 API tags
 - [#632](https://github.com/Azure/azure-sdk-for-rust/issues/632) add links & README.md for services
+- Renamed `no-default-version` feature to `no-default-tag` & expanded tag documentation
 
 # 0.1 (2022-01)
 

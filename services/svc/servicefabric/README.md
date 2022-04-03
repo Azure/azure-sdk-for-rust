@@ -1,12 +1,14 @@
 # azure_svc_servicefabric crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/servicefabric/data-plane/readme.md
 
-The default `Tag` is `8.1`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `8.1`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `6.5` has 234 operations from 1 API versions: `6.5.0.36`. Use crate feature `6_5` to enable. The operations will be in the `v6_5` module.
 - `7.0` has 239 operations from 1 API versions: `7.0.0.42`. Use crate feature `7_0` to enable. The operations will be in the `v7_0` module.

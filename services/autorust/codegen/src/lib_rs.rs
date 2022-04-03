@@ -28,7 +28,7 @@ fn create_body(tags: &[&Tag]) -> Result<TokenStream> {
         cfgs.extend(quote! {
             #[cfg(feature = #feature_name)]
             pub mod #mod_name;
-            #[cfg(all(feature = #feature_name, not(feature = "no-default-version")))]
+            #[cfg(all(feature = #feature_name, not(feature = "no-default-tag")))]
             pub use #mod_name::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
         });
     }
