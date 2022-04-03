@@ -61,7 +61,7 @@ features = [{}]
 default = ["{}", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
 "#,
             crate_name, crate_name, docs_rs_features, default_feature
         )
