@@ -8,7 +8,7 @@ jobs:
   azure_mgmt_vmware:
     uses: ./.github/workflows/publish.yml
     with:
-      directory: 'services'
-      package: 'azure_mgmt_vmware'
+      directory: services
+      package: azure_mgmt_vmware
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
