@@ -10,7 +10,7 @@ jobs:
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
-      - uses: /.github/workflows/publish.yml
+      - uses: .github/workflows/publish.yml
         with:
           directory: services
           package: azure_mgmt_vmware
