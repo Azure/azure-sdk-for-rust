@@ -1,0 +1,17 @@
+name: publish all service crates
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  azure_mgmt_vmware:
+    concurrency: publish
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: publish
+        with:
+          directory: services
+          package: azure_mgmt_vmware
+      - run: sleep 5m
