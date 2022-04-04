@@ -1,7 +1,7 @@
 mod client;
 pub mod device_update;
 
-pub use client::{DeviceUpdateClient};
+pub use client::DeviceUpdateClient;
 
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
@@ -9,7 +9,9 @@ pub enum Error {
     #[error("Azure Active Directory authorization error")]
     Authorization,
 
-    #[error("Received an error accessing the Device Update, which could not be parsed as expected.")]
+    #[error(
+        "Received an error accessing the Device Update, which could not be parsed as expected."
+    )]
     UnparsableError,
 
     #[error(transparent)]
@@ -45,7 +47,6 @@ pub enum Error {
     #[error("Import unsuccessful with status Undefined, error: {0}")]
     ImportUndefined(String),
 }
-
 
 #[cfg(test)]
 mod tests {
