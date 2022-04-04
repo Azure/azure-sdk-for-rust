@@ -17,15 +17,15 @@ on:
         description: The crates.io registry token
         required: true
 
+env:
+  CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: publish
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           cd ${{ inputs.directory }}
           cargo publish -p ${{ inputs.package }}
-      - run: sleep 7m

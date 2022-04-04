@@ -3,14 +3,18 @@ name: Publish All Services
 on:
   workflow_dispatch:
 
+env:
+  CARGO_REGISTRY_TOKEN: {% raw %}${{ secrets.CARGO_REGISTRY_TOKEN }}{% endraw %}
+
 jobs:
 {% for package in packages %}
   {{package}}:
     if: always()
-    uses: ./.github/workflows/publish.yml
-    with:
-      directory: services
-      package: {{package}}
-    secrets:
-      CARGO_REGISTRY_TOKEN: {% raw %}${{ secrets.CARGO_REGISTRY_TOKEN }}{% endraw %}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p {{package}}
 {% endfor %}

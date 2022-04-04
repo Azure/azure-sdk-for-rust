@@ -75,10 +75,10 @@ fn main() -> Result<()> {
     //     }
     // }
 
-    // let yml = PublishServicesYml {
-    //     packages: &names.iter().map(String::as_str).collect(),
-    // };
-    // yml.create("../../.github/workflows/publish-services.yml")?;
+    let yml = PublishServicesYml {
+        packages: &names.iter().map(String::as_str).collect(),
+    };
+    yml.create("../../.github/workflows/publish-services.yml")?;
 
     let yml = CheckAllServicesYml {
         packages: &names.iter().map(String::as_str).collect(),
