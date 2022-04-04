@@ -16,8 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - run: cd services
-    - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -25,5 +23,7 @@ jobs:
         override: true
     - uses: Swatinem/rust-cache@v1
     - name: check all features
-      run: cargo check --all-features -p {{package}}
+      run: |
+        cd services
+        cargo check --all-features -p {{package}}
 {% endfor %}
