@@ -46,43 +46,45 @@ impl CreateOrReplaceSlugAttachmentBuilder {
 
     pub fn into_future(self) -> CreateOrReplaceSlugAttachment {
         Box::pin(async move {
-            let mut req = if self.is_create {
+            let mut request = if self.is_create {
                 self.client.prepare_pipeline(http::Method::POST)
             } else {
                 self.client
                     .prepare_pipeline_with_attachment_name(http::Method::PUT)
             };
 
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut req)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
+            request.insert_headers(&self.if_match_condition);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
                 self.client.document_client().partition_key_serialized(),
-                &mut req,
+                &mut request,
             );
             let body = self.body;
-            req.headers_mut().insert(
+            request.headers_mut().insert(
                 http::header::CONTENT_TYPE,
                 http::HeaderValue::from_str(self.content_type.as_deref().unwrap_or("text/plain"))
                     .unwrap(),
             );
 
-            req.headers_mut().insert(
+            request.headers_mut().insert(
                 "Slug",
                 http::HeaderValue::from_str(self.client.attachment_name()).unwrap(),
             );
-            req.headers_mut().insert(
+            request.headers_mut().insert(
                 http::header::CONTENT_LENGTH,
                 http::HeaderValue::from_str(&format!("{}", body.len())).unwrap(),
             );
 
-            req.set_body(body.into());
+            request.set_body(body.into());
             let response = self
                 .client
                 .pipeline()
                 .send(
                     self.context.clone().insert(ResourceType::Attachments),
-                    &mut req,
+                    &mut request,
                 )
                 .await?;
 
@@ -91,14 +93,16 @@ impl CreateOrReplaceSlugAttachmentBuilder {
     }
 }
 /// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceSlugAttachment =
-    futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceSlugAttachmentResponse>>;
+pub type CreateOrReplaceSlugAttachment = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<CreateOrReplaceSlugAttachmentResponse>,
+>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceSlugAttachmentBuilder {
-    type Future = CreateOrReplaceSlugAttachment;
+    type IntoFuture = CreateOrReplaceSlugAttachment;
     type Output = <CreateOrReplaceSlugAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -131,7 +135,7 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
 }
 
 impl CreateOrReplaceSlugAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

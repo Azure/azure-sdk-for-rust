@@ -48,7 +48,10 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
         context: Context => context,
     }
 
-    pub fn partition_key<T: Serialize>(&mut self, partition_key: &T) -> crate::Result<()> {
+    pub fn partition_key<T: Serialize>(
+        &mut self,
+        partition_key: &T,
+    ) -> azure_core::error::Result<()> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(())
     }
@@ -65,11 +68,13 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
                 .unwrap_or_else(|| self.client.partition_key_serialized());
             add_as_partition_key_header_serialized2(partition_key, &mut request);
 
-            azure_core::headers::add_mandatory_header2(&self.indexing_directive, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
+            request.insert_headers(&self.indexing_directive);
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.allow_tentative_writes);
 
             let serialized = azure_core::to_json(&self.document)?;
             request.set_body(serialized.into());
@@ -91,13 +96,13 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 
 /// The future returned by calling `into_future` on the builder.
 pub type ReplaceDocument =
-    futures::future::BoxFuture<'static, crate::Result<ReplaceDocumentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<ReplaceDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
-    type Future = ReplaceDocument;
+    type IntoFuture = ReplaceDocument;
     type Output = <ReplaceDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -131,7 +136,7 @@ pub struct ReplaceDocumentResponse {
 }
 
 impl ReplaceDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         let document_attributes = serde_json::from_slice(&*body)?;

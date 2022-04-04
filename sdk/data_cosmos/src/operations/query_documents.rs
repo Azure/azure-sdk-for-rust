@@ -6,8 +6,7 @@ use crate::resources::ResourceType;
 use crate::ResourceQuota;
 use azure_core::collect_pinned_stream;
 use azure_core::headers::{
-    self, continuation_token_from_headers_optional, item_count_from_headers,
-    session_token_from_headers,
+    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::prelude::*;
 use azure_core::Pageable;
@@ -61,7 +60,7 @@ impl QueryDocumentsBuilder {
         context: Context => context,
     }
 
-    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> azure_core::error::Result<Self> {
         Ok(Self {
             partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
             ..self
@@ -72,7 +71,7 @@ impl QueryDocumentsBuilder {
     where
         T: DeserializeOwned,
     {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -95,14 +94,13 @@ impl QueryDocumentsBuilder {
                     http::HeaderValue::from_str("application/query+json").unwrap(),
                 );
 
-                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut request)?;
-                azure_core::headers::add_optional_header2(&this.if_modified_since, &mut request)?;
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
-                azure_core::headers::add_mandatory_header2(
-                    &this.query_cross_partition,
-                    &mut request,
-                )?;
+                request.insert_headers(&this.if_match_condition);
+                request.insert_headers(&this.if_modified_since);
+                if let Some(cl) = &this.consistency_level {
+                    request.insert_headers(cl);
+                }
+                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.query_cross_partition);
 
                 request.set_body(bytes::Bytes::from(serde_json::to_string(&this.query)?).into());
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {
@@ -112,10 +110,8 @@ impl QueryDocumentsBuilder {
                     );
                 }
 
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    request.headers_mut().append(headers::CONTINUATION, h);
+                if let Some(ref c) = continuation {
+                    request.insert_headers(c);
                 }
 
                 let response = this
@@ -131,7 +127,7 @@ impl QueryDocumentsBuilder {
     }
 }
 
-pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, crate::Error>;
+pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, azure_core::error::Error>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DocumentQueryResult<T> {
@@ -145,10 +141,19 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(response.body())?)
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(response.body()).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
     }
 }
 
@@ -201,7 +206,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(self) -> crate::Result<QueryDocumentsResponseDocuments<T>> {
+    pub fn into_documents(self) -> azure_core::error::Result<QueryDocumentsResponseDocuments<T>> {
         self.try_into()
     }
 }
@@ -210,7 +215,7 @@ impl<T> QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 
@@ -376,7 +381,7 @@ pub struct QueryDocumentsResponseDocuments<T> {
 }
 
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -388,8 +393,9 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
                     QueryResult::Document(document) => Ok(document),
                     QueryResult::Raw(_) => {
                         // Bail if there is a raw document
-                        Err(crate::Error::ElementIsRaw(
-                            "QueryDocumentsResponseDocuments".to_owned(),
+                        Err(azure_core::error::Error::with_message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            "error when converting from a QueryDocumentsResponse to structured documents - expected no raw documents but a raw document was found."
                         ))
                     }
                 })

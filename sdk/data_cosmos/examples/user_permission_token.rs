@@ -28,20 +28,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.clone().into_database_client(database_name.clone());
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(collection_name.clone());
-    let user_client = database_client.into_user_client(user_name);
+    let database = client.database_client(database_name.clone());
+    let collection = database.collection_client(collection_name.clone());
+    let user = database.user_client(user_name);
 
-    let get_collection_response = collection_client.get_collection().into_future().await?;
+    let get_collection_response = collection.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let create_user_response = user_client.create_user().into_future().await?;
+    let create_user_response = user.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // test list documents
-    let list_documents_response = collection_client
+    let list_documents_response = collection
         .list_documents()
         .into_stream::<serde_json::Value>()
         .next()
@@ -53,11 +51,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // create the first permission!
-    let permission_client = user_client.clone().into_permission_client("matrix");
+    let permission = user.permission_client("matrix");
 
     let permission_mode = get_collection_response.collection.read_permission();
 
-    let create_permission_response = permission_client
+    let create_permission_response = permission
         .create_permission(permission_mode)
         .expiry_seconds(18000u64) // 5 hours, max!
         .into_future()
@@ -84,9 +82,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's list the documents with the new auth token
     let list_documents_response = client
-        .clone()
-        .into_database_client(database_name.clone())
-        .into_collection_client(collection_name.clone())
+        .database_client(database_name.clone())
+        .collection_client(collection_name.clone())
         .list_documents()
         .into_stream::<serde_json::Value>()
         .next()
@@ -113,9 +110,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let document = serde_json::from_str::<serde_json::Value>(data)?;
 
     match client
-        .clone()
-        .into_database_client(database_name.clone())
-        .into_collection_client(collection_name.clone())
+        .database_client(database_name.clone())
+        .collection_client(collection_name.clone())
         .create_document(document.clone())
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
@@ -126,11 +122,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Err(error) => println!("Insert failed: {:#?}", error),
     }
 
-    permission_client.delete_permission().into_future().await?;
+    permission.delete_permission().into_future().await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
-    let create_permission_response = permission_client
+    let create_permission_response = permission
         .create_permission(permission_mode)
         .expiry_seconds(18000u64)
         .into_future()
@@ -155,8 +151,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = client
-        .into_database_client(database_name)
-        .into_collection_client(collection_name)
+        .database_client(database_name)
+        .collection_client(collection_name)
         .create_document(document)
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
@@ -168,7 +164,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("Cleaning up user.");
-    let delete_user_response = user_client.delete_user().into_future().await?;
+    let delete_user_response = user.delete_user().into_future().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

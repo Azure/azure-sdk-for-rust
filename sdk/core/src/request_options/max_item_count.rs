@@ -1,6 +1,4 @@
-use crate::headers;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers::{self, Header};
 
 /// The max number of items in the collection
 #[derive(Debug, Clone, Copy)]
@@ -13,29 +11,13 @@ impl MaxItemCount {
     }
 }
 
-impl AddAsHeader for MaxItemCount {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        if self.0 <= 0 {
-            builder.header(headers::MAX_ITEM_COUNT, -1)
-        } else {
-            builder.header(headers::MAX_ITEM_COUNT, self.0)
-        }
+impl Header for MaxItemCount {
+    fn name(&self) -> headers::HeaderName {
+        headers::MAX_ITEM_COUNT.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        let (header_name, header_value) = if self.0 <= 0 {
-            (headers::MAX_ITEM_COUNT, -1)
-        } else {
-            (headers::MAX_ITEM_COUNT, self.0)
-        };
-
-        request
-            .headers_mut()
-            .append(header_name, http::HeaderValue::from(header_value));
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        let count = if self.0 <= 0 { -1 } else { self.0 };
+        format!("{}", count).into()
     }
 }

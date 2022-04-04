@@ -2,6 +2,17 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The properties that are associated with an aggregate function."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AggregateFunctionProperties {
+    #[serde(flatten)]
+    pub function_properties: FunctionProperties,
+}
+impl AggregateFunctionProperties {
+    pub fn new(function_properties: FunctionProperties) -> Self {
+        Self { function_properties }
+    }
+}
 #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AuthenticationMode {
@@ -560,7 +571,7 @@ impl BlobStreamInputDataSource {
 pub struct BlobStreamInputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
-    #[doc = "The partition count of the blob input data source. Range 1 - 256."]
+    #[doc = "The partition count of the blob input data source. Range 1 - 1024."]
     #[serde(rename = "sourcePartitionCount", default, skip_serializing_if = "Option::is_none")]
     pub source_partition_count: Option<i32>,
 }
@@ -1065,6 +1076,22 @@ impl FunctionBinding {
         Self { type_ }
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FunctionConfiguration {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub inputs: Vec<FunctionInput>,
+    #[doc = "Describes the output of a function."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<FunctionOutput>,
+    #[doc = "The physical binding of the function. For example, in the Azure Machine Learning web service’s case, this describes the endpoint."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub binding: Option<FunctionBinding>,
+}
+impl FunctionConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Describes one input parameter of a function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FunctionInput {
@@ -1116,10 +1143,16 @@ pub struct FunctionProperties {
     #[doc = "The current entity tag for the function. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FunctionConfiguration>,
 }
 impl FunctionProperties {
     pub fn new(type_: String) -> Self {
-        Self { type_, etag: None }
+        Self {
+            type_,
+            etag: None,
+            properties: None,
+        }
     }
 }
 #[doc = "Parameters used to specify the type of function to retrieve the default definition for."]
@@ -1785,39 +1818,15 @@ impl ResourceTestStatus {
         Self::default()
     }
 }
-#[doc = "Describes the configuration of the scalar function."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ScalarFunctionConfiguration {
-    #[doc = "A list of inputs describing the parameters of the function."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub inputs: Vec<FunctionInput>,
-    #[doc = "Describes the output of a function."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<FunctionOutput>,
-    #[doc = "The physical binding of the function. For example, in the Azure Machine Learning web service’s case, this describes the endpoint."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub binding: Option<FunctionBinding>,
-}
-impl ScalarFunctionConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "The properties that are associated with a scalar function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalarFunctionProperties {
     #[serde(flatten)]
     pub function_properties: FunctionProperties,
-    #[doc = "Describes the configuration of the scalar function."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ScalarFunctionConfiguration>,
 }
 impl ScalarFunctionProperties {
     pub fn new(function_properties: FunctionProperties) -> Self {
-        Self {
-            function_properties,
-            properties: None,
-        }
+        Self { function_properties }
     }
 }
 #[doc = "Parameters supplied to the Scale Streaming Job operation."]

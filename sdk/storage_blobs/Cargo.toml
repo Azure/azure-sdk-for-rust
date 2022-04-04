@@ -1,7 +1,7 @@
 [package]
 name = "azure_storage_blobs"
 version = "0.1.0"
-description = "Rust wrappers around Microsoft Azure Storage Blobs REST APIs"
+description = "Azure Blob Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
@@ -10,10 +10,10 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blobs"
 keywords = ["sdk", "azure", "storage", "blobs"]
 categories = ["api-bindings"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.1", default-features=false }
+azure_core = { path = "../core", version = "0.2", default-features=false }
 azure_storage = { path = "../storage", version = "0.1", default-features=false, features=["account"] }
 base64 = "0.13"
 bytes = "1.0"

@@ -4,8 +4,7 @@ use crate::resources::document::{Document, DocumentAttributes};
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
 use azure_core::headers::{
-    self, continuation_token_from_headers_optional, item_count_from_headers,
-    session_token_from_headers,
+    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::{collect_pinned_stream, Response, SessionToken};
 use azure_core::{prelude::*, Pageable};
@@ -45,7 +44,7 @@ impl ListDocumentsBuilder {
     }
 
     pub fn into_stream<T: DeserializeOwned>(self) -> ListDocuments<T> {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -58,17 +57,14 @@ impl ListDocumentsBuilder {
                     http::Method::GET,
                 );
 
-                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut req)?;
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut req)?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut req)?;
-                azure_core::headers::add_mandatory_header2(&this.a_im, &mut req)?;
-                azure_core::headers::add_optional_header2(&this.partition_range_id, &mut req)?;
-
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    req.headers_mut().append(headers::CONTINUATION, h);
+                req.insert_headers(&this.if_match_condition);
+                if let Some(cl) = &this.consistency_level {
+                    req.insert_headers(cl);
                 }
+                req.insert_headers(&this.max_item_count);
+                req.insert_headers(&this.a_im);
+                req.insert_headers(&this.partition_range_id);
+                req.insert_headers(&continuation);
 
                 let response = this
                     .client
@@ -84,7 +80,7 @@ impl ListDocumentsBuilder {
     }
 }
 
-pub type ListDocuments<T> = Pageable<ListDocumentsResponse<T>, crate::Error>;
+pub type ListDocuments<T> = Pageable<ListDocumentsResponse<T>, azure_core::error::Error>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListDocumentsResponseAttributes {
@@ -137,7 +133,7 @@ impl<T> ListDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
+    pub(crate) async fn try_from(response: Response) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
         let headers = &headers;

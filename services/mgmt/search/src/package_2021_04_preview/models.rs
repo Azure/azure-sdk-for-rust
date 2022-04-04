@@ -270,7 +270,7 @@ pub struct NetworkRuleSet {
     #[doc = "A list of IP restriction rules that defines the inbound network(s) with allowing access to the search service endpoint. At the meantime, all other public IP networks are blocked by the firewall. These restriction rules are applied only when the 'publicNetworkAccess' of the search service is 'enabled'; otherwise, traffic over public interface is not allowed even with any public IP rules, and private endpoint connections would be the exclusive access method."]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_rules: Vec<IpRule>,
-    #[doc = "A specific data exfiltration scenario that is disabled for the service."]
+    #[doc = "Possible origins of inbound traffic that can bypass the rules defined in the 'ipRules' section."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bypass: Option<network_rule_set::Bypass>,
 }
@@ -281,10 +281,11 @@ impl NetworkRuleSet {
 }
 pub mod network_rule_set {
     use super::*;
-    #[doc = "A specific data exfiltration scenario that is disabled for the service."]
+    #[doc = "Possible origins of inbound traffic that can bypass the rules defined in the 'ipRules' section."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Bypass {
         None,
+        AzurePortal,
     }
 }
 #[doc = "Describes a REST API operation."]

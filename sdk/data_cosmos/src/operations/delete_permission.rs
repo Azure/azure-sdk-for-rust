@@ -32,7 +32,9 @@ impl DeletePermissionBuilder {
                 .client
                 .prepare_request_with_permission_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -50,13 +52,13 @@ impl DeletePermissionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeletePermission =
-    futures::future::BoxFuture<'static, crate::Result<DeletePermissionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeletePermissionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeletePermissionBuilder {
-    type Future = DeletePermission;
+    type IntoFuture = DeletePermission;
     type Output = <DeletePermission as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -71,7 +73,7 @@ pub struct DeletePermissionResponse {
 }
 
 impl DeletePermissionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

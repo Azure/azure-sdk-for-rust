@@ -34,7 +34,9 @@ impl DeleteTriggerBuilder {
                 .client
                 .prepare_pipeline_with_trigger_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -51,13 +53,14 @@ impl DeleteTriggerBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type DeleteTrigger = futures::future::BoxFuture<'static, crate::Result<DeleteTriggerResponse>>;
+pub type DeleteTrigger =
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteTriggerResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteTriggerBuilder {
-    type Future = DeleteTrigger;
+    type IntoFuture = DeleteTrigger;
     type Output = <DeleteTrigger as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -90,7 +93,7 @@ pub struct DeleteTriggerResponse {
     pub date: DateTime<Utc>,
 }
 impl DeleteTriggerResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

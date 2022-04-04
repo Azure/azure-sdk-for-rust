@@ -19,7 +19,7 @@ pub async fn create_data_lake_client(
 
     let options = ClientOptions::new_with_transaction_name(transaction_name.into());
 
-    Ok(DataLakeClient::new_with_options(
+    Ok(DataLakeClient::new_with_shared_key(
         StorageSharedKeyCredential::new(account_name, account_key),
         None,
         options,

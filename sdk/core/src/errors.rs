@@ -36,10 +36,10 @@ pub enum Error {
     HeadersNotFound(Vec<String>),
     #[error("error preparing HTTP request")]
     HttpPrepare(#[source] http::Error),
-    #[error(transparent)]
-    Stream(#[from] StreamError),
     #[error("JSON error")]
-    Json(#[source] serde_json::Error),
+    Json(#[from] serde_json::Error),
+    #[error("authorization policy error")]
+    AuthorizationPolicy(String),
     #[error("Other error")]
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
@@ -131,8 +131,6 @@ pub enum HttpError {
     ReadBytes(#[source] HttpClientError),
     #[error("failed to build response")]
     BuildResponse(#[source] http::Error),
-    #[error("failed to reset stream")]
-    StreamReset(#[source] StreamError),
     #[error("failed to parse URL")]
     Url(#[from] url::ParseError),
 }

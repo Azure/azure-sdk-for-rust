@@ -4,7 +4,6 @@ use crate::resources::ResourceType;
 use crate::resources::StoredProcedure;
 use crate::ResourceQuota;
 use azure_core::collect_pinned_stream;
-use azure_core::headers;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
@@ -35,7 +34,7 @@ impl ListStoredProceduresBuilder {
     }
 
     pub fn into_stream(self) -> ListStoredProcedures {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -48,14 +47,12 @@ impl ListStoredProceduresBuilder {
                     http::Method::GET,
                 );
 
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
-
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    request.headers_mut().append(headers::CONTINUATION, h);
+                if let Some(cl) = &this.consistency_level {
+                    request.insert_headers(cl);
                 }
+                request.insert_headers(&this.max_item_count);
+
+                request.insert_headers(&continuation);
 
                 let response = this
                     .client
@@ -73,7 +70,7 @@ impl ListStoredProceduresBuilder {
     }
 }
 
-pub type ListStoredProcedures = Pageable<ListStoredProceduresResponse, crate::Error>;
+pub type ListStoredProcedures = Pageable<ListStoredProceduresResponse, azure_core::error::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListStoredProceduresResponse {
@@ -89,7 +86,7 @@ pub struct ListStoredProceduresResponse {
 }
 
 impl ListStoredProceduresResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

@@ -30,7 +30,9 @@ impl ReplaceUserBuilder {
                 .client
                 .prepare_request_with_user_name(http::Method::PUT);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             let body = ReplaceUserBody {
                 id: &self.user_name,
             };
@@ -55,13 +57,13 @@ struct ReplaceUserBody<'a> {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type ReplaceUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
+pub type ReplaceUser = futures::future::BoxFuture<'static, azure_core::error::Result<UserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceUserBuilder {
-    type Future = ReplaceUser;
+    type IntoFuture = ReplaceUser;
     type Output = <ReplaceUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

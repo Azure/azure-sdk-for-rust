@@ -1,5 +1,4 @@
-use azure_core::AddAsHeader;
-use http::request::Builder;
+use azure_core::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConditionAppendPosition(u64);
@@ -16,20 +15,12 @@ impl From<u64> for ConditionAppendPosition {
     }
 }
 
-impl AddAsHeader for ConditionAppendPosition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header("x-ms-blob-condition-appendpos", &format!("{}", self.0))
+impl Header for ConditionAppendPosition {
+    fn name(&self) -> headers::HeaderName {
+        "x-ms-blob-condition-appendpos".into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            "x-ms-blob-condition-appendpos",
-            http::header::HeaderValue::from_str(&self.0.to_string())?,
-        );
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_string().into()
     }
 }

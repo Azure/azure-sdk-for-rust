@@ -40,8 +40,10 @@ impl CreatePermissionBuilder {
                 http::Method::POST,
             );
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.expiry_seconds, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.expiry_seconds);
 
             #[derive(Serialize, Deserialize)]
             struct RequestBody<'x> {
@@ -73,13 +75,14 @@ impl CreatePermissionBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type CreatePermission = futures::future::BoxFuture<'static, crate::Result<PermissionResponse>>;
+pub type CreatePermission =
+    futures::future::BoxFuture<'static, azure_core::error::Result<PermissionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreatePermissionBuilder {
-    type Future = CreatePermission;
+    type IntoFuture = CreatePermission;
     type Output = <CreatePermission as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

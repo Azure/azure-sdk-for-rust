@@ -1,4 +1,7 @@
+use super::Continuation;
 use crate::{AppendToUrlQuery, Error, HttpHeaderError};
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NextMarker(String);
@@ -44,6 +47,12 @@ impl NextMarker {
 impl AppendToUrlQuery for NextMarker {
     fn append_to_url_query(&self, url: &mut url::Url) {
         url.query_pairs_mut().append_pair("marker", &self.0);
+    }
+}
+
+impl From<Continuation> for NextMarker {
+    fn from(next_marker: Continuation) -> Self {
+        Self::new(next_marker.into_raw())
     }
 }
 

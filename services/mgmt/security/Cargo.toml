@@ -2,12 +2,15 @@
 [package]
 name = "azure_mgmt_security"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "generated REST API bindings"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_mgmt_security"
 
 [dependencies]
-azure_core = { path = "../../../sdk/core", version = "0.1", default-features = false }
+azure_core = { path = "../../../sdk/core", version = "0.2", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 bytes = "1.0"
@@ -21,13 +24,16 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["no-default-version", "package-preview-2021-08", "package-composite-v1", "package-composite-v2", "package-2015-06-preview-only"]
+features = ["no-default-tag", "package-2021-11", "package-2022-03", "package-preview-2021-12", "package-preview-2021-08"]
 
 [features]
 default = ["package-composite-v3", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
+"package-2021-11" = []
+"package-2022-03" = []
+"package-preview-2021-12" = []
 "package-preview-2021-08" = []
 "package-composite-v1" = []
 "package-composite-v2" = []
@@ -41,6 +47,7 @@ no-default-version = []
 "package-2020-01-only" = []
 "package-2020-07-preview-only" = []
 "package-2021-01-preview-only" = []
+"package-2021-01-only" = []
 "package-2021-05-preview-only" = []
 "package-preview-2021-07" = []
 "package-preview-2021-10" = []

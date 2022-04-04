@@ -149,8 +149,8 @@ impl HttpClient for reqwest::Client {
     ) -> Result<crate::Response, HttpError> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method(), url);
-        for header in request.headers() {
-            reqwest_request = reqwest_request.header(header.0, header.1);
+        for (name, value) in request.headers().iter() {
+            reqwest_request = reqwest_request.header(name, value);
         }
 
         // We clone the body since we need to give ownership of it to Reqwest.
@@ -162,10 +162,7 @@ impl HttpClient for reqwest::Client {
                 .build()
                 .map_err(HttpError::BuildClientRequest)?,
             Body::SeekableStream(mut seekable_stream) => {
-                seekable_stream
-                    .reset()
-                    .await
-                    .map_err(HttpError::StreamReset)?;
+                seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
@@ -184,11 +181,14 @@ impl HttpClient for reqwest::Client {
             response.with_header(key, value.clone());
         }
 
-        let response = response.with_pinned_stream(Box::pin(
-            reqwest_response
-                .bytes_stream()
-                .map_err(crate::StreamError::Read),
-        ));
+        let response =
+            response.with_pinned_stream(Box::pin(reqwest_response.bytes_stream().map_err(|e| {
+                crate::error::Error::full(
+                    crate::error::ErrorKind::Io,
+                    e,
+                    "error converting `reqwest` request into a byte stream",
+                )
+            })));
 
         Ok(response)
     }

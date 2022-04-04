@@ -31,7 +31,9 @@ impl DeleteCollectionBuilder {
                 .client
                 .prepare_request_with_collection_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -49,13 +51,13 @@ impl DeleteCollectionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteCollection =
-    futures::future::BoxFuture<'static, crate::Result<DeleteCollectionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteCollectionBuilder {
-    type Future = DeleteCollection;
+    type IntoFuture = DeleteCollection;
     type Output = <DeleteCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -89,7 +91,7 @@ pub struct DeleteCollectionResponse {
 }
 
 impl DeleteCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

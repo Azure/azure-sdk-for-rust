@@ -10,10 +10,10 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventgrid"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.1" }
+azure_core = { path = "../core", version = "0.2" }
 chrono = { version = "0.4", features = ["serde"] }
 http = "0.2"
 serde = { version = "1.0", features = ["derive"] }

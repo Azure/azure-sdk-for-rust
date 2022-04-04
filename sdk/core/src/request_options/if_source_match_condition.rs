@@ -1,6 +1,4 @@
-use crate::headers::*;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum IfSourceMatchCondition {
@@ -8,27 +6,20 @@ pub enum IfSourceMatchCondition {
     NotMatch(String),
 }
 
-impl AddAsHeader for IfSourceMatchCondition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+impl Header for IfSourceMatchCondition {
+    fn name(&self) -> headers::HeaderName {
         match self {
-            IfSourceMatchCondition::Match(etag) => builder.header(SOURCE_IF_MATCH, etag),
-            IfSourceMatchCondition::NotMatch(etag) => builder.header(SOURCE_IF_NONE_MATCH, etag),
+            IfSourceMatchCondition::Match(_) => headers::SOURCE_IF_MATCH,
+            IfSourceMatchCondition::NotMatch(_) => headers::SOURCE_IF_NONE_MATCH,
         }
+        .into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        let (header_name, header_value) = match self {
-            IfSourceMatchCondition::Match(etag) => (SOURCE_IF_MATCH, etag),
-            IfSourceMatchCondition::NotMatch(etag) => (SOURCE_IF_NONE_MATCH, etag),
-        };
-
-        request
-            .headers_mut()
-            .append(header_name, http::HeaderValue::from_str(header_value)?);
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        match self.clone() {
+            IfSourceMatchCondition::Match(etag) => etag,
+            IfSourceMatchCondition::NotMatch(etag) => etag,
+        }
+        .into()
     }
 }

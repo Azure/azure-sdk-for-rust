@@ -3,11 +3,7 @@ use crate::{
     file_system::{Path, PathList},
     request_options::*,
 };
-use azure_core::prelude::{ClientRequestId, Context, MaxResults, NextMarker, Timeout};
-use azure_core::{
-    collect_pinned_stream, headers::add_optional_header2, prelude::*, AppendToUrlQuery, Pageable,
-    Response,
-};
+use azure_core::{collect_pinned_stream, prelude::*, AppendToUrlQuery, Pageable, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -54,7 +50,7 @@ impl ListPathsBuilder {
     }
 
     pub fn into_stream(self) -> ListPaths {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
 
@@ -76,7 +72,7 @@ impl ListPathsBuilder {
 
                 let mut request = this.client.prepare_request(url.as_str(), http::Method::GET);
 
-                add_optional_header2(&this.client_request_id, &mut request)?;
+                request.insert_headers(&this.client_request_id);
 
                 let response = this
                     .client

@@ -1,6 +1,5 @@
 use super::LeaseId;
-use crate::{headers, AddAsHeader};
-use http::request::Builder;
+use crate::{headers, Header};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ProposedLeaseId(LeaseId);
@@ -11,20 +10,12 @@ impl From<LeaseId> for ProposedLeaseId {
     }
 }
 
-impl AddAsHeader for ProposedLeaseId {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::PROPOSED_LEASE_ID, &format!("{}", self.0))
+impl Header for ProposedLeaseId {
+    fn name(&self) -> headers::HeaderName {
+        headers::PROPOSED_LEASE_ID.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            crate::PROPOSED_LEASE_ID,
-            http::HeaderValue::from_str(&format!("{}", self.0))?,
-        );
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        format!("{}", self.0).into()
     }
 }

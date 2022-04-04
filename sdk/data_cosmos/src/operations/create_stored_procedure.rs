@@ -33,7 +33,9 @@ impl CreateStoredProcedureBuilder {
         Box::pin(async move {
             let mut req = self.client.prepare_request_pipeline(http::Method::POST);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
+            if let Some(cl) = &self.consistency_level {
+                req.insert_headers(cl);
+            }
 
             #[derive(Debug, Serialize)]
             struct Request<'a> {
@@ -62,16 +64,16 @@ impl CreateStoredProcedureBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateStoredProcedureBuilder {
-    type Future = CreateStoredProcedure;
+    type IntoFuture = CreateStoredProcedure;
     type Output = <CreateStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateStoredProcedure =
-    futures::future::BoxFuture<'static, crate::Result<CreateStoredProcedureResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<CreateStoredProcedureResponse>>;
 
 /// A stored procedure response
 #[derive(Debug, Clone, PartialEq)]
@@ -90,7 +92,7 @@ pub struct CreateStoredProcedureResponse {
 }
 
 impl CreateStoredProcedureResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

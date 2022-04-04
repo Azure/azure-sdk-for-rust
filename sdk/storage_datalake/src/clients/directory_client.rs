@@ -58,7 +58,7 @@ impl DirectoryClient {
         FS: Into<String>,
         D: Into<String>,
     {
-        DataLakeClient::new_with_options(credential, custom_dns_suffix, options)
+        DataLakeClient::new_with_shared_key(credential, custom_dns_suffix, options)
             .into_file_system_client(file_system_name.into())
             .into_directory_client(path)
     }

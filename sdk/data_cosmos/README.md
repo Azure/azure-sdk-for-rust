@@ -60,9 +60,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = CosmosClient::new(account.clone(), authorization_token, CosmosOptions::default());
 
     // We know the database so we can obtain a database client.
-    let database_client = client.into_database_client(database_name);
+    let database = client.database_client(database_name);
     // We know the collection so we can obtain a collection client.
-    let collection_client = database_client.into_collection_client(collection_name);
+    let collection = database.collection_client(collection_name);
 
     // Insert 10 documents
     println!("Inserting 10 documents...");
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         };
 
         // insert it
-        collection_client
+        collection
             .create_document(
                 Context::new(),
                 &document_to_insert,
@@ -89,13 +89,4 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     Ok(())
 }
-```
-
-## Usage
-
-To set this crate as a dependency, add this to your Cargo.toml
-
-```toml
-[dependencies]
-azure_data_cosmos = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
 ```

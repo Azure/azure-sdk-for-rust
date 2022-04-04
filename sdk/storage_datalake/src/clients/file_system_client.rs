@@ -32,7 +32,7 @@ impl FileSystemClient {
     where
         FS: Into<String>,
     {
-        DataLakeClient::new_with_options(credential, custom_dns_suffix, options)
+        DataLakeClient::new_with_shared_key(credential, custom_dns_suffix, options)
             .into_file_system_client(file_system_name.into())
     }
 

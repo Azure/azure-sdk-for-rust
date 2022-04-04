@@ -34,7 +34,9 @@ impl GetCollectionBuilder {
                 .client
                 .prepare_request_with_collection_name(http::Method::GET);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -51,13 +53,14 @@ impl GetCollectionBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type GetCollection = futures::future::BoxFuture<'static, crate::Result<GetCollectionResponse>>;
+pub type GetCollection =
+    futures::future::BoxFuture<'static, azure_core::error::Result<GetCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetCollectionBuilder {
-    type Future = GetCollection;
+    type IntoFuture = GetCollection;
     type Output = <GetCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -92,7 +95,7 @@ pub struct GetCollectionResponse {
 }
 
 impl GetCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

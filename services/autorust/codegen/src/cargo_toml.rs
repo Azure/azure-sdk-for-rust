@@ -1,21 +1,26 @@
 use crate::config_parser::Tag;
+use camino::Utf8Path;
 use std::{
     fs::File,
     io::{prelude::*, LineWriter},
-    path::Path,
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("IoError")]
-    IoError { source: std::io::Error },
+    #[error(transparent)]
+    Io(crate::io::Error),
+}
+impl<T: Into<crate::io::Error>> From<T> for Error {
+    fn from(error: T) -> Self {
+        Self::Io(error.into())
+    }
 }
 
-pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Path) -> Result<()> {
-    let file = File::create(path).map_err(|source| Error::IoError { source })?;
+pub fn create(crate_name: &str, tags: &[&Tag], default_tag: &Tag, path: &Utf8Path) -> Result<()> {
+    let file = File::create(path)?;
     let mut file = LineWriter::new(file);
-    let default_feature = get_default_feature(tags, default_tag);
+    let default_feature = default_tag.rust_feature_name();
 
     // https://docs.rs/about/metadata
     let docs_rs_features = docs_rs_features(tags, &default_feature);
@@ -28,12 +33,15 @@ pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: 
 [package]
 name = "{}"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "generated REST API bindings"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/{}"
 
 [dependencies]
-azure_core = {{ path = "../../../sdk/core", version = "0.1", default-features = false }}
+azure_core = {{ path = "../../../sdk/core", version = "0.2", default-features = false }}
 serde = {{ version = "1.0", features = ["derive"] }}
 serde_json = "1.0"
 bytes = "1.0"
@@ -53,39 +61,34 @@ features = [{}]
 default = ["{}", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
 "#,
-            crate_name, docs_rs_features, default_feature
+            crate_name, crate_name, docs_rs_features, default_feature
         )
         .as_bytes(),
-    )
-    .map_err(|source| Error::IoError { source })?;
+    )?;
 
     for tag in tags {
-        file.write_all(format!("\"{}\" = []\n", tag.rust_feature_name()).as_bytes())
-            .map_err(|source| Error::IoError { source })?;
+        file.write_all(format!("\"{}\" = []\n", tag.rust_feature_name()).as_bytes())?;
     }
     Ok(())
 }
 
-fn get_default_feature(tags: &[&Tag], default_tag: Option<&str>) -> String {
+pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a Tag {
     if let Some(default_tag) = default_tag {
         if let Some(tag) = tags.iter().find(|tag| tag.name() == default_tag) {
-            return tag.rust_feature_name();
+            return tag;
         }
     }
-    let feature = tags
-        .iter()
-        .map(|tag| tag.rust_feature_name())
-        .find(|feature| !feature.contains("preview"));
-    match feature {
-        Some(feature) => feature,
-        None => tags[0].rust_feature_name(),
+    let tag = tags.iter().find(|tag| !tag.name().contains("preview"));
+    match tag {
+        Some(tag) => tag,
+        None => tags[0],
     }
 }
 
 const MAX_DOCS_RS_FEATURES: usize = 4;
-const NO_DEFAULT_VERSION: &str = "no-default-version";
+const NO_DEFAULT_TAG: &str = "no-default-tag";
 
 /// Get a list of features to document at docs.rs in addition the default
 fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
@@ -101,6 +104,6 @@ fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
         })
         .collect();
     features.truncate(MAX_DOCS_RS_FEATURES);
-    features.insert(0, NO_DEFAULT_VERSION.to_owned());
+    features.insert(0, NO_DEFAULT_TAG.to_owned());
     features
 }

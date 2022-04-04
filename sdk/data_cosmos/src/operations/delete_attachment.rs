@@ -39,8 +39,10 @@ impl DeleteAttachmentBuilder {
                 .prepare_pipeline_with_attachment_name(http::Method::DELETE);
 
             // add trait headers
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
                 self.client.document_client().partition_key_serialized(),
@@ -62,13 +64,13 @@ impl DeleteAttachmentBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteAttachment =
-    futures::future::BoxFuture<'static, crate::Result<DeleteAttachmentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteAttachmentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteAttachmentBuilder {
-    type Future = DeleteAttachment;
+    type IntoFuture = DeleteAttachment;
     type Output = <DeleteAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -100,7 +102,7 @@ pub struct DeleteAttachmentResponse {
 }
 
 impl DeleteAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {

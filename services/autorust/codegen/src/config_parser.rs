@@ -1,12 +1,13 @@
+use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
-use std::path::{Path, PathBuf};
+use std::collections::HashSet;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Received AutoRest configuration file did not contain an expected extension (e.g. '.md'): '{0}'")]
-    ExpectedMd(PathBuf),
+    ExpectedMd(Utf8PathBuf),
     #[error("Error reading the received CommonMark configuration file")]
     ReadingConfig,
     #[error("Configuration heading did not contain a tag.")]
@@ -20,7 +21,7 @@ pub enum Error {
     #[error("No `## Configuration` heading in the AutoRest literate configuration file")]
     NoConfigurationHeading,
     #[error("Received AutoRest configuration extension not supported: '{extension}' (in configuration file '{config_file}')")]
-    NotSupportedExtension { extension: String, config_file: PathBuf },
+    NotSupportedExtension { extension: String, config_file: Utf8PathBuf },
     #[error("Markdown ended unexpectedly after configuration tag heading")]
     MarkdownEnded,
     #[error("Code block info did not contain UTF-8 characters.")]
@@ -43,11 +44,19 @@ impl Configuration {
     pub fn openapi_type(&self) -> Option<&str> {
         self.basic_info.openapi_type.as_deref()
     }
+    /// An optional `Basic Information` `tag` specifies the default
     pub fn tag(&self) -> Option<&str> {
         self.basic_info.tag.as_deref()
     }
+    /// All `Tag`s in `Configuration`
     pub fn tags(&self) -> &Vec<Tag> {
         &self.tags
+    }
+    pub fn tags_filtered(&self, spec_name: &str, skip_service_tags: &HashSet<&(&str, &str)>) -> Vec<&Tag> {
+        self.tags()
+            .iter()
+            .filter(|tag| !skip_service_tags.contains(&(spec_name, tag.name())))
+            .collect()
     }
 }
 
@@ -72,8 +81,8 @@ pub struct Tag {
 }
 
 impl Tag {
-    pub fn input_files(&self) -> Vec<PathBuf> {
-        self.input_files.iter().map(PathBuf::from).collect()
+    pub fn input_files(&self) -> Vec<Utf8PathBuf> {
+        self.input_files.iter().map(Utf8PathBuf::from).collect()
     }
 
     pub fn name(&self) -> &str {
@@ -92,11 +101,10 @@ impl Tag {
 /// Receives the AutoRest configuration file and parses it to its various configurations (by tags/API versions),
 /// according to its extension.
 /// e.g. for "path/to/config.md", it will get parsed as CommonMark [Literate Tag](http://azure.github.io/autorest/user/literate-file-formats/configuration.html).
-pub fn parse_configurations_from_autorest_config_file(config_file: &Path) -> Result<Configuration> {
+pub fn parse_configurations_from_autorest_config_file(config_file: &Utf8Path) -> Result<Configuration> {
     let extension = config_file
         .extension()
         .ok_or_else(|| Error::ExpectedMd(config_file.to_path_buf()))?;
-    let extension = extension.to_str().ok_or_else(|| Error::ExpectedMd(config_file.to_path_buf()))?;
     match extension.to_lowercase().as_str() {
         "md" => {
             use literate_config::*;

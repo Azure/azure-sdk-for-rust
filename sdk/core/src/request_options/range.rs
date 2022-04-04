@@ -1,5 +1,5 @@
-use crate::{AddAsHeader, ParseError};
-use http::request::Builder;
+use crate::headers::{AsHeaders, HeaderName, HeaderValue};
+use crate::ParseError;
 use std::convert::From;
 use std::fmt;
 use std::str::FromStr;
@@ -21,6 +21,18 @@ impl Range {
 
     pub fn is_empty(&self) -> bool {
         self.end == self.start
+    }
+}
+
+impl AsHeaders for Range {
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
+        let mut headers = vec![("x-ms-range".into(), format!("{}", self).into())];
+        if self.len() < 1024 * 1024 * 4 {
+            headers.push(("x-ms-range-get-content-crc64".into(), "true".into()));
+        }
+        headers.into_iter()
     }
 }
 
@@ -76,38 +88,6 @@ impl FromStr for Range {
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "bytes={}-{}", self.start, self.end - 1)
-    }
-}
-
-impl<'a> AddAsHeader for Range {
-    // here we ask for the CRC64 value if we can (that is,
-    // if the range is smaller than 4MB).
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        let builder = builder.header("x-ms-range", &format!("{}", self));
-        if self.len() < 1024 * 1024 * 4 {
-            builder.header("x-ms-range-get-content-crc64", "true")
-        } else {
-            builder
-        }
-    }
-
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            "x-ms-range",
-            http::HeaderValue::from_str(&format!("{}", self))?,
-        );
-
-        if self.len() < 1024 * 1024 * 4 {
-            request.headers_mut().append(
-                "x-ms-range-get-content-crc64",
-                http::HeaderValue::from_str("true")?,
-            );
-        }
-
-        Ok(())
     }
 }
 

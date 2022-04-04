@@ -32,7 +32,9 @@ impl ReplaceStoredProcedureBuilder {
                 .client
                 .prepare_pipeline_with_stored_procedure_name(http::Method::PUT);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
+            if let Some(cl) = &self.consistency_level {
+                req.insert_headers(cl);
+            }
 
             #[derive(Debug, Serialize)]
             struct Request<'a> {
@@ -61,15 +63,15 @@ impl ReplaceStoredProcedureBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceStoredProcedureBuilder {
-    type Future = ReplaceStoredProcedure;
+    type IntoFuture = ReplaceStoredProcedure;
     type Output = <ReplaceStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
 pub type ReplaceStoredProcedure =
-    futures::future::BoxFuture<'static, crate::Result<ReplaceStoredProcedureResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<ReplaceStoredProcedureResponse>>;
 
 pub type ReplaceStoredProcedureResponse = CreateStoredProcedureResponse;

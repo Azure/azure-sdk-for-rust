@@ -1,6 +1,4 @@
-use crate::headers::*;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers::{self, Header};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -21,20 +19,12 @@ impl std::str::FromStr for SourceLeaseId {
     }
 }
 
-impl AddAsHeader for SourceLeaseId {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(SOURCE_LEASE_ID, &format!("{}", self.0))
+impl Header for SourceLeaseId {
+    fn name(&self) -> headers::HeaderName {
+        headers::SOURCE_LEASE_ID.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            SOURCE_LEASE_ID,
-            http::HeaderValue::from_str(&format!("{}", self.0))?,
-        );
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_string().into()
     }
 }

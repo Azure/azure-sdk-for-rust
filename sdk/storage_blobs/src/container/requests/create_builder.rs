@@ -1,6 +1,6 @@
 use crate::{container::PublicAccess, prelude::*};
 use azure_core::{
-    headers::{add_mandatory_header, add_optional_header},
+    headers::{add_mandatory_header, add_optional_header, AsHeaders},
     prelude::*,
 };
 use http::{method::Method, status::StatusCode};
@@ -43,8 +43,14 @@ impl<'a> CreateBuilder<'a> {
             url.as_str(),
             &Method::PUT,
             &|mut request| {
-                request = add_mandatory_header(&self.public_access, request);
-                request = add_optional_header(&self.metadata, request);
+                for (name, value) in self.public_access.as_headers() {
+                    request = request.header(name.as_str(), value.as_str())
+                }
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },

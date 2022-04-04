@@ -43,9 +43,11 @@ impl GetPartitionKeyRangesBuilder {
                 http::Method::GET,
             );
 
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -65,13 +67,13 @@ impl GetPartitionKeyRangesBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type GetPartitionKeyRanges =
-    futures::future::BoxFuture<'static, crate::Result<GetPartitionKeyRangesResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<GetPartitionKeyRangesResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetPartitionKeyRangesBuilder {
-    type Future = GetPartitionKeyRanges;
+    type IntoFuture = GetPartitionKeyRanges;
     type Output = <GetPartitionKeyRanges as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -101,7 +103,7 @@ pub struct GetPartitionKeyRangesResponse {
 }
 
 impl GetPartitionKeyRangesResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

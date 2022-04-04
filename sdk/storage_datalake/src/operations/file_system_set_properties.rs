@@ -2,12 +2,8 @@ use crate::clients::FileSystemClient;
 use crate::Properties;
 use azure_core::prelude::*;
 use azure_core::{
-    headers::{add_mandatory_header2, add_optional_header2},
-    AppendToUrlQuery, Response as HttpResponse,
-};
-use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
-    Etag,
+    AppendToUrlQuery, Etag, Response as HttpResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
@@ -57,10 +53,10 @@ impl SetFileSystemPropertiesBuilder {
                 .client
                 .prepare_request(url.as_str(), http::Method::PATCH);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_optional_header2(&this.if_modified_since_condition, &mut request)?;
-            add_optional_header2(&this.properties, &mut request)?;
-            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&this.if_modified_since_condition);
+            request.insert_headers(&this.properties);
+            request.insert_headers(&ContentLength::new(0));
 
             let response = self
                 .client

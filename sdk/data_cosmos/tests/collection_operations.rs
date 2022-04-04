@@ -1,12 +1,11 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::collection::*;
-use std::error::Error;
+use futures::StreamExt;
 
 mod setup;
 
-type BoxedError = Box<dyn Error + Send + Sync>;
+type BoxedError = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::test]
 async fn collection_operations() -> Result<(), BoxedError> {
@@ -15,15 +14,17 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let client = setup::initialize("collection_operations")?;
     let database_name = "test-collection-operations";
 
+    log::info!("Creating a database with name '{}'...", database_name);
     client.create_database(database_name).into_future().await?;
+    log::info!("Successfully created a database");
 
     // create collection!
-    let db_client = client.clone().into_database_client(database_name.clone());
+    let database = client.database_client(database_name.clone());
 
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);
 
-    let create_collection_response = db_client
+    let create_collection_response = database
         .create_collection(collection_name, "/id")
         .into_future()
         .await?;
@@ -36,17 +37,26 @@ async fn collection_operations() -> Result<(), BoxedError> {
         create_collection_response
     );
 
-    let collection_client = db_client.clone().into_collection_client(collection_name);
+    let collection = database.collection_client(collection_name);
 
     // get collection!
-    let get_collection_response = collection_client.get_collection().into_future().await?;
+    let get_collection = collection.get_collection().into_future().await?;
 
-    assert_eq!(get_collection_response.collection.id, collection_name);
+    assert_eq!(get_collection.collection.id, collection_name);
 
     log::info!("Successfully got a collection");
-    log::debug!(
-        "The get_collection response: {:#?}",
-        get_collection_response
+    log::debug!("The get_collection response: {:#?}", get_collection);
+
+    let collections = database
+        .list_collections()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
+    assert_eq!(collections.collections.len(), 1);
+    assert_eq!(
+        get_collection.collection.indexing_policy,
+        collections.collections[0].indexing_policy
     );
 
     let indexes = IncludedPathIndex {
@@ -72,7 +82,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         .push("/\"excludeme\"/?".to_owned().into());
 
     // replace collection!
-    let replace_collection_response = collection_client
+    let replace_collection_response = collection
         .replace_collection("/id")
         .indexing_policy(new_indexing_policy)
         .into_future()
@@ -104,7 +114,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     );
 
     // delete collection!
-    let delete_collection_response = collection_client.delete_collection().into_future().await?;
+    let delete_collection_response = collection.delete_collection().into_future().await?;
 
     log::info!("Successfully deleted collection");
     log::debug!(
@@ -112,7 +122,9 @@ async fn collection_operations() -> Result<(), BoxedError> {
         delete_collection_response
     );
 
-    db_client.delete_database().into_future().await.unwrap();
+    // delete database
+    database.delete_database().into_future().await?;
+    log::info!("Successfully deleted database");
 
     Ok(())
 }

@@ -1,9 +1,7 @@
 use crate::clients::DataLakeClient;
 use crate::file_system::{FileSystem, FileSystemList};
 use azure_core::AppendToUrlQuery;
-use azure_core::{
-    collect_pinned_stream, headers::add_optional_header2, prelude::*, Pageable, Response,
-};
+use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -43,7 +41,7 @@ impl ListFileSystemsBuilder {
     }
 
     pub fn into_stream(self) -> ListFileSystems {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
 
@@ -63,7 +61,7 @@ impl ListFileSystemsBuilder {
 
                 let mut request = this.client.prepare_request(url.as_str(), http::Method::GET);
 
-                add_optional_header2(&this.client_request_id, &mut request)?;
+                request.insert_headers(&this.client_request_id);
 
                 let response = this
                     .client

@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store, no-cache",
+    "content-location": "https://azuresdktesting2.documents.azure.com/dbs/cosmos-test-db-users/users",
+    "content-type": "application/json",
+    "date": "Wed, 30 Mar 2022 10:42:06 GMT",
+    "lsn": "67",
+    "pragma": "no-cache",
+    "server": "Microsoft-HTTPAPI/2.0",
+    "strict-transport-security": "max-age=31536000",
+    "transfer-encoding": "chunked",
+    "x-ms-activity-id": "23c2911b-7afe-428e-8e93-349fd2dc3366",
+    "x-ms-alt-content-path": "dbs/cosmos-test-db-users",
+    "x-ms-content-path": "Sf4bAA==",
+    "x-ms-cosmos-llsn": "67",
+    "x-ms-gatewayversion": "version=2.14.0",
+    "x-ms-global-committed-lsn": "67",
+    "x-ms-item-count": "1",
+    "x-ms-last-state-change-utc": "Wed, 23 Mar 2022 21:06:50.795 GMT",
+    "x-ms-number-of-read-regions": "0",
+    "x-ms-request-charge": "2",
+    "x-ms-request-duration-ms": "0.684",
+    "x-ms-resource-quota": "users=500000;",
+    "x-ms-resource-usage": "users=1;",
+    "x-ms-schemaversion": "1.13",
+    "x-ms-serviceversion": "version=2.14.0.0",
+    "x-ms-session-token": "0:-1#67",
+    "x-ms-transport-request-id": "216210",
+    "x-ms-xp-role": "2"
+  },
+  "body": "eyJfcmlkIjoiU2Y0YkFBPT0iLCJVc2VycyI6W3siaWQiOiJzb21lb25lQGNvb2wubmV0IiwiX3JpZCI6IlNmNGJBQzhuZGdBPSIsIl9zZWxmIjoiZGJzXC9TZjRiQUE9PVwvdXNlcnNcL1NmNGJBQzhuZGdBPVwvIiwiX2V0YWciOiJcIjAwMDA3MDAxLTAwMDAtMDEwMC0wMDAwLTYyNDQzM2ZlMDAwMFwiIiwiX3Blcm1pc3Npb25zIjoicGVybWlzc2lvbnNcLyIsIl90cyI6MTY0ODYzNjkyNn1dLCJfY291bnQiOjF9"
+}

@@ -11,9 +11,9 @@ pub use query::{Param, Query};
 use super::Resource;
 use crate::headers;
 
-use azure_core::AddAsHeader;
+use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::Header;
 use http::header::HeaderMap;
-use http::request::Builder;
 use serde::de::DeserializeOwned;
 
 /// User-defined content in JSON format.
@@ -44,12 +44,18 @@ impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for Document<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let _headers = value.0;
-        let body = value.1;
-
-        Ok(serde_json::from_slice(body)?)
+    type Error = azure_core::error::Error;
+    fn try_from((_, body): (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(body).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(body).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
     }
 }
 
@@ -82,24 +88,13 @@ impl QueryCrossPartition {
     }
 }
 
-impl AddAsHeader for QueryCrossPartition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
-            self.as_bool_str(),
-        )
+impl Header for QueryCrossPartition {
+    fn name(&self) -> HeaderName {
+        headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -120,24 +115,13 @@ impl ParallelizeCrossPartition {
     }
 }
 
-impl AddAsHeader for ParallelizeCrossPartition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
-            self.as_bool_str(),
-        )
+impl Header for ParallelizeCrossPartition {
+    fn name(&self) -> HeaderName {
+        headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -158,21 +142,13 @@ impl IsUpsert {
     }
 }
 
-impl AddAsHeader for IsUpsert {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_DOCUMENTDB_IS_UPSERT, self.as_bool_str())
+impl Header for IsUpsert {
+    fn name(&self) -> HeaderName {
+        headers::HEADER_DOCUMENTDB_IS_UPSERT.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_IS_UPSERT,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -184,28 +160,15 @@ pub enum ChangeFeed {
     None,
 }
 
-impl AddAsHeader for ChangeFeed {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        match self {
-            Self::Incremental => builder.header(headers::HEADER_A_IM, "Incremental feed"),
-            Self::None => builder,
-        }
-    }
-
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
+impl AsHeaders for ChangeFeed {
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    fn as_headers(&self) -> Self::Iter {
         match self {
             Self::Incremental => {
-                request.headers_mut().append(
-                    headers::HEADER_A_IM,
-                    http::header::HeaderValue::from_str("Incremental feed")?,
-                );
+                Some((headers::HEADER_A_IM.into(), "Incremental feed".into())).into_iter()
             }
-            Self::None => {}
+            Self::None => None.into_iter(),
         }
-        Ok(())
     }
 }
 
@@ -226,21 +189,13 @@ impl TentativeWritesAllowance {
     }
 }
 
-impl AddAsHeader for TentativeWritesAllowance {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_ALLOW_MULTIPLE_WRITES, self.as_bool_str())
+impl Header for TentativeWritesAllowance {
+    fn name(&self) -> HeaderName {
+        headers::HEADER_ALLOW_MULTIPLE_WRITES.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_ALLOW_MULTIPLE_WRITES,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -255,20 +210,12 @@ impl PartitionRangeId {
     }
 }
 
-impl AddAsHeader for PartitionRangeId {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_DOCUMENTDB_PARTITIONRANGEID, &self.0)
+impl Header for PartitionRangeId {
+    fn name(&self) -> HeaderName {
+        headers::HEADER_DOCUMENTDB_PARTITIONRANGEID.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_PARTITIONRANGEID,
-            http::header::HeaderValue::from_str(&self.0)?,
-        );
-
-        Ok(())
+    fn value(&self) -> HeaderValue {
+        self.0.clone().into()
     }
 }

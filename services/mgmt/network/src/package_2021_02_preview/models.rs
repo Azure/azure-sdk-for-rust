@@ -11816,6 +11816,198 @@ pub mod next_hop_result {
         None,
     }
 }
+#[doc = "The NSP access rule resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspAccessRule {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Properties of NSP access rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<NspAccessRuleProperties>,
+    #[doc = "The name of the access rule that is unique within a profile. This name can be used to access the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "NSP access rule identifier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl NspAccessRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Result of the request to list NSP access rules. Contains a list of NSP access rules and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspAccessRuleListResult {
+    #[doc = "Gets a page of NSP access rule"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<NspAccessRule>,
+    #[doc = "Gets the URL to get the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl NspAccessRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of NSP access rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspAccessRuleProperties {
+    #[doc = "The current provisioning state."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Direction that specifies whether the access rules is inbound/outbound."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<nsp_access_rule_properties::Direction>,
+    #[doc = "Inbound address prefixes (IPv4/IPv6)"]
+    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    pub address_prefixes: Vec<String>,
+    #[doc = "Outbound rules fully qualified domain name format."]
+    #[serde(rename = "fullyQualifiedDomainNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub fully_qualified_domain_names: Vec<String>,
+    #[doc = "Subscription id in the ARM id format."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subscriptions: Vec<String>,
+    #[doc = "Inbound rule specified by the perimeter id."]
+    #[serde(rename = "networkSecurityPerimeters", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_security_perimeters: Vec<PerimeterBasedAccessRule>,
+}
+impl NspAccessRuleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod nsp_access_rule_properties {
+    use super::*;
+    #[doc = "Direction that specifies whether the access rules is inbound/outbound."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Direction {
+        Inbound,
+        Outbound,
+    }
+}
+#[doc = "The NSP resource association resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspAssociation {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<NspAssociationProperties>,
+    #[doc = "The name of the resource that is unique within a resource group. This name can be used to access the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "NSP resource association identifier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl NspAssociation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspAssociationProperties {
+    #[doc = "The current provisioning state."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Reference to another subresource."]
+    #[serde(rename = "privateLinkResource", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_resource: Option<SubResource>,
+    #[doc = "Reference to another subresource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<SubResource>,
+    #[doc = "Access mode on the association."]
+    #[serde(rename = "accessMode", default, skip_serializing_if = "Option::is_none")]
+    pub access_mode: Option<nsp_association_properties::AccessMode>,
+}
+impl NspAssociationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod nsp_association_properties {
+    use super::*;
+    #[doc = "Access mode on the association."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AccessMode {
+        Unspecified,
+        EnforceMode,
+        LearningMode,
+        DryRunMode,
+    }
+}
+#[doc = "Result of the request to list NSP resource associations. Contains a list of NSP resource associations and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspAssociationsListResult {
+    #[doc = "Gets a page of NSP resource associations"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<NspAssociation>,
+    #[doc = "Gets the URL to get the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl NspAssociationsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The network security perimeter profile resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspProfile {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Properties of NSP profile."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<NspProfileProperties>,
+    #[doc = "The name of the profile resource that is unique within a perimeter. This name can be used to access the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Identifier of the network security perimeter profile in ARM id format."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl NspProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Result of the request to list NSP profiles. Contains a list of NSP profiles and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspProfileListResult {
+    #[doc = "Gets a page of NSP profile"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<NspProfile>,
+    #[doc = "Gets the URL to get the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl NspProfileListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of NSP profile."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NspProfileProperties {
+    #[doc = "Version number that increases with every update to access rules within the profile."]
+    #[serde(rename = "accessRulesVersion", default, skip_serializing_if = "Option::is_none")]
+    pub access_rules_version: Option<String>,
+}
+impl NspProfileProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Office365 breakout categories."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct O365BreakOutCategoryPolicies {
@@ -12620,6 +12812,23 @@ pub struct PerimeterAssociableResourcesListResult {
     pub next_link: Option<String>,
 }
 impl PerimeterAssociableResourcesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PerimeterBasedAccessRule {
+    #[doc = "NSP id in the ARM id format."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Resource guid of the NSP supplied."]
+    #[serde(rename = "perimeterGuid", default, skip_serializing_if = "Option::is_none")]
+    pub perimeter_guid: Option<String>,
+    #[doc = "Location of the NSP supplied."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+impl PerimeterBasedAccessRule {
     pub fn new() -> Self {
         Self::default()
     }

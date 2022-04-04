@@ -1,6 +1,6 @@
 use crate::blob::responses::PutBlockListResponse;
 use crate::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
+use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use bytes::Bytes;
 
@@ -83,7 +83,11 @@ impl<'a> PutBlockListBuilder<'a> {
                 request = add_optional_header(&self.content_language, request);
                 request = add_optional_header(&self.content_disposition, request);
                 request = add_optional_header(&self.content_md5, request);
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request = add_optional_header(&self.access_tier, request);
                 request = add_optional_header_ref(&self.lease_id, request);
                 request = add_optional_header(&self.client_request_id, request);

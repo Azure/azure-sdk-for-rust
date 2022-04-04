@@ -1,53 +1,54 @@
 use crate::{
     identifier::ident,
     spec::{self, RefKey, TypeName},
-    Config, PropertyName, Spec,
+    CrateConfig, PropertyName, Spec,
 };
+use camino::Utf8Path;
+use camino::Utf8PathBuf;
 use heck::ToPascalCase;
 use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::quote;
 use regex::Regex;
-use std::path::{Path, PathBuf};
 
 /// code generation context
-pub struct CodeGen {
-    config: Config,
+pub struct CodeGen<'a> {
+    config: &'a CrateConfig<'a>,
     pub spec: Spec,
 }
 
-impl CodeGen {
-    pub fn new(config: Config) -> Result<Self, Error> {
+impl<'a> CodeGen<'a> {
+    pub fn new(config: &'a CrateConfig) -> Result<Self, Error> {
         let spec = Spec::read_files(&config.input_files).map_err(Error::Spec)?;
         Ok(Self { config, spec })
     }
 
-    pub fn input_files(&self) -> &[PathBuf] {
+    pub fn input_files(&self) -> &[Utf8PathBuf] {
         &self.config.input_files
     }
 
-    pub fn output_folder(&self) -> &Path {
+    pub fn output_folder(&self) -> &Utf8Path {
         &self.config.output_folder
     }
 
     pub fn should_workaround_case(&self) -> bool {
         if let Some(title) = self.spec.title() {
-            self.config.fix_case_properties.contains(title)
+            self.config.run_config.fix_case_properties.contains(title)
         } else {
             false
         }
     }
 
     pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
-        self.config.optional_properties.contains(prop_nm)
+        self.config.run_config.optional_properties.contains(prop_nm)
     }
 
     pub fn should_force_obj(&self, prop_nm: &PropertyName) -> bool {
-        self.config.invalid_types.contains(prop_nm)
+        self.config.run_config.invalid_types.contains(prop_nm)
     }
 
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
-        self.config.box_properties.contains(prop_nm)
+        self.config.run_config.box_properties.contains(prop_nm)
     }
 
     pub fn get_request_content_type_json(&self) -> String {
@@ -105,8 +106,6 @@ pub enum Error {
     OperationMissingExample(String),
     #[error("operation is missing responses")]
     OperationMissingResponses,
-    #[error("creating path for example {0}")]
-    ExamplePath(#[source] crate::path::Error),
     #[error("example path not utf8")]
     ExamplePathNotUtf8,
     #[error("status code required")]

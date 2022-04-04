@@ -1,5 +1,5 @@
 use crate::{Body, Request};
-use http::{HeaderMap, Method, Uri};
+use http::{Method, Uri};
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};
@@ -78,19 +78,15 @@ impl<'de> Visitor<'de> for RequestVisitor {
 
         let body = base64::decode(&body.1).map_err(serde::de::Error::custom)?;
 
-        let mut hm = HeaderMap::new();
+        let mut hm = std::collections::HashMap::new();
         for (k, v) in headers.1.into_iter() {
-            hm.append(
-                http::header::HeaderName::from_lowercase(k.as_bytes())
-                    .map_err(serde::de::Error::custom)?,
-                http::HeaderValue::from_str(&v).map_err(serde::de::Error::custom)?,
-            );
+            hm.insert(k.to_owned().into(), v.into());
         }
 
         Ok(Self::Value {
             uri: Uri::from_str(uri.1).expect("expected a valid uri"),
             method: Method::from_str(method.1).expect("expected a valid HTTP method"),
-            headers: hm,
+            headers: hm.into(),
             body: bytes::Bytes::from(body).into(),
         })
     }
@@ -104,9 +100,9 @@ impl Serialize for Request {
         let mut hm = std::collections::BTreeMap::new();
         for (h, v) in self.headers().iter() {
             if h.as_str().to_lowercase() == "authorization" {
-                hm.insert(h.to_string(), "<<STRIPPED>>");
+                hm.insert(h.as_str(), "<<STRIPPED>>");
             } else {
-                hm.insert(h.to_string(), v.to_str().unwrap());
+                hm.insert(h.as_str(), v.as_str());
             }
         }
 

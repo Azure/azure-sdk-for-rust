@@ -42,10 +42,12 @@ impl DeleteDocumentBuilder {
                 .client
                 .prepare_request_pipeline_with_document_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.allow_tentative_writes);
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
                 self.client.partition_key_serialized(),
@@ -69,13 +71,13 @@ impl DeleteDocumentBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteDocument =
-    futures::future::BoxFuture<'static, crate::Result<DeleteDocumentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDocumentBuilder {
-    type Future = DeleteDocument;
+    type IntoFuture = DeleteDocument;
     type Output = <DeleteDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -88,7 +90,7 @@ pub struct DeleteDocumentResponse {
 }
 
 impl DeleteDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         let charge = request_charge_from_headers(&headers)?;

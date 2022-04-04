@@ -39,7 +39,9 @@ impl ReplaceCollectionBuilder {
                 .client
                 .prepare_request_with_collection_name(http::Method::PUT);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let collection = ReplaceCollectionBody {
                 id: self.client.collection_name(),
@@ -65,13 +67,13 @@ impl ReplaceCollectionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type ReplaceCollection =
-    futures::future::BoxFuture<'static, crate::Result<ReplaceCollectionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<ReplaceCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceCollectionBuilder {
-    type Future = ReplaceCollection;
+    type IntoFuture = ReplaceCollection;
     type Output = <ReplaceCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -116,7 +118,7 @@ pub struct ReplaceCollectionResponse {
 }
 
 impl ReplaceCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         Ok(Self {

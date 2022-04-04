@@ -87,10 +87,19 @@ impl PermissionMode {
 }
 
 impl std::convert::TryFrom<&[u8]> for Permission {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(slice)?)
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(slice).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(slice).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
     }
 }
 

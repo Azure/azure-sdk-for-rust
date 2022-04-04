@@ -42,12 +42,11 @@ impl CreateCollectionBuilder {
 
     pub fn into_future(self) -> CreateCollection {
         Box::pin(async move {
-            let mut request = self.client.cosmos_client().prepare_request_pipeline(
-                &format!("dbs/{}/colls", self.client.database_name()),
-                http::Method::POST,
-            );
-            azure_core::headers::add_optional_header2(&self.offer, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            let mut request = self.client.prepare_collections_pipeline(http::Method::POST);
+            request.insert_headers(&self.offer);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let collection = CreateCollectionBody {
                 id: &self.collection_name,
@@ -59,11 +58,8 @@ impl CreateCollectionBuilder {
 
             let response = self
                 .client
-                .pipeline()
-                .send(
-                    self.context.clone().insert(ResourceType::Collections),
-                    &mut request,
-                )
+                .cosmos_client()
+                .send(request, self.context.clone(), ResourceType::Collections)
                 .await?;
 
             CreateCollectionResponse::try_from(response).await
@@ -73,16 +69,16 @@ impl CreateCollectionBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateCollectionBuilder {
-    type Future = CreateCollection;
+    type IntoFuture = CreateCollection;
     type Output = <CreateCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateCollection =
-    futures::future::BoxFuture<'static, crate::Result<CreateCollectionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<CreateCollectionResponse>>;
 
 /// Body for the create collection request
 #[derive(Serialize, Debug)]
@@ -112,7 +108,7 @@ pub struct CreateCollectionResponse {
 }
 
 impl CreateCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

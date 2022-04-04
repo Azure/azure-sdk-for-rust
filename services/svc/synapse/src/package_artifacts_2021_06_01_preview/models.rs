@@ -19726,6 +19726,9 @@ pub struct WebActivityTypeProperties {
     #[doc = "Web activity authentication properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<WebActivityAuthentication>,
+    #[doc = "When set to true, Certificate validation will be disabled."]
+    #[serde(rename = "disableCertValidation", default, skip_serializing_if = "Option::is_none")]
+    pub disable_cert_validation: Option<bool>,
     #[doc = "List of datasets passed to web endpoint."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub datasets: Vec<DatasetReference>,
@@ -19744,6 +19747,7 @@ impl WebActivityTypeProperties {
             headers: None,
             body: None,
             authentication: None,
+            disable_cert_validation: None,
             datasets: Vec::new(),
             linked_services: Vec::new(),
             connect_via: None,

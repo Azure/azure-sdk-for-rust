@@ -40,8 +40,10 @@ impl GetAttachmentBuilder {
                 .client
                 .prepare_pipeline_with_attachment_name(http::Method::GET);
 
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
                 self.client.document_client().partition_key_serialized(),
@@ -63,15 +65,16 @@ impl GetAttachmentBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetAttachmentBuilder {
-    type Future = GetAttachment;
+    type IntoFuture = GetAttachment;
     type Output = <GetAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type GetAttachment = futures::future::BoxFuture<'static, crate::Result<GetAttachmentResponse>>;
+pub type GetAttachment =
+    futures::future::BoxFuture<'static, azure_core::error::Result<GetAttachmentResponse>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAttachmentResponse {
@@ -102,7 +105,7 @@ pub struct GetAttachmentResponse {
 }
 
 impl GetAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

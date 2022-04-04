@@ -30,35 +30,30 @@ impl GetDatabaseBuilder {
 
     pub fn into_future(self) -> GetDatabase {
         Box::pin(async move {
-            let mut request = self.client.cosmos_client().prepare_request_pipeline(
-                &format!("dbs/{}", self.client.database_name()),
-                http::Method::GET,
-            );
+            let mut request = self.client.prepare_pipeline(http::Method::GET);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            request.set_body(bytes::Bytes::from_static(&[]).into());
             let response = self
                 .client
-                .pipeline()
-                .send(
-                    self.context.clone().insert(ResourceType::Databases),
-                    &mut request,
-                )
+                .cosmos_client()
+                .send(request, self.context.clone(), ResourceType::Databases)
                 .await?;
-
             GetDatabaseResponse::try_from(response).await
         })
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type GetDatabase = futures::future::BoxFuture<'static, crate::Result<GetDatabaseResponse>>;
+pub type GetDatabase =
+    futures::future::BoxFuture<'static, azure_core::error::Result<GetDatabaseResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetDatabaseBuilder {
-    type Future = GetDatabase;
+    type IntoFuture = GetDatabase;
     type Output = <GetDatabase as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -79,7 +74,7 @@ pub struct GetDatabaseResponse {
 }
 
 impl GetDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

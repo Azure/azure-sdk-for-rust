@@ -32,7 +32,9 @@ impl DeleteStoredProcedureBuilder {
                 .client
                 .prepare_pipeline_with_stored_procedure_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -50,13 +52,13 @@ impl DeleteStoredProcedureBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteStoredProcedure =
-    futures::future::BoxFuture<'static, crate::Result<DeleteStoredProcedureResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteStoredProcedureResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteStoredProcedureBuilder {
-    type Future = DeleteStoredProcedure;
+    type IntoFuture = DeleteStoredProcedure;
     type Output = <DeleteStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -72,7 +74,7 @@ pub struct DeleteStoredProcedureResponse {
 }
 
 impl DeleteStoredProcedureResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {

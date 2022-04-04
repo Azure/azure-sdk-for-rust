@@ -16,13 +16,13 @@ struct QueryBody {
 }
 
 /// Builder for creating queries
-pub struct QueryBuilder<'a, 'b> {
+pub struct QueryBuilder<'a> {
     service_client: &'a ServiceClient,
     max_item_count: MaxItemCount,
-    continuation: Option<Continuation<'b>>,
+    continuation: Option<Continuation>,
 }
 
-impl<'a, 'b> QueryBuilder<'a, 'b> {
+impl<'a> QueryBuilder<'a> {
     /// Create a new query struct
     pub(crate) fn new(service_client: &'a ServiceClient) -> Self {
         Self {
@@ -33,7 +33,7 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     }
 
     azure_core::setters! {
-        continuation: &'b str => Some(Continuation::new(continuation)),
+        continuation: String => Some(Continuation::new(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 

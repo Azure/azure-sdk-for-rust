@@ -64,9 +64,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = CosmosClient::new(account.clone(), authorization_token, CosmosOptions::default());
 
     // We know the database so we can obtain a database client.
-    let database_client = client.into_database_client(database_name);
+    let database = client.database_client(database_name);
     // We know the collection so we can obtain a collection client.
-    let collection_client = database_client.into_collection_client(collection_name);
+    let collection = database.collection_client(collection_name);
 
     // Insert 10 documents
     println!("Inserting 10 documents...");
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         };
 
         // insert it
-        collection_client
+        collection
             .create_document(document_to_insert)
             .is_upsert(true)
             .into_future()
@@ -112,7 +112,6 @@ pub mod resources;
 mod authorization_policy;
 mod consistency_level;
 mod cosmos_entity;
-mod errors;
 mod headers;
 mod resource_quota;
 mod time_nonce;
@@ -123,7 +122,5 @@ pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
 pub(crate) use time_nonce::TimeNonce;
-
-pub use errors::{Error, Result};
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

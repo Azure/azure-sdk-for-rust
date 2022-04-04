@@ -28,7 +28,9 @@ impl GetUserBuilder {
                 .client
                 .prepare_request_with_user_name(http::Method::GET);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             request.set_body(bytes::Bytes::from_static(&[]).into());
             let response = self
                 .client
@@ -45,13 +47,13 @@ impl GetUserBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type GetUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
+pub type GetUser = futures::future::BoxFuture<'static, azure_core::error::Result<UserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetUserBuilder {
-    type Future = GetUser;
+    type IntoFuture = GetUser;
     type Output = <GetUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

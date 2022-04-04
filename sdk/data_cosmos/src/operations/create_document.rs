@@ -55,7 +55,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
     pub fn partition_key<PK: Serialize>(
         mut self,
         partition_key: &PK,
-    ) -> Result<Self, serde_json::Error> {
+    ) -> azure_core::error::Result<Self> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(self)
     }
@@ -71,12 +71,14 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
             let mut request = self.client.prepare_doc_request_pipeline(http::Method::POST);
 
             add_as_partition_key_header_serialized2(&partition_key, &mut request);
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.is_upsert, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.indexing_directive, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.is_upsert);
+            request.insert_headers(&self.indexing_directive);
+            request.insert_headers(&self.allow_tentative_writes);
 
             request.set_body(bytes::Bytes::from(serialized).into());
             let response = self
@@ -95,15 +97,15 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateDocument =
-    futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<CreateDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture
     for CreateDocumentBuilder<D>
 {
-    type Future = CreateDocument;
+    type IntoFuture = CreateDocument;
     type Output = <CreateDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -138,7 +140,7 @@ pub struct CreateDocumentResponse {
 }
 
 impl CreateDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 
@@ -169,7 +171,7 @@ impl CreateDocumentResponse {
             gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
             date: date_from_headers(&headers)?,
 
-            document_attributes: DocumentAttributes::try_from(body)?,
+            document_attributes: DocumentAttributes::try_from(&body)?,
         })
     }
 }

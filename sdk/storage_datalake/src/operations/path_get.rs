@@ -1,11 +1,7 @@
 use crate::clients::{FileClient, PathClient};
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
-use azure_core::{
-    collect_pinned_stream,
-    headers::{add_mandatory_header2, add_optional_header2},
-    AppendToUrlQuery, Response as HttpResponse,
-};
+use azure_core::{collect_pinned_stream, AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -62,12 +58,12 @@ impl GetFileBuilder {
             let mut request = this.client.prepare_request(url.as_str(), http::Method::GET);
 
             let requested_range = self.range.unwrap_or_else(|| Range::new(0, u64::MAX));
-            add_mandatory_header2(&requested_range, &mut request)?;
+            request.insert_headers(&requested_range);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_optional_header2(&this.if_match_condition, &mut request)?;
-            add_optional_header2(&this.if_modified_since, &mut request)?;
-            add_optional_header2(&this.lease_id, &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&this.if_match_condition);
+            request.insert_headers(&this.if_modified_since);
+            request.insert_headers(&this.lease_id);
 
             let response = self
                 .client

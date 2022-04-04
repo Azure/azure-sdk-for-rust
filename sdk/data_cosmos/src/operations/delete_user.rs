@@ -28,7 +28,9 @@ impl DeleteUserBuilder {
             let mut request = self
                 .client
                 .prepare_request_with_user_name(http::Method::DELETE);
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             request.set_body(bytes::Bytes::from_static(&[]).into());
             let response = self
                 .client
@@ -45,13 +47,14 @@ impl DeleteUserBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type DeleteUser = futures::future::BoxFuture<'static, crate::Result<DeleteUserResponse>>;
+pub type DeleteUser =
+    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteUserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteUserBuilder {
-    type Future = DeleteUser;
+    type IntoFuture = DeleteUser;
     type Output = <DeleteUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
@@ -64,7 +67,7 @@ pub struct DeleteUserResponse {
 }
 
 impl DeleteUserResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

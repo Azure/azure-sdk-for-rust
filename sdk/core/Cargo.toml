@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.1.1"
+version = "0.2.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -10,7 +10,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 async-trait = "0.1"

@@ -34,7 +34,9 @@ impl DeleteUserDefinedFunctionBuilder {
                 .client
                 .prepare_pipeline_with_user_defined_function_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client
@@ -54,16 +56,18 @@ impl DeleteUserDefinedFunctionBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteUserDefinedFunctionBuilder {
-    type Future = DeleteUserDefinedFunction;
+    type IntoFuture = DeleteUserDefinedFunction;
     type Output = <DeleteUserDefinedFunction as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type DeleteUserDefinedFunction =
-    futures::future::BoxFuture<'static, crate::Result<DeleteUserDefinedFunctionResponse>>;
+pub type DeleteUserDefinedFunction = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<DeleteUserDefinedFunctionResponse>,
+>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteUserDefinedFunctionResponse {
@@ -94,7 +98,7 @@ pub struct DeleteUserDefinedFunctionResponse {
 }
 
 impl DeleteUserDefinedFunctionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

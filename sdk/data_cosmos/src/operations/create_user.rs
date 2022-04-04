@@ -32,7 +32,9 @@ impl CreateUserBuilder {
                 http::Method::POST,
             );
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             let body = CreateUserBody {
                 id: self.client.user_name(),
             };
@@ -52,13 +54,13 @@ impl CreateUserBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type CreateUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
+pub type CreateUser = futures::future::BoxFuture<'static, azure_core::error::Result<UserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateUserBuilder {
-    type Future = CreateUser;
+    type IntoFuture = CreateUser;
     type Output = <CreateUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

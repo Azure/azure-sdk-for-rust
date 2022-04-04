@@ -149,3 +149,26 @@ impl RunDiskInspectionInput {
         }
     }
 }
+#[doc = "Data used for registering a Storage Account for a Subscription."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageConfigurationInput {
+    #[doc = "Qualified name of the storage account"]
+    #[serde(rename = "storageAccountId")]
+    pub storage_account_id: String,
+}
+impl StorageConfigurationInput {
+    pub fn new(storage_account_id: String) -> Self {
+        Self { storage_account_id }
+    }
+}
+#[doc = "Api output result when there is an existing storage configuration entry."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageConfigurationResponse {
+    #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_id: Option<String>,
+}
+impl StorageConfigurationResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
