@@ -22,15 +22,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let mut client = DeviceUpdateClient::new(&device_update_url, &creds)?;
 
-    let s_filter= match env::var("DEVICE_UPDATE_FILTER") {
-        Err(_e) => { "".to_owned() },
-        Ok(s) => { s }
-    };
+    let s_filter= env::var("DEVICE_UPDATE_FILTER").unwrap_or_default();
+
     let mut filter: Option<&str> = None;
     if  s_filter.len() != 0 {
         filter=Some(&s_filter);
     }
-
 
     let list_names_response = client.list_versions(&instance_id, &provider, &name, filter).await?;
     dbg!(&list_names_response);
