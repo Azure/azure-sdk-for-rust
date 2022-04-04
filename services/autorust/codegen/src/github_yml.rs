@@ -30,3 +30,18 @@ impl<'a> PublishServicesYml<'a> {
         Ok(())
     }
 }
+
+#[derive(Template)]
+#[template(path = "check-all-services.yml.jinja")]
+pub struct CheckAllServicesYml<'a> {
+    pub packages: &'a Vec<&'a str>,
+}
+
+impl<'a> CheckAllServicesYml<'a> {
+    pub fn create(&self, path: impl AsRef<Utf8Path>) -> Result<()> {
+        let md = self.render()?;
+        let mut file = File::create(path.as_ref())?;
+        write!(file, "{}", md)?;
+        Ok(())
+    }
+}

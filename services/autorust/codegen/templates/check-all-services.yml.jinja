@@ -1,0 +1,28 @@
+name: check all features for all service crates
+
+on:
+  workflow_dispatch:
+
+env:
+  # the goal is to remove warnings from the generated code
+  # https://github.com/Azure/azure-sdk-for-rust/issues/553
+  RUSTFLAGS: -Dwarnings -Aunused_attributes -Aunreachable-code -Aunused-assignments -Adead-code -Aclippy::new-without-default
+  CARGO_INCREMENTAL: 0
+
+jobs:
+{% for package in packages %}
+  {{package}}:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - run: cd services
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: cargo check --all-features -p {{package}}
+{% endfor %}

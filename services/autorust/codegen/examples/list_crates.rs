@@ -7,7 +7,8 @@
 // An updated clone of crates.io-index is required.
 // git clone https://github.com/rust-lang/crates.io-index
 
-use autorust_codegen::publish_services_yml::PublishServicesYml;
+use autorust_codegen::github_yml::CheckAllServicesYml;
+use autorust_codegen::github_yml::PublishServicesYml;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 use std::io::BufRead;
@@ -74,10 +75,15 @@ fn main() -> Result<()> {
     //     }
     // }
 
-    let yml = PublishServicesYml {
+    // let yml = PublishServicesYml {
+    //     packages: &names.iter().map(String::as_str).collect(),
+    // };
+    // yml.create("../../.github/workflows/publish-services.yml")?;
+
+    let yml = CheckAllServicesYml {
         packages: &names.iter().map(String::as_str).collect(),
     };
-    yml.create("../../.github/workflows/publish-services.yml")?;
+    yml.create("../../.github/workflows/check-all-services.yml")?;
 
     Ok(())
 }
