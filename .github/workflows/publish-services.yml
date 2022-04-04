@@ -1,4 +1,4 @@
-name: publish all service crates
+name: Publish All Services
 
 on:
   workflow_dispatch:

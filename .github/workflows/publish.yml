@@ -1,4 +1,4 @@
-name: publish crate
+name: Publish Crate
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: check all features for all service crates
+name: Check All Features for Services
 
 on:
   workflow_dispatch:
