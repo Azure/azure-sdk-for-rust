@@ -7,6 +7,8 @@
 // An updated clone of crates.io-index is required.
 // git clone https://github.com/rust-lang/crates.io-index
 
+use autorust_codegen::github_yml::CheckAllServicesYml;
+use autorust_codegen::github_yml::PublishServicesYml;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 use std::io::BufRead;
@@ -55,23 +57,33 @@ fn main() -> Result<()> {
     let version = std::env::args().nth(1);
 
     let names = list_crate_names()?;
-    match &version {
-        Some(version) => {
-            for name in names.iter() {
-                if !has_version(name, version)? {
-                    println!("{}", name);
-                    // println!("cargo publish -p {}", name);
-                    // println!("Start-Sleep -Seconds 420");
-                    // println!("cargo owner --add github:Azure:azure-sdk-publish-rust -- {}", name);
-                }
-            }
-        }
-        None => {
-            for (i, name) in names.iter().enumerate() {
-                println!("{} {}", i + 1, name);
-            }
-        }
-    }
+    // match &version {
+    //     Some(version) => {
+    //         for name in names.iter() {
+    //             if !has_version(name, version)? {
+    //                 println!("{}", name);
+    //                 // println!("cargo publish -p {}", name);
+    //                 // println!("Start-Sleep -Seconds 420");
+    //                 // println!("cargo owner --add github:Azure:azure-sdk-publish-rust -- {}", name);
+    //             }
+    //         }
+    //     }
+    //     None => {
+    //         for (i, name) in names.iter().enumerate() {
+    //             println!("{} {}", i + 1, name);
+    //         }
+    //     }
+    // }
+
+    let yml = PublishServicesYml {
+        packages: &names.iter().map(String::as_str).collect(),
+    };
+    yml.create("../../.github/workflows/publish-services.yml")?;
+
+    let yml = CheckAllServicesYml {
+        packages: &names.iter().map(String::as_str).collect(),
+    };
+    yml.create("../../.github/workflows/check-all-services.yml")?;
 
     Ok(())
 }
