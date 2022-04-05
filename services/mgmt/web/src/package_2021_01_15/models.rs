@@ -2029,7 +2029,7 @@ pub mod certificate {
         #[doc = "CNAME of the certificate to be issued via free certificate"]
         #[serde(rename = "canonicalName", default, skip_serializing_if = "Option::is_none")]
         pub canonical_name: Option<String>,
-        #[doc = "Method of domain validation for free cert"]
+        #[doc = "Method of domain validation for free cert. Possible values include: 'CNameValidationValue', 'HttpTokenValidationValue'"]
         #[serde(rename = "domainValidationMethod", default, skip_serializing_if = "Option::is_none")]
         pub domain_validation_method: Option<String>,
     }

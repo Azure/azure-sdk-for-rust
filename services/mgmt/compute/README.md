@@ -1,12 +1,14 @@
 # azure_mgmt_compute crate
 
-The is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate that is generated from the Azure REST API specifications listed in:
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/compute/resource-manager/readme.md
 
-The default `Tag` is `package-2021-12-01`.
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The following `Tag`s are available:
+The default tag is `package-2021-12-01`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-12-01` has 276 operations from 5 API versions: `2021-03-01`, `2021-07-01`, `2021-10-01`, `2021-11-01`, `2021-12-01`. Use crate feature `package-2021-12-01` to enable. The operations will be in the `package_2021_12_01` module.
 - `package-2021-12-01-only` has 38 operations from 1 API versions: `2021-12-01`. Use crate feature `package-2021-12-01-only` to enable. The operations will be in the `package_2021_12_01_only` module.
@@ -18,8 +20,8 @@ The following `Tag`s are available:
 - `package-2021-10-01-only` has 27 operations from 1 API versions: `2021-10-01`. Use crate feature `package-2021-10-01-only` to enable. The operations will be in the `package_2021_10_01_only` module.
 - `package-2021-07-01` has 275 operations from 3 API versions: `2021-03-01`, `2021-04-01`, `2021-07-01`. Use crate feature `package-2021-07-01` to enable. The operations will be in the `package_2021_07_01` module.
 - `package-2021-07-01-only` has 207 operations from 1 API versions: `2021-07-01`. Use crate feature `package-2021-07-01-only` to enable. The operations will be in the `package_2021_07_01_only` module.
-- `package-2021-06-01-preview` has 265 operations from 5 API versions: `2019-04-01`, `2020-09-30`, `2020-12-01`, `2021-03-01`, `2021-06-01-preview`. Use crate feature `package-2021-06-01-preview` to enable. The operations will be in the `package_2021_06_01_preview` module.
-- `package-2021-06-01-preview-only` has 4 operations from 1 API versions: `2021-06-01-preview`. Use crate feature `package-2021-06-01-preview-only` to enable. The operations will be in the `package_2021_06_01_preview_only` module.
+- `package-2021-06-01-preview` has 282 operations from 6 API versions: `2021-03-01`, `2021-06-01-preview`, `2021-07-01`, `2021-10-01`, `2021-11-01`, `2021-12-01`. Use crate feature `package-2021-06-01-preview` to enable. The operations will be in the `package_2021_06_01_preview` module.
+- `package-2021-06-01-preview-only` has 6 operations from 1 API versions: `2021-06-01-preview`. Use crate feature `package-2021-06-01-preview-only` to enable. The operations will be in the `package_2021_06_01_preview_only` module.
 - `package-2021-04-01` has 272 operations from 4 API versions: `2019-04-01`, `2020-09-30`, `2021-03-01`, `2021-04-01`. Use crate feature `package-2021-04-01` to enable. The operations will be in the `package_2021_04_01` module.
 - `package-2021-04-01-only` has 208 operations from 1 API versions: `2021-04-01`. Use crate feature `package-2021-04-01-only` to enable. The operations will be in the `package_2021_04_01_only` module.
 - `package-2021-03-01` has 261 operations from 4 API versions: `2019-04-01`, `2020-09-30`, `2020-12-01`, `2021-03-01`. Use crate feature `package-2021-03-01` to enable. The operations will be in the `package_2021_03_01` module.

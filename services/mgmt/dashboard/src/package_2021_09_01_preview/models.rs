@@ -66,9 +66,16 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LastModifiedByType {
+    User,
+    Application,
+    ManagedIdentity,
+    Key,
+}
 #[doc = "The grafana resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct GrafanaResource {
+pub struct ManagedGrafana {
     #[doc = "ARM id of the grafana resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -82,7 +89,7 @@ pub struct GrafanaResource {
     pub sku: Option<ResourceSku>,
     #[doc = "Properties specific to the grafana resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GrafanaResourceProperties>,
+    pub properties: Option<ManagedGrafanaProperties>,
     #[doc = "The managed identity of a resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedIdentity>,
@@ -95,26 +102,26 @@ pub struct GrafanaResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
-impl GrafanaResource {
+impl ManagedGrafana {
     pub fn new() -> Self {
         Self::default()
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct GrafanaResourceListResponse {
+pub struct ManagedGrafanaListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GrafanaResource>,
+    pub value: Vec<ManagedGrafana>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl GrafanaResourceListResponse {
+impl ManagedGrafanaListResponse {
     pub fn new() -> Self {
         Self::default()
     }
 }
 #[doc = "Properties specific to the grafana resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct GrafanaResourceProperties {
+pub struct ManagedGrafanaProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Grafana software version."]
@@ -126,14 +133,14 @@ pub struct GrafanaResourceProperties {
     #[serde(rename = "zoneRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundancy: Option<ZoneRedundancy>,
 }
-impl GrafanaResourceProperties {
+impl ManagedGrafanaProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
 #[doc = "The parameters for a PATCH request to a grafana resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct GrafanaResourceUpdateParameters {
+pub struct ManagedGrafanaUpdateParameters {
     #[doc = "The managed identity of a resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedIdentity>,
@@ -141,17 +148,10 @@ pub struct GrafanaResourceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-impl GrafanaResourceUpdateParameters {
+impl ManagedGrafanaUpdateParameters {
     pub fn new() -> Self {
         Self::default()
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LastModifiedByType {
-    User,
-    Application,
-    ManagedIdentity,
-    Key,
 }
 #[doc = "The managed identity of a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

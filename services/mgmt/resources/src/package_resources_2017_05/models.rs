@@ -310,6 +310,9 @@ pub struct DeploymentPropertiesExtended {
     pub mode: Option<deployment_properties_extended::Mode>,
     #[serde(rename = "debugSetting", default, skip_serializing_if = "Option::is_none")]
     pub debug_setting: Option<DebugSetting>,
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
 }
 impl DeploymentPropertiesExtended {
     pub fn new() -> Self {

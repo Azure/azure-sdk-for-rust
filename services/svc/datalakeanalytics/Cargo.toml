@@ -24,13 +24,13 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["no-default-version", "package-catalog-2015-10-preview", "package-job-2017-09-preview", "package-job-2016-11", "package-job-2016-03-preview"]
+features = ["no-default-tag", "package-catalog-2015-10-preview", "package-job-2017-09-preview", "package-job-2016-11", "package-job-2016-03-preview"]
 
 [features]
 default = ["package-catalog-2016-11", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
 "package-catalog-2016-11" = []
 "package-catalog-2015-10-preview" = []
 "package-job-2017-09-preview" = []

@@ -674,6 +674,62 @@ impl DataWarehouseUserActivitiesProperties {
         Self::default()
     }
 }
+#[doc = "Dedicated Sql Minimal Tls Settings Info"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DedicatedSqLminimalTlsSettings {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Properties of a dedicated sql minimal tls settings."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DedicatedSqLminimalTlsSettingsProperties>,
+}
+impl DedicatedSqLminimalTlsSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of the server's dedicated sql minimal tls settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DedicatedSqLminimalTlsSettingsListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DedicatedSqLminimalTlsSettings>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl DedicatedSqLminimalTlsSettingsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Dedicated SQL minimal tls settings patch info"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DedicatedSqLminimalTlsSettingsPatchInfo {
+    #[doc = "minimal tls version"]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<String>,
+}
+impl DedicatedSqLminimalTlsSettingsPatchInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a dedicated sql minimal tls settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DedicatedSqLminimalTlsSettingsProperties {
+    #[doc = "The minimal tls version of the sql server."]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<String>,
+}
+impl DedicatedSqLminimalTlsSettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Dynamic Executor Allocation Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DynamicExecutorAllocation {

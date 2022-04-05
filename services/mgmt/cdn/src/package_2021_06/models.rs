@@ -111,6 +111,8 @@ pub mod afd_domain_properties {
         TimedOut,
         PendingRevalidation,
         Approved,
+        RefreshingValidationToken,
+        InternalError,
     }
 }
 #[doc = "The domain JSON object required for domain creation or update."]
@@ -329,13 +331,6 @@ pub struct AfdOriginGroupUpdatePropertiesParameters {
         skip_serializing_if = "Option::is_none"
     )]
     pub traffic_restoration_time_to_healed_or_new_endpoints_in_minutes: Option<i32>,
-    #[doc = "The JSON object that contains the properties to determine origin health using real requests/responses."]
-    #[serde(
-        rename = "responseBasedAfdOriginErrorDetectionSettings",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub response_based_afd_origin_error_detection_settings: Option<ResponseBasedOriginErrorDetectionParameters>,
     #[doc = "Whether to allow session affinity on this host. Valid options are 'Enabled' or 'Disabled'"]
     #[serde(rename = "sessionAffinityState", default, skip_serializing_if = "Option::is_none")]
     pub session_affinity_state: Option<afd_origin_group_update_properties_parameters::SessionAffinityState>,
@@ -2982,39 +2977,6 @@ impl ManagedRuleSetList {
         Self::default()
     }
 }
-#[doc = "Managed service identity."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ManagedServiceIdentity {
-    #[doc = "Type of managed service identity."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<managed_service_identity::Type>,
-    #[doc = "Tenant of managed service identity."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "Principal Id of managed service identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The list of user assigned identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}"]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-impl ManagedServiceIdentity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod managed_service_identity {
-    use super::*;
-    #[doc = "Type of managed service identity."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
-}
 #[doc = "Define match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MatchCondition {
@@ -3640,9 +3602,6 @@ pub struct ProfileProperties {
     #[doc = "Resource status of the profile."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
-    #[doc = "Managed service identity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ManagedServiceIdentity>,
     #[doc = "Provisioning status of the profile."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -3675,9 +3634,6 @@ pub struct ProfilePropertiesUpdateParameters {
     #[doc = "Send and receive timeout on forwarding request to the origin. When timeout is reached, the request fails and returns."]
     #[serde(rename = "originResponseTimeoutSeconds", default, skip_serializing_if = "Option::is_none")]
     pub origin_response_timeout_seconds: Option<i32>,
-    #[doc = "Managed service identity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ManagedServiceIdentity>,
 }
 impl ProfilePropertiesUpdateParameters {
     pub fn new() -> Self {
@@ -5767,19 +5723,4 @@ pub enum Transform {
     UrlDecode,
     UrlEncode,
     RemoveNulls,
-}
-#[doc = "User Assigned identity."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UserAssignedIdentity {
-    #[doc = "Principal Id of user assigned identity"]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "Client Id of user assigned identity"]
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-}
-impl UserAssignedIdentity {
-    pub fn new() -> Self {
-        Self::default()
-    }
 }

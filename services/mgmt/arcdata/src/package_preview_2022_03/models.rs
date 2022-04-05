@@ -145,21 +145,18 @@ impl ActiveDirectoryDomainController {
     }
 }
 #[doc = "Details about the Active Directory domain controllers associated with this AD connector instance"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveDirectoryDomainControllers {
     #[doc = "Information about a domain controller in the AD domain."]
-    #[serde(rename = "primaryDomainController")]
-    pub primary_domain_controller: ActiveDirectoryDomainController,
+    #[serde(rename = "primaryDomainController", default, skip_serializing_if = "Option::is_none")]
+    pub primary_domain_controller: Option<ActiveDirectoryDomainController>,
     #[doc = "Information about the secondary domain controllers in the AD domain."]
     #[serde(rename = "secondaryDomainControllers", default, skip_serializing_if = "Option::is_none")]
     pub secondary_domain_controllers: Option<ActiveDirectorySecondaryDomainControllers>,
 }
 impl ActiveDirectoryDomainControllers {
-    pub fn new(primary_domain_controller: ActiveDirectoryDomainController) -> Self {
-        Self {
-            primary_domain_controller,
-            secondary_domain_controllers: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 pub type ActiveDirectorySecondaryDomainControllers = Vec<ActiveDirectoryDomainController>;
@@ -305,6 +302,9 @@ pub struct DataControllerUpdate {
     #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The data controller properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataControllerProperties>,
 }
 impl DataControllerUpdate {
     pub fn new() -> Self {

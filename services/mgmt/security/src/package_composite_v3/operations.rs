@@ -1931,7 +1931,7 @@ pub mod pricings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                    url.query_pairs_mut().append_pair("api-version", "2022-03-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2006,7 +2006,7 @@ pub mod pricings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                    url.query_pairs_mut().append_pair("api-version", "2022-03-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2082,7 +2082,7 @@ pub mod pricings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                    url.query_pairs_mut().append_pair("api-version", "2022-03-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.pricing).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -14031,7 +14031,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14106,7 +14106,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14181,7 +14181,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14258,7 +14258,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14335,7 +14335,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14414,7 +14414,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14491,7 +14491,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -14564,7 +14564,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -14637,7 +14637,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -14712,7 +14712,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -14787,7 +14787,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -14862,7 +14862,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -14934,7 +14934,7 @@ pub mod alerts {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-01-01");
+                    url.query_pairs_mut().append_pair("api-version", "2021-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.alert_simulator_request_body).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -14942,7 +14942,7 @@ pub mod alerts {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
+                        http::StatusCode::NO_CONTENT => Ok(()),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =

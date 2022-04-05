@@ -83,6 +83,9 @@ impl Client {
     pub fn disk_inspection(&self) -> disk_inspection::Client {
         disk_inspection::Client(self.clone())
     }
+    pub fn disk_inspection_storage_configuration(&self) -> disk_inspection_storage_configuration::Client {
+        disk_inspection_storage_configuration::Client(self.clone())
+    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -96,6 +99,10 @@ pub enum Error {
     Diagnostics_List(#[from] diagnostics::list::Error),
     #[error(transparent)]
     DiskInspection_Get(#[from] disk_inspection::get::Error),
+    #[error(transparent)]
+    DiskInspectionStorageConfiguration_Register(#[from] disk_inspection_storage_configuration::register::Error),
+    #[error(transparent)]
+    DiskInspectionStorageConfiguration_Validate(#[from] disk_inspection_storage_configuration::validate::Error),
 }
 pub mod diagnostic_operations {
     use super::models;
@@ -439,6 +446,172 @@ pub mod diagnostics {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ComputeDiagnosticsList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod disk_inspection_storage_configuration {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn register(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            storage_configuration_input: impl Into<models::StorageConfigurationInput>,
+        ) -> register::Builder {
+            register::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                storage_configuration_input: storage_configuration_input.into(),
+            }
+        }
+        pub fn validate(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> validate::Builder {
+            validate::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+            }
+        }
+    }
+    pub mod register {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) storage_configuration_input: models::StorageConfigurationInput,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/diagnostics/diskInspection/registerStorageConfiguration" , self . client . endpoint () , & self . subscription_id , & self . location) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.storage_configuration_input).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod validate {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageConfigurationResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/diagnostics/diskInspection/validateStorageConfiguration" , self . client . endpoint () , & self . subscription_id , & self . location) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageConfigurationResponse =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }

@@ -86,6 +86,16 @@ impl PrivateLinkAssociationGetResult {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkAssociationObject {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkAssociationProperties>,
+}
+impl PrivateLinkAssociationObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkAssociationProperties {
     #[doc = "The rmpl Resource ID."]
     #[serde(rename = "privateLink", default, skip_serializing_if = "Option::is_none")]

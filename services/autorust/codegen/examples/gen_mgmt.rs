@@ -37,6 +37,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
     ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
+    ("databoxedge", "package-2022-03-01"), // duplicate SystemData https://github.com/Azure/azure-rest-api-specs/pull/18526
     ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
     // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
@@ -185,6 +186,8 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferAllDetails", "include"),
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-05-01/databox.json", "transferFilterDetails", "include"),
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-05-01/databox.json", "transferAllDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-12-01/databox.json", "transferFilterDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-12-01/databox.json", "transferAllDetails", "include"),
     // dataprotection
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/dataprotection.json", "InnerError", "embeddedInnerError"),
@@ -193,6 +196,7 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-10-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-12-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2022-02-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/stable/2021-11-30/dedicatedhsm.json", "Error", "innererror"),

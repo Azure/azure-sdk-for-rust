@@ -947,6 +947,8 @@ pub struct PageList {
     pub page_range: Vec<PageRange>,
     #[serde(rename = "ClearRange", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_range: Vec<ClearRange>,
+    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
 }
 impl PageList {
     pub fn new() -> Self {

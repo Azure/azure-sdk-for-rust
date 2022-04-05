@@ -61,6 +61,7 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.0/keyvault.json" , "Error" , "innererror"),
     ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.1/common.json" , "Error" , "innererror"),
     ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.2/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.3/common.json" , "Error" , "innererror"),
     // webpubsub
     (
         "../../../azure-rest-api-specs/specification/webpubsub/data-plane/WebPubSub/stable/2021-10-01/webpubsub.json",

@@ -24,19 +24,20 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["no-default-version", "package-artifacts-composite-v2", "package-artifacts-composite-v1", "package-artifacts-2021-06-01-preview", "package-vnet-2021-06-01-preview"]
+features = ["no-default-tag", "package-artifacts-composite-v2", "package-artifacts-composite-v1", "package-artifacts-2021-06-01-preview", "package-vnet-2021-06-01-preview"]
 
 [features]
 default = ["package-artifacts-composite-v3", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
 "package-artifacts-composite-v3" = []
 "package-artifacts-composite-v2" = []
 "package-artifacts-composite-v1" = []
 "package-artifacts-2021-06-01-preview" = []
 "package-vnet-2021-06-01-preview" = []
 "package-kql-script-2021-06-preview" = []
+"package-link-connection-2021-12-01-preview" = []
 "package-artifacts-2020-12-01" = []
 "package-monitoring-2020-12-01" = []
 "package-access-control-2020-12-01" = []

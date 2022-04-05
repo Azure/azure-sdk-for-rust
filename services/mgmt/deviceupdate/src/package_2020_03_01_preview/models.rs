@@ -604,10 +604,28 @@ pub struct PrivateEndpointConnectionProxy {
     pub proxy_resource: ProxyResource,
     #[serde(flatten)]
     pub private_endpoint_connection_proxy_properties: PrivateEndpointConnectionProxyProperties,
+    #[doc = "Private endpoint connection proxy object property bag."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<private_endpoint_connection_proxy::Properties>,
 }
 impl PrivateEndpointConnectionProxy {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod private_endpoint_connection_proxy {
+    use super::*;
+    #[doc = "Private endpoint connection proxy object property bag."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "The current provisioning state."]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        pub provisioning_state: Option<PrivateEndpointConnectionProxyProvisioningState>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[doc = "The available private endpoint connection proxies for an Account (not to be used by anyone, here because of ARM requirements)"]
@@ -634,9 +652,6 @@ pub struct PrivateEndpointConnectionProxyProperties {
     #[doc = "Remote private endpoint details."]
     #[serde(rename = "remotePrivateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub remote_private_endpoint: Option<RemotePrivateEndpoint>,
-    #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<PrivateEndpointConnectionProxyProvisioningState>,
     #[doc = "Operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -660,6 +675,30 @@ pub enum PrivateEndpointServiceConnectionStatus {
     Pending,
     Approved,
     Rejected,
+}
+#[doc = "Private endpoint update details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateEndpointUpdate {
+    #[doc = "Remote endpoint resource ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "ARM location of the remote private endpoint."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Original subscription ID needed by Microsoft.Network."]
+    #[serde(rename = "immutableSubscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub immutable_subscription_id: Option<String>,
+    #[doc = "Original resource ID needed by Microsoft.Network."]
+    #[serde(rename = "immutableResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub immutable_resource_id: Option<String>,
+    #[doc = "Virtual network traffic tag."]
+    #[serde(rename = "vnetTrafficTag", default, skip_serializing_if = "Option::is_none")]
+    pub vnet_traffic_tag: Option<String>,
+}
+impl PrivateEndpointUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[doc = "The available private link resources for an Account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -772,6 +811,15 @@ pub struct RemotePrivateEndpoint {
     #[doc = "Remote endpoint resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "ARM location of the remote private endpoint."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Original subscription ID needed by Microsoft.Network."]
+    #[serde(rename = "immutableSubscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub immutable_subscription_id: Option<String>,
+    #[doc = "Original resource ID needed by Microsoft.Network."]
+    #[serde(rename = "immutableResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub immutable_resource_id: Option<String>,
     #[doc = "Virtual network traffic tag."]
     #[serde(rename = "vnetTrafficTag", default, skip_serializing_if = "Option::is_none")]
     pub vnet_traffic_tag: Option<String>,

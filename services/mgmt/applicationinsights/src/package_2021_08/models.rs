@@ -249,7 +249,7 @@ pub struct WorkbookResource {
     #[doc = "Identity used for BYOS"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<serde_json::Value>,
-    #[doc = "The kind of workbook. Choices are user and shared."]
+    #[doc = "The kind of workbook. Only valid value is shared."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<workbook_resource::Kind>,
     #[doc = "Resource etag"]
@@ -268,7 +268,7 @@ impl WorkbookResource {
 }
 pub mod workbook_resource {
     use super::*;
-    #[doc = "The kind of workbook. Choices are user and shared."]
+    #[doc = "The kind of workbook. Only valid value is shared."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "user")]
@@ -280,7 +280,7 @@ pub mod workbook_resource {
 #[doc = "The parameters that can be provided when updating workbook properties properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookUpdateParameters {
-    #[doc = "The kind of workbook. Choices are user and shared."]
+    #[doc = "The kind of workbook. Only valid value is shared."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<workbook_update_parameters::Kind>,
     #[doc = "Resource tags."]
@@ -297,7 +297,7 @@ impl WorkbookUpdateParameters {
 }
 pub mod workbook_update_parameters {
     use super::*;
-    #[doc = "The kind of workbook. Choices are user and shared."]
+    #[doc = "The kind of workbook. Only valid value is shared."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "user")]

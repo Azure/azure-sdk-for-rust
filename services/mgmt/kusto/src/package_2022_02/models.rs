@@ -1163,7 +1163,7 @@ pub struct EventGridConnectionProperties {
     #[doc = "The name of blob storage event type to process."]
     #[serde(rename = "blobStorageEventType", default, skip_serializing_if = "Option::is_none")]
     pub blob_storage_event_type: Option<BlobStorageEventType>,
-    #[doc = "The resource ID of a managed identity (system or user assigned) to be used to authenticate with event hub and storage account."]
+    #[doc = "Empty for non-managed identity based data connection. For system assigned identity, provide cluster resource Id.  For user assigned identity (UAI) provide the UAI resource Id."]
     #[serde(rename = "managedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
     pub managed_identity_resource_id: Option<String>,
     #[doc = "The object ID of managedIdentityResourceId"]

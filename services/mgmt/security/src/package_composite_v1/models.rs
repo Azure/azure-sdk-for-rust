@@ -2,6 +2,23 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The aws connector environment data"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsEnvironmentData {
+    #[serde(flatten)]
+    pub environment_data: EnvironmentData,
+    #[doc = "The awsOrganization data "]
+    #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
+    pub organizational_data: Option<AwsOrganizationalData>,
+}
+impl AwsEnvironmentData {
+    pub fn new(environment_data: EnvironmentData) -> Self {
+        Self {
+            environment_data,
+            organizational_data: None,
+        }
+    }
+}
 #[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadConnectivityState {
@@ -1069,6 +1086,67 @@ impl AwsCredsAuthenticationDetailsProperties {
         }
     }
 }
+#[doc = "The awsOrganization data "]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsOrganizationalData {
+    #[doc = "The multi cloud account's membership type in the organization"]
+    #[serde(rename = "organizationMembershipType")]
+    pub organization_membership_type: aws_organizational_data::OrganizationMembershipType,
+}
+impl AwsOrganizationalData {
+    pub fn new(organization_membership_type: aws_organizational_data::OrganizationMembershipType) -> Self {
+        Self {
+            organization_membership_type,
+        }
+    }
+}
+pub mod aws_organizational_data {
+    use super::*;
+    #[doc = "The multi cloud account's membership type in the organization"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OrganizationMembershipType {
+        Member,
+        Organization,
+    }
+}
+#[doc = "The awsOrganization data for the master account"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsOrganizationalDataMaster {
+    #[serde(flatten)]
+    pub aws_organizational_data: AwsOrganizationalData,
+    #[doc = "If the multi cloud account is of membership type organization, this will be the name of the onboarding stackset"]
+    #[serde(rename = "stacksetName", default, skip_serializing_if = "Option::is_none")]
+    pub stackset_name: Option<String>,
+    #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
+    #[serde(rename = "excludedAccountIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_account_ids: Vec<String>,
+}
+impl AwsOrganizationalDataMaster {
+    pub fn new(aws_organizational_data: AwsOrganizationalData) -> Self {
+        Self {
+            aws_organizational_data,
+            stackset_name: None,
+            excluded_account_ids: Vec::new(),
+        }
+    }
+}
+#[doc = "The awsOrganization data for the member account"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsOrganizationalDataMember {
+    #[serde(flatten)]
+    pub aws_organizational_data: AwsOrganizationalData,
+    #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the account's parent"]
+    #[serde(rename = "parentHierarchyId", default, skip_serializing_if = "Option::is_none")]
+    pub parent_hierarchy_id: Option<String>,
+}
+impl AwsOrganizationalDataMember {
+    pub fn new(aws_organizational_data: AwsOrganizationalData) -> Self {
+        Self {
+            aws_organizational_data,
+            parent_hierarchy_id: None,
+        }
+    }
+}
 #[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceLink {
@@ -1778,6 +1856,28 @@ pub enum EnforcementSupport {
     NotSupported,
     Unknown,
 }
+#[doc = "The security connector environment data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnvironmentData {
+    #[doc = "The type of the environment data."]
+    #[serde(rename = "environmentType")]
+    pub environment_type: environment_data::EnvironmentType,
+}
+impl EnvironmentData {
+    pub fn new(environment_type: environment_data::EnvironmentType) -> Self {
+        Self { environment_type }
+    }
+}
+pub mod environment_data {
+    use super::*;
+    #[doc = "The type of the environment data."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EnvironmentType {
+        AwsAccount,
+        GcpProject,
+        GithubScope,
+    }
+}
 #[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
@@ -1965,6 +2065,121 @@ impl GcpCredentialsDetailsProperties {
             auth_provider_x509_cert_url,
             client_x509_cert_url,
         }
+    }
+}
+#[doc = "The gcpOrganization data"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpOrganizationalData {
+    #[doc = "The multi cloud account's membership type in the organization"]
+    #[serde(rename = "organizationMembershipType")]
+    pub organization_membership_type: gcp_organizational_data::OrganizationMembershipType,
+}
+impl GcpOrganizationalData {
+    pub fn new(organization_membership_type: gcp_organizational_data::OrganizationMembershipType) -> Self {
+        Self {
+            organization_membership_type,
+        }
+    }
+}
+pub mod gcp_organizational_data {
+    use super::*;
+    #[doc = "The multi cloud account's membership type in the organization"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OrganizationMembershipType {
+        Member,
+        Organization,
+    }
+}
+#[doc = "The gcpOrganization data for the member account"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpOrganizationalDataMember {
+    #[serde(flatten)]
+    pub gcp_organizational_data: GcpOrganizationalData,
+    #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the project's parent"]
+    #[serde(rename = "parentHierarchyId", default, skip_serializing_if = "Option::is_none")]
+    pub parent_hierarchy_id: Option<String>,
+}
+impl GcpOrganizationalDataMember {
+    pub fn new(gcp_organizational_data: GcpOrganizationalData) -> Self {
+        Self {
+            gcp_organizational_data,
+            parent_hierarchy_id: None,
+        }
+    }
+}
+#[doc = "The gcpOrganization data for the parent account"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpOrganizationalDataOrganization {
+    #[serde(flatten)]
+    pub gcp_organizational_data: GcpOrganizationalData,
+    #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
+    #[serde(rename = "excludedProjectNumbers", default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_project_numbers: Vec<String>,
+    #[doc = "The service account email address which represents the organization level permissions container."]
+    #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+    pub service_account_email_address: Option<String>,
+    #[doc = "The GCP workload identity provider id which represents the permissions required to auto provision security connectors"]
+    #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+    pub workload_identity_provider_id: Option<String>,
+}
+impl GcpOrganizationalDataOrganization {
+    pub fn new(gcp_organizational_data: GcpOrganizationalData) -> Self {
+        Self {
+            gcp_organizational_data,
+            excluded_project_numbers: Vec::new(),
+            service_account_email_address: None,
+            workload_identity_provider_id: None,
+        }
+    }
+}
+#[doc = "The details about the project represented by the security connector"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GcpProjectDetails {
+    #[doc = "The unique GCP Project number"]
+    #[serde(rename = "projectNumber", default, skip_serializing_if = "Option::is_none")]
+    pub project_number: Option<String>,
+    #[doc = "The GCP Project id"]
+    #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
+    #[doc = "The GCP workload identity federation pool id"]
+    #[serde(rename = "workloadIdentityPoolId", default, skip_serializing_if = "Option::is_none")]
+    pub workload_identity_pool_id: Option<String>,
+}
+impl GcpProjectDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The GCP project connector environment data"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpProjectEnvironmentData {
+    #[serde(flatten)]
+    pub environment_data: EnvironmentData,
+    #[doc = "The gcpOrganization data"]
+    #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
+    pub organizational_data: Option<GcpOrganizationalData>,
+    #[doc = "The details about the project represented by the security connector"]
+    #[serde(rename = "projectDetails", default, skip_serializing_if = "Option::is_none")]
+    pub project_details: Option<GcpProjectDetails>,
+}
+impl GcpProjectEnvironmentData {
+    pub fn new(environment_data: EnvironmentData) -> Self {
+        Self {
+            environment_data,
+            organizational_data: None,
+            project_details: None,
+        }
+    }
+}
+#[doc = "The github scope connector's environment data"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GithubScopeEnvironmentData {
+    #[serde(flatten)]
+    pub environment_data: EnvironmentData,
+}
+impl GithubScopeEnvironmentData {
+    pub fn new(environment_data: EnvironmentData) -> Self {
+        Self { environment_data }
     }
 }
 pub type GroupResourceId = String;
@@ -3649,18 +3864,18 @@ impl SecurityConnector {
 #[doc = "A set of properties that defines the security connector configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnectorProperties {
-    #[doc = "The multi cloud resource identifier (account id in case of AWS connector)."]
+    #[doc = "The multi cloud resource identifier (account id in case of AWS connector, project number in case of GCP connector)."]
     #[serde(rename = "hierarchyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_identifier: Option<String>,
     #[doc = "The multi cloud resource's cloud name."]
-    #[serde(rename = "cloudName", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_name: Option<security_connector_properties::CloudName>,
+    #[serde(rename = "environmentName", default, skip_serializing_if = "Option::is_none")]
+    pub environment_name: Option<security_connector_properties::EnvironmentName>,
     #[doc = "A collection of offerings for the security connector."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub offerings: Vec<CloudOffering>,
-    #[doc = "The multi cloud account's organizational data"]
-    #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
-    pub organizational_data: Option<security_connector_properties::OrganizationalData>,
+    #[doc = "The security connector environment data."]
+    #[serde(rename = "environmentData", default, skip_serializing_if = "Option::is_none")]
+    pub environment_data: Option<EnvironmentData>,
 }
 impl SecurityConnectorProperties {
     pub fn new() -> Self {
@@ -3671,42 +3886,13 @@ pub mod security_connector_properties {
     use super::*;
     #[doc = "The multi cloud resource's cloud name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CloudName {
+    pub enum EnvironmentName {
         Azure,
         #[serde(rename = "AWS")]
         Aws,
         #[serde(rename = "GCP")]
         Gcp,
-    }
-    #[doc = "The multi cloud account's organizational data"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct OrganizationalData {
-        #[doc = "The multi cloud account's membership type in the organization"]
-        #[serde(rename = "organizationMembershipType", default, skip_serializing_if = "Option::is_none")]
-        pub organization_membership_type: Option<organizational_data::OrganizationMembershipType>,
-        #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the account's parent"]
-        #[serde(rename = "parentHierarchyId", default, skip_serializing_if = "Option::is_none")]
-        pub parent_hierarchy_id: Option<String>,
-        #[doc = "If the multi cloud account is of membership type organization, this will be the name of the onboarding stackset"]
-        #[serde(rename = "stacksetName", default, skip_serializing_if = "Option::is_none")]
-        pub stackset_name: Option<String>,
-        #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
-        #[serde(rename = "excludedAccountIds", default, skip_serializing_if = "Vec::is_empty")]
-        pub excluded_account_ids: Vec<String>,
-    }
-    impl OrganizationalData {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    pub mod organizational_data {
-        use super::*;
-        #[doc = "The multi cloud account's membership type in the organization"]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum OrganizationMembershipType {
-            Member,
-            Organization,
-        }
+        Github,
     }
 }
 #[doc = "List of security connectors response."]
@@ -4571,9 +4757,13 @@ pub mod cloud_offering {
         DefenderForContainersAws,
         DefenderForServersAws,
         InformationProtectionAws,
+        CspmMonitorGcp,
+        CspmMonitorGithub,
+        DefenderForServersGcp,
+        DefenderForContainersGcp,
     }
 }
-#[doc = "The CSPM monitoring for AWS offering configurations"]
+#[doc = "The CSPM monitoring for AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CspmMonitorAwsOffering {
     #[serde(flatten)]
@@ -4603,6 +4793,52 @@ pub mod cspm_monitor_aws_offering {
         pub fn new() -> Self {
             Self::default()
         }
+    }
+}
+#[doc = "The CSPM monitoring for GCP offering"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CspmMonitorGcpOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+    #[doc = "The native cloud connection configuration"]
+    #[serde(rename = "nativeCloudConnection", default, skip_serializing_if = "Option::is_none")]
+    pub native_cloud_connection: Option<cspm_monitor_gcp_offering::NativeCloudConnection>,
+}
+impl CspmMonitorGcpOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            native_cloud_connection: None,
+        }
+    }
+}
+pub mod cspm_monitor_gcp_offering {
+    use super::*;
+    #[doc = "The native cloud connection configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct NativeCloudConnection {
+        #[doc = "The GCP workload identity provider id for the offering"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this offering"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl NativeCloudConnection {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "The CSPM monitoring for github offering"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CspmMonitorGithubOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+}
+impl CspmMonitorGithubOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self { cloud_offering }
     }
 }
 #[doc = "Custom Assessment Automation"]
@@ -4744,7 +4980,7 @@ impl CustomAssessmentAutomationsListResult {
         Self::default()
     }
 }
-#[doc = "The Defender for Containers AWS offering configurations"]
+#[doc = "The Defender for Containers AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefenderForContainersAwsOffering {
     #[serde(flatten)]
@@ -4824,7 +5060,73 @@ pub mod defender_for_containers_aws_offering {
         }
     }
 }
-#[doc = "The Defender for Servers AWS offering configurations"]
+#[doc = "The containers GCP offering"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DefenderForContainersGcpOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+    #[doc = "The native cloud connection configuration"]
+    #[serde(rename = "nativeCloudConnection", default, skip_serializing_if = "Option::is_none")]
+    pub native_cloud_connection: Option<defender_for_containers_gcp_offering::NativeCloudConnection>,
+    #[doc = "The native cloud connection configuration"]
+    #[serde(rename = "dataPipelineNativeCloudConnection", default, skip_serializing_if = "Option::is_none")]
+    pub data_pipeline_native_cloud_connection: Option<defender_for_containers_gcp_offering::DataPipelineNativeCloudConnection>,
+    #[doc = "Is audit logs data collection enabled"]
+    #[serde(rename = "auditLogsAutoProvisioningFlag", default, skip_serializing_if = "Option::is_none")]
+    pub audit_logs_auto_provisioning_flag: Option<bool>,
+    #[doc = "Is Microsoft Defender for Cloud Kubernetes agent auto provisioning enabled"]
+    #[serde(rename = "defenderAgentAutoProvisioningFlag", default, skip_serializing_if = "Option::is_none")]
+    pub defender_agent_auto_provisioning_flag: Option<bool>,
+    #[doc = "Is Policy Kubernetes agent auto provisioning enabled"]
+    #[serde(rename = "policyAgentAutoProvisioningFlag", default, skip_serializing_if = "Option::is_none")]
+    pub policy_agent_auto_provisioning_flag: Option<bool>,
+}
+impl DefenderForContainersGcpOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            native_cloud_connection: None,
+            data_pipeline_native_cloud_connection: None,
+            audit_logs_auto_provisioning_flag: None,
+            defender_agent_auto_provisioning_flag: None,
+            policy_agent_auto_provisioning_flag: None,
+        }
+    }
+}
+pub mod defender_for_containers_gcp_offering {
+    use super::*;
+    #[doc = "The native cloud connection configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct NativeCloudConnection {
+        #[doc = "The service account email address in GCP for this offering"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+        #[doc = "The GCP workload identity provider id for this offering"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+    }
+    impl NativeCloudConnection {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The native cloud connection configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct DataPipelineNativeCloudConnection {
+        #[doc = "The data collection service account email address in GCP for this offering"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+        #[doc = "The data collection GCP workload identity provider id for this offering"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+    }
+    impl DataPipelineNativeCloudConnection {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "The Defender for Servers AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefenderForServersAwsOffering {
     #[serde(flatten)]
@@ -4835,6 +5137,15 @@ pub struct DefenderForServersAwsOffering {
     #[doc = "The ARC autoprovisioning configuration"]
     #[serde(rename = "arcAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
     pub arc_auto_provisioning: Option<defender_for_servers_aws_offering::ArcAutoProvisioning>,
+    #[doc = "The Vulnerability Assessment autoprovisioning configuration"]
+    #[serde(rename = "vaAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub va_auto_provisioning: Option<defender_for_servers_aws_offering::VaAutoProvisioning>,
+    #[doc = "The Microsoft Defender for Endpoint autoprovisioning configuration"]
+    #[serde(rename = "mdeAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub mde_auto_provisioning: Option<defender_for_servers_aws_offering::MdeAutoProvisioning>,
+    #[doc = "configuration for the servers offering subPlan"]
+    #[serde(rename = "subPlan", default, skip_serializing_if = "Option::is_none")]
+    pub sub_plan: Option<defender_for_servers_aws_offering::SubPlan>,
 }
 impl DefenderForServersAwsOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
@@ -4842,6 +5153,9 @@ impl DefenderForServersAwsOffering {
             cloud_offering,
             defender_for_servers: None,
             arc_auto_provisioning: None,
+            va_auto_provisioning: None,
+            mde_auto_provisioning: None,
+            sub_plan: None,
         }
     }
 }
@@ -4895,8 +5209,248 @@ pub mod defender_for_servers_aws_offering {
             }
         }
     }
+    #[doc = "The Vulnerability Assessment autoprovisioning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct VaAutoProvisioning {
+        #[doc = "Is Vulnerability Assessment auto provisioning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "configuration for Vulnerability Assessment autoprovisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<va_auto_provisioning::Configuration>,
+    }
+    impl VaAutoProvisioning {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod va_auto_provisioning {
+        use super::*;
+        #[doc = "configuration for Vulnerability Assessment autoprovisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "The Vulnerability Assessment solution to be provisioned. Can be either 'TVM' or 'Qualys'"]
+            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+            pub type_: Option<configuration::Type>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        pub mod configuration {
+            use super::*;
+            #[doc = "The Vulnerability Assessment solution to be provisioned. Can be either 'TVM' or 'Qualys'"]
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub enum Type {
+                Qualys,
+                #[serde(rename = "TVM")]
+                Tvm,
+            }
+        }
+    }
+    #[doc = "The Microsoft Defender for Endpoint autoprovisioning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdeAutoProvisioning {
+        #[doc = "Is Microsoft Defender for Endpoint auto provisioning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "configuration for Microsoft Defender for Endpoint autoprovisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<serde_json::Value>,
+    }
+    impl MdeAutoProvisioning {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "configuration for the servers offering subPlan"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct SubPlan {
+        #[doc = "The available sub plans"]
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+        pub type_: Option<sub_plan::Type>,
+    }
+    impl SubPlan {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod sub_plan {
+        use super::*;
+        #[doc = "The available sub plans"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum Type {
+            P1,
+            P2,
+        }
+    }
 }
-#[doc = "The information protection for AWS offering configurations"]
+#[doc = "The Defender for Servers GCP offering configurations"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DefenderForServersGcpOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+    #[doc = "The Defender for servers connection configuration"]
+    #[serde(rename = "defenderForServers", default, skip_serializing_if = "Option::is_none")]
+    pub defender_for_servers: Option<defender_for_servers_gcp_offering::DefenderForServers>,
+    #[doc = "The ARC autoprovisioning configuration"]
+    #[serde(rename = "arcAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub arc_auto_provisioning: Option<defender_for_servers_gcp_offering::ArcAutoProvisioning>,
+    #[doc = "The Vulnerability Assessment autoprovisioning configuration"]
+    #[serde(rename = "vaAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub va_auto_provisioning: Option<defender_for_servers_gcp_offering::VaAutoProvisioning>,
+    #[doc = "The Microsoft Defender for Endpoint autoprovisioning configuration"]
+    #[serde(rename = "mdeAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub mde_auto_provisioning: Option<defender_for_servers_gcp_offering::MdeAutoProvisioning>,
+    #[doc = "configuration for the servers offering subPlan"]
+    #[serde(rename = "subPlan", default, skip_serializing_if = "Option::is_none")]
+    pub sub_plan: Option<defender_for_servers_gcp_offering::SubPlan>,
+}
+impl DefenderForServersGcpOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            defender_for_servers: None,
+            arc_auto_provisioning: None,
+            va_auto_provisioning: None,
+            mde_auto_provisioning: None,
+            sub_plan: None,
+        }
+    }
+}
+pub mod defender_for_servers_gcp_offering {
+    use super::*;
+    #[doc = "The Defender for servers connection configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct DefenderForServers {
+        #[doc = "The workload identity provider id in GCP for this feature"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this feature"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl DefenderForServers {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The ARC autoprovisioning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct ArcAutoProvisioning {
+        #[doc = "Is arc auto provisioning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "Configuration for ARC autoprovisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<arc_auto_provisioning::Configuration>,
+    }
+    impl ArcAutoProvisioning {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod arc_auto_provisioning {
+        use super::*;
+        #[doc = "Configuration for ARC autoprovisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "The Azure service principal client id for agent onboarding"]
+            #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+            pub client_id: Option<String>,
+            #[doc = "The agent onboarding service account numeric id"]
+            #[serde(
+                rename = "agentOnboardingServiceAccountNumericId",
+                default,
+                skip_serializing_if = "Option::is_none"
+            )]
+            pub agent_onboarding_service_account_numeric_id: Option<String>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+    #[doc = "The Vulnerability Assessment autoprovisioning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct VaAutoProvisioning {
+        #[doc = "Is Vulnerability Assessment auto provisioning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "configuration for Vulnerability Assessment autoprovisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<va_auto_provisioning::Configuration>,
+    }
+    impl VaAutoProvisioning {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod va_auto_provisioning {
+        use super::*;
+        #[doc = "configuration for Vulnerability Assessment autoprovisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "The Vulnerability Assessment solution to be provisioned. Can be either 'TVM' or 'Qualys'"]
+            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+            pub type_: Option<configuration::Type>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        pub mod configuration {
+            use super::*;
+            #[doc = "The Vulnerability Assessment solution to be provisioned. Can be either 'TVM' or 'Qualys'"]
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub enum Type {
+                Qualys,
+                #[serde(rename = "TVM")]
+                Tvm,
+            }
+        }
+    }
+    #[doc = "The Microsoft Defender for Endpoint autoprovisioning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdeAutoProvisioning {
+        #[doc = "Is Microsoft Defender for Endpoint auto provisioning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "configuration for Microsoft Defender for Endpoint autoprovisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<serde_json::Value>,
+    }
+    impl MdeAutoProvisioning {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "configuration for the servers offering subPlan"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct SubPlan {
+        #[doc = "The available sub plans"]
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+        pub type_: Option<sub_plan::Type>,
+    }
+    impl SubPlan {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod sub_plan {
+        use super::*;
+        #[doc = "The available sub plans"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum Type {
+            P1,
+            P2,
+        }
+    }
+}
+#[doc = "The information protection for AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InformationProtectionAwsOffering {
     #[serde(flatten)]
