@@ -1,5 +1,6 @@
 use super::{authority_hosts, TokenCredential};
 use azure_core::auth::TokenResponse;
+use base64::{CharacterSet, Config};
 use chrono::Utc;
 use oauth2::AccessToken;
 use openssl::{
@@ -15,6 +16,9 @@ use std::{str, time::Duration};
 
 /// Refresh time to use in seconds
 const DEFAULT_REFRESH_TIME: i64 = 300;
+
+/// Base64 encoder for url safe encoding
+const BASE64_URL_SAFE: Config = Config::new(CharacterSet::UrlSafe, false);
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
@@ -112,10 +116,7 @@ impl ClientCertificateCredential {
     }
 
     fn as_jwt_part(part: &[u8]) -> String {
-        base64::encode(&part)
-            .replace('+', "-")
-            .replace('/', "_")
-            .replace('=', "")
+        base64::encode_config(part, BASE64_URL_SAFE)
     }
 }
 
