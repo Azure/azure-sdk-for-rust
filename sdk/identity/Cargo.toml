@@ -53,7 +53,8 @@ enable_reqwest_rustls = [
 ]
 development = []
 test_e2e = []
+client_certificate = ["openssl"]
 
 [[example]]
 name="client_certificate_credentials"
-required-features = ["openssl"]
+required-features = ["client_certificate"]

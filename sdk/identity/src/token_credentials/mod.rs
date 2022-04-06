@@ -7,7 +7,7 @@
 //! * Client secret
 mod auto_refreshing_credentials;
 mod cli_credentials;
-#[cfg(feature = "openssl")]
+#[cfg(feature = "client_certificate")]
 mod client_certificate_credentials;
 mod client_secret_credentials;
 mod default_credentials;
@@ -16,7 +16,7 @@ mod imds_managed_identity_credentials;
 
 pub use auto_refreshing_credentials::*;
 pub use cli_credentials::*;
-#[cfg(feature = "openssl")]
+#[cfg(feature = "client_certificate")]
 pub use client_certificate_credentials::*;
 pub use client_secret_credentials::*;
 pub use default_credentials::*;
