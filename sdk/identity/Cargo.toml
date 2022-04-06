@@ -26,15 +26,18 @@ log = "0.4"
 async-timer = "1.0.0-beta.7"
 thiserror = "1.0"
 async-trait = "0.1"
-openssl = "0.10"
+openssl = { version = "0.10",  optional=true }
 base64 = "0.13.0"
 uuid = { version = "0.8",  features = ["v4"] }
+
+
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 serde_test = "1"
 azure_security_keyvault = { path = "../security_keyvault", version = "0.1"}
+
 
 [features]
 default = ["development", "enable_reqwest"]
@@ -50,3 +53,7 @@ enable_reqwest_rustls = [
 ]
 development = []
 test_e2e = []
+
+[[example]]
+name="client_certificate_credentials"
+required-features = ["openssl"]
