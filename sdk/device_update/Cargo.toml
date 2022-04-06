@@ -1,0 +1,33 @@
+[package]
+name = "azure_device_update"
+version = "0.1.0"
+authors = ["roland.erk@conplement.de"]
+description = "Rust wrapper around Microsoft Azure REST APIs for Azure Device Update"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_device_update"
+keywords = ["azure", "microsoft", "sdk", "device", "update", "cloud"]
+categories = ["api-bindings"]
+readme = "README.md"
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+base64 = "0.13"
+thiserror = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+chrono = { version = "0.4", features = ["serde"] }
+const_format = "0.2.13"
+serde_json = "1.0"
+url = "2.2"
+serde = { version = "1.0", features = ["derive"] }
+getset = "0.1"
+azure_core = { path = "../core", version = "0.2" }
+tokio = { version = "1.0", features = ["full"] }
+log = "0.4"
+
+[dev-dependencies]
+oauth2 = "4.0.0"
+azure_identity = { path = "../identity", version = "0.1" }
+mockito = "0.30"
+async-trait = "0.1"
