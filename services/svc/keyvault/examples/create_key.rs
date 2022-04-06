@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let scopes = &["https://vault.azure.net"];
     let client = azure_svc_keyvault::ClientBuilder::new(credential).endpoint(endpoint).scopes(scopes).build();
 
-    // Configure the not-before (nbf) and expirateion (exp) dates
+    // Configure the not-before (nbf) and expiration (exp) dates
     let nbf = chrono::Utc::now();
     let exp = nbf + chrono::Duration::days(90);
     
