@@ -10,7 +10,7 @@ cargo run --package azure_svc_keyvault --example create_key <YourKeyVaultName> <
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_svc_keyvault::models::{Attributes, KeyAttributes, KeyCreateParameters, key_create_parameters::Kty};
+use azure_svc_keyvault::models::{key_create_parameters::Kty, Attributes, KeyAttributes, KeyCreateParameters};
 use std::sync::Arc;
 
 #[tokio::main]
@@ -20,12 +20,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key_name = std::env::args().nth(2).expect("please specify the name of the key to create");
     let endpoint = format!("https://{}.vault.azure.net", keyvault_name);
     let scopes = &["https://vault.azure.net"];
-    let client = azure_svc_keyvault::ClientBuilder::new(credential).endpoint(endpoint).scopes(scopes).build();
+    let client = azure_svc_keyvault::ClientBuilder::new(credential)
+        .endpoint(endpoint)
+        .scopes(scopes)
+        .build();
 
     // Configure the not-before (nbf) and expiration (exp) dates
     let nbf = chrono::Utc::now();
     let exp = nbf + chrono::Duration::days(90);
-    
+
     let mut key_attributes = KeyAttributes::new();
     key_attributes.attributes = Attributes::new();
     key_attributes.attributes.nbf = Some(nbf.timestamp());
@@ -38,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Creating key '{}' in key vault '{}'.", &key_name, keyvault_name);
     client.create_key(&key_name, key_create_params).into_future().await?;
-    println!("key '{}' created!", &key_name);
-    
+    println!("Key '{}' created!", &key_name);
+
     Ok(())
 }
