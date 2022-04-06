@@ -40,9 +40,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let cert_name = env::var("CERT_NAME").expect("Missing CERT_NAME environment variable.");
     let cert = get_certficate(&keyvault_id, &cert_name).await?;
 
-    let options = CertificateCredentialOptions::default();
+    let mut options = CertificateCredentialOptions::default();
     // set as true to to send certificate chain
-    // options.set_send_certificate_chain(true);
+    options.set_send_certificate_chain(true);
 
     // pass is empty by default when certificate is fetched from keyvault
     let creds = ClientCertificateCredential::new(

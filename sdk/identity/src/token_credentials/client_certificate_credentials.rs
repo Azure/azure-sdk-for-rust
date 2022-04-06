@@ -72,7 +72,7 @@ impl CertificateCredentialOptions {
 /// was generated for an App Registration.
 ///
 /// In order to use subject name validation send_cert_chain option must be set to true
-/// The certificate is expected to be in base64 encoded der
+/// The certificate is expected to be in base64 encoded PKCS12 format
 pub struct ClientCertificateCredential {
     tenant_id: String,
     client_id: String,
@@ -141,6 +141,16 @@ struct AadTokenResponse {
     access_token: String,
 }
 
+fn get_encoded_cert(cert: &X509) -> Result<String, ClientCertificateCredentialError> {
+    Ok(format!(
+        "\"{}\"",
+        base64::encode(
+            cert.to_pem()
+                .map_err(ClientCertificateCredentialError::OpensslError)?
+        )
+    ))
+}
+
 #[async_trait::async_trait]
 impl TokenCredential for ClientCertificateCredential {
     type Error = ClientCertificateCredentialError;
@@ -169,10 +179,24 @@ impl TokenCredential for ClientCertificateCredential {
         let x5t = base64::encode(&thumbprint);
 
         let header = match options.send_certificate_chain {
-            true => format!(
-                r#"{{"alg":"RS256","typ":"JWT", "x5t":"{}", "x5c":["{}"]}}"#,
-                x5t, self.client_certificate
-            ),
+            true => {
+                let base_signature = get_encoded_cert(&certificate.cert)?;
+                let x5c = match certificate.chain {
+                    Some(chain) => {
+                        let chain = chain
+                            .into_iter()
+                            .map(|x| get_encoded_cert(&x))
+                            .collect::<Result<Vec<String>, ClientCertificateCredentialError>>()?
+                            .join(",");
+                        format! {"{},{}", base_signature, chain}
+                    }
+                    None => base_signature,
+                };
+                format!(
+                    r#"{{"alg":"RS256","typ":"JWT", "x5t":"{}", "x5c":[{}]}}"#,
+                    x5t, x5c
+                )
+            }
             false => format!(r#"{{"alg":"RS256","typ":"JWT", "x5t":"{}"}}"#, x5t),
         };
         let header = ClientCertificateCredential::as_jwt_part(header.as_bytes());
