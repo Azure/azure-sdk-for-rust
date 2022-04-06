@@ -3,6 +3,7 @@ mod codegen;
 mod codegen_models;
 mod codegen_operations;
 pub mod config_parser;
+pub mod github_yml;
 pub mod identifier;
 pub mod io;
 pub mod lib_rs;

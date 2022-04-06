@@ -10,9 +10,10 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
-  test-services:
-    name: Services Tests
-    runs-on: macos-latest
+{% for package in packages %}
+  {{package}}:
+    if: always()
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -20,12 +21,9 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-
     - uses: Swatinem/rust-cache@v1
-
     - name: check all features
-      run: cargo check --manifest-path services/Cargo.toml --all-features
-
-    - name: display free disk space
-      run: df -h /
-      if: ${{ always() }}
+      run: |
+        cd services
+        cargo check --all-features -p {{package}}
+{% endfor %}
