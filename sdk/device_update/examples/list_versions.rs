@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s_filter = env::var("DEVICE_UPDATE_FILTER").unwrap_or_default();
 
     let mut filter: Option<&str> = None;
-    if s_filter.len() != 0 {
+    if !s_filter.is_empty() {
         filter = Some(&s_filter);
     }
 

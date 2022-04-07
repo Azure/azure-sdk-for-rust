@@ -39,9 +39,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     Ok(())
 }
 
-fn get_blob_stream<'a>(
-    blob_client: &'a BlobClient,
-) -> impl futures::Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + 'a
+fn get_blob_stream(
+    blob_client: &'_ BlobClient,
+) -> impl futures::Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + '_
 {
     let stream = blob_client.get().stream(1024);
     stream

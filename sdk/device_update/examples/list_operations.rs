@@ -24,14 +24,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s_filter = env::var("DEVICE_UPDATE_FILTER").unwrap_or_default();
 
     let mut filter: Option<&str> = None;
-    if s_filter.len() != 0 {
+    if !s_filter.is_empty() {
         filter = Some(&s_filter);
     }
 
     let s_top = env::var("DEVICE_UPDATE_TOP").unwrap_or_default();
 
     let mut top: Option<&str> = None;
-    if s_top.len() != 0 {
+    if !s_top.is_empty() {
         top = Some(&s_top);
     }
 
