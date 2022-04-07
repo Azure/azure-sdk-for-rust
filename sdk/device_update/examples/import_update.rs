@@ -1,6 +1,6 @@
 use azure_device_update::DeviceUpdateClient;
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use std::env;
+use std::{env, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,13 +14,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Missing DEVICE_UPDATE_INSTANCE_ID environment variable.");
     let import_json = env::var("IMPORT_VALUE").expect("Missing IMPORT_VALUE environment variable.");
 
-    let creds = ClientSecretCredential::new(
+    let creds = Arc::new(ClientSecretCredential::new(
         tenant_id,
         client_id,
         client_secret,
         TokenCredentialOptions::default(),
-    );
-    let mut client = DeviceUpdateClient::new(&device_update_url, &creds)?;
+    ));
+    let client = DeviceUpdateClient::new(&device_update_url, creds)?;
 
     let import_update_response = client.import_update(&instance_id, import_json).await?;
     dbg!(&import_update_response);
