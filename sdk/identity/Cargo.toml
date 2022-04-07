@@ -30,14 +30,11 @@ openssl = { version = "0.10",  optional=true }
 base64 = "0.13.0"
 uuid = { version = "0.8",  features = ["v4"] }
 
-
-
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 serde_test = "1"
 azure_security_keyvault = { path = "../security_keyvault", version = "0.1"}
-
 
 [features]
 default = ["development", "enable_reqwest"]

@@ -36,7 +36,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let subscription_id =
         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
-    let keyvault_uri = env::var("KEYVAULT_URI").expect("Missing KEYVAULT_URI environment variable.");
+    let keyvault_uri =
+        env::var("KEYVAULT_URI").expect("Missing KEYVAULT_URI environment variable.");
     let cert_name = env::var("CERT_NAME").expect("Missing CERT_NAME environment variable.");
     let cert = get_certficate(&keyvault_uri, &cert_name).await?;
 
