@@ -68,7 +68,7 @@ impl Spec {
             docs.insert(Utf8PathBuf::from(file_path), doc);
             for ref_file in ref_files {
                 let child_path = io::join(&file_path, &ref_file)?;
-                Spec::read_file(docs, &child_path)?;
+                Self::read_file(docs, &child_path)?;
             }
         }
         Ok(())
@@ -239,7 +239,7 @@ impl Spec {
         let mut operations: Vec<WebOperationUnresolved> = Vec::new();
         for (doc_file, doc) in self.docs() {
             if self.is_input_file(&doc_file) {
-                let paths = self.resolve_path_map(doc_file, doc.paths())?;
+                let paths = self.resolve_path_map(doc_file, &doc.paths())?;
                 for (path, item) in &paths {
                     operations.extend(path_operations_unresolved(doc_file, path, item))
                 }
@@ -368,7 +368,7 @@ pub mod openapi {
             match item {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::PathItem(reference.clone())),
                 ReferenceOr::Item(item) => {
-                    for operation in path_operations_unresolved(&doc_file, path, item) {
+                    for operation in path_operations_unresolved(&doc_file, &path, &item) {
                         // parameters
                         for param in &operation.parameters {
                             match param {

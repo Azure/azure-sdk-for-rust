@@ -827,6 +827,21 @@ pub mod operation {
         }
     }
 }
+#[doc = "A list of REST API operations supported by an Azure Resource Provider. It contains an URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationListResult {
+    #[doc = "List of operations supported by the resource provider"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results (if there are any)."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Plan for the managed application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {

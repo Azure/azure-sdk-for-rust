@@ -77,6 +77,12 @@ impl Client {
     pub fn deployments(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
+    pub fn devices(&self) -> devices::Client {
+        devices::Client(self.clone())
+    }
+    pub fn updates(&self) -> updates::Client {
+        updates::Client(self.clone())
+    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -86,6 +92,68 @@ pub enum Error {
     Deployments_CancelDeployment(#[from] deployments::cancel_deployment::Error),
     #[error(transparent)]
     Deployments_RetryDeployment(#[from] deployments::retry_deployment::Error),
+    #[error(transparent)]
+    Updates_ImportUpdate(#[from] updates::import_update::Error),
+    #[error(transparent)]
+    Updates_GetUpdate(#[from] updates::get_update::Error),
+    #[error(transparent)]
+    Updates_DeleteUpdate(#[from] updates::delete_update::Error),
+    #[error(transparent)]
+    Updates_GetProviders(#[from] updates::get_providers::Error),
+    #[error(transparent)]
+    Updates_GetNames(#[from] updates::get_names::Error),
+    #[error(transparent)]
+    Updates_GetVersions(#[from] updates::get_versions::Error),
+    #[error(transparent)]
+    Updates_GetFiles(#[from] updates::get_files::Error),
+    #[error(transparent)]
+    Updates_GetFile(#[from] updates::get_file::Error),
+    #[error(transparent)]
+    Updates_GetOperations(#[from] updates::get_operations::Error),
+    #[error(transparent)]
+    Updates_GetOperation(#[from] updates::get_operation::Error),
+    #[error(transparent)]
+    Devices_GetAllDeviceClasses(#[from] devices::get_all_device_classes::Error),
+    #[error(transparent)]
+    Devices_GetDeviceClass(#[from] devices::get_device_class::Error),
+    #[error(transparent)]
+    Devices_GetDeviceClassDeviceIds(#[from] devices::get_device_class_device_ids::Error),
+    #[error(transparent)]
+    Devices_GetDeviceClassInstallableUpdates(#[from] devices::get_device_class_installable_updates::Error),
+    #[error(transparent)]
+    Devices_GetAllDevices(#[from] devices::get_all_devices::Error),
+    #[error(transparent)]
+    Devices_GetDevice(#[from] devices::get_device::Error),
+    #[error(transparent)]
+    Devices_GetUpdateCompliance(#[from] devices::get_update_compliance::Error),
+    #[error(transparent)]
+    Devices_GetAllDeviceTags(#[from] devices::get_all_device_tags::Error),
+    #[error(transparent)]
+    Devices_GetDeviceTag(#[from] devices::get_device_tag::Error),
+    #[error(transparent)]
+    Devices_GetAllGroups(#[from] devices::get_all_groups::Error),
+    #[error(transparent)]
+    Devices_GetGroup(#[from] devices::get_group::Error),
+    #[error(transparent)]
+    Devices_CreateOrUpdateGroup(#[from] devices::create_or_update_group::Error),
+    #[error(transparent)]
+    Devices_DeleteGroup(#[from] devices::delete_group::Error),
+    #[error(transparent)]
+    Devices_GetGroupUpdateCompliance(#[from] devices::get_group_update_compliance::Error),
+    #[error(transparent)]
+    Devices_GetGroupBestUpdates(#[from] devices::get_group_best_updates::Error),
+    #[error(transparent)]
+    Deployments_GetAllDeployments(#[from] deployments::get_all_deployments::Error),
+    #[error(transparent)]
+    Deployments_GetDeployment(#[from] deployments::get_deployment::Error),
+    #[error(transparent)]
+    Deployments_CreateOrUpdateDeployment(#[from] deployments::create_or_update_deployment::Error),
+    #[error(transparent)]
+    Deployments_DeleteDeployment(#[from] deployments::delete_deployment::Error),
+    #[error(transparent)]
+    Deployments_GetDeploymentStatus(#[from] deployments::get_deployment_status::Error),
+    #[error(transparent)]
+    Deployments_GetDeploymentDevices(#[from] deployments::get_deployment_devices::Error),
 }
 pub mod deployments {
     use super::models;
@@ -115,6 +183,63 @@ pub mod deployments {
                 instance_id: instance_id.into(),
                 deployment_id: deployment_id.into(),
                 action: action.into(),
+            }
+        }
+        pub fn get_all_deployments(&self, instance_id: impl Into<String>) -> get_all_deployments::Builder {
+            get_all_deployments::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                filter: None,
+            }
+        }
+        pub fn get_deployment(&self, instance_id: impl Into<String>, deployment_id: impl Into<String>) -> get_deployment::Builder {
+            get_deployment::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                deployment_id: deployment_id.into(),
+            }
+        }
+        pub fn create_or_update_deployment(
+            &self,
+            instance_id: impl Into<String>,
+            deployment_id: impl Into<String>,
+            deployment: impl Into<models::Deployment>,
+        ) -> create_or_update_deployment::Builder {
+            create_or_update_deployment::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                deployment_id: deployment_id.into(),
+                deployment: deployment.into(),
+            }
+        }
+        pub fn delete_deployment(&self, instance_id: impl Into<String>, deployment_id: impl Into<String>) -> delete_deployment::Builder {
+            delete_deployment::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                deployment_id: deployment_id.into(),
+            }
+        }
+        pub fn get_deployment_status(
+            &self,
+            instance_id: impl Into<String>,
+            deployment_id: impl Into<String>,
+        ) -> get_deployment_status::Builder {
+            get_deployment_status::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                deployment_id: deployment_id.into(),
+            }
+        }
+        pub fn get_deployment_devices(
+            &self,
+            instance_id: impl Into<String>,
+            deployment_id: impl Into<String>,
+        ) -> get_deployment_devices::Builder {
+            get_deployment_devices::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                deployment_id: deployment_id.into(),
+                filter: None,
             }
         }
     }
@@ -254,6 +379,2565 @@ pub mod deployments {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Deployment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_all_deployments {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfDeployments, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deployments",
+                        self.client.endpoint(),
+                        &self.instance_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfDeployments =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_deployment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) deployment_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Deployment, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deployments/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.deployment_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Deployment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update_deployment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) deployment_id: String,
+            pub(crate) deployment: models::Deployment,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Deployment, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deployments/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.deployment_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.deployment).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Deployment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_deployment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) deployment_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deployments/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.deployment_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_deployment_status {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) deployment_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeploymentStatus, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deployments/{}/status",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.deployment_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DeploymentStatus =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_deployment_devices {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) deployment_id: String,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfDeploymentDeviceStates, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deployments/{}/devicestates",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.deployment_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfDeploymentDeviceStates =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod updates {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn import_update(
+            &self,
+            instance_id: impl Into<String>,
+            action: impl Into<String>,
+            update_to_import: impl Into<models::ImportUpdateInput>,
+        ) -> import_update::Builder {
+            import_update::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                action: action.into(),
+                update_to_import: update_to_import.into(),
+            }
+        }
+        pub fn get_update(
+            &self,
+            instance_id: impl Into<String>,
+            provider: impl Into<String>,
+            name: impl Into<String>,
+            version: impl Into<String>,
+        ) -> get_update::Builder {
+            get_update::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                provider: provider.into(),
+                name: name.into(),
+                version: version.into(),
+                if_none_match: None,
+            }
+        }
+        pub fn delete_update(
+            &self,
+            instance_id: impl Into<String>,
+            provider: impl Into<String>,
+            name: impl Into<String>,
+            version: impl Into<String>,
+        ) -> delete_update::Builder {
+            delete_update::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                provider: provider.into(),
+                name: name.into(),
+                version: version.into(),
+            }
+        }
+        pub fn get_providers(&self, instance_id: impl Into<String>) -> get_providers::Builder {
+            get_providers::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+            }
+        }
+        pub fn get_names(&self, instance_id: impl Into<String>, provider: impl Into<String>) -> get_names::Builder {
+            get_names::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                provider: provider.into(),
+            }
+        }
+        pub fn get_versions(
+            &self,
+            instance_id: impl Into<String>,
+            provider: impl Into<String>,
+            name: impl Into<String>,
+        ) -> get_versions::Builder {
+            get_versions::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                provider: provider.into(),
+                name: name.into(),
+            }
+        }
+        pub fn get_files(
+            &self,
+            instance_id: impl Into<String>,
+            provider: impl Into<String>,
+            name: impl Into<String>,
+            version: impl Into<String>,
+        ) -> get_files::Builder {
+            get_files::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                provider: provider.into(),
+                name: name.into(),
+                version: version.into(),
+            }
+        }
+        pub fn get_file(
+            &self,
+            instance_id: impl Into<String>,
+            provider: impl Into<String>,
+            name: impl Into<String>,
+            version: impl Into<String>,
+            file_id: impl Into<String>,
+        ) -> get_file::Builder {
+            get_file::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                provider: provider.into(),
+                name: name.into(),
+                version: version.into(),
+                file_id: file_id.into(),
+                if_none_match: None,
+            }
+        }
+        pub fn get_operations(&self, instance_id: impl Into<String>) -> get_operations::Builder {
+            get_operations::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                filter: None,
+                top: None,
+            }
+        }
+        pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::Builder {
+            get_operation::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                operation_id: operation_id.into(),
+                if_none_match: None,
+            }
+        }
+    }
+    pub mod import_update {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) action: String,
+            pub(crate) update_to_import: models::ImportUpdateInput,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/deviceupdate/{}/v2/updates", self.client.endpoint(), &self.instance_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let action = &self.action;
+                    url.query_pairs_mut().append_pair("action", action);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.update_to_import).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_update {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotModified304 {},
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) provider: String,
+            pub(crate) name: String,
+            pub(crate) version: String,
+            pub(crate) if_none_match: Option<String>,
+        }
+        impl Builder {
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Update, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.provider,
+                        &self.name,
+                        &self.version
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Update =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_update {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) provider: String,
+            pub(crate) name: String,
+            pub(crate) version: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.provider,
+                        &self.name,
+                        &self.version
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_providers {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfStrings, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/deviceupdate/{}/v2/updates/providers", self.client.endpoint(), &self.instance_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfStrings =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_names {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) provider: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfStrings, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/providers/{}/names",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.provider
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfStrings =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_versions {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) provider: String,
+            pub(crate) name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfStrings, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.provider,
+                        &self.name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfStrings =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_files {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) provider: String,
+            pub(crate) name: String,
+            pub(crate) version: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfStrings, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}/files",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.provider,
+                        &self.name,
+                        &self.version
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfStrings =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_file {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotModified304 {},
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) provider: String,
+            pub(crate) name: String,
+            pub(crate) version: String,
+            pub(crate) file_id: String,
+            pub(crate) if_none_match: Option<String>,
+        }
+        impl Builder {
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::File, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.provider,
+                        &self.name,
+                        &self.version,
+                        &self.file_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::File =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_operations {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfOperations, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/operations",
+                        self.client.endpoint(),
+                        &self.instance_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfOperations =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_operation {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotModified304 {},
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Error response #response_type")]
+            TooManyRequests429 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) operation_id: String,
+            pub(crate) if_none_match: Option<String>,
+        }
+        impl Builder {
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Operation, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/updates/operations/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.operation_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Operation =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod devices {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get_all_device_classes(&self, instance_id: impl Into<String>) -> get_all_device_classes::Builder {
+            get_all_device_classes::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+            }
+        }
+        pub fn get_device_class(&self, instance_id: impl Into<String>, device_class_id: impl Into<String>) -> get_device_class::Builder {
+            get_device_class::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                device_class_id: device_class_id.into(),
+            }
+        }
+        pub fn get_device_class_device_ids(
+            &self,
+            instance_id: impl Into<String>,
+            device_class_id: impl Into<String>,
+        ) -> get_device_class_device_ids::Builder {
+            get_device_class_device_ids::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                device_class_id: device_class_id.into(),
+            }
+        }
+        pub fn get_device_class_installable_updates(
+            &self,
+            instance_id: impl Into<String>,
+            device_class_id: impl Into<String>,
+        ) -> get_device_class_installable_updates::Builder {
+            get_device_class_installable_updates::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                device_class_id: device_class_id.into(),
+            }
+        }
+        pub fn get_all_devices(&self, instance_id: impl Into<String>) -> get_all_devices::Builder {
+            get_all_devices::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                filter: None,
+            }
+        }
+        pub fn get_device(&self, instance_id: impl Into<String>, device_id: impl Into<String>) -> get_device::Builder {
+            get_device::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                device_id: device_id.into(),
+            }
+        }
+        pub fn get_update_compliance(&self, instance_id: impl Into<String>) -> get_update_compliance::Builder {
+            get_update_compliance::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+            }
+        }
+        pub fn get_all_device_tags(&self, instance_id: impl Into<String>) -> get_all_device_tags::Builder {
+            get_all_device_tags::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+            }
+        }
+        pub fn get_device_tag(&self, instance_id: impl Into<String>, tag_name: impl Into<String>) -> get_device_tag::Builder {
+            get_device_tag::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                tag_name: tag_name.into(),
+            }
+        }
+        pub fn get_all_groups(&self, instance_id: impl Into<String>) -> get_all_groups::Builder {
+            get_all_groups::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+            }
+        }
+        pub fn get_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> get_group::Builder {
+            get_group::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                group_id: group_id.into(),
+            }
+        }
+        pub fn create_or_update_group(
+            &self,
+            instance_id: impl Into<String>,
+            group_id: impl Into<String>,
+            group: impl Into<models::Group>,
+        ) -> create_or_update_group::Builder {
+            create_or_update_group::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                group_id: group_id.into(),
+                group: group.into(),
+            }
+        }
+        pub fn delete_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> delete_group::Builder {
+            delete_group::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                group_id: group_id.into(),
+            }
+        }
+        pub fn get_group_update_compliance(
+            &self,
+            instance_id: impl Into<String>,
+            group_id: impl Into<String>,
+        ) -> get_group_update_compliance::Builder {
+            get_group_update_compliance::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                group_id: group_id.into(),
+            }
+        }
+        pub fn get_group_best_updates(
+            &self,
+            instance_id: impl Into<String>,
+            group_id: impl Into<String>,
+        ) -> get_group_best_updates::Builder {
+            get_group_best_updates::Builder {
+                client: self.0.clone(),
+                instance_id: instance_id.into(),
+                group_id: group_id.into(),
+                filter: None,
+            }
+        }
+    }
+    pub mod get_all_device_classes {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfDeviceClasses, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deviceclasses",
+                        self.client.endpoint(),
+                        &self.instance_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfDeviceClasses =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_device_class {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) device_class_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceClass, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deviceclasses/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.device_class_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DeviceClass =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_device_class_device_ids {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) device_class_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfStrings, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deviceclasses/{}/deviceids",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.device_class_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfStrings =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_device_class_installable_updates {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) device_class_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfUpdateIds, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/deviceclasses/{}/installableupdates",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.device_class_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfUpdateIds =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_all_devices {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfDevices, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/devices",
+                        self.client.endpoint(),
+                        &self.instance_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfDevices =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_device {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) device_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Device, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/devices/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.device_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Device =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_update_compliance {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UpdateCompliance, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/updatecompliance",
+                        self.client.endpoint(),
+                        &self.instance_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::UpdateCompliance =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_all_device_tags {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfDeviceTags, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/devicetags",
+                        self.client.endpoint(),
+                        &self.instance_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfDeviceTags =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_device_tag {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) tag_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceTag, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/devicetags/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.tag_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DeviceTag =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_all_groups {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfGroups, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/deviceupdate/{}/v2/management/groups", self.client.endpoint(), &self.instance_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfGroups =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) group_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Group, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/groups/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Group =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            BadRequest400 {},
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) group_id: String,
+            pub(crate) group: models::Group,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Group, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/groups/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.group).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Group =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::BAD_REQUEST => Err(Error::BadRequest400 {}),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_group {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) group_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/groups/{}",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_group_update_compliance {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) group_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UpdateCompliance, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/groups/{}/updateCompliance",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::UpdateCompliance =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_group_best_updates {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Error response #response_type")]
+            NotFound404 {},
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) instance_id: String,
+            pub(crate) group_id: String,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PageableListOfUpdatableDevices, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/deviceupdate/{}/v2/management/groups/{}/bestUpdates",
+                        self.client.endpoint(),
+                        &self.instance_id,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageableListOfUpdatableDevices =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }

@@ -74,8 +74,44 @@ impl Client {
             pipeline,
         }
     }
+    pub fn attached_database_configurations(&self) -> attached_database_configurations::Client {
+        attached_database_configurations::Client(self.clone())
+    }
+    pub fn cluster_principal_assignments(&self) -> cluster_principal_assignments::Client {
+        cluster_principal_assignments::Client(self.clone())
+    }
+    pub fn clusters(&self) -> clusters::Client {
+        clusters::Client(self.clone())
+    }
+    pub fn data_connections(&self) -> data_connections::Client {
+        data_connections::Client(self.clone())
+    }
+    pub fn database_principal_assignments(&self) -> database_principal_assignments::Client {
+        database_principal_assignments::Client(self.clone())
+    }
+    pub fn databases(&self) -> databases::Client {
+        databases::Client(self.clone())
+    }
+    pub fn managed_private_endpoints(&self) -> managed_private_endpoints::Client {
+        managed_private_endpoints::Client(self.clone())
+    }
+    pub fn operations(&self) -> operations::Client {
+        operations::Client(self.clone())
+    }
+    pub fn operations_results(&self) -> operations_results::Client {
+        operations_results::Client(self.clone())
+    }
     pub fn operations_results_location(&self) -> operations_results_location::Client {
         operations_results_location::Client(self.clone())
+    }
+    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+        private_endpoint_connections::Client(self.clone())
+    }
+    pub fn private_link_resources(&self) -> private_link_resources::Client {
+        private_link_resources::Client(self.clone())
+    }
+    pub fn scripts(&self) -> scripts::Client {
+        scripts::Client(self.clone())
     }
 }
 #[non_exhaustive]
@@ -84,6 +120,144 @@ impl Client {
 pub enum Error {
     #[error(transparent)]
     OperationsResultsLocation_Get(#[from] operations_results_location::get::Error),
+    #[error(transparent)]
+    Clusters_Get(#[from] clusters::get::Error),
+    #[error(transparent)]
+    Clusters_CreateOrUpdate(#[from] clusters::create_or_update::Error),
+    #[error(transparent)]
+    Clusters_Update(#[from] clusters::update::Error),
+    #[error(transparent)]
+    Clusters_Delete(#[from] clusters::delete::Error),
+    #[error(transparent)]
+    Clusters_Stop(#[from] clusters::stop::Error),
+    #[error(transparent)]
+    Clusters_Start(#[from] clusters::start::Error),
+    #[error(transparent)]
+    ClusterPrincipalAssignments_CheckNameAvailability(#[from] cluster_principal_assignments::check_name_availability::Error),
+    #[error(transparent)]
+    ClusterPrincipalAssignments_Get(#[from] cluster_principal_assignments::get::Error),
+    #[error(transparent)]
+    ClusterPrincipalAssignments_CreateOrUpdate(#[from] cluster_principal_assignments::create_or_update::Error),
+    #[error(transparent)]
+    ClusterPrincipalAssignments_Delete(#[from] cluster_principal_assignments::delete::Error),
+    #[error(transparent)]
+    ClusterPrincipalAssignments_List(#[from] cluster_principal_assignments::list::Error),
+    #[error(transparent)]
+    Clusters_ListFollowerDatabases(#[from] clusters::list_follower_databases::Error),
+    #[error(transparent)]
+    Clusters_DetachFollowerDatabases(#[from] clusters::detach_follower_databases::Error),
+    #[error(transparent)]
+    Clusters_DiagnoseVirtualNetwork(#[from] clusters::diagnose_virtual_network::Error),
+    #[error(transparent)]
+    Clusters_ListByResourceGroup(#[from] clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    Clusters_List(#[from] clusters::list::Error),
+    #[error(transparent)]
+    Clusters_ListSkus(#[from] clusters::list_skus::Error),
+    #[error(transparent)]
+    Clusters_CheckNameAvailability(#[from] clusters::check_name_availability::Error),
+    #[error(transparent)]
+    Databases_CheckNameAvailability(#[from] databases::check_name_availability::Error),
+    #[error(transparent)]
+    AttachedDatabaseConfigurations_CheckNameAvailability(#[from] attached_database_configurations::check_name_availability::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_CheckNameAvailability(#[from] managed_private_endpoints::check_name_availability::Error),
+    #[error(transparent)]
+    Clusters_ListSkusByResource(#[from] clusters::list_skus_by_resource::Error),
+    #[error(transparent)]
+    Databases_ListByCluster(#[from] databases::list_by_cluster::Error),
+    #[error(transparent)]
+    Databases_Get(#[from] databases::get::Error),
+    #[error(transparent)]
+    Databases_CreateOrUpdate(#[from] databases::create_or_update::Error),
+    #[error(transparent)]
+    Databases_Update(#[from] databases::update::Error),
+    #[error(transparent)]
+    Databases_Delete(#[from] databases::delete::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_CheckNameAvailability(#[from] database_principal_assignments::check_name_availability::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_Get(#[from] database_principal_assignments::get::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_CreateOrUpdate(#[from] database_principal_assignments::create_or_update::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_Delete(#[from] database_principal_assignments::delete::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_List(#[from] database_principal_assignments::list::Error),
+    #[error(transparent)]
+    Databases_ListPrincipals(#[from] databases::list_principals::Error),
+    #[error(transparent)]
+    Databases_AddPrincipals(#[from] databases::add_principals::Error),
+    #[error(transparent)]
+    Scripts_ListByDatabase(#[from] scripts::list_by_database::Error),
+    #[error(transparent)]
+    Scripts_Get(#[from] scripts::get::Error),
+    #[error(transparent)]
+    Scripts_CreateOrUpdate(#[from] scripts::create_or_update::Error),
+    #[error(transparent)]
+    Scripts_Update(#[from] scripts::update::Error),
+    #[error(transparent)]
+    Scripts_Delete(#[from] scripts::delete::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_List(#[from] managed_private_endpoints::list::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_Get(#[from] managed_private_endpoints::get::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_CreateOrUpdate(#[from] managed_private_endpoints::create_or_update::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_Update(#[from] managed_private_endpoints::update::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_Delete(#[from] managed_private_endpoints::delete::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_List(#[from] private_endpoint_connections::list::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_CreateOrUpdate(#[from] private_endpoint_connections::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResources_List(#[from] private_link_resources::list::Error),
+    #[error(transparent)]
+    PrivateLinkResources_Get(#[from] private_link_resources::get::Error),
+    #[error(transparent)]
+    Clusters_ListOutboundNetworkDependenciesEndpoints(#[from] clusters::list_outbound_network_dependencies_endpoints::Error),
+    #[error(transparent)]
+    AttachedDatabaseConfigurations_ListByCluster(#[from] attached_database_configurations::list_by_cluster::Error),
+    #[error(transparent)]
+    AttachedDatabaseConfigurations_Get(#[from] attached_database_configurations::get::Error),
+    #[error(transparent)]
+    AttachedDatabaseConfigurations_CreateOrUpdate(#[from] attached_database_configurations::create_or_update::Error),
+    #[error(transparent)]
+    AttachedDatabaseConfigurations_Delete(#[from] attached_database_configurations::delete::Error),
+    #[error(transparent)]
+    Databases_RemovePrincipals(#[from] databases::remove_principals::Error),
+    #[error(transparent)]
+    DataConnections_ListByDatabase(#[from] data_connections::list_by_database::Error),
+    #[error(transparent)]
+    DataConnections_DataConnectionValidation(#[from] data_connections::data_connection_validation::Error),
+    #[error(transparent)]
+    DataConnections_CheckNameAvailability(#[from] data_connections::check_name_availability::Error),
+    #[error(transparent)]
+    Scripts_CheckNameAvailability(#[from] scripts::check_name_availability::Error),
+    #[error(transparent)]
+    DataConnections_Get(#[from] data_connections::get::Error),
+    #[error(transparent)]
+    DataConnections_CreateOrUpdate(#[from] data_connections::create_or_update::Error),
+    #[error(transparent)]
+    DataConnections_Update(#[from] data_connections::update::Error),
+    #[error(transparent)]
+    DataConnections_Delete(#[from] data_connections::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Clusters_ListLanguageExtensions(#[from] clusters::list_language_extensions::Error),
+    #[error(transparent)]
+    Clusters_AddLanguageExtensions(#[from] clusters::add_language_extensions::Error),
+    #[error(transparent)]
+    Clusters_RemoveLanguageExtensions(#[from] clusters::remove_language_extensions::Error),
+    #[error(transparent)]
+    OperationsResults_Get(#[from] operations_results::get::Error),
 }
 pub mod operations_results_location {
     use super::models;
@@ -159,6 +333,6837 @@ pub mod operations_results_location {
                         http::StatusCode::OK => Ok(Response::Ok200),
                         http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => Err(Error::DefaultResponse { status_code }),
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod clusters {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            parameters: impl Into<models::Cluster>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+                if_match: None,
+                if_none_match: None,
+            }
+        }
+        pub fn update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            parameters: impl Into<models::ClusterUpdate>,
+            subscription_id: impl Into<String>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+                if_match: None,
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn stop(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> stop::Builder {
+            stop::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn start(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> start::Builder {
+            start::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_follower_databases(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_follower_databases::Builder {
+            list_follower_databases::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn detach_follower_databases(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            follower_database_to_remove: impl Into<models::FollowerDatabaseDefinition>,
+        ) -> detach_follower_databases::Builder {
+            detach_follower_databases::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+                follower_database_to_remove: follower_database_to_remove.into(),
+            }
+        }
+        pub fn diagnose_virtual_network(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> diagnose_virtual_network::Builder {
+            diagnose_virtual_network::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_resource_group(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_resource_group::Builder {
+            list_by_resource_group::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
+            list_skus::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn check_name_availability(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            cluster_name: impl Into<models::ClusterCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        pub fn list_skus_by_resource(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_skus_by_resource::Builder {
+            list_skus_by_resource::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_outbound_network_dependencies_endpoints(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> list_outbound_network_dependencies_endpoints::Builder {
+            list_outbound_network_dependencies_endpoints::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        pub fn list_language_extensions(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> list_language_extensions::Builder {
+            list_language_extensions::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        pub fn add_language_extensions(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            language_extensions_to_add: impl Into<models::LanguageExtensionsList>,
+        ) -> add_language_extensions::Builder {
+            add_language_extensions::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                language_extensions_to_add: language_extensions_to_add.into(),
+            }
+        }
+        pub fn remove_language_extensions(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            language_extensions_to_remove: impl Into<models::LanguageExtensionsList>,
+        ) -> remove_language_extensions::Builder {
+            remove_language_extensions::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                language_extensions_to_remove: language_extensions_to_remove.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Cluster, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Cluster =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Cluster),
+            Created201(models::Cluster),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) parameters: models::Cluster,
+            pub(crate) subscription_id: String,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+        }
+        impl Builder {
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Cluster =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Cluster =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Cluster),
+            Created201(models::Cluster),
+            Accepted202(models::Cluster),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) parameters: models::ClusterUpdate,
+            pub(crate) subscription_id: String,
+            pub(crate) if_match: Option<String>,
+        }
+        impl Builder {
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Cluster =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Cluster =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Cluster =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod stop {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/stop",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod start {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/start",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_follower_databases {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::FollowerDatabaseListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/listFollowerDatabases",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FollowerDatabaseListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod detach_follower_databases {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) follower_database_to_remove: models::FollowerDatabaseDefinition,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/detachFollowerDatabases",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.follower_database_to_remove).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod diagnose_virtual_network {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::DiagnoseVirtualNetworkResult),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/diagnoseVirtualNetwork",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DiagnoseVirtualNetworkResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_by_resource_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClusterListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ClusterListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClusterListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Kusto/clusters",
+                        self.client.endpoint(),
+                        &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ClusterListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_skus {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuDescriptionList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Kusto/skus",
+                        self.client.endpoint(),
+                        &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SkuDescriptionList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) cluster_name: models::ClusterCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Kusto/locations/{}/checkNameAvailability",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.cluster_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_skus_by_resource {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListResourceSkusResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/skus",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ListResourceSkusResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_outbound_network_dependencies_endpoints {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::OutboundNetworkDependenciesEndpointListResult, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/outboundNetworkDependenciesEndpoints",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OutboundNetworkDependenciesEndpointListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_language_extensions {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LanguageExtensionsList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/listLanguageExtensions",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::LanguageExtensionsList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod add_language_extensions {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) language_extensions_to_add: models::LanguageExtensionsList,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/addLanguageExtensions",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.language_extensions_to_add).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod remove_language_extensions {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) language_extensions_to_remove: models::LanguageExtensionsList,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/removeLanguageExtensions",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.language_extensions_to_remove).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod cluster_principal_assignments {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            principal_assignment_name: impl Into<models::ClusterPrincipalAssignmentCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            principal_assignment_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            principal_assignment_name: impl Into<String>,
+            parameters: impl Into<models::ClusterPrincipalAssignment>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            principal_assignment_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+            }
+        }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) principal_assignment_name: models::ClusterPrincipalAssignmentCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/checkPrincipalAssignmentNameAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.principal_assignment_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) principal_assignment_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ClusterPrincipalAssignment, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/principalAssignments/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.principal_assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ClusterPrincipalAssignment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ClusterPrincipalAssignment),
+            Created201(models::ClusterPrincipalAssignment),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) principal_assignment_name: String,
+            pub(crate) parameters: models::ClusterPrincipalAssignment,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/principalAssignments/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.principal_assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ClusterPrincipalAssignment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ClusterPrincipalAssignment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) principal_assignment_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/principalAssignments/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.principal_assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ClusterPrincipalAssignmentListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/principalAssignments",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ClusterPrincipalAssignmentListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod databases {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_name: impl Into<models::CheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+                resource_name: resource_name.into(),
+            }
+        }
+        pub fn list_by_cluster(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_cluster::Builder {
+            list_by_cluster::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            parameters: impl Into<models::Database>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            parameters: impl Into<models::Database>,
+            subscription_id: impl Into<String>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_principals(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_principals::Builder {
+            list_principals::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn add_principals(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            database_principals_to_add: impl Into<models::DatabasePrincipalListRequest>,
+        ) -> add_principals::Builder {
+            add_principals::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                database_principals_to_add: database_principals_to_add.into(),
+            }
+        }
+        pub fn remove_principals(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            database_principals_to_remove: impl Into<models::DatabasePrincipalListRequest>,
+        ) -> remove_principals::Builder {
+            remove_principals::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                database_principals_to_remove: database_principals_to_remove.into(),
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_name: models::CheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/checkNameAvailability",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.resource_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_by_cluster {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabaseListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabaseListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Database, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Database),
+            Created201(models::Database),
+            Accepted202(models::Database),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) parameters: models::Database,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Database),
+            Created201(models::Database),
+            Accepted202(models::Database),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) parameters: models::Database,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Database =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_principals {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabasePrincipalListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/listPrincipals",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod add_principals {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) database_principals_to_add: models::DatabasePrincipalListRequest,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabasePrincipalListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/addPrincipals",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.database_principals_to_add).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod remove_principals {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) database_principals_to_remove: models::DatabasePrincipalListRequest,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabasePrincipalListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/removePrincipals",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.database_principals_to_remove).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod attached_database_configurations {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_name: impl Into<models::AttachedDatabaseConfigurationsCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+                resource_name: resource_name.into(),
+            }
+        }
+        pub fn list_by_cluster(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_cluster::Builder {
+            list_by_cluster::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            attached_database_configuration_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                attached_database_configuration_name: attached_database_configuration_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            attached_database_configuration_name: impl Into<String>,
+            parameters: impl Into<models::AttachedDatabaseConfiguration>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                attached_database_configuration_name: attached_database_configuration_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            attached_database_configuration_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                attached_database_configuration_name: attached_database_configuration_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_name: models::AttachedDatabaseConfigurationsCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/attachedDatabaseConfigurationCheckNameAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.resource_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_by_cluster {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AttachedDatabaseConfigurationListResult, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/attachedDatabaseConfigurations",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AttachedDatabaseConfigurationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) attached_database_configuration_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AttachedDatabaseConfiguration, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/attachedDatabaseConfigurations/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.attached_database_configuration_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AttachedDatabaseConfiguration =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::AttachedDatabaseConfiguration),
+            Created201(models::AttachedDatabaseConfiguration),
+            Accepted202(models::AttachedDatabaseConfiguration),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) attached_database_configuration_name: String,
+            pub(crate) parameters: models::AttachedDatabaseConfiguration,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/attachedDatabaseConfigurations/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.attached_database_configuration_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AttachedDatabaseConfiguration =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AttachedDatabaseConfiguration =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AttachedDatabaseConfiguration =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) attached_database_configuration_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/attachedDatabaseConfigurations/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.attached_database_configuration_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod managed_private_endpoints {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_name: impl Into<models::ManagedPrivateEndpointsCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+                resource_name: resource_name.into(),
+            }
+        }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            managed_private_endpoint_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                managed_private_endpoint_name: managed_private_endpoint_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            managed_private_endpoint_name: impl Into<String>,
+            parameters: impl Into<models::ManagedPrivateEndpoint>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                managed_private_endpoint_name: managed_private_endpoint_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            managed_private_endpoint_name: impl Into<String>,
+            parameters: impl Into<models::ManagedPrivateEndpoint>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                managed_private_endpoint_name: managed_private_endpoint_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            managed_private_endpoint_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                managed_private_endpoint_name: managed_private_endpoint_name.into(),
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_name: models::ManagedPrivateEndpointsCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/managedPrivateEndpointsCheckNameAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.resource_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagedPrivateEndpointListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/managedPrivateEndpoints",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpointListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) managed_private_endpoint_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagedPrivateEndpoint, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/managedPrivateEndpoints/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.managed_private_endpoint_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpoint =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ManagedPrivateEndpoint),
+            Created201(models::ManagedPrivateEndpoint),
+            Accepted202(models::ManagedPrivateEndpoint),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) managed_private_endpoint_name: String,
+            pub(crate) parameters: models::ManagedPrivateEndpoint,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/managedPrivateEndpoints/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.managed_private_endpoint_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpoint =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpoint =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpoint =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ManagedPrivateEndpoint),
+            Accepted202(models::ManagedPrivateEndpoint),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) managed_private_endpoint_name: String,
+            pub(crate) parameters: models::ManagedPrivateEndpoint,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/managedPrivateEndpoints/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.managed_private_endpoint_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpoint =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ManagedPrivateEndpoint =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) managed_private_endpoint_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/managedPrivateEndpoints/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.managed_private_endpoint_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod database_principal_assignments {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            principal_assignment_name: impl Into<models::DatabasePrincipalAssignmentCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            principal_assignment_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            principal_assignment_name: impl Into<String>,
+            parameters: impl Into<models::DatabasePrincipalAssignment>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            principal_assignment_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                principal_assignment_name: principal_assignment_name.into(),
+            }
+        }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) principal_assignment_name: models::DatabasePrincipalAssignmentCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/checkPrincipalAssignmentNameAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . database_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.principal_assignment_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) principal_assignment_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabasePrincipalAssignment, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/principalAssignments/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.principal_assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalAssignment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::DatabasePrincipalAssignment),
+            Created201(models::DatabasePrincipalAssignment),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) principal_assignment_name: String,
+            pub(crate) parameters: models::DatabasePrincipalAssignment,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/principalAssignments/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.principal_assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalAssignment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalAssignment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) principal_assignment_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/principalAssignments/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.principal_assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::DatabasePrincipalAssignmentListResult, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/principalAssignments",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DatabasePrincipalAssignmentListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod scripts {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list_by_database(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+        ) -> list_by_database::Builder {
+            list_by_database::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            script_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                script_name: script_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            script_name: impl Into<String>,
+            parameters: impl Into<models::Script>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                script_name: script_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            script_name: impl Into<String>,
+            parameters: impl Into<models::Script>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                script_name: script_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            script_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                script_name: script_name.into(),
+            }
+        }
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            script_name: impl Into<models::ScriptCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                script_name: script_name.into(),
+            }
+        }
+    }
+    pub mod list_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ScriptListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/scripts",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ScriptListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) script_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Script, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/scripts/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.script_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Script =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Script),
+            Created201(models::Script),
+            Accepted202(models::Script),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) script_name: String,
+            pub(crate) parameters: models::Script,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/scripts/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.script_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Script =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Script =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Script =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Script),
+            Accepted202(models::Script),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) script_name: String,
+            pub(crate) parameters: models::Script,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/scripts/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.script_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Script =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Script =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) script_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/scripts/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.script_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) script_name: models::ScriptCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/scriptsCheckNameAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . database_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.script_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod private_endpoint_connections {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            private_endpoint_connection_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                private_endpoint_connection_name: private_endpoint_connection_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            private_endpoint_connection_name: impl Into<String>,
+            parameters: impl Into<models::PrivateEndpointConnection>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                private_endpoint_connection_name: private_endpoint_connection_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            private_endpoint_connection_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                private_endpoint_connection_name: private_endpoint_connection_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnectionListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/privateEndpointConnections",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PrivateEndpointConnectionListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) private_endpoint_connection_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/privateEndpointConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.private_endpoint_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PrivateEndpointConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) private_endpoint_connection_name: String,
+            pub(crate) parameters: models::PrivateEndpointConnection,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/privateEndpointConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.private_endpoint_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PrivateEndpointConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PrivateEndpointConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) private_endpoint_connection_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/privateEndpointConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.private_endpoint_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod private_link_resources {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            private_link_resource_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                private_link_resource_name: private_link_resource_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateLinkResourceListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/privateLinkResources",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PrivateLinkResourceListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) private_link_resource_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateLinkResource, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/privateLinkResources/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.private_link_resource_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PrivateLinkResource =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod data_connections {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list_by_database(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_database::Builder {
+            list_by_database::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn data_connection_validation(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            parameters: impl Into<models::DataConnectionValidation>,
+        ) -> data_connection_validation::Builder {
+            data_connection_validation::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn check_name_availability(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            data_connection_name: impl Into<models::DataConnectionCheckNameRequest>,
+        ) -> check_name_availability::Builder {
+            check_name_availability::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+                data_connection_name: data_connection_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            data_connection_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                data_connection_name: data_connection_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            data_connection_name: impl Into<String>,
+            parameters: impl Into<models::DataConnection>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                data_connection_name: data_connection_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            data_connection_name: impl Into<String>,
+            parameters: impl Into<models::DataConnection>,
+            subscription_id: impl Into<String>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                data_connection_name: data_connection_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            database_name: impl Into<String>,
+            data_connection_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                database_name: database_name.into(),
+                data_connection_name: data_connection_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod list_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataConnectionListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/dataConnections",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnectionListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod data_connection_validation {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::DataConnectionValidationListResult),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) parameters: models::DataConnectionValidation,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/dataConnectionValidation",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnectionValidationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) data_connection_name: models::DataConnectionCheckNameRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/checkNameAvailability",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.data_connection_name).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CheckNameResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) data_connection_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataConnection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/dataConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.data_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::DataConnection),
+            Created201(models::DataConnection),
+            Accepted202(models::DataConnection),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) data_connection_name: String,
+            pub(crate) parameters: models::DataConnection,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/dataConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.data_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::DataConnection),
+            Created201(models::DataConnection),
+            Accepted202(models::DataConnection),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) data_connection_name: String,
+            pub(crate) parameters: models::DataConnection,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/dataConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.data_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DataConnection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) database_name: String,
+            pub(crate) data_connection_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/dataConnections/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name,
+                        &self.database_name,
+                        &self.data_connection_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod operations {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.0.clone() }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/providers/Microsoft.Kusto/operations", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod operations_results {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            operation_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                operation_id: operation_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) operation_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Kusto/locations/{}/operationResults/{}",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location,
+                        &self.operation_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2022-02-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
                     }
                 })
             }

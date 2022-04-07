@@ -90,6 +90,96 @@ pub enum Error {
     Catalog_RevokeAcl(#[from] catalog::revoke_acl::Error),
     #[error(transparent)]
     Catalog_RevokeAclFromDatabase(#[from] catalog::revoke_acl_from_database::Error),
+    #[error(transparent)]
+    Catalog_GetSecret(#[from] catalog::get_secret::Error),
+    #[error(transparent)]
+    Catalog_CreateSecret(#[from] catalog::create_secret::Error),
+    #[error(transparent)]
+    Catalog_UpdateSecret(#[from] catalog::update_secret::Error),
+    #[error(transparent)]
+    Catalog_DeleteSecret(#[from] catalog::delete_secret::Error),
+    #[error(transparent)]
+    Catalog_DeleteAllSecrets(#[from] catalog::delete_all_secrets::Error),
+    #[error(transparent)]
+    Catalog_GetCredential(#[from] catalog::get_credential::Error),
+    #[error(transparent)]
+    Catalog_DeleteCredential(#[from] catalog::delete_credential::Error),
+    #[error(transparent)]
+    Catalog_CreateCredential(#[from] catalog::create_credential::Error),
+    #[error(transparent)]
+    Catalog_UpdateCredential(#[from] catalog::update_credential::Error),
+    #[error(transparent)]
+    Catalog_ListCredentials(#[from] catalog::list_credentials::Error),
+    #[error(transparent)]
+    Catalog_GetExternalDataSource(#[from] catalog::get_external_data_source::Error),
+    #[error(transparent)]
+    Catalog_ListExternalDataSources(#[from] catalog::list_external_data_sources::Error),
+    #[error(transparent)]
+    Catalog_GetProcedure(#[from] catalog::get_procedure::Error),
+    #[error(transparent)]
+    Catalog_ListProcedures(#[from] catalog::list_procedures::Error),
+    #[error(transparent)]
+    Catalog_GetTable(#[from] catalog::get_table::Error),
+    #[error(transparent)]
+    Catalog_ListTableFragments(#[from] catalog::list_table_fragments::Error),
+    #[error(transparent)]
+    Catalog_ListTables(#[from] catalog::list_tables::Error),
+    #[error(transparent)]
+    Catalog_ListTableStatisticsByDatabaseAndSchema(#[from] catalog::list_table_statistics_by_database_and_schema::Error),
+    #[error(transparent)]
+    Catalog_GetTableType(#[from] catalog::get_table_type::Error),
+    #[error(transparent)]
+    Catalog_ListTableTypes(#[from] catalog::list_table_types::Error),
+    #[error(transparent)]
+    Catalog_GetPackage(#[from] catalog::get_package::Error),
+    #[error(transparent)]
+    Catalog_ListPackages(#[from] catalog::list_packages::Error),
+    #[error(transparent)]
+    Catalog_GetView(#[from] catalog::get_view::Error),
+    #[error(transparent)]
+    Catalog_ListViews(#[from] catalog::list_views::Error),
+    #[error(transparent)]
+    Catalog_GetTableStatistic(#[from] catalog::get_table_statistic::Error),
+    #[error(transparent)]
+    Catalog_ListTableStatistics(#[from] catalog::list_table_statistics::Error),
+    #[error(transparent)]
+    Catalog_PreviewTablePartition(#[from] catalog::preview_table_partition::Error),
+    #[error(transparent)]
+    Catalog_GetTablePartition(#[from] catalog::get_table_partition::Error),
+    #[error(transparent)]
+    Catalog_PreviewTable(#[from] catalog::preview_table::Error),
+    #[error(transparent)]
+    Catalog_ListTablePartitions(#[from] catalog::list_table_partitions::Error),
+    #[error(transparent)]
+    Catalog_ListTypes(#[from] catalog::list_types::Error),
+    #[error(transparent)]
+    Catalog_GetTableValuedFunction(#[from] catalog::get_table_valued_function::Error),
+    #[error(transparent)]
+    Catalog_ListTableValuedFunctions(#[from] catalog::list_table_valued_functions::Error),
+    #[error(transparent)]
+    Catalog_GetAssembly(#[from] catalog::get_assembly::Error),
+    #[error(transparent)]
+    Catalog_ListAssemblies(#[from] catalog::list_assemblies::Error),
+    #[error(transparent)]
+    Catalog_GetSchema(#[from] catalog::get_schema::Error),
+    #[error(transparent)]
+    Catalog_ListSchemas(#[from] catalog::list_schemas::Error),
+    #[error(transparent)]
+    Catalog_ListTableStatisticsByDatabase(#[from] catalog::list_table_statistics_by_database::Error),
+    #[error(transparent)]
+    Catalog_ListTablesByDatabase(#[from] catalog::list_tables_by_database::Error),
+    #[error(transparent)]
+    Catalog_ListTableValuedFunctionsByDatabase(#[from] catalog::list_table_valued_functions_by_database::Error),
+    #[error(transparent)]
+    Catalog_ListViewsByDatabase(#[from] catalog::list_views_by_database::Error),
+    #[error(transparent)]
+    Catalog_ListAclsByDatabase(#[from] catalog::list_acls_by_database::Error),
+    #[error(transparent)]
+    Catalog_ListAcls(#[from] catalog::list_acls::Error),
+    #[error(transparent)]
+    Catalog_GetDatabase(#[from] catalog::get_database::Error),
+    #[error(transparent)]
+    Catalog_ListDatabases(#[from] catalog::list_databases::Error),
 }
 pub mod catalog {
     use super::models;
@@ -133,6 +223,573 @@ pub mod catalog {
                 database_name: database_name.into(),
                 parameters: parameters.into(),
                 op: op.into(),
+            }
+        }
+        pub fn get_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> get_secret::Builder {
+            get_secret::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                secret_name: secret_name.into(),
+            }
+        }
+        pub fn create_secret(
+            &self,
+            database_name: impl Into<String>,
+            secret_name: impl Into<String>,
+            parameters: impl Into<models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters>,
+        ) -> create_secret::Builder {
+            create_secret::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                secret_name: secret_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn update_secret(
+            &self,
+            database_name: impl Into<String>,
+            secret_name: impl Into<String>,
+            parameters: impl Into<models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters>,
+        ) -> update_secret::Builder {
+            update_secret::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                secret_name: secret_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> delete_secret::Builder {
+            delete_secret::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                secret_name: secret_name.into(),
+            }
+        }
+        pub fn delete_all_secrets(&self, database_name: impl Into<String>) -> delete_all_secrets::Builder {
+            delete_all_secrets::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+            }
+        }
+        pub fn get_credential(&self, database_name: impl Into<String>, credential_name: impl Into<String>) -> get_credential::Builder {
+            get_credential::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                credential_name: credential_name.into(),
+            }
+        }
+        pub fn delete_credential(
+            &self,
+            database_name: impl Into<String>,
+            credential_name: impl Into<String>,
+        ) -> delete_credential::Builder {
+            delete_credential::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                credential_name: credential_name.into(),
+                parameters: None,
+                cascade: None,
+            }
+        }
+        pub fn create_credential(
+            &self,
+            database_name: impl Into<String>,
+            credential_name: impl Into<String>,
+            parameters: impl Into<models::DataLakeAnalyticsCatalogCredentialCreateParameters>,
+        ) -> create_credential::Builder {
+            create_credential::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                credential_name: credential_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn update_credential(
+            &self,
+            database_name: impl Into<String>,
+            credential_name: impl Into<String>,
+            parameters: impl Into<models::DataLakeAnalyticsCatalogCredentialUpdateParameters>,
+        ) -> update_credential::Builder {
+            update_credential::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                credential_name: credential_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn list_credentials(&self, database_name: impl Into<String>) -> list_credentials::Builder {
+            list_credentials::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_external_data_source(
+            &self,
+            database_name: impl Into<String>,
+            external_data_source_name: impl Into<String>,
+        ) -> get_external_data_source::Builder {
+            get_external_data_source::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                external_data_source_name: external_data_source_name.into(),
+            }
+        }
+        pub fn list_external_data_sources(&self, database_name: impl Into<String>) -> list_external_data_sources::Builder {
+            list_external_data_sources::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_procedure(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            procedure_name: impl Into<String>,
+        ) -> get_procedure::Builder {
+            get_procedure::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                procedure_name: procedure_name.into(),
+            }
+        }
+        pub fn list_procedures(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_procedures::Builder {
+            list_procedures::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_table(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+        ) -> get_table::Builder {
+            get_table::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+            }
+        }
+        pub fn list_table_fragments(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+        ) -> list_table_fragments::Builder {
+            list_table_fragments::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_tables(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_tables::Builder {
+            list_tables::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+                basic: None,
+            }
+        }
+        pub fn list_table_statistics_by_database_and_schema(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+        ) -> list_table_statistics_by_database_and_schema::Builder {
+            list_table_statistics_by_database_and_schema::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_table_type(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_type_name: impl Into<String>,
+        ) -> get_table_type::Builder {
+            get_table_type::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_type_name: table_type_name.into(),
+            }
+        }
+        pub fn list_table_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_table_types::Builder {
+            list_table_types::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_package(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            package_name: impl Into<String>,
+        ) -> get_package::Builder {
+            get_package::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                package_name: package_name.into(),
+            }
+        }
+        pub fn list_packages(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_packages::Builder {
+            list_packages::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_view(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            view_name: impl Into<String>,
+        ) -> get_view::Builder {
+            get_view::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                view_name: view_name.into(),
+            }
+        }
+        pub fn list_views(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_views::Builder {
+            list_views::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_table_statistic(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+            statistics_name: impl Into<String>,
+        ) -> get_table_statistic::Builder {
+            get_table_statistic::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                statistics_name: statistics_name.into(),
+            }
+        }
+        pub fn list_table_statistics(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+        ) -> list_table_statistics::Builder {
+            list_table_statistics::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn preview_table_partition(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+            partition_name: impl Into<String>,
+        ) -> preview_table_partition::Builder {
+            preview_table_partition::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                partition_name: partition_name.into(),
+                max_rows: None,
+                max_columns: None,
+            }
+        }
+        pub fn get_table_partition(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+            partition_name: impl Into<String>,
+        ) -> get_table_partition::Builder {
+            get_table_partition::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                partition_name: partition_name.into(),
+            }
+        }
+        pub fn preview_table(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+        ) -> preview_table::Builder {
+            preview_table::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                max_rows: None,
+                max_columns: None,
+            }
+        }
+        pub fn list_table_partitions(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_name: impl Into<String>,
+        ) -> list_table_partitions::Builder {
+            list_table_partitions::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_name: table_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_types::Builder {
+            list_types::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_table_valued_function(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            table_valued_function_name: impl Into<String>,
+        ) -> get_table_valued_function::Builder {
+            get_table_valued_function::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                table_valued_function_name: table_valued_function_name.into(),
+            }
+        }
+        pub fn list_table_valued_functions(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+        ) -> list_table_valued_functions::Builder {
+            list_table_valued_functions::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_assembly(&self, database_name: impl Into<String>, assembly_name: impl Into<String>) -> get_assembly::Builder {
+            get_assembly::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                assembly_name: assembly_name.into(),
+            }
+        }
+        pub fn list_assemblies(&self, database_name: impl Into<String>) -> list_assemblies::Builder {
+            list_assemblies::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_schema(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> get_schema::Builder {
+            get_schema::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                schema_name: schema_name.into(),
+            }
+        }
+        pub fn list_schemas(&self, database_name: impl Into<String>) -> list_schemas::Builder {
+            list_schemas::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_table_statistics_by_database(&self, database_name: impl Into<String>) -> list_table_statistics_by_database::Builder {
+            list_table_statistics_by_database::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_tables_by_database(&self, database_name: impl Into<String>) -> list_tables_by_database::Builder {
+            list_tables_by_database::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+                basic: None,
+            }
+        }
+        pub fn list_table_valued_functions_by_database(
+            &self,
+            database_name: impl Into<String>,
+        ) -> list_table_valued_functions_by_database::Builder {
+            list_table_valued_functions_by_database::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_views_by_database(&self, database_name: impl Into<String>) -> list_views_by_database::Builder {
+            list_views_by_database::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_acls_by_database(&self, database_name: impl Into<String>) -> list_acls_by_database::Builder {
+            list_acls_by_database::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn list_acls(&self) -> list_acls::Builder {
+            list_acls::Builder {
+                client: self.0.clone(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
+            }
+        }
+        pub fn get_database(&self, database_name: impl Into<String>) -> get_database::Builder {
+            get_database::Builder {
+                client: self.0.clone(),
+                database_name: database_name.into(),
+            }
+        }
+        pub fn list_databases(&self) -> list_databases::Builder {
+            list_databases::Builder {
+                client: self.0.clone(),
+                filter: None,
+                top: None,
+                skip: None,
+                select: None,
+                orderby: None,
+                count: None,
             }
         }
     }
@@ -386,6 +1043,4229 @@ pub mod catalog {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_secret {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) secret_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlSecret, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/secrets/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlSecret =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_secret {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) secret_name: String,
+            pub(crate) parameters: models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/secrets/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update_secret {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) secret_name: String,
+            pub(crate) parameters: models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/secrets/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_secret {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) secret_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/secrets/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_all_secrets {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases/{}/secrets", self.client.endpoint(), &self.database_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_credential {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) credential_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlCredential, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/credentials/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.credential_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlCredential =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_credential {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) credential_name: String,
+            pub(crate) parameters: Option<models::DataLakeAnalyticsCatalogCredentialDeleteParameters>,
+            pub(crate) cascade: Option<bool>,
+        }
+        impl Builder {
+            pub fn parameters(mut self, parameters: impl Into<models::DataLakeAnalyticsCatalogCredentialDeleteParameters>) -> Self {
+                self.parameters = Some(parameters.into());
+                self
+            }
+            pub fn cascade(mut self, cascade: bool) -> Self {
+                self.cascade = Some(cascade);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/credentials/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.credential_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = if let Some(parameters) = &self.parameters {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(parameters).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(cascade) = &self.cascade {
+                        url.query_pairs_mut().append_pair("cascade", &cascade.to_string());
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_credential {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) credential_name: String,
+            pub(crate) parameters: models::DataLakeAnalyticsCatalogCredentialCreateParameters,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/credentials/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.credential_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update_credential {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) credential_name: String,
+            pub(crate) parameters: models::DataLakeAnalyticsCatalogCredentialUpdateParameters,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/credentials/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.credential_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_credentials {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlCredentialList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/credentials",
+                        self.client.endpoint(),
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlCredentialList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_external_data_source {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) external_data_source_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlExternalDataSource, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/externaldatasources/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.external_data_source_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlExternalDataSource =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_external_data_sources {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlExternalDataSourceList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/externaldatasources",
+                        self.client.endpoint(),
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlExternalDataSourceList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_procedure {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) procedure_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlProcedure, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/procedures/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.procedure_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlProcedure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_procedures {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlProcedureList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/procedures",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlProcedureList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_table {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTable, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTable =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_fragments {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableFragmentList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/tablefragments",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableFragmentList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_tables {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+            pub(crate) basic: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn basic(mut self, basic: bool) -> Self {
+                self.basic = Some(basic);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    if let Some(basic) = &self.basic {
+                        url.query_pairs_mut().append_pair("basic", &basic.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_statistics_by_database_and_schema {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableStatisticsList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/statistics",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableStatisticsList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_table_type {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_type_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableType, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_type_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableType =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_types {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableTypeList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tabletypes",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableTypeList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_package {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) package_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlPackage, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/packages/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.package_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlPackage =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_packages {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlPackageList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/packages",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlPackageList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_view {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) view_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlView, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/views/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.view_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlView =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_views {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlViewList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/views",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlViewList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_table_statistic {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) statistics_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableStatistics, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name,
+                        &self.statistics_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableStatistics =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_statistics {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableStatisticsList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableStatisticsList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod preview_table_partition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) partition_name: String,
+            pub(crate) max_rows: Option<i64>,
+            pub(crate) max_columns: Option<i64>,
+        }
+        impl Builder {
+            pub fn max_rows(mut self, max_rows: i64) -> Self {
+                self.max_rows = Some(max_rows);
+                self
+            }
+            pub fn max_columns(mut self, max_columns: i64) -> Self {
+                self.max_columns = Some(max_columns);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTablePreview, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}/previewrows",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name,
+                        &self.partition_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(max_rows) = &self.max_rows {
+                        url.query_pairs_mut().append_pair("maxRows", &max_rows.to_string());
+                    }
+                    if let Some(max_columns) = &self.max_columns {
+                        url.query_pairs_mut().append_pair("maxColumns", &max_columns.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTablePreview =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_table_partition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) partition_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTablePartition, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name,
+                        &self.partition_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTablePartition =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod preview_table {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) max_rows: Option<i64>,
+            pub(crate) max_columns: Option<i64>,
+        }
+        impl Builder {
+            pub fn max_rows(mut self, max_rows: i64) -> Self {
+                self.max_rows = Some(max_rows);
+                self
+            }
+            pub fn max_columns(mut self, max_columns: i64) -> Self {
+                self.max_columns = Some(max_columns);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTablePreview, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/previewrows",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(max_rows) = &self.max_rows {
+                        url.query_pairs_mut().append_pair("maxRows", &max_rows.to_string());
+                    }
+                    if let Some(max_columns) = &self.max_columns {
+                        url.query_pairs_mut().append_pair("maxColumns", &max_columns.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTablePreview =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_partitions {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTablePartitionList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTablePartitionList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_types {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTypeList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/types",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTypeList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_table_valued_function {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) table_valued_function_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableValuedFunction, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_valued_function_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableValuedFunction =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_valued_functions {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableValuedFunctionList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableValuedFunctionList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_assembly {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) assembly_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlAssembly, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/assemblies/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.assembly_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlAssembly =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_assemblies {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlAssemblyList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/assemblies",
+                        self.client.endpoint(),
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlAssemblyList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_schema {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) schema_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlSchema, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/schemas/{}",
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlSchema =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_schemas {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlSchemaList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases/{}/schemas", self.client.endpoint(), &self.database_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlSchemaList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_statistics_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableStatisticsList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/statistics",
+                        self.client.endpoint(),
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableStatisticsList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_tables_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+            pub(crate) basic: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn basic(mut self, basic: bool) -> Self {
+                self.basic = Some(basic);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases/{}/tables", self.client.endpoint(), &self.database_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    if let Some(basic) = &self.basic {
+                        url.query_pairs_mut().append_pair("basic", &basic.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_table_valued_functions_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlTableValuedFunctionList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/catalog/usql/databases/{}/tablevaluedfunctions",
+                        self.client.endpoint(),
+                        &self.database_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlTableValuedFunctionList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_views_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlViewList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases/{}/views", self.client.endpoint(), &self.database_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlViewList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_acls_by_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AclList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases/{}/acl", self.client.endpoint(), &self.database_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AclList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_acls {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AclList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/acl", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AclList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_database {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) database_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlDatabase, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases/{}", self.client.endpoint(), &self.database_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlDatabase =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_databases {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) count: Option<bool>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn skip(mut self, skip: i32) -> Self {
+                self.skip = Some(skip);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn count(mut self, count: bool) -> Self {
+                self.count = Some(count);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlDatabaseList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/catalog/usql/databases", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-11-01");
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(skip) = &self.skip {
+                        url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(count) = &self.count {
+                        url.query_pairs_mut().append_pair("$count", &count.to_string());
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::USqlDatabaseList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {

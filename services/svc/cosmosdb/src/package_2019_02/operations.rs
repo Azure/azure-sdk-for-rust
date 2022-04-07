@@ -77,6 +77,9 @@ impl Client {
     pub fn service(&self) -> service::Client {
         service::Client(self.clone())
     }
+    pub fn table(&self) -> table::Client {
+        table::Client(self.clone())
+    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -88,6 +91,28 @@ pub enum Error {
     Service_SetProperties(#[from] service::set_properties::Error),
     #[error(transparent)]
     Service_GetStatistics(#[from] service::get_statistics::Error),
+    #[error(transparent)]
+    Table_Query(#[from] table::query::Error),
+    #[error(transparent)]
+    Table_Create(#[from] table::create::Error),
+    #[error(transparent)]
+    Table_Delete(#[from] table::delete::Error),
+    #[error(transparent)]
+    Table_QueryEntities(#[from] table::query_entities::Error),
+    #[error(transparent)]
+    Table_QueryEntityWithPartitionAndRowKey(#[from] table::query_entity_with_partition_and_row_key::Error),
+    #[error(transparent)]
+    Table_UpdateEntity(#[from] table::update_entity::Error),
+    #[error(transparent)]
+    Table_MergeEntity(#[from] table::merge_entity::Error),
+    #[error(transparent)]
+    Table_DeleteEntity(#[from] table::delete_entity::Error),
+    #[error(transparent)]
+    Table_GetAccessPolicy(#[from] table::get_access_policy::Error),
+    #[error(transparent)]
+    Table_InsertEntity(#[from] table::insert_entity::Error),
+    #[error(transparent)]
+    Table_SetAccessPolicy(#[from] table::set_access_policy::Error),
 }
 pub mod service {
     use super::models;
@@ -397,6 +422,1391 @@ pub mod service {
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod table {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::Builder {
+            query::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                x_ms_client_request_id: None,
+                format: None,
+                top: None,
+                select: None,
+                filter: None,
+                next_table_name: None,
+            }
+        }
+        pub fn create(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table_properties: impl Into<models::TableProperties>,
+        ) -> create::Builder {
+            create::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table_properties: table_properties.into(),
+                x_ms_client_request_id: None,
+                format: None,
+                prefer: None,
+            }
+        }
+        pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                table: table.into(),
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn query_entities(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table: impl Into<String>,
+        ) -> query_entities::Builder {
+            query_entities::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table: table.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                format: None,
+                top: None,
+                select: None,
+                filter: None,
+                next_partition_key: None,
+                next_row_key: None,
+            }
+        }
+        pub fn query_entity_with_partition_and_row_key(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table: impl Into<String>,
+            partition_key: impl Into<String>,
+            row_key: impl Into<String>,
+        ) -> query_entity_with_partition_and_row_key::Builder {
+            query_entity_with_partition_and_row_key::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table: table.into(),
+                partition_key: partition_key.into(),
+                row_key: row_key.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                format: None,
+                select: None,
+                filter: None,
+            }
+        }
+        pub fn update_entity(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table: impl Into<String>,
+            partition_key: impl Into<String>,
+            row_key: impl Into<String>,
+        ) -> update_entity::Builder {
+            update_entity::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table: table.into(),
+                partition_key: partition_key.into(),
+                row_key: row_key.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                format: None,
+                table_entity_properties: None,
+                if_match: None,
+            }
+        }
+        pub fn merge_entity(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table: impl Into<String>,
+            partition_key: impl Into<String>,
+            row_key: impl Into<String>,
+        ) -> merge_entity::Builder {
+            merge_entity::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table: table.into(),
+                partition_key: partition_key.into(),
+                row_key: row_key.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                format: None,
+                table_entity_properties: None,
+                if_match: None,
+            }
+        }
+        pub fn delete_entity(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table: impl Into<String>,
+            partition_key: impl Into<String>,
+            row_key: impl Into<String>,
+            if_match: impl Into<String>,
+        ) -> delete_entity::Builder {
+            delete_entity::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table: table.into(),
+                partition_key: partition_key.into(),
+                row_key: row_key.into(),
+                if_match: if_match.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                format: None,
+            }
+        }
+        pub fn get_access_policy(
+            &self,
+            x_ms_version: impl Into<String>,
+            table: impl Into<String>,
+            comp: impl Into<String>,
+        ) -> get_access_policy::Builder {
+            get_access_policy::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                table: table.into(),
+                comp: comp.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn insert_entity(
+            &self,
+            x_ms_version: impl Into<String>,
+            data_service_version: impl Into<String>,
+            table: impl Into<String>,
+        ) -> insert_entity::Builder {
+            insert_entity::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                data_service_version: data_service_version.into(),
+                table: table.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                format: None,
+                table_entity_properties: None,
+                prefer: None,
+            }
+        }
+        pub fn set_access_policy(
+            &self,
+            x_ms_version: impl Into<String>,
+            table: impl Into<String>,
+            comp: impl Into<String>,
+        ) -> set_access_policy::Builder {
+            set_access_policy::Builder {
+                client: self.0.clone(),
+                x_ms_version: x_ms_version.into(),
+                table: table.into(),
+                comp: comp.into(),
+                table_acl: None,
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+    }
+    pub mod query {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) next_table_name: Option<String>,
+        }
+        impl Builder {
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn next_table_name(mut self, next_table_name: impl Into<String>) -> Self {
+                self.next_table_name = Some(next_table_name.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TableQueryResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/Tables", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(next_table_name) = &self.next_table_name {
+                        url.query_pairs_mut().append_pair("NextTableName", next_table_name);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableQueryResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Created201(models::TableResponse),
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table_properties: models::TableProperties,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) prefer: Option<String>,
+        }
+        impl Builder {
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn prefer(mut self, prefer: impl Into<String>) -> Self {
+                self.prefer = Some(prefer.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/Tables", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                    let req_body = azure_core::to_json(&self.table_properties).map_err(Error::Serialize)?;
+                    if let Some(prefer) = &self.prefer {
+                        req_builder = req_builder.header("Prefer", prefer);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) table: String,
+            pub(crate) x_ms_client_request_id: Option<String>,
+        }
+        impl Builder {
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/Tables('{}')", self.client.endpoint(), &self.table);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod query_entities {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) select: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) next_partition_key: Option<String>,
+            pub(crate) next_row_key: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn next_partition_key(mut self, next_partition_key: impl Into<String>) -> Self {
+                self.next_partition_key = Some(next_partition_key.into());
+                self
+            }
+            pub fn next_row_key(mut self, next_row_key: impl Into<String>) -> Self {
+                self.next_row_key = Some(next_row_key.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TableEntityQueryResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}()", self.client.endpoint(), &self.table);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(next_partition_key) = &self.next_partition_key {
+                        url.query_pairs_mut().append_pair("NextPartitionKey", next_partition_key);
+                    }
+                    if let Some(next_row_key) = &self.next_row_key {
+                        url.query_pairs_mut().append_pair("NextRowKey", next_row_key);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableEntityQueryResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod query_entity_with_partition_and_row_key {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table: String,
+            pub(crate) partition_key: String,
+            pub(crate) row_key: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TableEntityProperties, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}(PartitionKey='{}',RowKey='{}')",
+                        self.client.endpoint(),
+                        &self.table,
+                        &self.partition_key,
+                        &self.row_key
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableEntityProperties =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod update_entity {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table: String,
+            pub(crate) partition_key: String,
+            pub(crate) row_key: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) table_entity_properties: Option<models::TableEntityProperties>,
+            pub(crate) if_match: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn table_entity_properties(mut self, table_entity_properties: impl Into<models::TableEntityProperties>) -> Self {
+                self.table_entity_properties = Some(table_entity_properties.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}(PartitionKey='{}',RowKey='{}')",
+                        self.client.endpoint(),
+                        &self.table,
+                        &self.partition_key,
+                        &self.row_key
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    let req_body = if let Some(table_entity_properties) = &self.table_entity_properties {
+                        req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                        azure_core::to_json(table_entity_properties).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod merge_entity {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table: String,
+            pub(crate) partition_key: String,
+            pub(crate) row_key: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) table_entity_properties: Option<models::TableEntityProperties>,
+            pub(crate) if_match: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn table_entity_properties(mut self, table_entity_properties: impl Into<models::TableEntityProperties>) -> Self {
+                self.table_entity_properties = Some(table_entity_properties.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}(PartitionKey='{}',RowKey='{}')",
+                        self.client.endpoint(),
+                        &self.table,
+                        &self.partition_key,
+                        &self.row_key
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    let req_body = if let Some(table_entity_properties) = &self.table_entity_properties {
+                        req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                        azure_core::to_json(table_entity_properties).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete_entity {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table: String,
+            pub(crate) partition_key: String,
+            pub(crate) row_key: String,
+            pub(crate) if_match: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}(PartitionKey='{}',RowKey='{}')",
+                        self.client.endpoint(),
+                        &self.table,
+                        &self.partition_key,
+                        &self.row_key
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    req_builder = req_builder.header("If-Match", &self.if_match);
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get_access_policy {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) table: String,
+            pub(crate) comp: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SignedIdentifiers, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.table);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SignedIdentifiers =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod insert_entity {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Created201(models::TableEntityProperties),
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) data_service_version: String,
+            pub(crate) table: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) format: Option<String>,
+            pub(crate) table_entity_properties: Option<models::TableEntityProperties>,
+            pub(crate) prefer: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn format(mut self, format: impl Into<String>) -> Self {
+                self.format = Some(format.into());
+                self
+            }
+            pub fn table_entity_properties(mut self, table_entity_properties: impl Into<models::TableEntityProperties>) -> Self {
+                self.table_entity_properties = Some(table_entity_properties.into());
+                self
+            }
+            pub fn prefer(mut self, prefer: impl Into<String>) -> Self {
+                self.prefer = Some(prefer.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.table);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("DataServiceVersion", &self.data_service_version);
+                    if let Some(format) = &self.format {
+                        url.query_pairs_mut().append_pair("$format", format);
+                    }
+                    let req_body = if let Some(table_entity_properties) = &self.table_entity_properties {
+                        req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                        azure_core::to_json(table_entity_properties).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(prefer) = &self.prefer {
+                        req_builder = req_builder.header("Prefer", prefer);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableEntityProperties =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TableServiceError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod set_access_policy {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) x_ms_version: String,
+            pub(crate) table: String,
+            pub(crate) comp: String,
+            pub(crate) table_acl: Option<models::SignedIdentifiers>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+        }
+        impl Builder {
+            pub fn table_acl(mut self, table_acl: impl Into<models::SignedIdentifiers>) -> Self {
+                self.table_acl = Some(table_acl.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.table);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = if let Some(table_acl) = &self.table_acl {
+                        req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                        azure_core::to_json(table_acl).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::TableServiceError =
