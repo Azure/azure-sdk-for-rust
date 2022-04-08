@@ -28,9 +28,9 @@ where
     let request = service_client.prepare_request(&uri, Method::GET);
     let request = request.body(azure_core::EMPTY_BODY)?;
 
-    Ok(service_client
+    service_client
         .http_client()
         .execute_request_check_status(request, StatusCode::OK)
         .await?
-        .try_into()?)
+        .try_into()
 }
