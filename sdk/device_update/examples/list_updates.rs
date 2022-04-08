@@ -1,6 +1,6 @@
 use azure_device_update::DeviceUpdateClient;
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use std::env;
+use std::{env, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -13,23 +13,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let instance_id = env::var("DEVICE_UPDATE_INSTANCE_ID")
         .expect("Missing DEVICE_UPDATE_INSTANCE_ID environment variable.");
 
-    let creds = ClientSecretCredential::new(
+    let creds = Arc::new(ClientSecretCredential::new(
         tenant_id,
         client_id,
         client_secret,
         TokenCredentialOptions::default(),
-    );
-    let mut client = DeviceUpdateClient::new(&device_update_url, &creds)?;
+    ));
+    let client = DeviceUpdateClient::new(&device_update_url, creds)?;
 
     let s_filter = env::var("DEVICE_UPDATE_FILTER").unwrap_or_default();
     let mut filter: Option<&str> = None;
-    if s_filter.len() != 0 {
+    if !s_filter.is_empty() {
         filter = Some(&s_filter);
     }
 
     let s_search = env::var("DEVICE_UPDATE_SEARCH").unwrap_or_default();
     let mut search: Option<&str> = None;
-    if s_search.len() != 0 {
+    if !s_search.is_empty() {
         search = Some(&s_search);
     }
 

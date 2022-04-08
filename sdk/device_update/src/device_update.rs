@@ -1,7 +1,5 @@
-use crate::client::API_VERSION_PARAM;
-use crate::DeviceUpdateClient;
-use crate::Error;
-use azure_core::auth::TokenCredential;
+use crate::{client::API_VERSION_PARAM, DeviceUpdateClient, Error, Result};
+use azure_core::{Error as CoreError, HttpError};
 use chrono::{DateTime, Utc};
 use getset::Getters;
 use log::debug;
@@ -124,15 +122,15 @@ pub enum OperationStatus {
 #[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateOperation {
-    created_date_time: DateTime<Utc>,
-    error: Option<Value>,
-    etag: String,
-    last_action_date_time: DateTime<Utc>,
-    operation_id: String,
-    resource_location: Option<String>,
-    status: OperationStatus,
-    trace_id: String,
-    update_id: Option<UpdateId>,
+    pub created_date_time: DateTime<Utc>,
+    pub error: Option<Value>,
+    pub etag: String,
+    pub last_action_date_time: DateTime<Utc>,
+    pub operation_id: String,
+    pub resource_location: Option<String>,
+    pub status: OperationStatus,
+    pub trace_id: String,
+    pub update_id: Option<UpdateId>,
 }
 
 #[derive(Debug, Deserialize, Getters)]
@@ -159,22 +157,22 @@ pub struct UpdateList {
     value: Vec<Update>,
 }
 
-impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
+impl DeviceUpdateClient {
     /// Import new update version.
     /// POST https://{endpoint}/deviceupdate/{instanceId}/updates?action=import&api-version=2021-06-01-preview
     pub async fn import_update(
-        &mut self,
+        &self,
         instance_id: &str,
         import_json: String,
-    ) -> Result<UpdateOperation, Error> {
+    ) -> Result<UpdateOperation> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates");
         uri.set_path(&path);
-        let params = format!("action=import&{}", API_VERSION_PARAM);
-        uri.set_query(Some(&params));
+        uri.set_query(Some(API_VERSION_PARAM));
+        uri.query_pairs_mut().append_pair("action", "import");
 
         debug!("Import request: {}", &uri);
-        let resp_body = self.post_authed(uri.to_string(), Some(import_json)).await?;
+        let resp_body = self.post(uri.to_string(), Some(import_json)).await?;
         debug!("Import response: {}", &resp_body);
 
         loop {
@@ -182,25 +180,14 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
             let mut uri = self.device_update_url.clone();
             uri.set_path(&resp_body);
             debug!("Requesting operational status: {}", &uri);
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            debug!("Operational status response: {}", &resp_body);
-            match serde_json::from_str::<UpdateOperation>(&resp_body) {
-                Ok(status) => {
-                    let error: String = match status.error.clone() {
-                        None => "not present".to_owned(),
-                        Some(v) => v.to_string(),
-                    };
-                    match status.status {
-                        OperationStatus::Failed => return Err(Error::ImportFailed(error)),
-                        OperationStatus::Succeeded => return Ok(status),
-                        OperationStatus::NotStarted => continue,
-                        OperationStatus::Running => continue,
-                        OperationStatus::Undefined => return Err(Error::ImportUndefined(error)),
-                    }
-                }
-                Err(_e) => {
-                    return Err(Error::SerdeParse(_e));
-                }
+            let update_operation: UpdateOperation = self.get(uri.to_string()).await?;
+
+            match update_operation.status {
+                OperationStatus::Failed => return Err(Error::ImportFailed(update_operation)),
+                OperationStatus::Succeeded => return Ok(update_operation),
+                OperationStatus::NotStarted => continue,
+                OperationStatus::Running => continue,
+                OperationStatus::Undefined => return Err(Error::ImportUndefined(update_operation)),
             }
         }
     }
@@ -208,86 +195,79 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
     /// Delete a specific update version.
     /// DELETE https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview
     pub async fn delete_update(
-        &mut self,
+        &self,
         instance_id: &str,
         provider: &str,
         name: &str,
         version: &str,
-    ) -> Result<String, Error> {
+    ) -> Result<String> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}");
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.delete_authed(uri.to_string()).await?;
-        Ok(resp_body)
+        self.delete(uri.to_string()).await
     }
 
     /// Get a specific update file from the version.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files/{fileId}?api-version=2021-06-01-previe
     pub async fn get_file(
-        &mut self,
+        &self,
         instance_id: &str,
         provider: &str,
         name: &str,
         version: &str,
         file_id: &str,
-    ) -> Result<UpdateFile, Error> {
+    ) -> Result<UpdateFile> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}/files/{file_id}");
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<UpdateFile>(&resp_body)?;
-        Ok(response)
+        self.get(uri.to_string()).await
     }
 
     /// Retrieve operation status.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations/{operationId}?api-version=2021-06-01-preview
     pub async fn get_operation(
-        &mut self,
+        &self,
         instance_id: &str,
         operation_id: &str,
-    ) -> Result<UpdateOperation, Error> {
+    ) -> Result<UpdateOperation> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/operations/{operation_id}");
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<UpdateOperation>(&resp_body)?;
-        Ok(response)
+        self.get(uri.to_string()).await
     }
 
     /// Get a specific update version.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview
     pub async fn get_update(
-        &mut self,
+        &self,
         instance_id: &str,
         provider: &str,
         name: &str,
         version: &str,
-    ) -> Result<Update, Error> {
+    ) -> Result<Update> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}");
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<Update>(&resp_body)?;
-        Ok(response)
+        self.get(uri.to_string()).await
     }
 
     /// Get a list of all update file identifiers for the specified version.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files?api-version=2021-06-01-preview
     pub async fn list_files(
-        &mut self,
+        &self,
         instance_id: &str,
         provider: &str,
         name: &str,
         version: &str,
-    ) -> Result<Vec<String>, Error> {
+    ) -> Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}/files");
         uri.set_path(&path);
@@ -296,8 +276,7 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         let mut all_results: Vec<String> = Vec::new();
 
         loop {
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            let mut response: StringsList = self.get(uri.to_string()).await?;
             all_results.append(&mut response.value);
 
             match response.next_link {
@@ -306,7 +285,9 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri.join(&url)?
+                    uri = uri
+                        .join(&url)
+                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
                 }
             }
         }
@@ -315,11 +296,7 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
 
     /// Get a list of all update names that match the specified provider.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names?api-version=2021-06-01-preview
-    pub async fn list_names(
-        &mut self,
-        instance_id: &str,
-        provider: &str,
-    ) -> Result<Vec<String>, Error> {
+    pub async fn list_names(&self, instance_id: &str, provider: &str) -> Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names");
         uri.set_path(&path);
@@ -328,8 +305,7 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         let mut all_results: Vec<String> = Vec::new();
 
         loop {
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            let mut response: StringsList = self.get(uri.to_string()).await?;
             all_results.append(&mut response.value);
 
             match response.next_link {
@@ -338,7 +314,9 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri.join(&url)?
+                    uri = uri
+                        .join(&url)
+                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
                 }
             }
         }
@@ -349,34 +327,27 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
     /// Completed operations are kept for 7 days before auto-deleted. Delete operations are not returned by this API version.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations?$filter={$filter}&$top={$top}&api-version=2021-06-01-preview
     pub async fn list_operations(
-        &mut self,
+        &self,
         instance_id: &str,
         filter: Option<&str>,
         top: Option<&str>,
-    ) -> Result<Vec<UpdateOperation>, Error> {
+    ) -> Result<Vec<UpdateOperation>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/operations");
-        let mut params = API_VERSION_PARAM.to_owned();
-        match top {
-            None => {}
-            Some(t) => {
-                params = format!("$top={t}&{params}");
-            }
-        }
-        match filter {
-            None => {}
-            Some(f) => {
-                params = format!("$filter={f}&{params}");
-            }
-        }
+
         uri.set_path(&path);
-        uri.set_query(Some(&params));
+        uri.set_query(Some(API_VERSION_PARAM));
+        if let Some(filter) = filter {
+            uri.query_pairs_mut().append_pair("$filter", filter);
+        }
+        if let Some(top) = top {
+            uri.query_pairs_mut().append_pair("$top", top);
+        }
 
         let mut all_results: Vec<UpdateOperation> = Vec::new();
 
         loop {
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            let mut response = serde_json::from_str::<UpdateOperationsList>(&resp_body)?;
+            let mut response: UpdateOperationsList = self.get(uri.to_string()).await?;
             all_results.append(&mut response.value);
 
             match response.next_link {
@@ -385,7 +356,9 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri.join(&url)?
+                    uri = uri
+                        .join(&url)
+                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
                 }
             }
         }
@@ -394,7 +367,7 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
 
     /// Get a list of all update providers that have been imported to Device Update for IoT Hub.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers?api-version=2021-06-01-preview
-    pub async fn list_providers(&mut self, instance_id: &str) -> Result<Vec<String>, Error> {
+    pub async fn list_providers(&self, instance_id: &str) -> Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers");
         uri.set_path(&path);
@@ -403,8 +376,7 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         let mut all_results: Vec<String> = Vec::new();
 
         loop {
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            let mut response: StringsList = self.get(uri.to_string()).await?;
             all_results.append(&mut response.value);
 
             match response.next_link {
@@ -413,7 +385,9 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri.join(&url)?
+                    uri = uri
+                        .join(&url)
+                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
                 }
             }
         }
@@ -423,34 +397,28 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
     /// Get a list of all updates that have been imported to Device Update for IoT Hub.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates?api-version=2021-06-01-preview&$search={$search}&$filter={$filter}
     pub async fn list_updates(
-        &mut self,
+        &self,
         instance_id: &str,
         filter: Option<&str>,
         search: Option<&str>,
-    ) -> Result<Vec<Update>, Error> {
+    ) -> Result<Vec<Update>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates");
         uri.set_path(&path);
-        let mut params = API_VERSION_PARAM.to_owned();
-        match search {
-            None => {}
-            Some(s) => {
-                params = format!("{params}&$search={s}");
-            }
+
+        uri.set_query(Some(API_VERSION_PARAM));
+        if let Some(search) = search {
+            uri.query_pairs_mut().append_pair("$search", search);
         }
-        match filter {
-            None => {}
-            Some(f) => {
-                params = format!("{params}&$filter={f}");
-            }
+
+        if let Some(filter) = filter {
+            uri.query_pairs_mut().append_pair("$filter", filter);
         }
-        uri.set_query(Some(&params));
 
         let mut all_results: Vec<Update> = Vec::new();
 
         loop {
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            let mut response = serde_json::from_str::<UpdateList>(&resp_body)?;
+            let mut response: UpdateList = self.get(uri.to_string()).await?;
             all_results.append(&mut response.value);
 
             match response.next_link {
@@ -459,7 +427,9 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri.join(&url)?
+                    uri = uri
+                        .join(&url)
+                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
                 }
             }
         }
@@ -469,31 +439,27 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
     /// Get a list of all update versions that match the specified provider and name.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions?api-version=2021-06-01-preview&$filter={$filter}
     pub async fn list_versions(
-        &mut self,
+        &self,
         instance_id: &str,
         provider: &str,
         name: &str,
         filter: Option<&str>,
-    ) -> Result<Vec<String>, Error> {
+    ) -> Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!(
             "deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions"
         );
         uri.set_path(&path);
-        let mut params = API_VERSION_PARAM.to_owned();
-        match filter {
-            None => {}
-            Some(f) => {
-                params = format!("{params}&$filter={f}");
-            }
+
+        uri.set_query(Some(API_VERSION_PARAM));
+        if let Some(filter) = filter {
+            uri.query_pairs_mut().append_pair("$filter", filter);
         }
-        uri.set_query(Some(&params));
 
         let mut all_results: Vec<String> = Vec::new();
 
         loop {
-            let resp_body = self.get_authed(uri.to_string()).await?;
-            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            let mut response: StringsList = self.get(uri.to_string()).await?;
             all_results.append(&mut response.value);
 
             match response.next_link {
@@ -502,7 +468,9 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri.join(&url)?
+                    uri = uri
+                        .join(&url)
+                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
                 }
             }
         }
@@ -516,14 +484,10 @@ mod tests {
     use mockito::{mock, Matcher};
     use serde_json::json;
 
-    use crate::client::API_VERSION;
-    use crate::mock_key_client;
-    use crate::tests::MockCredential;
+    use crate::{client::API_VERSION, tests::mock_client, Result};
 
     #[tokio::test]
-    async fn can_import_update() {
-        let mut op_url = mockito::server_url();
-        op_url += "/op_location";
+    async fn can_import_update() -> Result<()> {
         let _m = mock("POST", "/deviceupdate/test-instance/updates")
             .match_query(Matcher::UrlEncoded(
                 "api-version".into(),
@@ -554,16 +518,14 @@ mod tests {
             .with_status(200)
             .create();
 
-        let creds = MockCredential;
-        let mut client = mock_key_client!(&"test-du", &creds,);
+        let client = mock_client();
 
         let update = client
             .import_update(
                 "test-instance",
                 r#"{"some":"json","...":"fields"}"#.to_owned(),
             )
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(update.etag, "\"some_tag\"");
         assert_eq!(update.operation_id, "some_op_id");
         assert_eq!(
@@ -574,5 +536,7 @@ mod tests {
             update.last_action_date_time,
             DateTime::parse_from_rfc3339("1999-09-10T02:05:07.3845533Z").unwrap()
         );
+
+        Ok(())
     }
 }
