@@ -1,5 +1,9 @@
 use crate::clients::FileSystemClient;
-use crate::{util::*, Properties};
+use crate::{
+    request_options::{PathGetPropertiesAction, PathGetPropertiesFsAction},
+    util::*,
+    Properties,
+};
 use azure_core::prelude::*;
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
@@ -18,6 +22,8 @@ pub struct GetFileSystemPropertiesBuilder {
     client: FileSystemClient,
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    action: Option<PathGetPropertiesAction>,
+    fs_action: Option<PathGetPropertiesFsAction>,
 }
 
 impl GetFileSystemPropertiesBuilder {
@@ -26,12 +32,16 @@ impl GetFileSystemPropertiesBuilder {
             client,
             client_request_id: None,
             timeout: None,
+            action: None,
+            fs_action: None,
         }
     }
 
     setters! {
         client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
+        action: PathGetPropertiesAction => Some(action),
+        fs_action: PathGetPropertiesFsAction => Some(fs_action),
     }
 
     pub fn into_future(self) -> GetFileSystemProperties {
@@ -40,6 +50,15 @@ impl GetFileSystemPropertiesBuilder {
 
         Box::pin(async move {
             let mut url = this.client.url()?;
+            if self.action.is_some() {
+                self.action.append_to_url_query(&mut url);
+
+                // For CheckAccess, we must also specify the "fsAction"
+                if let Some(PathGetPropertiesAction::CheckAccess) = self.action {
+                    self.fs_action.append_to_url_query(&mut url);
+                }
+            }
+
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
