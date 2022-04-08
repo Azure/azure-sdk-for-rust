@@ -16,7 +16,7 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
     type Entity = String;
 
     fn partition_key(&self) -> Self::Entity {
-        self.id.clone().into()
+        self.id.clone()
     }
 }
 
