@@ -16,6 +16,7 @@ where
 {
     client: C,
     action: Option<PathGetPropertiesAction>,
+    fs_action: Option<PathGetPropertiesFsAction>,
     upn: Option<Upn>,
     timeout: Option<Timeout>,
     if_match_condition: Option<IfMatchCondition>,
@@ -30,6 +31,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
         Self {
             client,
             action: None,
+            fs_action: None,
             upn: None,
             timeout: None,
             if_match_condition: None,
@@ -42,6 +44,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 
     setters! {
         action: PathGetPropertiesAction => Some(action),
+        fs_action: PathGetPropertiesFsAction => Some(fs_action),
         upn: Upn => Some(upn),
         timeout: Timeout => Some(timeout),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
@@ -59,6 +62,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             let mut url = this.client.url()?;
 
             self.action.append_to_url_query(&mut url);
+            self.fs_action.append_to_url_query(&mut url);
             self.upn.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 

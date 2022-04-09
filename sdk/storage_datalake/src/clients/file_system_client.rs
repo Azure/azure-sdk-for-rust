@@ -1,6 +1,5 @@
 use super::{DataLakeClient, DirectoryClient, FileClient};
 use crate::operations::*;
-use crate::request_options::{PathGetPropertiesAction, PathGetPropertiesFsAction};
 use crate::{Properties, Result};
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
@@ -83,24 +82,6 @@ impl FileSystemClient {
 
     pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {
         GetFileSystemPropertiesBuilder::new(self.clone())
-    }
-
-    pub fn get_status(&self) -> GetFileSystemPropertiesBuilder {
-        GetFileSystemPropertiesBuilder::new(self.clone()).action(PathGetPropertiesAction::GetStatus)
-    }
-
-    pub fn get_access_control_list(&self) -> GetFileSystemPropertiesBuilder {
-        GetFileSystemPropertiesBuilder::new(self.clone())
-            .action(PathGetPropertiesAction::GetAccessControl)
-    }
-
-    pub fn check_access(
-        &self,
-        fs_action: PathGetPropertiesFsAction,
-    ) -> GetFileSystemPropertiesBuilder {
-        GetFileSystemPropertiesBuilder::new(self.clone())
-            .action(PathGetPropertiesAction::CheckAccess)
-            .fs_action(fs_action)
     }
 
     pub fn set_properties(&self, properties: Properties) -> SetFileSystemPropertiesBuilder {
