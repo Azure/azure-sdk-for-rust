@@ -91,7 +91,7 @@ pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
     pub last_modified: DateTime<Utc>,
-    pub properties: Properties,
+    pub properties: Option<Properties>,
 }
 
 impl HeadPathResponse {
@@ -102,7 +102,7 @@ impl HeadPathResponse {
             common_storage_response_headers: (&headers).try_into()?,
             etag: etag_from_headers(&headers)?,
             last_modified: last_modified_from_headers(&headers)?,
-            properties: (&headers).try_into()?,
+            properties: (&headers).try_into().ok(),
         })
     }
 }
