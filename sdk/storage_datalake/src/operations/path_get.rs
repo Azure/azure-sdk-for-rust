@@ -39,6 +39,7 @@ impl GetFileBuilder {
 
     setters! {
         timeout: Timeout => Some(timeout),
+        range: Range => Some(range),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         if_modified_since: IfModifiedSinceCondition => Some(if_modified_since),
         client_request_id: ClientRequestId => Some(client_request_id),
