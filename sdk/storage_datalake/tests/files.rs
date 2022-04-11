@@ -1,5 +1,4 @@
 #![cfg(feature = "mock_transport_framework")]
-use azure_storage_datalake::request_options::PathGetPropertiesFsAction;
 use azure_storage_datalake::Properties;
 use std::{assert_eq, assert_ne, error::Error};
 
