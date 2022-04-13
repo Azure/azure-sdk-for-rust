@@ -1,5 +1,7 @@
 use crate::{clients::PathClient, request_options::*, Properties};
-use azure_core::headers::{etag_from_headers, last_modified_from_headers};
+use azure_core::headers::{
+    acl_from_headers_optional, etag_from_headers, last_modified_from_headers,
+};
 use azure_core::prelude::*;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -88,6 +90,7 @@ pub struct HeadPathResponse {
     pub etag: String,
     pub last_modified: DateTime<Utc>,
     pub properties: Option<Properties>,
+    pub acl: Option<String>,
 }
 
 impl HeadPathResponse {
@@ -99,6 +102,7 @@ impl HeadPathResponse {
             etag: etag_from_headers(&headers)?,
             last_modified: last_modified_from_headers(&headers)?,
             properties: (&headers).try_into().ok(),
+            acl: acl_from_headers_optional(&headers),
         })
     }
 }

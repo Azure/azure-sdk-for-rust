@@ -123,6 +123,11 @@ impl FileClient {
             .action(PathGetPropertiesAction::GetStatus)
     }
 
+    pub fn get_access_control_list(&self) -> HeadPathBuilder<Self> {
+        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+            .action(PathGetPropertiesAction::GetAccessControl)
+    }
+
     pub fn set_properties(&self, properties: Properties) -> PatchPathBuilder<Self> {
         PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .properties(properties)

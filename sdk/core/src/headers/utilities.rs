@@ -216,3 +216,7 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str> {
 pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32> {
     get_from_headers(headers, ITEM_COUNT)
 }
+
+pub fn acl_from_headers_optional(headers: &HeaderMap) -> Option<String> {
+    get_option_from_headers(headers, ACL).ok().flatten()
+}
