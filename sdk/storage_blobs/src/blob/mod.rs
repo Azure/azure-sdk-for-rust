@@ -10,6 +10,8 @@ mod block_with_size_list;
 pub use self::block_with_size_list::BlockWithSizeList;
 mod block_list;
 pub use self::block_list::BlockList;
+mod page_range_list;
+pub use self::page_range_list::PageRangeList;
 pub mod requests;
 pub mod responses;
 use crate::AccessTier;
