@@ -1,7 +1,6 @@
 use crate::blob::PageRangeList;
 use azure_core::headers::{
-    date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional,
-    request_id_from_headers,
+    date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
 };
 use azure_core::RequestId;
 use chrono::{DateTime, Utc};
@@ -10,8 +9,8 @@ use std::str::from_utf8;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPageRangesResponse {
-    pub etag: Option<String>,
-    pub last_modified: Option<DateTime<Utc>>,
+    pub etag: String,
+    pub last_modified: DateTime<Utc>,
     pub request_id: RequestId,
     pub date: DateTime<Utc>,
     pub page_list: PageRangeList,
@@ -22,8 +21,8 @@ impl GetPageRangesResponse {
         headers: &HeaderMap,
         body: &[u8],
     ) -> crate::Result<GetPageRangesResponse> {
-        let etag = etag_from_headers_optional(headers)?;
-        let last_modified = last_modified_from_headers_optional(headers)?;
+        let etag = etag_from_headers(headers)?;
+        let last_modified = last_modified_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
 
