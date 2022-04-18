@@ -40,3 +40,5 @@ mod set_blob_metadata_response;
 pub use set_blob_metadata_response::SetBlobMetadataResponse;
 mod set_blob_tier_response;
 pub use set_blob_tier_response::SetBlobTierResponse;
+mod get_page_ranges_response;
+pub use get_page_ranges_response::GetPageRangesResponse;
