@@ -1,7 +1,9 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
 use autorust_codegen::{
-    self, cargo_toml, get_svc_readmes, io, lib_rs, config_parser::get_default_tag,
+    self, cargo_toml,
+    config_parser::get_default_tag,
+    get_svc_readmes, io, lib_rs,
     readme_md::{self, ReadmeMd},
     CrateConfig, Error, Result, RunConfig, SpecReadme,
 };

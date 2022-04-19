@@ -60,4 +60,3 @@ enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 
     Ok(())
 }
-
