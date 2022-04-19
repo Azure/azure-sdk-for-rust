@@ -1,4 +1,3 @@
-use crate::config_parser::Tag;
 use camino::Utf8Path;
 use std::{
     fs::File,
