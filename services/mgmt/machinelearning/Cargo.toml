@@ -23,16 +23,7 @@ futures = "0.3"
 azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
-[package.metadata.docs.rs]
-features = ["no-default-tag", "package-commitmentPlans-2016-05-preview", "package-workspaces-2016-04", "package-workspaces-2019-10", "package-webservices-2016-05-preview"]
-
 [features]
-default = ["package-webservices-2017-01", "enable_reqwest"]
+default = ["enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-tag = []
-"package-webservices-2017-01" = []
-"package-commitmentPlans-2016-05-preview" = []
-"package-workspaces-2016-04" = []
-"package-workspaces-2019-10" = []
-"package-webservices-2016-05-preview" = []

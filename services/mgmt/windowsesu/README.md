@@ -5,9 +5,3 @@ This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/windowsesu/resource-manager/readme.md
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
-
-The default tag is `package-2019-09-16-preview`.
-
-The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
-
-- `package-2019-09-16-preview` has 7 operations from 1 API versions: `2019-09-16-preview`. Use crate feature `package-2019-09-16-preview` to enable. The operations will be in the `package_2019_09_16_preview` module.
