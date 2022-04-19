@@ -161,10 +161,6 @@ pub fn run<'a>(config: &'a CrateConfig) -> Result<CodeGen<'a>, Error> {
         let operations = codegen_operations::create_operations(&cg)?;
         let operations_path = io::join(&config.output_folder, "operations.rs")?;
         write_file(&operations_path, &operations, config.print_writing_file())?;
-
-        let operations = create_mod();
-        let operations_path = io::join(&config.output_folder, "mod.rs")?;
-        write_file(&operations_path, &operations, config.print_writing_file())?;
     }
 
     Ok(cg)

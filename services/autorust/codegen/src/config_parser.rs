@@ -98,6 +98,19 @@ impl Tag {
     }
 }
 
+pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a Tag {
+    if let Some(default_tag) = default_tag {
+        if let Some(tag) = tags.iter().find(|tag| tag.name() == default_tag) {
+            return tag;
+        }
+    }
+    let tag = tags.iter().find(|tag| !tag.name().contains("preview"));
+    match tag {
+        Some(tag) => tag,
+        None => tags[0],
+    }
+}
+
 /// Receives the AutoRest configuration file and parses it to its various configurations (by tags/API versions),
 /// according to its extension.
 /// e.g. for "path/to/config.md", it will get parsed as CommonMark [Literate Tag](http://azure.github.io/autorest/user/literate-file-formats/configuration.html).

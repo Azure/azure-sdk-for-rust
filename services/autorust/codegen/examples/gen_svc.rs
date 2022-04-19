@@ -1,11 +1,11 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
 use autorust_codegen::{
-    self, cargo_toml, get_svc_readmes, io, lib_rs,
+    self, cargo_toml, get_svc_readmes, io, lib_rs, config_parser::get_default_tag,
     readme_md::{self, ReadmeMd},
     CrateConfig, Error, Result, RunConfig, SpecReadme,
 };
-use std::{collections::HashMap, fs};
+use std::fs;
 
 const OUTPUT_FOLDER: &str = "../svc";
 
@@ -204,45 +204,27 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
         fs::remove_dir_all(&src_folder)?;
     }
 
-    let mut operation_totals = HashMap::new();
-    let mut api_version_totals = HashMap::new();
-    let mut api_versions = HashMap::new();
-    for tag in tags {
-        println!("  {}", tag.name());
-        let output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
-        let input_files: Result<Vec<_>> = tag
-            .input_files()
-            .iter()
-            .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
-            .collect();
-        let input_files = input_files?;
-        let crate_config = &CrateConfig {
-            run_config,
-            output_folder,
-            input_files,
-        };
-        let cg = autorust_codegen::run(crate_config)?;
-        operation_totals.insert(tag.name(), cg.spec.operations()?.len());
-        let mut versions = cg.spec.api_versions();
-        versions.sort_unstable();
-        api_version_totals.insert(tag.name(), versions.len());
-        api_versions.insert(
-            tag.name(),
-            versions.iter().map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(", "),
-        );
-    }
+    let tag = get_default_tag(tags, spec_config.tag());
 
-    let default_tag = cargo_toml::get_default_tag(tags, spec_config.tag());
-    cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
-    lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
+    println!("  {}", tag.name());
+    let input_files: Result<Vec<_>> = tag
+        .input_files()
+        .iter()
+        .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
+        .collect();
+    let input_files = input_files?;
+    let crate_config = &CrateConfig {
+        run_config,
+        output_folder: src_folder.clone(),
+        input_files,
+    };
+    autorust_codegen::run(crate_config)?;
+
+    cargo_toml::create(crate_name, &io::join(output_folder, "Cargo.toml")?)?;
+    lib_rs::create(&io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
         crate_name,
         readme_url: readme_md::url(spec.readme().as_str()),
-        tags,
-        default_tag,
-        operation_totals,
-        api_version_totals,
-        api_versions,
     };
     readme.create(&io::join(output_folder, "README.md")?)?;
 

@@ -1,4 +1,4 @@
-use crate::{codegen::create_generated_by_header, config_parser::Tag, identifier::ident, write_file};
+use crate::{codegen::create_generated_by_header, write_file};
 use camino::Utf8Path;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -13,25 +13,17 @@ pub enum Error {
     ModName { source: crate::identifier::Error, feature: String },
 }
 
-pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool) -> Result<()> {
-    Ok(write_file(path, &create_body(tags)?, print_writing_file)?)
+pub fn create(path: &Utf8Path, print_writing_file: bool) -> Result<()> {
+    Ok(write_file(path, &create_body()?, print_writing_file)?)
 }
 
-fn create_body(tags: &[&Tag]) -> Result<TokenStream> {
+fn create_body() -> Result<TokenStream> {
     let mut cfgs = TokenStream::new();
-    for tag in tags {
-        let feature_name = tag.rust_feature_name();
-        let mod_name = ident(&tag.rust_mod_name()).map_err(|source| Error::ModName {
-            source,
-            feature: feature_name.to_owned(),
-        })?;
-        cfgs.extend(quote! {
-            #[cfg(feature = #feature_name)]
-            pub mod #mod_name;
-            #[cfg(all(feature = #feature_name, not(feature = "no-default-tag")))]
-            pub use #mod_name::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-        });
-    }
+    cfgs.extend(quote! {
+        pub mod models;
+        pub mod operations;
+        pub use crate::{operations::{Client, ClientBuilder, Error}};
+    });
     let generated_by = create_generated_by_header();
     Ok(quote! {
         #![allow(clippy::module_inception)]
