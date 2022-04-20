@@ -77,6 +77,9 @@ impl Client {
     pub fn attestations(&self) -> attestations::Client {
         attestations::Client(self.clone())
     }
+    pub fn operations(&self) -> operations::Client {
+        operations::Client(self.clone())
+    }
     pub fn policy_events(&self) -> policy_events::Client {
         policy_events::Client(self.clone())
     }
@@ -161,7 +164,73 @@ pub enum Error {
     #[error(transparent)]
     PolicyEvents_NextLink(#[from] policy_events::next_link::Error),
     #[error(transparent)]
+    PolicyEvents_ListQueryResultsForManagementGroup(#[from] policy_events::list_query_results_for_management_group::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForSubscription(#[from] policy_events::list_query_results_for_subscription::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForResourceGroup(#[from] policy_events::list_query_results_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForResource(#[from] policy_events::list_query_results_for_resource::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForPolicySetDefinition(#[from] policy_events::list_query_results_for_policy_set_definition::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForPolicyDefinition(#[from] policy_events::list_query_results_for_policy_definition::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForSubscriptionLevelPolicyAssignment(
+        #[from] policy_events::list_query_results_for_subscription_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForResourceGroupLevelPolicyAssignment(
+        #[from] policy_events::list_query_results_for_resource_group_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
     PolicyStates_NextLink(#[from] policy_states::next_link::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForManagementGroup(#[from] policy_states::list_query_results_for_management_group::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForManagementGroup(#[from] policy_states::summarize_for_management_group::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForSubscription(#[from] policy_states::list_query_results_for_subscription::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForSubscription(#[from] policy_states::summarize_for_subscription::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForResourceGroup(#[from] policy_states::list_query_results_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForResourceGroup(#[from] policy_states::summarize_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForResource(#[from] policy_states::list_query_results_for_resource::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForResource(#[from] policy_states::summarize_for_resource::Error),
+    #[error(transparent)]
+    PolicyStates_TriggerSubscriptionEvaluation(#[from] policy_states::trigger_subscription_evaluation::Error),
+    #[error(transparent)]
+    PolicyStates_TriggerResourceGroupEvaluation(#[from] policy_states::trigger_resource_group_evaluation::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForPolicySetDefinition(#[from] policy_states::list_query_results_for_policy_set_definition::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForPolicySetDefinition(#[from] policy_states::summarize_for_policy_set_definition::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForPolicyDefinition(#[from] policy_states::list_query_results_for_policy_definition::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForPolicyDefinition(#[from] policy_states::summarize_for_policy_definition::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForSubscriptionLevelPolicyAssignment(
+        #[from] policy_states::list_query_results_for_subscription_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyStates_SummarizeForSubscriptionLevelPolicyAssignment(
+        #[from] policy_states::summarize_for_subscription_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForResourceGroupLevelPolicyAssignment(
+        #[from] policy_states::list_query_results_for_resource_group_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyStates_SummarizeForResourceGroupLevelPolicyAssignment(
+        #[from] policy_states::summarize_for_resource_group_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
     #[error(transparent)]
     PolicyMetadata_GetResource(#[from] policy_metadata::get_resource::Error),
     #[error(transparent)]
@@ -2948,6 +3017,181 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        pub fn list_query_results_for_management_group(
+            &self,
+            policy_events_resource: impl Into<String>,
+            management_groups_namespace: impl Into<String>,
+            management_group_name: impl Into<String>,
+        ) -> list_query_results_for_management_group::Builder {
+            list_query_results_for_management_group::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                management_groups_namespace: management_groups_namespace.into(),
+                management_group_name: management_group_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_subscription(
+            &self,
+            policy_events_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_query_results_for_subscription::Builder {
+            list_query_results_for_subscription::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                subscription_id: subscription_id.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_resource_group(
+            &self,
+            policy_events_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+        ) -> list_query_results_for_resource_group::Builder {
+            list_query_results_for_resource_group::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_resource(
+            &self,
+            policy_events_resource: impl Into<String>,
+            resource_id: impl Into<String>,
+        ) -> list_query_results_for_resource::Builder {
+            list_query_results_for_resource::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                resource_id: resource_id.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                expand: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_policy_set_definition(
+            &self,
+            policy_events_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_set_definition_name: impl Into<String>,
+        ) -> list_query_results_for_policy_set_definition::Builder {
+            list_query_results_for_policy_set_definition::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_set_definition_name: policy_set_definition_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_policy_definition(
+            &self,
+            policy_events_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_definition_name: impl Into<String>,
+        ) -> list_query_results_for_policy_definition::Builder {
+            list_query_results_for_policy_definition::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_definition_name: policy_definition_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_subscription_level_policy_assignment(
+            &self,
+            policy_events_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+        ) -> list_query_results_for_subscription_level_policy_assignment::Builder {
+            list_query_results_for_subscription_level_policy_assignment::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_resource_group_level_policy_assignment(
+            &self,
+            policy_events_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+        ) -> list_query_results_for_resource_group_level_policy_assignment::Builder {
+            list_query_results_for_resource_group_level_policy_assignment::Builder {
+                client: self.0.clone(),
+                policy_events_resource: policy_events_resource.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
     }
     pub mod next_link {
         use super::models;
@@ -3027,6 +3271,1127 @@ pub mod policy_events {
             }
         }
     }
+    pub mod list_query_results_for_management_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) management_groups_namespace: String,
+            pub(crate) management_group_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_name,
+                        &self.policy_events_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_subscription {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_events_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_events_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) resource_id: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_events_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_policy_set_definition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_set_definition_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_events_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_policy_definition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_definition_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_events_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_subscription_level_policy_assignment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group_level_policy_assignment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_events_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyEventsQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
 }
 pub mod policy_states {
     use super::models;
@@ -3037,6 +4402,340 @@ pub mod policy_states {
                 client: self.0.clone(),
                 next_link: next_link.into(),
                 skiptoken: None,
+            }
+        }
+        pub fn list_query_results_for_management_group(
+            &self,
+            policy_states_resource: impl Into<String>,
+            management_groups_namespace: impl Into<String>,
+            management_group_name: impl Into<String>,
+        ) -> list_query_results_for_management_group::Builder {
+            list_query_results_for_management_group::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                management_groups_namespace: management_groups_namespace.into(),
+                management_group_name: management_group_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_management_group(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            management_groups_namespace: impl Into<String>,
+            management_group_name: impl Into<String>,
+        ) -> summarize_for_management_group::Builder {
+            summarize_for_management_group::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                management_groups_namespace: management_groups_namespace.into(),
+                management_group_name: management_group_name.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn list_query_results_for_subscription(
+            &self,
+            policy_states_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_query_results_for_subscription::Builder {
+            list_query_results_for_subscription::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                subscription_id: subscription_id.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_subscription(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> summarize_for_subscription::Builder {
+            summarize_for_subscription::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                subscription_id: subscription_id.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn list_query_results_for_resource_group(
+            &self,
+            policy_states_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+        ) -> list_query_results_for_resource_group::Builder {
+            list_query_results_for_resource_group::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_resource_group(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+        ) -> summarize_for_resource_group::Builder {
+            summarize_for_resource_group::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn list_query_results_for_resource(
+            &self,
+            policy_states_resource: impl Into<String>,
+            resource_id: impl Into<String>,
+        ) -> list_query_results_for_resource::Builder {
+            list_query_results_for_resource::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                resource_id: resource_id.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                expand: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_resource(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            resource_id: impl Into<String>,
+        ) -> summarize_for_resource::Builder {
+            summarize_for_resource::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                resource_id: resource_id.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn trigger_subscription_evaluation(&self, subscription_id: impl Into<String>) -> trigger_subscription_evaluation::Builder {
+            trigger_subscription_evaluation::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn trigger_resource_group_evaluation(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+        ) -> trigger_resource_group_evaluation::Builder {
+            trigger_resource_group_evaluation::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+            }
+        }
+        pub fn list_query_results_for_policy_set_definition(
+            &self,
+            policy_states_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_set_definition_name: impl Into<String>,
+        ) -> list_query_results_for_policy_set_definition::Builder {
+            list_query_results_for_policy_set_definition::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_set_definition_name: policy_set_definition_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_policy_set_definition(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_set_definition_name: impl Into<String>,
+        ) -> summarize_for_policy_set_definition::Builder {
+            summarize_for_policy_set_definition::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_set_definition_name: policy_set_definition_name.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn list_query_results_for_policy_definition(
+            &self,
+            policy_states_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_definition_name: impl Into<String>,
+        ) -> list_query_results_for_policy_definition::Builder {
+            list_query_results_for_policy_definition::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_definition_name: policy_definition_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_policy_definition(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_definition_name: impl Into<String>,
+        ) -> summarize_for_policy_definition::Builder {
+            summarize_for_policy_definition::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_definition_name: policy_definition_name.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn list_query_results_for_subscription_level_policy_assignment(
+            &self,
+            policy_states_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+        ) -> list_query_results_for_subscription_level_policy_assignment::Builder {
+            list_query_results_for_subscription_level_policy_assignment::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_subscription_level_policy_assignment(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+        ) -> summarize_for_subscription_level_policy_assignment::Builder {
+            summarize_for_subscription_level_policy_assignment::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
+            }
+        }
+        pub fn list_query_results_for_resource_group_level_policy_assignment(
+            &self,
+            policy_states_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+        ) -> list_query_results_for_resource_group_level_policy_assignment::Builder {
+            list_query_results_for_resource_group_level_policy_assignment::Builder {
+                client: self.0.clone(),
+                policy_states_resource: policy_states_resource.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                skiptoken: None,
+            }
+        }
+        pub fn summarize_for_resource_group_level_policy_assignment(
+            &self,
+            policy_states_summary_resource: impl Into<String>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+        ) -> summarize_for_resource_group_level_policy_assignment::Builder {
+            summarize_for_resource_group_level_policy_assignment::Builder {
+                client: self.0.clone(),
+                policy_states_summary_resource: policy_states_summary_resource.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                top: None,
+                from: None,
+                to: None,
+                filter: None,
             }
         }
     }
@@ -3101,6 +4800,2213 @@ pub mod policy_states {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_management_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) management_groups_namespace: String,
+            pub(crate) management_group_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_name,
+                        &self.policy_states_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_management_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) management_groups_namespace: String,
+            pub(crate) management_group_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_name,
+                        &self.policy_states_summary_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_subscription {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_states_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_subscription {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_states_summary_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_states_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_resource_group {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_states_summary_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) resource_id: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_states_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_resource {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) resource_id: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_states_summary_resource
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod trigger_subscription_evaluation {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation",
+                        self.client.endpoint(),
+                        &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod trigger_resource_group_evaluation {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation",
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_policy_set_definition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_set_definition_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_policy_set_definition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_set_definition_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_summary_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_policy_definition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_definition_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_states_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_policy_definition {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_definition_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_states_summary_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_subscription_level_policy_assignment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_subscription_level_policy_assignment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group_level_policy_assignment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) skiptoken: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
+                self.skiptoken = Some(skiptoken.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(orderby) = &self.orderby {
+                        url.query_pairs_mut().append_pair("$orderby", orderby);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(apply) = &self.apply {
+                        url.query_pairs_mut().append_pair("$apply", apply);
+                    }
+                    if let Some(skiptoken) = &self.skiptoken {
+                        url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PolicyStatesQueryResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod summarize_for_resource_group_level_policy_assignment {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) policy_states_summary_resource: String,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) from: Option<String>,
+            pub(crate) to: Option<String>,
+            pub(crate) filter: Option<String>,
+        }
+        impl Builder {
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn from(mut self, from: impl Into<String>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            pub fn to(mut self, to: impl Into<String>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(from) = &self.from {
+                        url.query_pairs_mut().append_pair("$from", from);
+                    }
+                    if let Some(to) = &self.to {
+                        url.query_pairs_mut().append_pair("$to", to);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SummarizeResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryFailure =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod operations {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.0.clone() }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResults, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/providers/Microsoft.PolicyInsights/operations", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2019-10-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationsListResults =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
