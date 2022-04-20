@@ -51,7 +51,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
                     "Content-Type",
                     &format!(
                         "multipart/mixed; boundary=batch_{}",
-                        batch.batch_uuid().to_hyphenated_ref()
+                        batch.batch_uuid().hyphenated()
                     ),
                 );
                 request
