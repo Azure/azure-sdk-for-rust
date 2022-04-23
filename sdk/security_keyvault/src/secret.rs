@@ -116,7 +116,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn get_secret(&mut self, secret_name: &str) -> Result<KeyVaultSecret, Error> {
-        Ok(self.get_secret_with_version(secret_name, "").await?)
+        self.get_secret_with_version(secret_name, "").await
     }
 
     /// Gets a secret from the Key Vault with a specific version.

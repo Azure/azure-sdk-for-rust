@@ -169,7 +169,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn get_certificate(&mut self, name: &'a str) -> Result<KeyVaultCertificate, Error> {
-        Ok(self.get_certificate_with_version(name, "").await?)
+        self.get_certificate_with_version(name, "").await
     }
 
     /// Gets a certificate from the Key Vault with a specific version.

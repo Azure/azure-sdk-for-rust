@@ -60,7 +60,7 @@ impl QueryDocumentsBuilder {
         context: Context => context,
     }
 
-    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> azure_core::error::Result<Self> {
         Ok(Self {
             partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
             ..self
@@ -127,7 +127,7 @@ impl QueryDocumentsBuilder {
     }
 }
 
-pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, crate::Error>;
+pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, azure_core::error::Error>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DocumentQueryResult<T> {
@@ -141,10 +141,19 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(response.body())?)
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(response.body()).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
     }
 }
 
@@ -197,7 +206,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(self) -> crate::Result<QueryDocumentsResponseDocuments<T>> {
+    pub fn into_documents(self) -> azure_core::error::Result<QueryDocumentsResponseDocuments<T>> {
         self.try_into()
     }
 }
@@ -206,7 +215,7 @@ impl<T> QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 
@@ -372,7 +381,7 @@ pub struct QueryDocumentsResponseDocuments<T> {
 }
 
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -384,8 +393,9 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
                     QueryResult::Document(document) => Ok(document),
                     QueryResult::Raw(_) => {
                         // Bail if there is a raw document
-                        Err(crate::Error::ElementIsRaw(
-                            "QueryDocumentsResponseDocuments".to_owned(),
+                        Err(azure_core::error::Error::with_message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            "error when converting from a QueryDocumentsResponse to structured documents - expected no raw documents but a raw document was found."
                         ))
                     }
                 })

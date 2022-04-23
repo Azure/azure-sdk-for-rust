@@ -84,6 +84,8 @@ pub mod api_properties {
         N3_6,
         #[serde(rename = "4.0")]
         N4_0,
+        #[serde(rename = "4.2")]
+        N4_2,
     }
 }
 #[doc = "Enum to indicate the API type of the restorable database account."]

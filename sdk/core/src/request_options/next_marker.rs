@@ -1,6 +1,7 @@
+use super::Continuation;
 use crate::{AppendToUrlQuery, Error, HttpHeaderError};
 
-use super::Continuation;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NextMarker(String);

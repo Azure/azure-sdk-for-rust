@@ -2,12 +2,15 @@
 [package]
 name = "azure_mgmt_sql"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "generated REST API bindings"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_mgmt_sql"
 
 [dependencies]
-azure_core = { path = "../../../sdk/core", version = "0.1", default-features = false }
+azure_core = { path = "../../../sdk/core", version = "0.2", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 bytes = "1.0"
@@ -21,13 +24,14 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["no-default-version", "package-composite-v4", "package-composite-v3", "package-composite-v2", "package-composite-v1"]
+features = ["no-default-tag", "package-preview-2021-11", "package-composite-v4", "package-composite-v3", "package-composite-v2"]
 
 [features]
 default = ["package-composite-v5", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-version = []
+no-default-tag = []
+"package-preview-2021-11" = []
 "package-composite-v5" = []
 "package-composite-v4" = []
 "package-composite-v3" = []

@@ -1,0 +1,12 @@
+{
+  "uri": "/dbs/cosmos-test-db-users/users/someone@cool.net/permissions",
+  "method": "POST",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-data_cosmos/0.1.0 (1.59.0; linux; x86_64)",
+    "x-ms-date": "Wed, 30 Mar 2022 10:47:12 GMT",
+    "x-ms-documentdb-expiry-seconds": "18000",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6ImdvZG1vZGUiLCJwZXJtaXNzaW9uTW9kZSI6IkFsbCIsInJlc291cmNlIjoiZGJzL1lWMVdBQT09L2NvbGxzL1lWMVdBUDdSa3hJPS8ifQ=="
+}

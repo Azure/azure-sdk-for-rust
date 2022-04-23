@@ -83,7 +83,7 @@ impl ListAttachmentsBuilder {
     }
 }
 
-pub type ListAttachments = Pageable<ListAttachmentsResponse, crate::Error>;
+pub type ListAttachments = Pageable<ListAttachmentsResponse, azure_core::error::Error>;
 
 #[derive(Debug, Clone, Deserialize)]
 struct JsonListAttachmentResponse {
@@ -124,7 +124,7 @@ pub struct ListAttachmentsResponse {
 }
 
 impl ListAttachmentsResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

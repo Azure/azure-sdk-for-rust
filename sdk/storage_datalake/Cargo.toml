@@ -1,7 +1,7 @@
 [package]
 name = "azure_storage_datalake"
 version = "0.1.1"
-description = "Rust wrappers around Microsoft Azure Data Lake Storage Gen2 REST APIs"
+description = "Azure Data Lake Storage Gen2 crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
@@ -10,11 +10,11 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_datalake"
 keywords = ["sdk", "azure", "storage", "datalake"]
 categories = ["api-bindings"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.1" }
+azure_core = { path = "../core", version = "0.2" }
 azure_storage = { path = "../storage", version = "0.1" }
 base64 = "0.13"
 bytes = "1.0"
@@ -26,7 +26,7 @@ serde = { version = "1.0" }
 serde_derive = "1.0"
 serde_json = "1.0"
 serde-xml-rs = "0.5"
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4"] }
 url = "2.2"
 
 [dev-dependencies]

@@ -70,7 +70,7 @@ impl ListStoredProceduresBuilder {
     }
 }
 
-pub type ListStoredProcedures = Pageable<ListStoredProceduresResponse, crate::Error>;
+pub type ListStoredProcedures = Pageable<ListStoredProceduresResponse, azure_core::error::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListStoredProceduresResponse {
@@ -86,7 +86,7 @@ pub struct ListStoredProceduresResponse {
 }
 
 impl ListStoredProceduresResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

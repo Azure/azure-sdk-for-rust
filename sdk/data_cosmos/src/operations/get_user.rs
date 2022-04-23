@@ -47,7 +47,7 @@ impl GetUserBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type GetUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
+pub type GetUser = futures::future::BoxFuture<'static, azure_core::error::Result<UserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetUserBuilder {

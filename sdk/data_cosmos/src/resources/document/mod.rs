@@ -44,12 +44,18 @@ impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for Document<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let _headers = value.0;
-        let body = value.1;
-
-        Ok(serde_json::from_slice(body)?)
+    type Error = azure_core::error::Error;
+    fn try_from((_, body): (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(body).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(body).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
     }
 }
 

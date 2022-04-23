@@ -83,12 +83,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("update sequence number condition == {:?}", res);
 
+    // let's get page ranges
+    let res = blob_client.get_page_ranges().execute().await?;
+    println!("get page ranges == {:?}", res);
+
     // let's clear a page
     let res = blob_client
         .clear_page(BA512Range::new(0, 511)?)
         .execute()
         .await?;
     println!("clear first page {:?}", res);
+
+    // let's get page ranges again
+    let res = blob_client.get_page_ranges().execute().await?;
+    println!("get page ranges == {:?}", res);
 
     Ok(())
 }

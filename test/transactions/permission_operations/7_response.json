@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store, no-cache",
+    "content-location": "https://azuresdktesting2.documents.azure.com/dbs/cosmos-test-db-users/users/pollastro@cool.net/permissions",
+    "content-type": "application/json",
+    "date": "Wed, 30 Mar 2022 10:47:08 GMT",
+    "lsn": "76",
+    "pragma": "no-cache",
+    "server": "Microsoft-HTTPAPI/2.0",
+    "strict-transport-security": "max-age=31536000",
+    "transfer-encoding": "chunked",
+    "x-ms-activity-id": "b21458c3-3853-4193-a564-fcfcf4cf8296",
+    "x-ms-alt-content-path": "dbs/cosmos-test-db-users/users/pollastro@cool.net",
+    "x-ms-content-path": "YV1WAAjiHwA=",
+    "x-ms-cosmos-llsn": "76",
+    "x-ms-gatewayversion": "version=2.14.0",
+    "x-ms-global-committed-lsn": "76",
+    "x-ms-item-count": "1",
+    "x-ms-last-state-change-utc": "Wed, 23 Mar 2022 22:20:37.552 GMT",
+    "x-ms-number-of-read-regions": "0",
+    "x-ms-request-charge": "2",
+    "x-ms-request-duration-ms": "0.54",
+    "x-ms-resource-quota": "permissions=2000000;",
+    "x-ms-resource-usage": "permissions=2;",
+    "x-ms-schemaversion": "1.13",
+    "x-ms-serviceversion": "version=2.14.0.0",
+    "x-ms-session-token": "0:-1#76",
+    "x-ms-transport-request-id": "104975",
+    "x-ms-xp-role": "1"
+  },
+  "body": "eyJfcmlkIjoiWVYxV0FBamlId0E9IiwiUGVybWlzc2lvbnMiOlt7ImlkIjoic3B5bWUiLCJwZXJtaXNzaW9uTW9kZSI6IlJlYWQiLCJyZXNvdXJjZSI6ImRicy9ZVjFXQUE9PS9jb2xscy9ZVjFXQVA3Umt4ST0vIiwiX3JpZCI6IllWMVdBQWppSHdBaktmbDAtbFlBQUE9PSIsIl9zZWxmIjoiZGJzXC9ZVjFXQUE9PVwvdXNlcnNcL1lWMVdBQWppSHdBPVwvcGVybWlzc2lvbnNcL1lWMVdBQWppSHdBaktmbDAtbFlBQUE9PVwvIiwiX2V0YWciOiJcIjAwMDA3YjAxLTAwMDAtMDEwMC0wMDAwLTYyNDQzNTJiMDAwMFwiIiwiX3RzIjoxNjQ4NjM3MjI3LCJfdG9rZW4iOiJ0eXBlPXJlc291cmNlJnZlcj0xJnNpZz1rWFRjRFRtcVN3aHVJUUM2SUNBbFZ3PT07SmNRd2VoTk9nYVV2V2UwN24yNEkwXC92aGdtT3c2ZGZrY0Q3czVtTTVjT2JtSGZQM29uU0ZQbXMyVStkTW43YUFPXC9CQUx1RFVjMzZDT0hcLzRmaWFUMlZwRVBmdnNNOVUxNENrQ2d2OWNZVVhzNGFXUW5KZlBydEpvRTdMcTFcL3ZLdVwvXC9cL2pXXC9VRlBvXC82d1ZzekViKzFZSzhtZXlTVkM1VjlZQnRrc3hMNksxSUY3alVcL2JuNkl4U1hORUVKVWlcLzA7In1dLCJfY291bnQiOjF9"
+}

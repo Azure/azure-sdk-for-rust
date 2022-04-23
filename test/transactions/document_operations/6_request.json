@@ -1,0 +1,16 @@
+{
+  "uri": "/dbs/test-cosmos-db-create-and-delete-document/colls/test-collection-create-and-delete-document/docs/test-document-name-create-and-delete-document",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "if-match": "\"1b00347b-0000-0100-0000-624310300000\"",
+    "user-agent": "azsdk-rust-data_cosmos/0.1.0 (1.59.0; linux; x86_64)",
+    "x-ms-consistency-level": "Session",
+    "x-ms-cosmos-allow-tentative-writes": "false",
+    "x-ms-date": "Tue, 29 Mar 2022 13:57:07 GMT",
+    "x-ms-documentdb-partitionkey": "[\"test-document-name-create-and-delete-document\"]",
+    "x-ms-session-token": "0:-1#2",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6InRlc3QtZG9jdW1lbnQtbmFtZS1jcmVhdGUtYW5kLWRlbGV0ZS1kb2N1bWVudCIsImhlbGxvIjoxOTB9"
+}

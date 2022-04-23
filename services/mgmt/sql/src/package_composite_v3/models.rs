@@ -938,6 +938,9 @@ pub struct DatabaseProperties {
     #[doc = "The date when database was resumed by user action or database login (ISO8601 format). Null if the database is paused."]
     #[serde(rename = "resumedDate", default, skip_serializing_if = "Option::is_none")]
     pub resumed_date: Option<String>,
+    #[doc = "The resource identifier of the source associated with the create operation of this database.\r\n\r\nWhen sourceResourceId is specified, sourceDatabaseId, recoverableDatabaseId, restorableDroppedDatabaseId and sourceDatabaseDeletionDate must not be specified and CreateMode must be PointInTimeRestore, Restore or Recover.\r\n\r\nWhen createMode is PointInTimeRestore, sourceResourceId must be the resource ID of an existing database or existing sql pool, and restorePointInTime must be specified.\r\n\r\nWhen createMode is Restore, sourceResourceId must be the resource ID of restorable dropped database or restorable dropped sql pool.\r\n\r\nWhen createMode is Recover, sourceResourceId must be the resource ID of recoverable database or recoverable sql pool.\r\n\r\nThis property allows to restore across subscriptions which is only supported for DataWarehouse edition.\r\n\r\nWhen source subscription belongs to a different tenant than target subscription, “x-ms-authorization-auxiliary” header must contain authentication token for the source tenant. For more details about “x-ms-authorization-auxiliary” header see https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/authenticate-multi-tenant "]
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_resource_id: Option<String>,
 }
 impl DatabaseProperties {
     pub fn new() -> Self {
@@ -1107,15 +1110,15 @@ pub mod database_security_alert_policy_properties {
         Disabled,
     }
 }
-#[doc = "A database resource."]
+#[doc = "A database update resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseUpdate {
     #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[doc = "The database's properties."]
+    #[doc = "A database update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseProperties>,
+    pub properties: Option<DatabaseUpdateProperties>,
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -1123,6 +1126,191 @@ pub struct DatabaseUpdate {
 impl DatabaseUpdate {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "A database update properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseUpdateProperties {
+    #[doc = "Specifies the mode of database creation.\r\n\r\nDefault: regular database creation.\r\n\r\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\r\n\r\nSecondary: creates a database as a secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\r\n\r\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\r\n\r\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\r\n\r\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\r\n\r\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\r\n\r\nCopy, Secondary, and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<database_update_properties::CreateMode>,
+    #[doc = "The collation of the database."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collation: Option<String>,
+    #[doc = "The max size of the database expressed in bytes."]
+    #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
+    pub max_size_bytes: Option<i64>,
+    #[doc = "The name of the sample schema to apply when creating this database."]
+    #[serde(rename = "sampleName", default, skip_serializing_if = "Option::is_none")]
+    pub sample_name: Option<database_update_properties::SampleName>,
+    #[doc = "The resource identifier of the elastic pool containing this database."]
+    #[serde(rename = "elasticPoolId", default, skip_serializing_if = "Option::is_none")]
+    pub elastic_pool_id: Option<String>,
+    #[doc = "The resource identifier of the source database associated with create operation of this database."]
+    #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub source_database_id: Option<String>,
+    #[doc = "The status of the database."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<database_update_properties::Status>,
+    #[doc = "The ID of the database."]
+    #[serde(rename = "databaseId", default, skip_serializing_if = "Option::is_none")]
+    pub database_id: Option<String>,
+    #[doc = "The creation date of the database (ISO8601 format)."]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
+    pub creation_date: Option<String>,
+    #[doc = "The current service level objective name of the database."]
+    #[serde(rename = "currentServiceObjectiveName", default, skip_serializing_if = "Option::is_none")]
+    pub current_service_objective_name: Option<String>,
+    #[doc = "The requested service level objective name of the database."]
+    #[serde(rename = "requestedServiceObjectiveName", default, skip_serializing_if = "Option::is_none")]
+    pub requested_service_objective_name: Option<String>,
+    #[doc = "The default secondary region for this database."]
+    #[serde(rename = "defaultSecondaryLocation", default, skip_serializing_if = "Option::is_none")]
+    pub default_secondary_location: Option<String>,
+    #[doc = "Failover Group resource identifier that this database belongs to."]
+    #[serde(rename = "failoverGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub failover_group_id: Option<String>,
+    #[doc = "Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database."]
+    #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
+    pub restore_point_in_time: Option<String>,
+    #[doc = "Specifies the time that the database was deleted."]
+    #[serde(rename = "sourceDatabaseDeletionDate", default, skip_serializing_if = "Option::is_none")]
+    pub source_database_deletion_date: Option<String>,
+    #[doc = "The resource identifier of the recovery point associated with create operation of this database."]
+    #[serde(rename = "recoveryServicesRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_services_recovery_point_id: Option<String>,
+    #[doc = "The resource identifier of the long term retention backup associated with create operation of this database."]
+    #[serde(rename = "longTermRetentionBackupResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub long_term_retention_backup_resource_id: Option<String>,
+    #[doc = "The resource identifier of the recoverable database associated with create operation of this database."]
+    #[serde(rename = "recoverableDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub recoverable_database_id: Option<String>,
+    #[doc = "The resource identifier of the restorable dropped database associated with create operation of this database."]
+    #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub restorable_dropped_database_id: Option<String>,
+    #[doc = "Collation of the metadata catalog."]
+    #[serde(rename = "catalogCollation", default, skip_serializing_if = "Option::is_none")]
+    pub catalog_collation: Option<database_update_properties::CatalogCollation>,
+    #[doc = "Whether or not this database is zone redundant, which means the replicas of this database will be spread across multiple availability zones."]
+    #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
+    pub zone_redundant: Option<bool>,
+    #[doc = "The license type to apply for this database. `LicenseIncluded` if you need a license, or `BasePrice` if you have a license and are eligible for the Azure Hybrid Benefit."]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    pub license_type: Option<database_update_properties::LicenseType>,
+    #[doc = "The max log size for this database."]
+    #[serde(rename = "maxLogSizeBytes", default, skip_serializing_if = "Option::is_none")]
+    pub max_log_size_bytes: Option<i64>,
+    #[doc = "This records the earliest start date and time that restore is available for this database (ISO8601 format)."]
+    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
+    pub earliest_restore_date: Option<String>,
+    #[doc = "The state of read-only routing. If enabled, connections that have application intent set to readonly in their connection string may be routed to a readonly secondary replica in the same region."]
+    #[serde(rename = "readScale", default, skip_serializing_if = "Option::is_none")]
+    pub read_scale: Option<database_update_properties::ReadScale>,
+    #[doc = "The number of readonly secondary replicas associated with the database."]
+    #[serde(rename = "readReplicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub read_replica_count: Option<i32>,
+    #[doc = "An ARM Resource SKU."]
+    #[serde(rename = "currentSku", default, skip_serializing_if = "Option::is_none")]
+    pub current_sku: Option<Sku>,
+    #[doc = "Time in minutes after which database is automatically paused. A value of -1 means that automatic pause is disabled"]
+    #[serde(rename = "autoPauseDelay", default, skip_serializing_if = "Option::is_none")]
+    pub auto_pause_delay: Option<i32>,
+    #[doc = "The storage account type used to store backups for this database."]
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_type: Option<database_update_properties::StorageAccountType>,
+    #[doc = "Minimal capacity that database will always have allocated, if not paused"]
+    #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub min_capacity: Option<f64>,
+    #[doc = "The date when database was paused by user configuration or action(ISO8601 format). Null if the database is ready."]
+    #[serde(rename = "pausedDate", default, skip_serializing_if = "Option::is_none")]
+    pub paused_date: Option<String>,
+    #[doc = "The date when database was resumed by user action or database login (ISO8601 format). Null if the database is paused."]
+    #[serde(rename = "resumedDate", default, skip_serializing_if = "Option::is_none")]
+    pub resumed_date: Option<String>,
+}
+impl DatabaseUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod database_update_properties {
+    use super::*;
+    #[doc = "Specifies the mode of database creation.\r\n\r\nDefault: regular database creation.\r\n\r\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\r\n\r\nSecondary: creates a database as a secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\r\n\r\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\r\n\r\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\r\n\r\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\r\n\r\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\r\n\r\nCopy, Secondary, and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreateMode {
+        Default,
+        Copy,
+        Secondary,
+        PointInTimeRestore,
+        Restore,
+        Recovery,
+        RestoreExternalBackup,
+        RestoreExternalBackupSecondary,
+        RestoreLongTermRetentionBackup,
+        OnlineSecondary,
+    }
+    #[doc = "The name of the sample schema to apply when creating this database."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SampleName {
+        #[serde(rename = "AdventureWorksLT")]
+        AdventureWorksLt,
+        WideWorldImportersStd,
+        WideWorldImportersFull,
+    }
+    #[doc = "The status of the database."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Online,
+        Restoring,
+        RecoveryPending,
+        Recovering,
+        Suspect,
+        Offline,
+        Standby,
+        Shutdown,
+        EmergencyMode,
+        AutoClosed,
+        Copying,
+        Creating,
+        Inaccessible,
+        OfflineSecondary,
+        Pausing,
+        Paused,
+        Resuming,
+        Scaling,
+        OfflineChangingDwPerformanceTiers,
+        OnlineChangingDwPerformanceTiers,
+        Disabled,
+    }
+    #[doc = "Collation of the metadata catalog."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CatalogCollation {
+        #[serde(rename = "DATABASE_DEFAULT")]
+        DatabaseDefault,
+        #[serde(rename = "SQL_Latin1_General_CP1_CI_AS")]
+        SqlLatin1GeneralCp1CiAs,
+    }
+    #[doc = "The license type to apply for this database. `LicenseIncluded` if you need a license, or `BasePrice` if you have a license and are eligible for the Azure Hybrid Benefit."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LicenseType {
+        LicenseIncluded,
+        BasePrice,
+    }
+    #[doc = "The state of read-only routing. If enabled, connections that have application intent set to readonly in their connection string may be routed to a readonly secondary replica in the same region."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ReadScale {
+        Enabled,
+        Disabled,
+    }
+    #[doc = "The storage account type used to store backups for this database."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageAccountType {
+        #[serde(rename = "GRS")]
+        Grs,
+        #[serde(rename = "LRS")]
+        Lrs,
+        #[serde(rename = "ZRS")]
+        Zrs,
     }
 }
 #[doc = "The database usages."]

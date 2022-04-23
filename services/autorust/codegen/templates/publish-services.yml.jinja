@@ -1,0 +1,22 @@
+name: Publish All Services
+
+on:
+  workflow_dispatch:
+
+# Do NOT add your CARGO_REGISTRY_TOKEN to Azure/azure-sdk-for-rust repository. Only add it to your repository.
+# The publish actions are intended for running in your own fork where only you have access to run the actions.
+env:
+  CARGO_REGISTRY_TOKEN: {% raw %}${{ secrets.CARGO_REGISTRY_TOKEN }}{% endraw %}
+
+jobs:
+{% for package in packages %}
+  {{package}}:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p {{package}}
+{% endfor %}

@@ -7525,6 +7525,9 @@ pub mod execute_data_flow_activity_type_properties {
 pub struct ExecutePipelineActivity {
     #[serde(flatten)]
     pub control_activity: ControlActivity,
+    #[doc = "Execution policy for an execute pipeline activity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<ExecutePipelineActivityPolicy>,
     #[doc = "Execute pipeline activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: ExecutePipelineActivityTypeProperties,
@@ -7533,8 +7536,21 @@ impl ExecutePipelineActivity {
     pub fn new(control_activity: ControlActivity, type_properties: ExecutePipelineActivityTypeProperties) -> Self {
         Self {
             control_activity,
+            policy: None,
             type_properties,
         }
+    }
+}
+#[doc = "Execution policy for an execute pipeline activity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExecutePipelineActivityPolicy {
+    #[doc = "When set to true, Input from activity is considered as secure and will not be logged to monitoring."]
+    #[serde(rename = "secureInput", default, skip_serializing_if = "Option::is_none")]
+    pub secure_input: Option<bool>,
+}
+impl ExecutePipelineActivityPolicy {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Execute pipeline activity properties."]
@@ -20883,6 +20899,9 @@ pub struct WebActivityTypeProperties {
     #[doc = "Web activity authentication properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<WebActivityAuthentication>,
+    #[doc = "When set to true, Certificate validation will be disabled."]
+    #[serde(rename = "disableCertValidation", default, skip_serializing_if = "Option::is_none")]
+    pub disable_cert_validation: Option<bool>,
     #[doc = "List of datasets passed to web endpoint."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub datasets: Vec<DatasetReference>,
@@ -20901,6 +20920,7 @@ impl WebActivityTypeProperties {
             headers: None,
             body: None,
             authentication: None,
+            disable_cert_validation: None,
             datasets: Vec::new(),
             linked_services: Vec::new(),
             connect_via: None,

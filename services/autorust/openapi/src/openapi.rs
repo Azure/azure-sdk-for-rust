@@ -54,12 +54,17 @@ pub struct OpenAPI {
 }
 
 impl OpenAPI {
-    pub fn paths(&self) -> &IndexMap<String, ReferenceOr<PathItem>> {
-        if !self.x_ms_paths.is_empty() {
-            &self.x_ms_paths
-        } else {
-            &self.paths
+    pub fn paths(&self) -> IndexMap<String, ReferenceOr<PathItem>> {
+        let mut result = IndexMap::new();
+        for (k, v) in self.x_ms_paths.iter() {
+            result.insert(k.clone(), v.clone());
         }
+        for (k, v) in self.paths.iter() {
+            if !self.x_ms_paths.contains_key(k) {
+                result.insert(k.clone(), v.clone());
+            }
+        }
+        result
     }
     pub fn version(&self) -> Result<&str, Error> {
         Ok(self.info.version.as_ref().ok_or(Error::MissingApiVersion)?.as_str())

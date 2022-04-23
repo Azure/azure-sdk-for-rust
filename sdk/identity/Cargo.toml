@@ -10,11 +10,11 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_identity"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }
-azure_core = { path = "../core", version = "0.1", default-features = false }
+azure_core = { path = "../core", version = "0.2", default-features = false }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
@@ -26,11 +26,15 @@ log = "0.4"
 async-timer = "1.0.0-beta.7"
 thiserror = "1.0"
 async-trait = "0.1"
+openssl = { version = "0.10",  optional=true }
+base64 = "0.13.0"
+uuid = { version = "1.0",  features = ["v4"] }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 serde_test = "1"
+azure_security_keyvault = { path = "../security_keyvault", version = "0.1"}
 
 [features]
 default = ["development", "enable_reqwest"]
@@ -46,3 +50,8 @@ enable_reqwest_rustls = [
 ]
 development = []
 test_e2e = []
+client_certificate = ["openssl"]
+
+[[example]]
+name="client_certificate_credentials"
+required-features = ["client_certificate"]

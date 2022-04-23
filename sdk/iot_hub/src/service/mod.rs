@@ -148,7 +148,7 @@ impl ServiceClient {
     /// let private_key = "YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     ///
     /// let result = ServiceClient::from_private_key(http_client, iot_hub_name, key_name, private_key, 3600);
-    /// assert!(result.is_ok(), true);
+    /// assert!(result.is_ok());
     /// ```
     pub fn from_private_key<S, T, U>(
         http_client: Arc<dyn HttpClient>,
@@ -190,7 +190,7 @@ impl ServiceClient {
     /// let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     ///
     /// let result = ServiceClient::from_connection_string(http_client, connection_string, 3600);
-    /// assert!(result.is_ok(), true);
+    /// assert!(result.is_ok());
     /// ```
     pub fn from_connection_string<S>(
         http_client: Arc<dyn HttpClient>,
@@ -201,7 +201,6 @@ impl ServiceClient {
         S: AsRef<str>,
     {
         let parts: Vec<&str> = connection_string.as_ref().split(';').collect();
-
         let mut iot_hub_name: Option<&str> = None;
         let mut key_name: Option<&str> = None;
         let mut primary_key: Option<&str> = None;

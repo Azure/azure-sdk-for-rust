@@ -5,15 +5,13 @@ use crate::{
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
 use autorust_openapi::{DataType, Reference, ReferenceOr, Schema};
+use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::{
-    collections::HashSet,
-    path::{Path, PathBuf},
-};
+use std::collections::HashSet;
 
 #[derive(Clone)]
 struct PropertyGen {
@@ -27,7 +25,7 @@ struct SchemaGen {
     schema: Schema,
 
     // used for identifying workarounds
-    doc_file: PathBuf,
+    doc_file: Utf8PathBuf,
 
     // resolved
     properties: Vec<PropertyGen>,
@@ -41,7 +39,7 @@ struct EnumValue {
 }
 
 impl SchemaGen {
-    fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: PathBuf) -> Self {
+    fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: Utf8PathBuf) -> Self {
         Self {
             ref_key,
             schema,
@@ -135,7 +133,7 @@ fn resolve_schema_properties(
     resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     spec: &Spec,
-    doc_file: &Path,
+    doc_file: &Utf8Path,
     schema: &SchemaGen,
 ) -> Result<SchemaGen, Error> {
     let mut properties: IndexMap<String, _> = IndexMap::new();
@@ -164,7 +162,7 @@ fn resolve_schema_property(
     resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     spec: &Spec,
-    doc_file: &Path,
+    doc_file: &Utf8Path,
     property_name: String,
     property: &ResolvedSchema,
 ) -> Result<PropertyGen, Error> {
@@ -340,7 +338,12 @@ fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<
 }
 
 // For create_models. Recursively adds schema refs.
-fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_file: &Path, schema_ref: &Reference) -> Result<(), Error> {
+fn add_schema_refs(
+    resolved: &mut IndexMap<RefKey, SchemaGen>,
+    spec: &Spec,
+    doc_file: &Utf8Path,
+    schema_ref: &Reference,
+) -> Result<(), Error> {
     let resolved_schema = spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = &resolved_schema.ref_key {
         if !resolved.contains_key(ref_key) && !spec.is_input_file(&ref_key.file_path) {

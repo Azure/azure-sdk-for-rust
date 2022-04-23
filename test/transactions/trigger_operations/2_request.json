@@ -1,0 +1,11 @@
+{
+  "uri": "/dbs/test-cosmos-db-trigger/colls/test-udf/triggers",
+  "method": "POST",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-data_cosmos/0.1.0 (1.59.0; linux; x86_64)",
+    "x-ms-date": "Wed, 30 Mar 2022 10:36:22 GMT",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6InRlc3QiLCJ0cmlnZ2VyT3BlcmF0aW9uIjoiQWxsIiwidHJpZ2dlclR5cGUiOiJQb3N0IiwiYm9keSI6InNvbWV0aGluZyJ9"
+}

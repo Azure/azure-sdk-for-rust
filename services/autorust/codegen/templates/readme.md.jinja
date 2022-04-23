@@ -1,0 +1,14 @@
+# {{ crate_name }} crate
+
+This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
+
+{{ readme_url }}
+
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
+
+The default tag is `{{default_tag.name()}}`.
+
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
+{% for tag in tags %}
+- `{{tag.name()}}` has {{self.operation_total(tag)}} operations from {{self.api_version_total(tag)}} API versions: {{self.api_versions(tag)}}. Use crate feature `{{tag.rust_feature_name()}}` to enable. The operations will be in the `{{tag.rust_mod_name()}}` module.
+{%- endfor -%}

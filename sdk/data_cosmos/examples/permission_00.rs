@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
-    let permission = user.permission("matrix");
+    let permission = user.permission_client("matrix");
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // create the second permission!
-    let permission = user.permission("neo".to_owned());
+    let permission = user.permission_client("neo".to_owned());
     let permission_mode = get_collection2_response.collection.all_permission();
 
     let create_permission2_response = permission
