@@ -1343,16 +1343,16 @@ pub struct Workspace {
     #[doc = "Workspace properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
-    #[doc = "The ETag of the workspace."]
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
+    #[doc = "The etag of the workspace."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }
 impl Workspace {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
             properties: None,
-            e_tag: None,
+            etag: None,
         }
     }
 }

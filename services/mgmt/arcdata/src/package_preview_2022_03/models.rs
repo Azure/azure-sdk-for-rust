@@ -36,6 +36,12 @@ pub struct ActiveDirectoryConnectorDomainDetails {
     #[doc = "NETBIOS name of the Active Directory domain."]
     #[serde(rename = "netbiosDomainName", default, skip_serializing_if = "Option::is_none")]
     pub netbios_domain_name: Option<String>,
+    #[doc = "The service account provisioning mode for this Active Directory connector."]
+    #[serde(rename = "serviceAccountProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub service_account_provisioning: Option<active_directory_connector_domain_details::ServiceAccountProvisioning>,
+    #[doc = "The distinguished name of the Active Directory Organizational Unit."]
+    #[serde(rename = "ouDistinguishedName", default, skip_serializing_if = "Option::is_none")]
+    pub ou_distinguished_name: Option<String>,
     #[doc = "Details about the Active Directory domain controllers associated with this AD connector instance"]
     #[serde(rename = "domainControllers")]
     pub domain_controllers: ActiveDirectoryDomainControllers,
@@ -45,7 +51,25 @@ impl ActiveDirectoryConnectorDomainDetails {
         Self {
             realm,
             netbios_domain_name: None,
+            service_account_provisioning: None,
+            ou_distinguished_name: None,
             domain_controllers,
+        }
+    }
+}
+pub mod active_directory_connector_domain_details {
+    use super::*;
+    #[doc = "The service account provisioning mode for this Active Directory connector."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ServiceAccountProvisioning {
+        #[serde(rename = "automatic")]
+        Automatic,
+        #[serde(rename = "manual")]
+        Manual,
+    }
+    impl Default for ServiceAccountProvisioning {
+        fn default() -> Self {
+            Self::Manual
         }
     }
 }
@@ -67,6 +91,9 @@ impl ActiveDirectoryConnectorListResult {
 #[doc = "The properties of an Active Directory connector resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectoryConnectorProperties {
+    #[doc = "Username and password for basic login authentication."]
+    #[serde(rename = "domainServiceAccountLoginInformation", default, skip_serializing_if = "Option::is_none")]
+    pub domain_service_account_login_information: Option<BasicLoginInformation>,
     #[doc = "The provisioning state of the Active Directory connector resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -79,6 +106,7 @@ pub struct ActiveDirectoryConnectorProperties {
 impl ActiveDirectoryConnectorProperties {
     pub fn new(spec: ActiveDirectoryConnectorSpec) -> Self {
         Self {
+            domain_service_account_login_information: None,
             provisioning_state: None,
             spec,
             status: None,
@@ -155,6 +183,18 @@ pub struct ActiveDirectoryDomainControllers {
     pub secondary_domain_controllers: Option<ActiveDirectorySecondaryDomainControllers>,
 }
 impl ActiveDirectoryDomainControllers {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Active Directory information that related to the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActiveDirectoryInformation {
+    #[doc = "Keytab used for authenticate with Active Directory."]
+    #[serde(rename = "keytabInformation", default, skip_serializing_if = "Option::is_none")]
+    pub keytab_information: Option<KeytabInformation>,
+}
+impl ActiveDirectoryInformation {
     pub fn new() -> Self {
         Self::default()
     }
@@ -399,6 +439,18 @@ pub struct K8sSchedulingOptions {
     pub resources: Option<K8sResourceRequirements>,
 }
 impl K8sSchedulingOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Keytab used for authenticate with Active Directory."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KeytabInformation {
+    #[doc = "A base64-encoded keytab."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keytab: Option<String>,
+}
+impl KeytabInformation {
     pub fn new() -> Self {
         Self::default()
     }
@@ -763,9 +815,9 @@ pub struct SqlManagedInstanceProperties {
     #[doc = "The provisioning state of the Arc-enabled SQL Managed Instance resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[doc = "A base64-encoded keytab."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub keytab: Option<String>,
+    #[doc = "Active Directory information that related to the resource."]
+    #[serde(rename = "activeDirectoryInformation", default, skip_serializing_if = "Option::is_none")]
+    pub active_directory_information: Option<ActiveDirectoryInformation>,
     #[doc = "The license type to apply for this managed instance."]
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<sql_managed_instance_properties::LicenseType>,
@@ -946,9 +998,6 @@ pub struct SqlServerInstanceProperties {
     #[doc = "The provisioning state of the Arc-enabled SQL Server resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[doc = "Timestamp of ESU Expiration."]
-    #[serde(rename = "esuExpirationDate", default, skip_serializing_if = "Option::is_none")]
-    pub esu_expiration_date: Option<String>,
     #[doc = "Type of host for Azure Arc SQL Server"]
     #[serde(rename = "hostType", default, skip_serializing_if = "Option::is_none")]
     pub host_type: Option<sql_server_instance_properties::HostType>,
@@ -973,7 +1022,6 @@ impl SqlServerInstanceProperties {
             azure_defender_status_last_updated: None,
             azure_defender_status: None,
             provisioning_state: None,
-            esu_expiration_date: None,
             host_type: None,
         }
     }

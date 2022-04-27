@@ -791,7 +791,7 @@ pub mod automation_action {
         Workspace,
     }
 }
-#[doc = "The target Event Hub to which event data will be exported. To learn more about Security Center continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
+#[doc = "The target Event Hub to which event data will be exported. To learn more about Microsoft Defender for Cloud continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionEventHub {
     #[serde(flatten)]
@@ -816,7 +816,7 @@ impl AutomationActionEventHub {
         }
     }
 }
-#[doc = "The logic app action that should be triggered. To learn more about Security Center's Workflow Automation capabilities, visit https://aka.ms/ASCWorkflowAutomationLearnMore"]
+#[doc = "The logic app action that should be triggered. To learn more about Microsoft Defender for Cloud's Workflow Automation capabilities, visit https://aka.ms/ASCWorkflowAutomationLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionLogicApp {
     #[serde(flatten)]
@@ -837,7 +837,7 @@ impl AutomationActionLogicApp {
         }
     }
 }
-#[doc = "The\u{a0}Log\u{a0}Analytics\u{a0}Workspace\u{a0}to\u{a0}which\u{a0}event data will be exported. Security alerts data will reside in the 'SecurityAlert' table and the assessments data will reside in the 'SecurityRecommendation' table (under the 'Security'/'SecurityCenterFree' solutions). Note that in order to view the data in the workspace, the Security Center Log Analytics free/standard solution needs to be enabled on that workspace. To learn more about Security Center continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
+#[doc = "The\u{a0}Log\u{a0}Analytics\u{a0}Workspace\u{a0}to\u{a0}which\u{a0}event data will be exported. Security alerts data will reside in the 'SecurityAlert' table and the assessments data will reside in the 'SecurityRecommendation' table (under the 'Security'/'SecurityCenterFree' solutions). Note that in order to view the data in the workspace, the Security Center Log Analytics free/standard solution needs to be enabled on that workspace. To learn more about Microsoft Defender for Cloud continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionWorkspace {
     #[serde(flatten)]
@@ -3160,7 +3160,7 @@ pub enum PermissionProperty {
     GcpSecurityCenterAdminViewer,
 }
 pub type PortNumber = i64;
-#[doc = "Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
+#[doc = "Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pricing {
     #[serde(flatten)]
@@ -3188,7 +3188,7 @@ impl PricingList {
 #[doc = "Pricing properties for the relevant scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingProperties {
-    #[doc = "The pricing tier value. Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
+    #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[serde(rename = "pricingTier")]
     pub pricing_tier: pricing_properties::PricingTier,
     #[doc = "The duration left for the subscriptions free trial period - in ISO 8601 format (e.g. P3Y6M4DT12H30M5S)."]
@@ -3205,7 +3205,7 @@ impl PricingProperties {
 }
 pub mod pricing_properties {
     use super::*;
-    #[doc = "The pricing tier value. Azure Security Center is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
+    #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PricingTier {
         Free,

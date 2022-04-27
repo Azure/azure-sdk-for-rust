@@ -1364,16 +1364,12 @@ pub struct ModernReservationRecommendation {
     pub reservation_recommendation: ReservationRecommendation,
     #[doc = "The properties of the reservation recommendation."]
     pub properties: ModernReservationRecommendationProperties,
-    #[doc = "Resource eTag."]
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
 }
 impl ModernReservationRecommendation {
     pub fn new(reservation_recommendation: ReservationRecommendation, properties: ModernReservationRecommendationProperties) -> Self {
         Self {
             reservation_recommendation,
             properties,
-            e_tag: None,
         }
     }
 }
@@ -2168,9 +2164,6 @@ pub struct ReservationRecommendationDetailsModel {
     #[doc = "Resource sku"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
-    #[doc = "Resource eTag."]
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
     #[doc = "The properties of the reservation recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationRecommendationDetailsProperties>,

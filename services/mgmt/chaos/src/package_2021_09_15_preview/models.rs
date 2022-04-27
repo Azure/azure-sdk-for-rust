@@ -195,6 +195,12 @@ pub struct ActionStatus {
     #[doc = "The status of the action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "String that represents the start time of the action."]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[doc = "String that represents the end time of the action."]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
     #[doc = "The array of targets."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<ExperimentExecutionActionTargetDetailsProperties>,

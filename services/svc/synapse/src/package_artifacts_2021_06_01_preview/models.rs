@@ -7548,6 +7548,37 @@ pub mod expression {
         Expression,
     }
 }
+#[doc = "This activity will fail within its own scope and output a custom error message and error code. The error message and code can provided either as a string literal or as an expression that can be evaluated to a string at runtime. The activity scope can be the whole pipeline or a control activity (e.g. foreach, switch, until), if the fail activity is contained in it."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
+    #[doc = "Fail activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: FailActivityTypeProperties,
+}
+impl FailActivity {
+    pub fn new(control_activity: ControlActivity, type_properties: FailActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Fail activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailActivityTypeProperties {
+    #[doc = "The error message that surfaced in the Fail activity. It can be dynamic content that's evaluated to a non empty/blank string at runtime. Type: string (or Expression with resultType string)."]
+    pub message: serde_json::Value,
+    #[doc = "The error code that categorizes the error type of the Fail activity. It can be dynamic content that's evaluated to a non empty/blank string at runtime. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "errorCode")]
+    pub error_code: serde_json::Value,
+}
+impl FailActivityTypeProperties {
+    pub fn new(message: serde_json::Value, error_code: serde_json::Value) -> Self {
+        Self { message, error_code }
+    }
+}
 #[doc = "File system linked service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServerLinkedService {
@@ -12435,9 +12466,9 @@ pub struct OperationResult {
     #[doc = "Operation status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "The object that defines the structure of an Azure Synapse error."]
+    #[doc = "The object that defines the structure of an Azure Synapse error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
+    pub error: Option<CloudError>,
 }
 impl OperationResult {
     pub fn new() -> Self {

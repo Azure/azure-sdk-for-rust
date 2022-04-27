@@ -699,6 +699,9 @@ pub struct FusionAlertRuleTemplateProperties {
     #[doc = "The display name for alert rule template."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The time that this alert rule template was last updated."]
+    #[serde(rename = "lastUpdatedDateUTC", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_date_utc: Option<String>,
     #[doc = "The required data connectors for this template"]
     #[serde(rename = "requiredDataConnectors", default, skip_serializing_if = "Vec::is_empty")]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
@@ -1189,6 +1192,9 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     #[doc = "The display name for alert rule template."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The time that this alert rule template was last updated."]
+    #[serde(rename = "lastUpdatedDateUTC", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_date_utc: Option<String>,
     #[doc = "The required data connectors for this template"]
     #[serde(rename = "requiredDataConnectors", default, skip_serializing_if = "Vec::is_empty")]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
@@ -1215,6 +1221,7 @@ impl MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
             created_date_utc: None,
             description: None,
             display_name: None,
+            last_updated_date_utc: None,
             required_data_connectors: Vec::new(),
             status: None,
             display_names_filter: Vec::new(),
@@ -1546,6 +1553,9 @@ pub struct ScheduledAlertRuleTemplateProperties {
     #[doc = "The display name for alert rule template."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The time that this alert rule template was last updated."]
+    #[serde(rename = "lastUpdatedDateUTC", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_date_utc: Option<String>,
     #[doc = "The required data connectors for this template"]
     #[serde(rename = "requiredDataConnectors", default, skip_serializing_if = "Vec::is_empty")]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,

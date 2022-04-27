@@ -3642,7 +3642,7 @@ pub struct KeyVaultContractCreateProperties {
     #[doc = "Key vault secret identifier for fetching secret. Providing a versioned secret will prevent auto-refresh. This requires API Management service to be configured with aka.ms/apimmsi"]
     #[serde(rename = "secretIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub secret_identifier: Option<String>,
-    #[doc = "SystemAssignedIdentity or UserAssignedIdentity Client Id which will be used to access key vault secret."]
+    #[doc = "Null for SystemAssignedIdentity or Client Id for UserAssignedIdentity , which will be used to access key vault secret."]
     #[serde(rename = "identityClientId", default, skip_serializing_if = "Option::is_none")]
     pub identity_client_id: Option<String>,
 }

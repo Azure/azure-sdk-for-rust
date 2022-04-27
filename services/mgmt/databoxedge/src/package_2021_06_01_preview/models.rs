@@ -848,6 +848,24 @@ pub struct DataBoxEdgeDeviceExtendedInfoProperties {
     #[doc = "Device secrets, will be returned only with ODataFilter $expand=deviceSecrets"]
     #[serde(rename = "deviceSecrets", default, skip_serializing_if = "Option::is_none")]
     pub device_secrets: Option<serde_json::Value>,
+    #[doc = "Cluster Witness Type"]
+    #[serde(rename = "clusterWitnessType", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_witness_type: Option<data_box_edge_device_extended_info_properties::ClusterWitnessType>,
+    #[doc = "The witness location of file share."]
+    #[serde(rename = "fileShareWitnessLocation", default, skip_serializing_if = "Option::is_none")]
+    pub file_share_witness_location: Option<String>,
+    #[doc = "The username of file share."]
+    #[serde(rename = "fileShareWitnessUsername", default, skip_serializing_if = "Option::is_none")]
+    pub file_share_witness_username: Option<String>,
+    #[doc = "The Cloud Witness Storage account name."]
+    #[serde(rename = "cloudWitnessStorageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_witness_storage_account_name: Option<String>,
+    #[doc = "The Container for cloud witness in the storage account."]
+    #[serde(rename = "cloudWitnessContainerName", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_witness_container_name: Option<String>,
+    #[doc = "The Azure service endpoint of the cloud witness storage account."]
+    #[serde(rename = "cloudWitnessStorageEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_witness_storage_endpoint: Option<String>,
 }
 impl DataBoxEdgeDeviceExtendedInfoProperties {
     pub fn new() -> Self {
@@ -865,6 +883,13 @@ pub mod data_box_edge_device_extended_info_properties {
         KeyVaultSyncPending,
         KeyVaultSyncing,
         KeyVaultNotSynced,
+    }
+    #[doc = "Cluster Witness Type"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ClusterWitnessType {
+        None,
+        Cloud,
+        FileShare,
     }
 }
 #[doc = "The collection of Data Box Edge/Gateway devices."]

@@ -427,6 +427,7 @@ pub enum DisplayProvisioningState {
     Expiring,
     Expired,
     Pending,
+    Processing,
     Cancelled,
     Failed,
 }
@@ -1464,6 +1465,7 @@ impl ReservationSplitProperties {
 pub enum ReservationStatusCode {
     None,
     Pending,
+    Processing,
     Active,
     PurchaseError,
     PaymentInstrumentError,
@@ -1493,6 +1495,9 @@ pub struct ReservationSummary {
     #[doc = "The number of reservation in Cancelled state"]
     #[serde(rename = "cancelledCount", default, skip_serializing_if = "Option::is_none")]
     pub cancelled_count: Option<f64>,
+    #[doc = "The number of reservation in Processing state"]
+    #[serde(rename = "processingCount", default, skip_serializing_if = "Option::is_none")]
+    pub processing_count: Option<f64>,
 }
 impl ReservationSummary {
     pub fn new() -> Self {
@@ -1783,6 +1788,7 @@ pub enum ReservedResourceType {
     NetAppStorage,
     AzureFiles,
     SqlEdge,
+    VirtualMachineSoftware,
 }
 #[doc = "Resource name provided by the resource provider. Use this property for quotaRequest parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

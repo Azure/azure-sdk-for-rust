@@ -6,11 +6,12 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/network/re
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2021-05`.
+The default tag is `package-2021-08`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2022-02-preview` has 603 operations from 3 API versions: `2018-10-01`, `2021-05-01`, `2022-02-01-preview`. Use crate feature `package-2022-02-preview` to enable. The operations will be in the `package_2022_02_preview` module.
+- `package-2021-08` has 549 operations from 2 API versions: `2018-10-01`, `2021-08-01`. Use crate feature `package-2021-08` to enable. The operations will be in the `package_2021_08` module.
 - `package-2021-05-preview` has 603 operations from 3 API versions: `2018-10-01`, `2021-05-01`, `2021-05-01-preview`. Use crate feature `package-2021-05-preview` to enable. The operations will be in the `package_2021_05_preview` module.
 - `package-2021-05` has 540 operations from 2 API versions: `2018-10-01`, `2021-05-01`. Use crate feature `package-2021-05` to enable. The operations will be in the `package_2021_05` module.
 - `package-2021-03` has 529 operations from 2 API versions: `2018-10-01`, `2021-03-01`. Use crate feature `package-2021-03` to enable. The operations will be in the `package_2021_03` module.

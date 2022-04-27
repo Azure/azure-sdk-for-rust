@@ -2231,9 +2231,6 @@ pub struct ReservationRecommendationDetailsModel {
     #[doc = "Resource sku"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
-    #[doc = "Resource etag."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
     #[doc = "The properties of the reservation recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationRecommendationDetailsProperties>,

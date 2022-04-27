@@ -2848,6 +2848,47 @@ pub mod encryption_protector_properties {
         AzureKeyVault,
     }
 }
+#[doc = "Certificate used on an endpoint on the Managed Instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EndpointCertificate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of an endpoint certificate."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EndpointCertificateProperties>,
+}
+impl EndpointCertificate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of endpoint certificates on the target instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EndpointCertificateListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EndpointCertificate>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl EndpointCertificateListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of an endpoint certificate."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EndpointCertificateProperties {
+    #[doc = "The certificate public blob"]
+    #[serde(rename = "publicBlob", default, skip_serializing_if = "Option::is_none")]
+    pub public_blob: Option<String>,
+}
+impl EndpointCertificateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Contains the information necessary to perform export database operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDatabaseDefinition {
@@ -6470,73 +6511,6 @@ impl ManagedInstanceVulnerabilityAssessmentProperties {
         }
     }
 }
-#[doc = "A managed server DNS alias."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ManagedServerDnsAlias {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[doc = "Properties of a managed server DNS alias."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ManagedServerDnsAliasProperties>,
-}
-impl ManagedServerDnsAlias {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A managed server DNS alias acquisition request."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedServerDnsAliasAcquisition {
-    #[doc = "The resource ID of the managed server DNS alias that will be acquired to point to this managed server instead."]
-    #[serde(rename = "oldManagedServerDnsAliasResourceId")]
-    pub old_managed_server_dns_alias_resource_id: String,
-}
-impl ManagedServerDnsAliasAcquisition {
-    pub fn new(old_managed_server_dns_alias_resource_id: String) -> Self {
-        Self {
-            old_managed_server_dns_alias_resource_id,
-        }
-    }
-}
-#[doc = "A managed server dns alias creation request."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ManagedServerDnsAliasCreation {
-    #[doc = "Whether or not DNS record should be created for this alias."]
-    #[serde(rename = "createDnsRecord", default, skip_serializing_if = "Option::is_none")]
-    pub create_dns_record: Option<bool>,
-}
-impl ManagedServerDnsAliasCreation {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A list of managed server DNS aliases."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ManagedServerDnsAliasListResult {
-    #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ManagedServerDnsAlias>,
-    #[doc = "Link to retrieve next page of results."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl ManagedServerDnsAliasListResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Properties of a managed server DNS alias."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ManagedServerDnsAliasProperties {
-    #[doc = "The fully qualified DNS record for managed server alias"]
-    #[serde(rename = "azureDnsRecord", default, skip_serializing_if = "Option::is_none")]
-    pub azure_dns_record: Option<String>,
-}
-impl ManagedServerDnsAliasProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "A managed server security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServerSecurityAlertPolicy {
@@ -9412,7 +9386,7 @@ impl ServerTrustCertificateProperties {
         Self::default()
     }
 }
-#[doc = "A list of the server trust certificates which are used for secure communication between SQL On-Prem instance and the given Sql Managed Instance."]
+#[doc = "A list of server trust certificates in instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerTrustCertificatesListResult {
     #[doc = "Array of results."]
@@ -10778,6 +10752,18 @@ pub mod transparent_data_encryption_properties {
     pub enum State {
         Enabled,
         Disabled,
+    }
+}
+#[doc = "Represents the parameters for Unlink Replication Link request."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UnlinkParameters {
+    #[doc = "Determines whether link will be terminated in a forced or a friendly way."]
+    #[serde(rename = "forcedTermination", default, skip_serializing_if = "Option::is_none")]
+    pub forced_termination: Option<bool>,
+}
+impl UnlinkParameters {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Contains the information necessary to perform long term retention backup update operation."]
