@@ -1,15 +1,16 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone)]
-pub struct ActivityId(String);
+/// The (friendly) name of the user making the request
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct User(String);
 
-impl ActivityId {
-    pub fn new(id: String) -> Self {
-        Self(id)
+impl User {
+    pub fn new(s: String) -> Self {
+        Self(s)
     }
 }
 
-impl<S> From<S> for ActivityId
+impl<S> From<S> for User
 where
     S: Into<String>,
 {
@@ -18,9 +19,9 @@ where
     }
 }
 
-impl Header for ActivityId {
+impl Header for User {
     fn name(&self) -> headers::HeaderName {
-        headers::ACTIVITY_ID.into()
+        headers::USER.into()
     }
 
     fn value(&self) -> headers::HeaderValue {

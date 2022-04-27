@@ -1,15 +1,15 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone)]
-pub struct ActivityId(String);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Version(String);
 
-impl ActivityId {
-    pub fn new(id: String) -> Self {
-        Self(id)
+impl Version {
+    pub fn new(s: String) -> Self {
+        Self(s)
     }
 }
 
-impl<S> From<S> for ActivityId
+impl<S> From<S> for Version
 where
     S: Into<String>,
 {
@@ -18,9 +18,9 @@ where
     }
 }
 
-impl Header for ActivityId {
+impl Header for Version {
     fn name(&self) -> headers::HeaderName {
-        headers::ACTIVITY_ID.into()
+        headers::VERSION.into()
     }
 
     fn value(&self) -> headers::HeaderValue {
