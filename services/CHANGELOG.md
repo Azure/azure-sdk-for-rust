@@ -1,5 +1,6 @@
-# UNRELEASED
-- generated from azure-rest-api-specs [commit from 2022-04-27](https://github.com/Azure/azure-rest-api-specs/commit/46ffdc4fe0f9a413ba29ed859b5ff4174ce1c7ec)
+# 0.3 (2022-04)
+
+- [#732](https://github.com/Azure/azure-sdk-for-rust/pull/732) generated from azure-rest-api-specs [commit from 2022-04-27](https://github.com/Azure/azure-rest-api-specs/commit/46ffdc4fe0f9a413ba29ed859b5ff4174ce1c7ec)
 - [#718](https://github.com/Azure/azure-sdk-for-rust/pull/718) include `path` and `x_ms_path` endpoints
 - [#706](https://github.com/Azure/azure-sdk-for-rust/pull/706) update `azure_core` to 0.2
 
