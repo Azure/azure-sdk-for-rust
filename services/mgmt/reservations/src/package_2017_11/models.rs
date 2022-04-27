@@ -330,6 +330,7 @@ pub enum ProvisioningState {
     Failed,
     Split,
     Merged,
+    Processing,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationList {

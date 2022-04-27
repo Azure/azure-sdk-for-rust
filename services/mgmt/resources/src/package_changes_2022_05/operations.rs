@@ -74,11 +74,8 @@ impl Client {
             pipeline,
         }
     }
-    pub fn change_resource(&self) -> change_resource::Client {
-        change_resource::Client(self.clone())
-    }
-    pub fn change_resources(&self) -> change_resources::Client {
-        change_resources::Client(self.clone())
+    pub fn changes(&self) -> changes::Client {
+        changes::Client(self.clone())
     }
 }
 #[non_exhaustive]
@@ -86,11 +83,11 @@ impl Client {
 #[allow(non_camel_case_types)]
 pub enum Error {
     #[error(transparent)]
-    ChangeResources_List(#[from] change_resources::list::Error),
+    Changes_List(#[from] changes::list::Error),
     #[error(transparent)]
-    ChangeResource_Get(#[from] change_resource::get::Error),
+    Changes_Get(#[from] changes::get::Error),
 }
-pub mod change_resources {
+pub mod changes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
@@ -111,6 +108,25 @@ pub mod change_resources {
                 resource_name: resource_name.into(),
                 top: None,
                 skip_token: None,
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            resource_provider_namespace: impl Into<String>,
+            resource_type: impl Into<String>,
+            resource_name: impl Into<String>,
+            change_resource_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                resource_provider_namespace: resource_provider_namespace.into(),
+                resource_type: resource_type.into(),
+                resource_name: resource_name.into(),
+                change_resource_id: change_resource_id.into(),
             }
         }
     }
@@ -178,7 +194,7 @@ pub mod change_resources {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2022-03-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2022-05-01");
                     if let Some(top) = &self.top {
                         url.query_pairs_mut().append_pair("$top", &top.to_string());
                     }
@@ -208,31 +224,6 @@ pub mod change_resources {
                         }
                     }
                 })
-            }
-        }
-    }
-}
-pub mod change_resource {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            resource_provider_namespace: impl Into<String>,
-            resource_type: impl Into<String>,
-            resource_name: impl Into<String>,
-            change_resource_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                resource_provider_namespace: resource_provider_namespace.into(),
-                resource_type: resource_type.into(),
-                resource_name: resource_name.into(),
-                change_resource_id: change_resource_id.into(),
             }
         }
     }
@@ -292,7 +283,7 @@ pub mod change_resource {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2022-03-01-preview");
+                    url.query_pairs_mut().append_pair("api-version", "2022-05-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;

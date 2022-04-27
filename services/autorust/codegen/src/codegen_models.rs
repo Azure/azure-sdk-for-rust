@@ -480,7 +480,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         } = create_struct_field_code(cg, &ns, &property.schema, property_name, lowercase_workaround)?;
         mod_code.extend(field_code);
         // uncomment the next two lines to help identify entries that need boxed
-        // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
+        // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         if cg.should_force_obj(prop_nm) {
@@ -513,6 +513,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         } else {
             quote! {}
         };
+
         // see if a field should be wrapped in a Box
         let should_box = cg.should_box_property(prop_nm);
         if should_box {

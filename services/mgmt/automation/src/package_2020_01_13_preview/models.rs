@@ -1785,6 +1785,7 @@ impl FieldDefinition {
         }
     }
 }
+pub type GroupIdsProperty = Vec<String>;
 #[doc = "Definition of hybrid runbook worker."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorker {
@@ -2695,6 +2696,9 @@ pub struct PrivateEndpointConnectionProperties {
     #[doc = "Private endpoint which the connection belongs to."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpointProperty>,
+    #[doc = "Gets the groupIds."]
+    #[serde(rename = "groupIds", default, skip_serializing_if = "Option::is_none")]
+    pub group_ids: Option<GroupIdsProperty>,
     #[doc = "Connection State of the Private Endpoint Connection."]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionStateProperty>,

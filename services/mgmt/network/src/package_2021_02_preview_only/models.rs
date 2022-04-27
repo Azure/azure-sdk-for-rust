@@ -871,6 +871,28 @@ impl Hub {
         Self::default()
     }
 }
+#[doc = "Logging Category"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LoggingCategory {
+    #[doc = "The name of the logging category."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl LoggingCategory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The current provisioning state."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NspProvisioningState {
+    Succeeded,
+    Creating,
+    Updating,
+    Deleting,
+    Accepted,
+    Failed,
+}
 #[doc = "The network group resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkGroup {
@@ -1193,7 +1215,7 @@ pub struct NetworkSecurityPerimeterProperties {
     pub description: Option<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
+    pub provisioning_state: Option<NspProvisioningState>,
 }
 impl NetworkSecurityPerimeterProperties {
     pub fn new() -> Self {
@@ -1243,7 +1265,7 @@ impl NspAccessRuleListResult {
 pub struct NspAccessRuleProperties {
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
+    pub provisioning_state: Option<NspProvisioningState>,
     #[doc = "Direction that specifies whether the access rules is inbound/outbound."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<nsp_access_rule_properties::Direction>,
@@ -1300,7 +1322,7 @@ impl NspAssociation {
 pub struct NspAssociationProperties {
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
+    pub provisioning_state: Option<NspProvisioningState>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "privateLinkResource", default, skip_serializing_if = "Option::is_none")]
     pub private_link_resource: Option<SubResource>,
@@ -1310,6 +1332,9 @@ pub struct NspAssociationProperties {
     #[doc = "Access mode on the association."]
     #[serde(rename = "accessMode", default, skip_serializing_if = "Option::is_none")]
     pub access_mode: Option<nsp_association_properties::AccessMode>,
+    #[doc = "Specifies if there are provisioning issues"]
+    #[serde(rename = "hasProvisioningIssues", default, skip_serializing_if = "Option::is_none")]
+    pub has_provisioning_issues: Option<String>,
 }
 impl NspAssociationProperties {
     pub fn new() -> Self {
@@ -1321,10 +1346,9 @@ pub mod nsp_association_properties {
     #[doc = "Access mode on the association."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessMode {
-        Unspecified,
-        EnforceMode,
-        LearningMode,
-        DryRunMode,
+        Learning,
+        Enforced,
+        Audit,
     }
 }
 #[doc = "Result of the request to list NSP resource associations. Contains a list of NSP resource associations and a URL link to get the next set of results."]
@@ -1386,6 +1410,9 @@ pub struct NspProfileProperties {
     #[doc = "Version number that increases with every update to access rules within the profile."]
     #[serde(rename = "accessRulesVersion", default, skip_serializing_if = "Option::is_none")]
     pub access_rules_version: Option<String>,
+    #[doc = "Gets the enabled log categories."]
+    #[serde(rename = "enabledLogCategories", default, skip_serializing_if = "Vec::is_empty")]
+    pub enabled_log_categories: Vec<LoggingCategory>,
 }
 impl NspProfileProperties {
     pub fn new() -> Self {

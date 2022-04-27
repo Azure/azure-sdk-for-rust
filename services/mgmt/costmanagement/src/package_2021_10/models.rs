@@ -1505,9 +1505,9 @@ impl ReportConfigTimePeriod {
 #[doc = "The URL to download the generated report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportUrl {
-    #[doc = "The URL to download the generated report."]
+    #[doc = "The CSV file from the reportUrl blob link consists of reservation usage data with the following schema at daily granularity"]
     #[serde(rename = "reportUrl", default, skip_serializing_if = "Option::is_none")]
-    pub report_url: Option<String>,
+    pub report_url: Option<ReservationReportSchema>,
     #[doc = "The time at which report URL becomes invalid."]
     #[serde(rename = "validUntil", default, skip_serializing_if = "Option::is_none")]
     pub valid_until: Option<String>,
@@ -1516,6 +1516,21 @@ impl ReportUrl {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[doc = "The CSV file from the reportUrl blob link consists of reservation usage data with the following schema at daily granularity"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReservationReportSchema {
+    InstanceFlexibilityGroup,
+    InstanceFlexibilityRatio,
+    InstanceId,
+    Kind,
+    ReservationId,
+    ReservationOrderId,
+    ReservedHours,
+    SkuName,
+    TotalReservedQuantity,
+    UsageDate,
+    UsedHours,
 }
 #[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1529,6 +1544,15 @@ pub struct Resource {
     #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Location of the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "SKU of the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
+    #[doc = "ETag of the resource."]
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

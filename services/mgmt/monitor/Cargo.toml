@@ -24,13 +24,14 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-2016-03-preview-monitorlegacy", "package-2021-05-preview-diagnostics", "package-2021-05-metrics", "package-2021-08-scheduledqueryrules"]
+features = ["no-default-tag", "package-2016-03-preview-monitorlegacy", "package-2021-05-preview-diagnostics", "package-2020-10-activityLogs", "package-2021-05-metrics"]
 
 [features]
-default = ["package-2020-10-activityLogs", "enable_reqwest"]
+default = ["package-2022-04-01-only", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
+"package-2022-04-01-only" = []
 "package-2016-03-preview-monitorlegacy" = []
 "package-2021-05-preview-diagnostics" = []
 "package-2020-10-activityLogs" = []

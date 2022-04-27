@@ -1191,10 +1191,10 @@ pub mod reservations_summaries {
                 filter: None,
             }
         }
-        pub fn list(&self, scope: impl Into<String>, grain: impl Into<String>) -> list::Builder {
+        pub fn list(&self, resource_scope: impl Into<String>, grain: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
-                scope: scope.into(),
+                resource_scope: resource_scope.into(),
                 grain: grain.into(),
                 start_date: None,
                 end_date: None,
@@ -1400,7 +1400,7 @@ pub mod reservations_summaries {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) scope: String,
+            pub(crate) resource_scope: String,
             pub(crate) grain: String,
             pub(crate) start_date: Option<String>,
             pub(crate) end_date: Option<String>,
@@ -1436,7 +1436,7 @@ pub mod reservations_summaries {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Consumption/reservationSummaries",
                         self.client.endpoint(),
-                        &self.scope
+                        &self.resource_scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1520,10 +1520,10 @@ pub mod reservations_details {
                 filter: filter.into(),
             }
         }
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
+        pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
-                scope: scope.into(),
+                resource_scope: resource_scope.into(),
                 start_date: None,
                 end_date: None,
                 filter: None,
@@ -1712,7 +1712,7 @@ pub mod reservations_details {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) scope: String,
+            pub(crate) resource_scope: String,
             pub(crate) start_date: Option<String>,
             pub(crate) end_date: Option<String>,
             pub(crate) filter: Option<String>,
@@ -1747,7 +1747,7 @@ pub mod reservations_details {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Consumption/reservationDetails",
                         self.client.endpoint(),
-                        &self.scope
+                        &self.resource_scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1805,10 +1805,10 @@ pub mod reservation_recommendations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
+        pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
-                scope: scope.into(),
+                resource_scope: resource_scope.into(),
                 filter: None,
             }
         }
@@ -1845,7 +1845,7 @@ pub mod reservation_recommendations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) scope: String,
+            pub(crate) resource_scope: String,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -1858,7 +1858,7 @@ pub mod reservation_recommendations {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Consumption/reservationRecommendations",
                         self.client.endpoint(),
-                        &self.scope
+                        &self.resource_scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1907,6 +1907,7 @@ pub mod reservation_recommendation_details {
     impl Client {
         pub fn get(
             &self,
+            resource_scope: impl Into<String>,
             scope: impl Into<String>,
             region: impl Into<String>,
             term: impl Into<String>,
@@ -1915,6 +1916,7 @@ pub mod reservation_recommendation_details {
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
+                resource_scope: resource_scope.into(),
                 scope: scope.into(),
                 region: region.into(),
                 term: term.into(),
@@ -1955,6 +1957,7 @@ pub mod reservation_recommendation_details {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
+            pub(crate) resource_scope: String,
             pub(crate) scope: String,
             pub(crate) region: String,
             pub(crate) term: String,
@@ -1967,7 +1970,7 @@ pub mod reservation_recommendation_details {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Consumption/reservationRecommendationDetails",
                         self.client.endpoint(),
-                        &self.scope
+                        &self.resource_scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1979,6 +1982,8 @@ pub mod reservation_recommendation_details {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
+                    let scope = &self.scope;
+                    url.query_pairs_mut().append_pair("scope", scope);
                     let region = &self.region;
                     url.query_pairs_mut().append_pair("region", region);
                     let term = &self.term;
