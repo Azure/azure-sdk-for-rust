@@ -98,7 +98,13 @@ impl HeadPathResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,
-            properties: headers.try_into().ok(),
+            properties: match headers.try_into() {
+                Ok(p) => Some(p),
+                // 'x-ms-properties' will not be returned in some cases, such as when the request 'action' is set to 'getStatus'
+                Err(crate::Error::HeaderNotFound(_)) => None,
+                // Propagate all other errors
+                Err(e) => return Err(e),
+            },
         })
     }
 }
