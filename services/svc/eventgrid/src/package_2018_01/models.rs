@@ -1510,28 +1510,6 @@ impl EventHubCaptureFileCreatedEventData {
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceCreated event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareFhirResourceCreatedEventData {
-    #[serde(flatten)]
-    pub healthcare_fhir_resource_event_base_properties: HealthcareFhirResourceEventBaseProperties,
-}
-impl HealthcareFhirResourceCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HealthcareFhirResourceDeletedEventData {
-    #[serde(flatten)]
-    pub healthcare_fhir_resource_event_base_properties: HealthcareFhirResourceEventBaseProperties,
-}
-impl HealthcareFhirResourceDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Schema of common properties of all FhirResource events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HealthcareFhirResourceEventBaseProperties {
     #[doc = "Schema of FHIR resource type enumeration."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<HealthcareFhirResourceType>,
@@ -1545,7 +1523,28 @@ pub struct HealthcareFhirResourceEventBaseProperties {
     #[serde(rename = "resourceVersionId", default, skip_serializing_if = "Option::is_none")]
     pub resource_version_id: Option<i64>,
 }
-impl HealthcareFhirResourceEventBaseProperties {
+impl HealthcareFhirResourceCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareFhirResourceDeletedEventData {
+    #[doc = "Schema of FHIR resource type enumeration."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<HealthcareFhirResourceType>,
+    #[doc = "Domain name of FHIR account for this resource."]
+    #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
+    pub resource_fhir_account: Option<String>,
+    #[doc = "Id of HL7 FHIR resource."]
+    #[serde(rename = "resourceFhirId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_fhir_id: Option<String>,
+    #[doc = "VersionId of HL7 FHIR resource. It changes when the resource is created, updated, or deleted(soft-deletion)."]
+    #[serde(rename = "resourceVersionId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_version_id: Option<i64>,
+}
+impl HealthcareFhirResourceDeletedEventData {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1718,8 +1717,18 @@ pub enum HealthcareFhirResourceType {
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceUpdated event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareFhirResourceUpdatedEventData {
-    #[serde(flatten)]
-    pub healthcare_fhir_resource_event_base_properties: HealthcareFhirResourceEventBaseProperties,
+    #[doc = "Schema of FHIR resource type enumeration."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<HealthcareFhirResourceType>,
+    #[doc = "Domain name of FHIR account for this resource."]
+    #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
+    pub resource_fhir_account: Option<String>,
+    #[doc = "Id of HL7 FHIR resource."]
+    #[serde(rename = "resourceFhirId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_fhir_id: Option<String>,
+    #[doc = "VersionId of HL7 FHIR resource. It changes when the resource is created, updated, or deleted(soft-deletion)."]
+    #[serde(rename = "resourceVersionId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_version_id: Option<i64>,
 }
 impl HealthcareFhirResourceUpdatedEventData {
     pub fn new() -> Self {

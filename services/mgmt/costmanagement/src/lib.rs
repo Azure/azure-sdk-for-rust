@@ -7,6 +7,10 @@
 pub mod package_preview_2022_02;
 #[cfg(all(feature = "package-preview-2022-02", not(feature = "no-default-tag")))]
 pub use package_preview_2022_02::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-preview-2022-04")]
+pub mod package_preview_2022_04;
+#[cfg(all(feature = "package-preview-2022-04", not(feature = "no-default-tag")))]
+pub use package_preview_2022_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2021-10")]
 pub mod package_2021_10;
 #[cfg(all(feature = "package-2021-10", not(feature = "no-default-tag")))]

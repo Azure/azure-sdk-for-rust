@@ -791,6 +791,44 @@ impl AmazonS3ReadSettings {
         }
     }
 }
+#[doc = "Linked service for AppFigures."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppFiguresLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "AppFigures linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AppFiguresLinkedServiceTypeProperties,
+}
+impl AppFiguresLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: AppFiguresLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "AppFigures linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppFiguresLinkedServiceTypeProperties {
+    #[doc = "The username of the Appfigures source."]
+    #[serde(rename = "userName")]
+    pub user_name: serde_json::Value,
+    #[doc = "The base definition of a secret type."]
+    pub password: SecretBase,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientKey")]
+    pub client_key: SecretBase,
+}
+impl AppFiguresLinkedServiceTypeProperties {
+    pub fn new(user_name: serde_json::Value, password: SecretBase, client_key: SecretBase) -> Self {
+        Self {
+            user_name,
+            password,
+            client_key,
+        }
+    }
+}
 #[doc = "Append value for a Variable of type Array."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppendVariableActivity {
@@ -833,6 +871,41 @@ pub struct ArtifactRenameRequest {
 impl ArtifactRenameRequest {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Linked service for Asana."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AsanaLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Asana linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AsanaLinkedServiceTypeProperties,
+}
+impl AsanaLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: AsanaLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Asana linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AsanaLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl AsanaLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
+        }
     }
 }
 #[doc = "Auto-pausing properties of a Big Data pool powered by Apache Spark"]
@@ -6059,6 +6132,41 @@ impl DatasetStorageFormat {
         }
     }
 }
+#[doc = "Linked service for Dataworld."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataworldLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Dataworld linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: DataworldLinkedServiceTypeProperties,
+}
+impl DataworldLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: DataworldLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Dataworld linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataworldLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl DataworldLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
+        }
+    }
+}
 #[doc = "The days of the week."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DayOfWeek {
@@ -7573,6 +7681,37 @@ pub mod expression {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Expression,
+    }
+}
+#[doc = "This activity will fail within its own scope and output a custom error message and error code. The error message and code can provided either as a string literal or as an expression that can be evaluated to a string at runtime. The activity scope can be the whole pipeline or a control activity (e.g. foreach, switch, until), if the fail activity is contained in it."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
+    #[doc = "Fail activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: FailActivityTypeProperties,
+}
+impl FailActivity {
+    pub fn new(control_activity: ControlActivity, type_properties: FailActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Fail activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailActivityTypeProperties {
+    #[doc = "The error message that surfaced in the Fail activity. It can be dynamic content that's evaluated to a non empty/blank string at runtime. Type: string (or Expression with resultType string)."]
+    pub message: serde_json::Value,
+    #[doc = "The error code that categorizes the error type of the Fail activity. It can be dynamic content that's evaluated to a non empty/blank string at runtime. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "errorCode")]
+    pub error_code: serde_json::Value,
+}
+impl FailActivityTypeProperties {
+    pub fn new(message: serde_json::Value, error_code: serde_json::Value) -> Self {
+        Self { message, error_code }
     }
 }
 #[doc = "File system linked service."]
@@ -19697,6 +19836,37 @@ impl TumblingWindowTriggerDependencyReference {
             offset: None,
             size: None,
         }
+    }
+}
+#[doc = "Linked service for Twilio."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TwilioLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Twilio linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: TwilioLinkedServiceTypeProperties,
+}
+impl TwilioLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: TwilioLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Twilio linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TwilioLinkedServiceTypeProperties {
+    #[doc = "The Account SID of Twilio service."]
+    #[serde(rename = "userName")]
+    pub user_name: serde_json::Value,
+    #[doc = "The base definition of a secret type."]
+    pub password: SecretBase,
+}
+impl TwilioLinkedServiceTypeProperties {
+    pub fn new(user_name: serde_json::Value, password: SecretBase) -> Self {
+        Self { user_name, password }
     }
 }
 #[doc = "Type conversion settings"]

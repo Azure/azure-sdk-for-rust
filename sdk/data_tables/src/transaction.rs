@@ -33,12 +33,12 @@ impl Transaction {
 
         s.push_str(&format!(
             "--batch_{}\nContent-Type: multipart/mixed; boundary=changeset_{}\n\n",
-            self.batch_uuid.to_hyphenated_ref(),
-            self.change_set_uuid.to_hyphenated_ref()
+            self.batch_uuid.hyphenated(),
+            self.change_set_uuid.hyphenated()
         ));
 
         for transaction_operation in self.transaction_operations.iter() {
-            s.push_str(&format!("--changeset_{}\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n", self.change_set_uuid.to_hyphenated_ref()));
+            s.push_str(&format!("--changeset_{}\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n", self.change_set_uuid.hyphenated()));
             s.push_str(&format!(
                 "{} {} HTTP/1.1\n",
                 transaction_operation.request.method(),
@@ -57,8 +57,8 @@ impl Transaction {
 
         s.push_str(&format!(
             "\n--changeset_{}--\n--batch_{}\n",
-            self.change_set_uuid.to_hyphenated_ref(),
-            self.batch_uuid.to_hyphenated_ref(),
+            self.change_set_uuid.hyphenated(),
+            self.batch_uuid.hyphenated(),
         ));
 
         Ok(s)

@@ -20,3 +20,4 @@ __queuestorage__
 *.iml
 *.bat
 *.ps1
+.env

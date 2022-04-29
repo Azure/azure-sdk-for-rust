@@ -211,6 +211,7 @@ pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
 
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
 pub const ACTIVITY_ID: &str = "x-ms-activity-id";
+pub const APP: &str = "x-ms-app";
 pub const APPEND_POSITION: &str = "x-ms-blob-condition-appendpos";
 pub const BLOB_ACCESS_TIER: &str = "x-ms-access-tier";
 pub const BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
@@ -219,6 +220,7 @@ pub const BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";
 pub const BLOB_TYPE: &str = "x-ms-blob-type";
 pub const CACHE_CONTROL: &str = "x-ms-blob-cache-control";
 pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id";
+pub const CLIENT_VERSION: &str = "x-ms-client-version";
 pub const CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
 pub const CONTINUATION: &str = "x-ms-continuation";
 pub const COPY_COMPLETION_TIME: &str = "x-ms-copy-completion-time";
@@ -262,4 +264,5 @@ pub const SOURCE_IF_MODIFIED_SINCE: &str = "x-ms-source-if-modified-since";
 pub const SOURCE_IF_NONE_MATCH: &str = "x-ms-source-if-none-match";
 pub const SOURCE_IF_UNMODIFIED_SINCE: &str = "x-ms-source-if-unmodified-since";
 pub const SOURCE_LEASE_ID: &str = "x-ms-source-lease-id";
+pub const USER: &str = "x-ms-user";
 pub const VERSION: &str = "x-ms-version";

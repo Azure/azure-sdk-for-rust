@@ -1,15 +1,24 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone, Copy)]
-pub struct ActivityId<'a>(&'a str);
+#[derive(Debug, Clone)]
+pub struct ActivityId(String);
 
-impl<'a> ActivityId<'a> {
-    pub fn new(id: &'a str) -> Self {
+impl ActivityId {
+    pub fn new(id: String) -> Self {
         Self(id)
     }
 }
 
-impl<'a> Header for ActivityId<'a> {
+impl<S> From<S> for ActivityId
+where
+    S: Into<String>,
+{
+    fn from(s: S) -> Self {
+        Self(s.into())
+    }
+}
+
+impl Header for ActivityId {
     fn name(&self) -> headers::HeaderName {
         headers::ACTIVITY_ID.into()
     }

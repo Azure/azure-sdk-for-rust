@@ -928,6 +928,44 @@ impl AmazonS3ReadSettings {
         }
     }
 }
+#[doc = "Linked service for AppFigures."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppFiguresLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "AppFigures linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AppFiguresLinkedServiceTypeProperties,
+}
+impl AppFiguresLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: AppFiguresLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "AppFigures linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppFiguresLinkedServiceTypeProperties {
+    #[doc = "The username of the Appfigures source."]
+    #[serde(rename = "userName")]
+    pub user_name: serde_json::Value,
+    #[doc = "The base definition of a secret type."]
+    pub password: SecretBase,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientKey")]
+    pub client_key: SecretBase,
+}
+impl AppFiguresLinkedServiceTypeProperties {
+    pub fn new(user_name: serde_json::Value, password: SecretBase, client_key: SecretBase) -> Self {
+        Self {
+            user_name,
+            password,
+            client_key,
+        }
+    }
+}
 #[doc = "Append value for a Variable of type Array."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppendVariableActivity {
@@ -969,6 +1007,41 @@ pub struct ArmIdWrapper {
 impl ArmIdWrapper {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Linked service for Asana."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AsanaLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Asana linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AsanaLinkedServiceTypeProperties,
+}
+impl AsanaLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: AsanaLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Asana linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AsanaLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl AsanaLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6228,6 +6301,41 @@ impl DatasetStorageFormat {
             type_,
             serializer: None,
             deserializer: None,
+        }
+    }
+}
+#[doc = "Linked service for Dataworld."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataworldLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Dataworld linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: DataworldLinkedServiceTypeProperties,
+}
+impl DataworldLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: DataworldLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Dataworld linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataworldLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl DataworldLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
         }
     }
 }
@@ -15061,6 +15169,18 @@ impl PrestoSource {
         }
     }
 }
+#[doc = "Private endpoint which a connection belongs to."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateEndpoint {
+    #[doc = "The resource Id for private endpoint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A list of linked service resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionListResponse {
@@ -15095,6 +15215,9 @@ pub struct PrivateLinkConnectionApprovalRequest {
     #[doc = "The state of a private link connection"]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkConnectionState>,
+    #[doc = "Private endpoint which a connection belongs to."]
+    #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<PrivateEndpoint>,
 }
 impl PrivateLinkConnectionApprovalRequest {
     pub fn new() -> Self {
@@ -20480,6 +20603,37 @@ impl TumblingWindowTriggerDependencyReference {
             offset: None,
             size: None,
         }
+    }
+}
+#[doc = "Linked service for Twilio."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TwilioLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Twilio linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: TwilioLinkedServiceTypeProperties,
+}
+impl TwilioLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: TwilioLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Twilio linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TwilioLinkedServiceTypeProperties {
+    #[doc = "The Account SID of Twilio service."]
+    #[serde(rename = "userName")]
+    pub user_name: serde_json::Value,
+    #[doc = "The base definition of a secret type."]
+    pub password: SecretBase,
+}
+impl TwilioLinkedServiceTypeProperties {
+    pub fn new(user_name: serde_json::Value, password: SecretBase) -> Self {
+        Self { user_name, password }
     }
 }
 #[doc = "Type conversion settings"]

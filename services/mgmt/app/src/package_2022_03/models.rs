@@ -1042,6 +1042,17 @@ impl DaprMetadata {
         Self::default()
     }
 }
+#[doc = "Dapr component Secrets Collection ARM resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DaprSecretsCollection {
+    #[doc = "Collection of secrets used by a Dapr component"]
+    pub value: Vec<Secret>,
+}
+impl DaprSecretsCollection {
+    pub fn new(value: Vec<Secret>) -> Self {
+        Self { value }
+    }
+}
 #[doc = "The configuration settings of the Azure Active Directory default authorization policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultAuthorizationPolicy {
@@ -1491,6 +1502,9 @@ pub mod managed_environment {
         #[doc = "Azure Monitor instrumentation key used by Dapr to export Service to Service communication telemetry"]
         #[serde(rename = "daprAIInstrumentationKey", default, skip_serializing_if = "Option::is_none")]
         pub dapr_ai_instrumentation_key: Option<String>,
+        #[doc = "Application Insights connection string used by Dapr to export Service to Service communication telemetry"]
+        #[serde(rename = "daprAIConnectionString", default, skip_serializing_if = "Option::is_none")]
+        pub dapr_ai_connection_string: Option<String>,
         #[doc = "Configuration properties for apps environment to join a Virtual Network"]
         #[serde(rename = "vnetConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub vnet_configuration: Option<VnetConfiguration>,
@@ -1506,6 +1520,9 @@ pub mod managed_environment {
         #[doc = "Configuration of application logs"]
         #[serde(rename = "appLogsConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub app_logs_configuration: Option<AppLogsConfiguration>,
+        #[doc = "Whether or not this Managed Environment is zone-redundant."]
+        #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
+        pub zone_redundant: Option<bool>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1797,6 +1814,9 @@ pub struct RegistryCredentials {
     #[doc = "The name of the Secret that contains the registry login password"]
     #[serde(rename = "passwordSecretRef", default, skip_serializing_if = "Option::is_none")]
     pub password_secret_ref: Option<String>,
+    #[doc = "A Managed Identity to use to authenticate with Azure Container Registry. For user-assigned identities, use the full user-assigned identity Resource ID. For system-assigned identities, use 'system'"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<String>,
 }
 impl RegistryCredentials {
     pub fn new() -> Self {

@@ -6,9 +6,10 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/servicelin
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2022-01-01-preview`.
+The default tag is `package-2022-05-01`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-2021-11-01-preview` has 8 operations from 1 API versions: `2021-11-01-preview`. Use crate feature `package-2021-11-01-preview` to enable. The operations will be in the `package_2021_11_01_preview` module.
 - `package-2022-01-01-preview` has 8 operations from 1 API versions: `2022-01-01-preview`. Use crate feature `package-2022-01-01-preview` to enable. The operations will be in the `package_2022_01_01_preview` module.
+- `package-2022-05-01` has 8 operations from 1 API versions: `2022-05-01`. Use crate feature `package-2022-05-01` to enable. The operations will be in the `package_2022_05_01` module.

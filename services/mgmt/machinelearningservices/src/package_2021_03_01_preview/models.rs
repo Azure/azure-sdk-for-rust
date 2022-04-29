@@ -449,17 +449,17 @@ impl AutoScaleSettings {
 pub struct AzureBlobContents {
     #[serde(flatten)]
     pub datastore_contents: DatastoreContents,
-    #[doc = "Storage account name."]
+    #[doc = "[Required] Storage account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
-    #[doc = "Storage account container name."]
+    #[doc = "[Required] Storage account container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
-    #[doc = "Azure cloud endpoint for the storage account."]
+    #[doc = "[Required] Azure cloud endpoint for the storage account."]
     pub endpoint: String,
-    #[doc = "Protocol used to communicate with the storage account."]
+    #[doc = "[Required] Protocol used to communicate with the storage account."]
     pub protocol: String,
 }
 impl AzureBlobContents {
@@ -488,7 +488,7 @@ pub struct AzureDataLakeGen1Contents {
     pub datastore_contents: DatastoreContents,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
-    #[doc = "Azure Data Lake store name."]
+    #[doc = "[Required] Azure Data Lake store name."]
     #[serde(rename = "storeName")]
     pub store_name: String,
 }
@@ -506,17 +506,17 @@ impl AzureDataLakeGen1Contents {
 pub struct AzureDataLakeGen2Contents {
     #[serde(flatten)]
     pub datastore_contents: DatastoreContents,
-    #[doc = "Storage account name."]
+    #[doc = "[Required] Storage account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
-    #[doc = "Storage account container name."]
+    #[doc = "[Required] Storage account container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
-    #[doc = "Azure cloud endpoint for the storage account."]
+    #[doc = "[Required] Azure cloud endpoint for the storage account."]
     pub endpoint: String,
-    #[doc = "Protocol used to communicate with the storage account."]
+    #[doc = "[Required] Protocol used to communicate with the storage account."]
     pub protocol: String,
 }
 impl AzureDataLakeGen2Contents {
@@ -543,17 +543,17 @@ impl AzureDataLakeGen2Contents {
 pub struct AzureFileContents {
     #[serde(flatten)]
     pub datastore_contents: DatastoreContents,
-    #[doc = "Storage account name."]
+    #[doc = "[Required] Storage account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
-    #[doc = "Storage account container name."]
+    #[doc = "[Required] Storage account container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
-    #[doc = "Azure cloud endpoint for the storage account."]
+    #[doc = "[Required] Azure cloud endpoint for the storage account."]
     pub endpoint: String,
-    #[doc = "Protocol used to communicate with the storage account."]
+    #[doc = "[Required] Protocol used to communicate with the storage account."]
     pub protocol: String,
 }
 impl AzureFileContents {
@@ -582,18 +582,18 @@ pub struct AzurePostgreSqlContents {
     pub datastore_contents: DatastoreContents,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
-    #[doc = "Azure SQL database name."]
+    #[doc = "[Required] Azure SQL database name."]
     #[serde(rename = "databaseName")]
     pub database_name: String,
     #[doc = "Whether the Azure PostgreSQL server requires SSL."]
     #[serde(rename = "enableSSL", default, skip_serializing_if = "Option::is_none")]
     pub enable_ssl: Option<bool>,
-    #[doc = "Azure cloud endpoint for the database."]
+    #[doc = "[Required] Azure cloud endpoint for the database."]
     pub endpoint: String,
-    #[doc = "Azure SQL server port."]
+    #[doc = "[Required] Azure SQL server port."]
     #[serde(rename = "portNumber")]
     pub port_number: i32,
-    #[doc = "Azure SQL server name."]
+    #[doc = "[Required] Azure SQL server name."]
     #[serde(rename = "serverName")]
     pub server_name: String,
 }
@@ -624,15 +624,15 @@ pub struct AzureSqlDatabaseContents {
     pub datastore_contents: DatastoreContents,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
-    #[doc = "Azure SQL database name."]
+    #[doc = "[Required] Azure SQL database name."]
     #[serde(rename = "databaseName")]
     pub database_name: String,
-    #[doc = "Azure cloud endpoint for the database."]
+    #[doc = "[Required] Azure cloud endpoint for the database."]
     pub endpoint: String,
-    #[doc = "Azure SQL server port."]
+    #[doc = "[Required] Azure SQL server port."]
     #[serde(rename = "portNumber")]
     pub port_number: i32,
-    #[doc = "Azure SQL server name."]
+    #[doc = "[Required] Azure SQL server name."]
     #[serde(rename = "serverName")]
     pub server_name: String,
 }
@@ -889,7 +889,7 @@ pub struct CertificateDatastoreCredentials {
     #[doc = "Authority URL used for authentication."]
     #[serde(rename = "authorityUrl", default, skip_serializing_if = "Option::is_none")]
     pub authority_url: Option<String>,
-    #[doc = "Service principal client ID."]
+    #[doc = "[Required] Service principal client ID."]
     #[serde(rename = "clientId")]
     pub client_id: String,
     #[doc = "Resource the service principal has access to."]
@@ -898,10 +898,10 @@ pub struct CertificateDatastoreCredentials {
     #[doc = "Datastore certificate secrets."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secrets: Option<CertificateDatastoreSecrets>,
-    #[doc = "ID of the tenant to which the service principal belongs."]
+    #[doc = "[Required] ID of the tenant to which the service principal belongs."]
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
-    #[doc = "Thumbprint of the certificate used for authentication."]
+    #[doc = "[Required] Thumbprint of the certificate used for authentication."]
     pub thumbprint: String,
 }
 impl CertificateDatastoreCredentials {
@@ -984,7 +984,7 @@ pub struct CodeConfiguration {
     #[doc = "ARM resource ID of the code asset."]
     #[serde(rename = "codeId", default, skip_serializing_if = "Option::is_none")]
     pub code_id: Option<String>,
-    #[doc = "The script to execute on startup. eg. \"score.py\""]
+    #[doc = "[Required] The script to execute on startup. eg. \"score.py\""]
     #[serde(rename = "scoringScript")]
     pub scoring_script: String,
 }
@@ -1061,7 +1061,7 @@ pub struct CodeVersion {
     #[doc = "If the name version are system generated (anonymous registration)."]
     #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous: Option<bool>,
-    #[doc = "The path of the file/directory in the datastore."]
+    #[doc = "[Required] The path of the file/directory in the datastore."]
     pub path: String,
     #[doc = "The asset property dictionary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1125,7 +1125,7 @@ pub struct CommandJob {
     #[doc = "ARM resource ID of the code asset."]
     #[serde(rename = "codeId", default, skip_serializing_if = "Option::is_none")]
     pub code_id: Option<String>,
-    #[doc = "The command to execute on startup of the job. eg. \"python train.py\""]
+    #[doc = "[Required] The command to execute on startup of the job. eg. \"python train.py\""]
     pub command: String,
     #[doc = "Configuration for compute binding."]
     pub compute: ComputeConfiguration,
@@ -1270,7 +1270,7 @@ pub struct ComputeConfiguration {
     #[doc = "Additional properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
-    #[doc = "ARM resource ID of the compute resource."]
+    #[doc = "ARM resource ID of the Compute you are targeting. If not provided the resource will be deployed as Managed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -1888,7 +1888,7 @@ pub struct DataVersion {
     #[doc = "If the name version are system generated (anonymous registration)."]
     #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous: Option<bool>,
-    #[doc = "The path of the file/directory in the datastore."]
+    #[doc = "[Required] The path of the file/directory in the datastore."]
     pub path: String,
     #[doc = "The asset property dictionary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2182,7 +2182,7 @@ pub struct DockerBuild {
     #[doc = "Path to a snapshot of the Docker Context. This property is only valid if Dockerfile is specified.\r\nThe path is relative to the asset path which must contain a single Blob URI value.\r\n<seealso href=\"https://docs.docker.com/engine/context/working-with-contexts/\" />"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<String>,
-    #[doc = "Docker command line instructions to assemble an image.\r\n<seealso href=\"https://repo2docker.readthedocs.io/en/latest/config_files.html#dockerfile-advanced-environments\" />"]
+    #[doc = "[Required] Docker command line instructions to assemble an image.\r\n<seealso href=\"https://repo2docker.readthedocs.io/en/latest/config_files.html#dockerfile-advanced-environments\" />"]
     pub dockerfile: String,
 }
 impl DockerBuild {
@@ -2199,7 +2199,7 @@ impl DockerBuild {
 pub struct DockerImage {
     #[serde(flatten)]
     pub docker_specification: DockerSpecification,
-    #[doc = "Image name of a custom base image.\r\n<seealso href=\"https://docs.microsoft.com/en-us/azure/machine-learning/how-to-deploy-custom-docker-image#use-a-custom-base-image\" />"]
+    #[doc = "[Required] Image name of a custom base image.\r\n<seealso href=\"https://docs.microsoft.com/en-us/azure/machine-learning/how-to-deploy-custom-docker-image#use-a-custom-base-image\" />"]
     #[serde(rename = "dockerImageUri")]
     pub docker_image_uri: String,
 }
@@ -2670,10 +2670,10 @@ impl FlavorData {
 pub struct GlusterFsContents {
     #[serde(flatten)]
     pub datastore_contents: DatastoreContents,
-    #[doc = "GlusterFS server address (can be the IP address or server name)."]
+    #[doc = "[Required] GlusterFS server address (can be the IP address or server name)."]
     #[serde(rename = "serverAddress")]
     pub server_address: String,
-    #[doc = "GlusterFS volume name."]
+    #[doc = "[Required] GlusterFS volume name."]
     #[serde(rename = "volumeName")]
     pub volume_name: String,
 }
@@ -2730,7 +2730,7 @@ pub mod hd_insight {
 pub struct IdAssetReference {
     #[serde(flatten)]
     pub asset_reference_base: AssetReferenceBase,
-    #[doc = "ARM resource ID of the asset."]
+    #[doc = "[Required] ARM resource ID of the asset."]
     #[serde(rename = "assetId")]
     pub asset_id: String,
 }
@@ -3504,7 +3504,7 @@ pub struct ModelVersion {
     #[doc = "If the name version are system generated (anonymous registration)."]
     #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous: Option<bool>,
-    #[doc = "The path of the file/directory in the datastore."]
+    #[doc = "[Required] The path of the file/directory in the datastore."]
     pub path: String,
     #[doc = "The asset property dictionary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3689,7 +3689,7 @@ impl NotebookResourceInfo {
 pub struct Objective {
     #[doc = "Defines supported metric goals for hyperparameter tuning"]
     pub goal: Goal,
-    #[doc = "Name of the metric to optimize."]
+    #[doc = "[Required] Name of the metric to optimize."]
     #[serde(rename = "primaryMetric")]
     pub primary_metric: String,
 }
@@ -4817,9 +4817,9 @@ pub mod restriction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Route {
-    #[doc = "The path for the route."]
+    #[doc = "[Required] The path for the route."]
     pub path: String,
-    #[doc = "The port for the route."]
+    #[doc = "[Required] The port for the route."]
     pub port: i32,
 }
 impl Route {
@@ -4999,7 +4999,7 @@ pub struct ServicePrincipalDatastoreCredentials {
     #[doc = "Authority URL used for authentication."]
     #[serde(rename = "authorityUrl", default, skip_serializing_if = "Option::is_none")]
     pub authority_url: Option<String>,
-    #[doc = "Service principal client ID."]
+    #[doc = "[Required] Service principal client ID."]
     #[serde(rename = "clientId")]
     pub client_id: String,
     #[doc = "Resource the service principal has access to."]
@@ -5008,7 +5008,7 @@ pub struct ServicePrincipalDatastoreCredentials {
     #[doc = "Datastore Service Principal secrets."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secrets: Option<ServicePrincipalDatastoreSecrets>,
-    #[doc = "ID of the tenant to which the service principal belongs."]
+    #[doc = "[Required] ID of the tenant to which the service principal belongs."]
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
 }
@@ -5125,7 +5125,7 @@ pub struct SqlAdminDatastoreCredentials {
     #[doc = "Datastore SQL Admin secrets."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secrets: Option<SqlAdminDatastoreSecrets>,
-    #[doc = "SQL database user name."]
+    #[doc = "[Required] SQL database user name."]
     #[serde(rename = "userId")]
     pub user_id: String,
 }
@@ -5249,7 +5249,7 @@ pub struct SweepJob {
     #[doc = "Job priority for scheduling policy. Only applies to AMLCompute.\r\nPrivate preview feature and only available to users on the allow list."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
-    #[doc = "A dictionary containing each parameter and its distribution. The dictionary key is the name of the parameter"]
+    #[doc = "[Required] A dictionary containing each parameter and its distribution. The dictionary key is the name of the parameter"]
     #[serde(rename = "searchSpace")]
     pub search_space: serde_json::Value,
     #[doc = "The status of a job."]
@@ -5429,7 +5429,7 @@ pub struct TrialComponent {
     #[doc = "ARM resource ID of the code asset."]
     #[serde(rename = "codeId", default, skip_serializing_if = "Option::is_none")]
     pub code_id: Option<String>,
-    #[doc = "The command to execute on startup of the job. eg. \"python train.py\""]
+    #[doc = "[Required] The command to execute on startup of the job. eg. \"python train.py\""]
     pub command: String,
     #[doc = "Base definition for job distribution configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

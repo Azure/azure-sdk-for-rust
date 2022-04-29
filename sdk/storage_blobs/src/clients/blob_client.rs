@@ -103,6 +103,10 @@ impl BlobClient {
         UpdatePageBuilder::new(self, ba512_range, content)
     }
 
+    pub fn get_page_ranges(&self) -> GetPageRangesBuilder {
+        GetPageRangesBuilder::new(self)
+    }
+
     pub fn delete(&self) -> DeleteBlobBuilder {
         DeleteBlobBuilder::new(self)
     }

@@ -21,7 +21,6 @@ const SKIP_SERVICES: &[&str] = &[
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
-    ("purview", "package-2021-05-01-preview"),  // need to box types
     ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
     ("maps", "package-1.0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
     ("servicefabric", "6.2"),                   // invalid model TimeBasedBackupScheduleDescription
@@ -165,6 +164,16 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "InnerError",
         "innererror"
     ),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "currencyInstance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "instance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "integerInstance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "numberInstance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "percentInstance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "TimeZone", "default"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "dateInstance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "instance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "dateTimeInstance"),
+    ("../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "timeInstance"),
 ];
 
 fn main() -> Result<()> {

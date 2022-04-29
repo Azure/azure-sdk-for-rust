@@ -1,6 +1,7 @@
 use crate::headers;
 use crate::Header;
 
+/// A unique identifier for the request
 #[derive(Debug, Clone)]
 pub struct ClientRequestId(String);
 
@@ -10,15 +11,12 @@ impl ClientRequestId {
     }
 }
 
-impl From<String> for ClientRequestId {
-    fn from(client_request_id: String) -> Self {
-        Self::new(client_request_id)
-    }
-}
-
-impl From<&str> for ClientRequestId {
-    fn from(client_request_id: &str) -> Self {
-        Self::new(client_request_id.into())
+impl<S> From<S> for ClientRequestId
+where
+    S: Into<String>,
+{
+    fn from(s: S) -> Self {
+        Self(s.into())
     }
 }
 

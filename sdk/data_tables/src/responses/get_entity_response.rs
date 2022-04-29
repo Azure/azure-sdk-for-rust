@@ -1,3 +1,4 @@
+use azure_core::{headers::etag_from_headers, Etag};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
@@ -12,6 +13,7 @@ where
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub metadata: String,
     pub entity: E,
+    pub etag: Etag,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -39,6 +41,7 @@ where
             common_storage_response_headers: response.headers().try_into()?,
             metadata: get_entity_response_internal.metadata,
             entity: get_entity_response_internal.value,
+            etag: etag_from_headers(response.headers())?.into(),
         })
     }
 }
