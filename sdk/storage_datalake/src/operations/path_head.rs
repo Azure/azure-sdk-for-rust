@@ -1,5 +1,7 @@
 use crate::{clients::PathClient, request_options::*, Properties};
-use azure_core::headers::{etag_from_headers, last_modified_from_headers};
+use azure_core::headers::{
+    etag_from_headers, get_option_str_from_headers, last_modified_from_headers,
+};
 use azure_core::prelude::*;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -87,18 +89,20 @@ pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
     pub last_modified: DateTime<Utc>,
-    pub properties: Properties,
+    pub properties: Option<Properties>,
 }
 
 impl HeadPathResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
-        let (_status_code, headers, _pinned_stream) = response.deconstruct();
+        let headers = response.headers();
 
         Ok(Self {
-            common_storage_response_headers: (&headers).try_into()?,
-            etag: etag_from_headers(&headers)?,
-            last_modified: last_modified_from_headers(&headers)?,
-            properties: (&headers).try_into()?,
+            common_storage_response_headers: headers.try_into()?,
+            etag: etag_from_headers(headers)?,
+            last_modified: last_modified_from_headers(headers)?,
+            properties: get_option_str_from_headers(headers, azure_core::headers::PROPERTIES)?
+                .map(Properties::try_from)
+                .transpose()?,
         })
     }
 }

@@ -1,4 +1,4 @@
-use azure_core::headers::{self, Header};
+use azure_core::headers::{self, Header, PROPERTIES};
 use http::HeaderMap;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
@@ -6,8 +6,6 @@ use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Properties(BTreeMap<Cow<'static, str>, Cow<'static, str>>);
-
-const HEADER: &str = "x-ms-properties";
 
 impl Default for Properties {
     fn default() -> Self {
@@ -35,7 +33,7 @@ impl Properties {
 
 impl Header for Properties {
     fn name(&self) -> headers::HeaderName {
-        HEADER.into()
+        PROPERTIES.into()
     }
 
     fn value(&self) -> headers::HeaderValue {
@@ -54,12 +52,21 @@ impl TryFrom<&HeaderMap> for Properties {
     type Error = crate::Error;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+        let header_value = headers
+            .get(PROPERTIES)
+            .ok_or_else(|| crate::Error::HeaderNotFound(PROPERTIES.to_owned()))?
+            .to_str()?;
+
+        Properties::try_from(header_value)
+    }
+}
+
+impl TryFrom<&str> for Properties {
+    type Error = crate::Error;
+
+    fn try_from(header_value: &str) -> Result<Self, Self::Error> {
         let mut properties = Self::new();
 
-        let header_value = headers
-            .get(HEADER)
-            .ok_or_else(|| crate::Error::HeaderNotFound(HEADER.to_owned()))?
-            .to_str()?;
         if header_value.is_empty() {
             return Ok(properties);
         }

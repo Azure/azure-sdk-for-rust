@@ -118,6 +118,11 @@ impl FileClient {
         HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
     }
 
+    pub fn get_status(&self) -> HeadPathBuilder<Self> {
+        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+            .action(PathGetPropertiesAction::GetStatus)
+    }
+
     pub fn set_properties(&self, properties: Properties) -> PatchPathBuilder<Self> {
         PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .properties(properties)

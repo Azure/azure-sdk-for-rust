@@ -1,0 +1,12 @@
+{
+  "uri": "/azurerustsdk-datalake-file-get-properties?resource=filesystem",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-length": "0",
+    "user-agent": "azsdk-rust-storage_datalake/0.1.1 (1.59.0; linux; x86_64)",
+    "x-ms-date": "Mon, 11 Apr 2022 16:19:46 GMT",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

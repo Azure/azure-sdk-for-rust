@@ -1,6 +1,6 @@
 #![cfg(feature = "mock_transport_framework")]
 use azure_storage_datalake::Properties;
-use std::error::Error;
+use std::{assert_eq, assert_ne, error::Error};
 
 mod setup;
 
@@ -162,7 +162,7 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
     let renamed_file_properties = file_client3.get_properties().into_future().await?;
 
     // when renaming a file, the source file properties should be propagated
-    assert_eq!(renamed_file_properties.properties, file_properties);
+    assert_eq!(renamed_file_properties.properties, Some(file_properties));
     assert_ne!(
         renamed_file_properties.properties,
         original_target_file_properties.properties
@@ -172,6 +172,51 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
     let source_file_properties_result = file_client1.get_properties().into_future().await;
     assert!(source_file_properties_result.is_err());
 
+    file_system_client.delete().into_future().await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn file_get_properties() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let data_lake_client = setup::create_data_lake_client("datalake_file_properties")
+        .await
+        .unwrap();
+
+    let file_system_name = "azurerustsdk-datalake-file-get-properties";
+    let file_system_client = data_lake_client
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
+
+    let create_fs_response = file_system_client.create().into_future().await?;
+    assert!(
+        create_fs_response.namespace_enabled,
+        "namespace should be enabled"
+    );
+
+    let file_path = "some/path/e2etest-file.txt";
+    let file_client = file_system_client.get_file_client(file_path);
+
+    file_client.create().into_future().await?;
+
+    let mut file_properties = Properties::new();
+    file_properties.insert("AddedVia", "Azure SDK for Rust");
+
+    file_client
+        .create()
+        .properties(file_properties.clone())
+        .into_future()
+        .await?;
+
+    // Get properties
+    let file_properties = file_client.get_properties().into_future().await?;
+    assert!(file_properties.properties.is_some());
+
+    // Get status (ie: only system-defined properties)
+    let file_properties = file_client.get_status().into_future().await?;
+    assert!(!file_properties.properties.is_some());
+
+    // Cleanup
     file_system_client.delete().into_future().await?;
 
     Ok(())

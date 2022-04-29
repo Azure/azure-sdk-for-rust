@@ -1,0 +1,13 @@
+{
+  "uri": "/azurerustsdk-datalake-file-get-properties/some/path/e2etest-file.txt?resource=file",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-length": "0",
+    "user-agent": "azsdk-rust-storage_datalake/0.1.1 (1.59.0; linux; x86_64)",
+    "x-ms-date": "Mon, 11 Apr 2022 16:19:47 GMT",
+    "x-ms-properties": "AddedVia=QXp1cmUgU0RLIGZvciBSdXN0",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}
