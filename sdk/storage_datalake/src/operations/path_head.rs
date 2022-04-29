@@ -1,5 +1,7 @@
 use crate::{clients::PathClient, request_options::*, Properties};
-use azure_core::headers::{etag_from_headers, last_modified_from_headers};
+use azure_core::headers::{
+    etag_from_headers, get_option_str_from_headers, last_modified_from_headers,
+};
 use azure_core::prelude::*;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -98,13 +100,9 @@ impl HeadPathResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,
-            properties: match headers.try_into() {
-                Ok(p) => Some(p),
-                // 'x-ms-properties' will not be returned in some cases, such as when the request 'action' is set to 'getStatus'
-                Err(crate::Error::HeaderNotFound(_)) => None,
-                // Propagate all other errors
-                Err(e) => return Err(e),
-            },
+            properties: get_option_str_from_headers(headers, azure_core::headers::PROPERTIES)?
+                .map(Properties::try_from)
+                .transpose()?,
         })
     }
 }
