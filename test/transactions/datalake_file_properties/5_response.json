@@ -1,10 +1,15 @@
 {
-  "status": 202,
+  "status": 200,
   "headers": {
-    "content-length": "0",
-    "date": "Mon, 11 Apr 2022 16:19:48 GMT",
+    "date": "Mon, 02 May 2022 22:54:56 GMT",
+    "etag": "\"0x8DA2C8EC6B72419\"",
+    "last-modified": "Mon, 02 May 2022 22:54:55 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-request-id": "def5aa50-901f-0073-78bf-4d3635000000",
+    "x-ms-acl": "user::rw-,group::r--,other::---",
+    "x-ms-group": "$superuser",
+    "x-ms-owner": "$superuser",
+    "x-ms-permissions": "rw-r-----",
+    "x-ms-request-id": "3c59a2d7-601f-0058-6c77-5eb6f9000000",
     "x-ms-version": "2019-12-12"
   },
   "body": ""
