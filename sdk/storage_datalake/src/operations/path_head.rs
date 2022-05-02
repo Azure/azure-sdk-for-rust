@@ -90,6 +90,7 @@ pub struct HeadPathResponse {
     pub etag: String,
     pub last_modified: DateTime<Utc>,
     pub properties: Option<Properties>,
+    pub acl: Option<String>,
 }
 
 impl HeadPathResponse {
@@ -103,6 +104,8 @@ impl HeadPathResponse {
             properties: get_option_str_from_headers(headers, azure_core::headers::PROPERTIES)?
                 .map(Properties::try_from)
                 .transpose()?,
+            acl: get_option_str_from_headers(headers, azure_core::headers::ACL)?
+                .map(|s| s.to_owned()),
         })
     }
 }
