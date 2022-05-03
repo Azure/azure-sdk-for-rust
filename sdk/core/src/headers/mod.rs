@@ -209,6 +209,7 @@ pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
     builder.header(item.name().as_str(), item.value().as_str())
 }
 
+pub const ACL: &str = "x-ms-acl";
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
 pub const ACTIVITY_ID: &str = "x-ms-activity-id";
 pub const APP: &str = "x-ms-app";
