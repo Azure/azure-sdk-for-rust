@@ -218,7 +218,6 @@ async fn file_get_properties() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // Get access control list for the file
     let file_acl = file_client.get_access_control_list().into_future().await?;
-    assert!(file_acl.acl.is_some());
     assert_eq!(
         file_acl.acl,
         Some("user::rw-,group::r--,other::---".to_string())
