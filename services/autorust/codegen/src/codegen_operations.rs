@@ -153,6 +153,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
+        #![allow(clippy::redundant_clone)]
         use super::models;
     });
     let mut operations_code: IndexMap<Option<String>, OperationCode> = IndexMap::new();
