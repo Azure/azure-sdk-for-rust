@@ -75,6 +75,11 @@ pub struct AgentPoolListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AgentPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AgentPoolListResult {
     pub fn new() -> Self {
         Self::default()
@@ -161,6 +166,11 @@ pub struct CloudError {
     #[doc = "An error response from the Container service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -996,6 +1006,11 @@ pub struct MaintenanceConfigurationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MaintenanceConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MaintenanceConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1369,6 +1384,11 @@ pub struct ManagedClusterListResult {
     #[doc = "The URL to get the next set of managed cluster results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ManagedClusterListResult {
     pub fn new() -> Self {
@@ -2052,6 +2072,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2119,6 +2144,11 @@ pub struct OutboundEnvironmentEndpointCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OutboundEnvironmentEndpointCollection {
     pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {
@@ -2425,6 +2455,11 @@ pub struct SnapshotListResult {
     #[doc = "The URL to get the next set of snapshot results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SnapshotListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SnapshotListResult {
     pub fn new() -> Self {

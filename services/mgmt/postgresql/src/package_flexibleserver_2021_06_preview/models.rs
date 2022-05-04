@@ -34,6 +34,11 @@ pub struct AdvisorsResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AdvisorsResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AdvisorsResultList {
     pub fn new() -> Self {
         Self::default()
@@ -81,6 +86,11 @@ pub struct CapabilitiesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CapabilitiesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CapabilitiesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -121,6 +131,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -152,6 +167,11 @@ pub struct ConfigurationListResult {
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ConfigurationListResult {
     pub fn new() -> Self {
@@ -234,6 +254,11 @@ pub struct DatabaseListResult {
     #[doc = "The link used to get the next page of databases."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DatabaseListResult {
     pub fn new() -> Self {
@@ -338,6 +363,11 @@ pub struct FirewallRuleListResult {
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FirewallRuleListResult {
     pub fn new() -> Self {
@@ -762,6 +792,11 @@ pub struct QueryTextsResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for QueryTextsResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl QueryTextsResultList {
     pub fn new() -> Self {
         Self::default()
@@ -823,6 +858,11 @@ pub struct RecommendationActionsResultList {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RecommendationActionsResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RecommendationActionsResultList {
     pub fn new() -> Self {
@@ -927,6 +967,11 @@ pub struct ServerListResult {
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ServerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ServerListResult {
     pub fn new() -> Self {
@@ -1206,6 +1251,11 @@ pub struct TopQueryStatisticsResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TopQueryStatisticsResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TopQueryStatisticsResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1370,6 +1420,11 @@ pub struct WaitStatisticsResultList {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WaitStatisticsResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WaitStatisticsResultList {
     pub fn new() -> Self {

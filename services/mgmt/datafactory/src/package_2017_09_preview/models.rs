@@ -101,6 +101,11 @@ pub struct ActivityRunsListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActivityRunsListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ActivityRunsListResponse {
     pub fn new(value: Vec<ActivityRun>) -> Self {
         Self { value, next_link: None }
@@ -185,6 +190,11 @@ pub struct DatasetListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DatasetListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DatasetListResponse {
     pub fn new(value: Vec<DatasetResource>) -> Self {
         Self { value, next_link: None }
@@ -249,6 +259,11 @@ pub struct ErrorResponse {
     #[doc = "Array with additional error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new(code: String, message: String) -> Self {
@@ -337,6 +352,11 @@ pub struct FactoryListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FactoryListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FactoryListResponse {
     pub fn new(value: Vec<Factory>) -> Self {
@@ -498,6 +518,11 @@ pub struct IntegrationRuntimeListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IntegrationRuntimeListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IntegrationRuntimeListResponse {
     pub fn new(value: Vec<IntegrationRuntimeResource>) -> Self {
@@ -748,6 +773,11 @@ pub struct LinkedServiceListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LinkedServiceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LinkedServiceListResponse {
     pub fn new(value: Vec<LinkedServiceResource>) -> Self {
@@ -1036,6 +1066,11 @@ pub struct PipelineListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PipelineListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PipelineListResponse {
     pub fn new(value: Vec<PipelineResource>) -> Self {
@@ -1438,6 +1473,11 @@ pub struct TriggerListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TriggerListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TriggerListResponse {
     pub fn new(value: Vec<TriggerResource>) -> Self {
         Self { value, next_link: None }
@@ -1525,6 +1565,11 @@ pub struct TriggerRunListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TriggerRunListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TriggerRunListResponse {
     pub fn new(value: Vec<TriggerRun>) -> Self {

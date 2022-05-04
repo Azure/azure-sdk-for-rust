@@ -117,6 +117,11 @@ pub struct ClientDiscoveryResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ClientDiscoveryResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClientDiscoveryResponse {
     pub fn new() -> Self {
         Self::default()
@@ -376,6 +381,11 @@ pub struct PrivateLinkResources {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PrivateLinkResources {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateLinkResources {
     pub fn new() -> Self {
         Self::default()
@@ -472,6 +482,11 @@ pub struct ReplicationUsageList {
     #[doc = "The list of replication usages for the given vault."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReplicationUsage>,
+}
+impl azure_core::Continuable for ReplicationUsageList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ReplicationUsageList {
     pub fn new() -> Self {
@@ -798,6 +813,11 @@ pub struct VaultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VaultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VaultList {
     pub fn new() -> Self {
         Self::default()
@@ -888,6 +908,11 @@ pub struct VaultUsageList {
     #[doc = "The list of usages for the given vault."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VaultUsage>,
+}
+impl azure_core::Continuable for VaultUsageList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl VaultUsageList {
     pub fn new() -> Self {

@@ -72,6 +72,11 @@ pub struct BestPracticeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BestPractice>,
 }
+impl azure_core::Continuable for BestPracticeList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BestPracticeList {
     pub fn new() -> Self {
         Self::default()
@@ -130,6 +135,11 @@ pub struct ConfigurationProfileAssignmentList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfileAssignment>,
 }
+impl azure_core::Continuable for ConfigurationProfileAssignmentList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ConfigurationProfileAssignmentList {
     pub fn new() -> Self {
         Self::default()
@@ -170,6 +180,11 @@ pub struct ConfigurationProfileList {
     #[doc = "Result of the list ConfigurationProfile operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfile>,
+}
+impl azure_core::Continuable for ConfigurationProfileList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ConfigurationProfileList {
     pub fn new() -> Self {
@@ -251,6 +266,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -329,6 +349,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -369,6 +394,11 @@ pub struct ReportList {
     #[doc = "Result of the list report operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Report>,
+}
+impl azure_core::Continuable for ReportList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ReportList {
     pub fn new() -> Self {
@@ -440,6 +470,11 @@ pub struct ServicePrincipalListResult {
     #[doc = "The list of servicePrincipals."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServicePrincipal>,
+}
+impl azure_core::Continuable for ServicePrincipalListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ServicePrincipalListResult {
     pub fn new() -> Self {

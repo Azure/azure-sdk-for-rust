@@ -81,6 +81,11 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActionGroupList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActionGroupList {
     pub fn new() -> Self {
         Self::default()
@@ -222,6 +227,11 @@ pub struct ActivityLogAlertList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActivityLogAlertList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActivityLogAlertList {
     pub fn new() -> Self {
         Self::default()
@@ -340,6 +350,11 @@ pub struct AlertRuleResourceCollection {
     #[doc = "the values for the alert rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertRuleResource>,
+}
+impl azure_core::Continuable for AlertRuleResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl AlertRuleResourceCollection {
     pub fn new() -> Self {
@@ -560,6 +575,11 @@ pub struct AutoscaleSettingResourceCollection {
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AutoscaleSettingResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AutoscaleSettingResourceCollection {
     pub fn new(value: Vec<AutoscaleSettingResource>) -> Self {
@@ -946,6 +966,11 @@ pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for ErrorContract {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorContract {
     pub fn new() -> Self {
         Self::default()
@@ -961,6 +986,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -971,6 +1001,11 @@ impl ErrorResponse {
 pub struct EventCategoryCollection {
     #[doc = "the list that includes the Azure event categories."]
     pub value: Vec<LocalizableString>,
+}
+impl azure_core::Continuable for EventCategoryCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl EventCategoryCollection {
     pub fn new(value: Vec<LocalizableString>) -> Self {
@@ -1079,6 +1114,11 @@ pub struct EventDataCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EventDataCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EventDataCollection {
     pub fn new(value: Vec<EventData>) -> Self {
         Self { value, next_link: None }
@@ -1135,6 +1175,11 @@ pub struct IncidentListResult {
     #[doc = "the incident collection."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Incident>,
+}
+impl azure_core::Continuable for IncidentListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl IncidentListResult {
     pub fn new() -> Self {
@@ -1233,6 +1278,11 @@ impl LogMetricTrigger {
 pub struct LogProfileCollection {
     #[doc = "the values of the log profiles."]
     pub value: Vec<LogProfileResource>,
+}
+impl azure_core::Continuable for LogProfileCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LogProfileCollection {
     pub fn new(value: Vec<LogProfileResource>) -> Self {
@@ -1408,6 +1458,11 @@ pub struct LogSearchRuleResourceCollection {
     #[doc = "The values for the Log Search Rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LogSearchRuleResource>,
+}
+impl azure_core::Continuable for LogSearchRuleResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LogSearchRuleResourceCollection {
     pub fn new() -> Self {
@@ -1762,6 +1817,11 @@ pub struct MetricAlertResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricAlertResource>,
 }
+impl azure_core::Continuable for MetricAlertResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MetricAlertResourceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1879,6 +1939,11 @@ pub struct MetricBaselinesResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SingleMetricBaseline>,
 }
+impl azure_core::Continuable for MetricBaselinesResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MetricBaselinesResponse {
     pub fn new(timespan: String, interval: String) -> Self {
         Self {
@@ -1982,6 +2047,11 @@ impl MetricDefinition {
 pub struct MetricDefinitionCollection {
     #[doc = "the values for the metric definitions."]
     pub value: Vec<MetricDefinition>,
+}
+impl azure_core::Continuable for MetricDefinitionCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricDefinitionCollection {
     pub fn new(value: Vec<MetricDefinition>) -> Self {

@@ -65,6 +65,11 @@ pub struct DatadogAgreementResourceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DatadogAgreementResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DatadogAgreementResourceListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -104,6 +109,11 @@ pub struct DatadogApiKeyListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DatadogApiKeyListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DatadogApiKeyListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -137,6 +147,11 @@ pub struct DatadogHostListResponse {
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatadogHostListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DatadogHostListResponse {
     pub fn new() -> Self {
@@ -231,6 +246,11 @@ pub struct DatadogMonitorResourceListResponse {
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatadogMonitorResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DatadogMonitorResourceListResponse {
     pub fn new() -> Self {
@@ -345,6 +365,11 @@ pub struct DatadogSingleSignOnResourceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DatadogSingleSignOnResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DatadogSingleSignOnResourceListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -427,6 +452,11 @@ pub struct LinkedResourceListResponse {
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LinkedResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LinkedResourceListResponse {
     pub fn new() -> Self {
@@ -554,6 +584,11 @@ pub struct MonitoredResourceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MonitoredResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MonitoredResourceListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -600,6 +635,11 @@ pub struct MonitoringTagRulesListResponse {
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MonitoringTagRulesListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MonitoringTagRulesListResponse {
     pub fn new() -> Self {
@@ -654,6 +694,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -693,6 +738,11 @@ pub enum ProvisioningState {
 pub struct ResourceProviderDefaultErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl azure_core::Continuable for ResourceProviderDefaultErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ResourceProviderDefaultErrorResponse {
     pub fn new() -> Self {

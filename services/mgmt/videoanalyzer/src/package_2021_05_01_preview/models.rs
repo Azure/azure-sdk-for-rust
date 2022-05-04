@@ -29,6 +29,11 @@ pub struct AccessPolicyEntityCollection {
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AccessPolicyEntityCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AccessPolicyEntityCollection {
     pub fn new() -> Self {
         Self::default()
@@ -203,6 +208,11 @@ pub struct EdgeModuleEntityCollection {
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EdgeModuleEntityCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EdgeModuleEntityCollection {
     pub fn new() -> Self {
         Self::default()
@@ -303,6 +313,11 @@ pub struct ErrorResponse {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -873,6 +888,11 @@ pub struct VideoEntityCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VideoEntityCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VideoEntityCollection {
     pub fn new() -> Self {

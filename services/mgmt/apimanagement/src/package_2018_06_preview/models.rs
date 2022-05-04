@@ -77,6 +77,11 @@ pub struct ApiCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApiCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApiCollection {
     pub fn new() -> Self {
         Self::default()
@@ -483,6 +488,11 @@ pub struct ApiManagementServiceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApiManagementServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApiManagementServiceListResult {
     pub fn new(value: Vec<ApiManagementServiceResource>) -> Self {
         Self { value, next_link: None }
@@ -693,6 +703,11 @@ pub struct ApiReleaseCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApiReleaseCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApiReleaseCollection {
     pub fn new() -> Self {
         Self::default()
@@ -742,6 +757,11 @@ pub struct ApiRevisionCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ApiRevisionCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ApiRevisionCollection {
     pub fn new() -> Self {
@@ -849,6 +869,11 @@ pub struct ApiVersionSetCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ApiVersionSetCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ApiVersionSetCollection {
     pub fn new() -> Self {
@@ -1043,6 +1068,11 @@ pub struct AuthorizationServerCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AuthorizationServerCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AuthorizationServerCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1235,6 +1265,11 @@ pub struct BackendCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for BackendCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl BackendCollection {
     pub fn new() -> Self {
@@ -1480,6 +1515,11 @@ pub struct CacheCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CacheCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CacheCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1560,6 +1600,11 @@ pub struct CertificateCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CertificateCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CertificateCollection {
     pub fn new() -> Self {
@@ -1755,6 +1800,11 @@ pub struct DiagnosticCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DiagnosticCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DiagnosticCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1826,6 +1876,11 @@ pub struct EmailTemplateCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EmailTemplateCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EmailTemplateCollection {
     pub fn new() -> Self {
@@ -1957,6 +2012,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -2001,6 +2061,11 @@ pub struct GroupCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GroupCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GroupCollection {
     pub fn new() -> Self {
@@ -2354,6 +2419,11 @@ pub struct IdentityProviderList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IdentityProviderList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IdentityProviderList {
     pub fn new() -> Self {
         Self::default()
@@ -2397,6 +2467,11 @@ pub struct IssueAttachmentCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IssueAttachmentCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IssueAttachmentCollection {
     pub fn new() -> Self {
@@ -2447,6 +2522,11 @@ pub struct IssueCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IssueCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IssueCollection {
     pub fn new() -> Self {
         Self::default()
@@ -2461,6 +2541,11 @@ pub struct IssueCommentCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IssueCommentCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IssueCommentCollection {
     pub fn new() -> Self {
@@ -2619,6 +2704,11 @@ pub struct LoggerCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LoggerCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LoggerCollection {
     pub fn new() -> Self {
         Self::default()
@@ -2765,6 +2855,11 @@ pub struct NotificationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NotificationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NotificationCollection {
     pub fn new() -> Self {
         Self::default()
@@ -2844,6 +2939,11 @@ pub struct OpenIdConnectProviderCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OpenIdConnectProviderCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OpenIdConnectProviderCollection {
     pub fn new() -> Self {
@@ -2985,6 +3085,11 @@ pub struct OperationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationCollection {
     pub fn new() -> Self {
         Self::default()
@@ -3061,6 +3166,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -3439,6 +3549,11 @@ pub struct ProductCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ProductCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ProductCollection {
     pub fn new() -> Self {
         Self::default()
@@ -3568,6 +3683,11 @@ pub struct PropertyCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PropertyCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PropertyCollection {
     pub fn new() -> Self {
@@ -3855,6 +3975,11 @@ pub struct RegionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RegionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RegionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3884,6 +4009,11 @@ pub struct ReportCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ReportCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ReportCollection {
     pub fn new() -> Self {
@@ -4037,6 +4167,11 @@ pub struct RequestReportCollection {
     #[doc = "Total record count number across all pages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl azure_core::Continuable for RequestReportCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl RequestReportCollection {
     pub fn new() -> Self {
@@ -4209,6 +4344,11 @@ pub struct ResourceSkuResults {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceSkuResults {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceSkuResults {
     pub fn new(value: Vec<ResourceSkuResult>) -> Self {
         Self { value, next_link: None }
@@ -4288,6 +4428,11 @@ pub struct SchemaCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SchemaCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SchemaCollection {
     pub fn new() -> Self {
         Self::default()
@@ -4346,6 +4491,11 @@ pub struct SubscriptionCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SubscriptionCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SubscriptionCollection {
     pub fn new() -> Self {
@@ -4617,6 +4767,11 @@ pub struct TagCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TagCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TagCollection {
     pub fn new() -> Self {
         Self::default()
@@ -4688,6 +4843,11 @@ pub struct TagDescriptionCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TagDescriptionCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TagDescriptionCollection {
     pub fn new() -> Self {
         Self::default()
@@ -4742,6 +4902,11 @@ pub struct TagResourceCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TagResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TagResourceCollection {
     pub fn new() -> Self {
@@ -4858,6 +5023,11 @@ pub struct UserCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UserCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UserCollection {
     pub fn new() -> Self {
@@ -5009,6 +5179,11 @@ pub struct UserIdentityCollection {
     #[doc = "Next page link if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UserIdentityCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UserIdentityCollection {
     pub fn new() -> Self {

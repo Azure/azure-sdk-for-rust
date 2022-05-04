@@ -51,6 +51,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -181,6 +186,11 @@ pub struct GalleryApplicationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for GalleryApplicationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl GalleryApplicationList {
     pub fn new(value: Vec<GalleryApplication>) -> Self {
         Self { value, next_link: None }
@@ -268,6 +278,11 @@ pub struct GalleryApplicationVersionList {
     #[doc = "The uri to fetch the next page of gallery Application Versions. Call ListNext() with this to fetch the next page of gallery Application Versions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GalleryApplicationVersionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GalleryApplicationVersionList {
     pub fn new(value: Vec<GalleryApplicationVersion>) -> Self {
@@ -557,6 +572,11 @@ pub struct GalleryImageList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for GalleryImageList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl GalleryImageList {
     pub fn new(value: Vec<GalleryImage>) -> Self {
         Self { value, next_link: None }
@@ -713,6 +733,11 @@ pub struct GalleryImageVersionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for GalleryImageVersionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl GalleryImageVersionList {
     pub fn new(value: Vec<GalleryImageVersion>) -> Self {
         Self { value, next_link: None }
@@ -808,6 +833,11 @@ pub struct GalleryList {
     #[doc = "The uri to fetch the next page of galleries. Call ListNext() with this to fetch the next page of galleries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GalleryList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GalleryList {
     pub fn new(value: Vec<Gallery>) -> Self {

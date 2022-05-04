@@ -586,6 +586,11 @@ pub struct PageableListOfDeploymentDeviceStates {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PageableListOfDeploymentDeviceStates {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PageableListOfDeploymentDeviceStates {
     pub fn new() -> Self {
         Self::default()
@@ -600,6 +605,11 @@ pub struct PageableListOfDeployments {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PageableListOfDeployments {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PageableListOfDeployments {
     pub fn new() -> Self {
@@ -616,6 +626,11 @@ pub struct PageableListOfDeviceClasses {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PageableListOfDeviceClasses {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PageableListOfDeviceClasses {
     pub fn new() -> Self {
         Self::default()
@@ -630,6 +645,11 @@ pub struct PageableListOfDeviceTags {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PageableListOfDeviceTags {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PageableListOfDeviceTags {
     pub fn new() -> Self {
@@ -646,6 +666,11 @@ pub struct PageableListOfDevices {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PageableListOfDevices {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PageableListOfDevices {
     pub fn new() -> Self {
         Self::default()
@@ -660,6 +685,11 @@ pub struct PageableListOfGroups {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PageableListOfGroups {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PageableListOfGroups {
     pub fn new() -> Self {
@@ -676,6 +706,11 @@ pub struct PageableListOfOperations {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PageableListOfOperations {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PageableListOfOperations {
     pub fn new() -> Self {
         Self::default()
@@ -690,6 +725,11 @@ pub struct PageableListOfStrings {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PageableListOfStrings {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PageableListOfStrings {
     pub fn new() -> Self {
@@ -706,6 +746,11 @@ pub struct PageableListOfUpdatableDevices {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PageableListOfUpdatableDevices {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PageableListOfUpdatableDevices {
     pub fn new() -> Self {
         Self::default()
@@ -720,6 +765,11 @@ pub struct PageableListOfUpdateIds {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PageableListOfUpdateIds {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PageableListOfUpdateIds {
     pub fn new() -> Self {

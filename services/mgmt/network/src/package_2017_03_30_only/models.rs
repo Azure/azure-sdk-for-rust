@@ -308,6 +308,11 @@ pub struct NetworkInterfaceIpConfigurationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NetworkInterfaceIpConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NetworkInterfaceIpConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -379,6 +384,11 @@ pub struct NetworkInterfaceListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for NetworkInterfaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl NetworkInterfaceListResult {
     pub fn new() -> Self {
@@ -518,6 +528,11 @@ pub struct PublicIpAddressListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PublicIpAddressListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PublicIpAddressListResult {
     pub fn new() -> Self {

@@ -96,6 +96,11 @@ pub struct ClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cluster>,
 }
+impl azure_core::Continuable for ClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClusterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -228,6 +233,11 @@ pub struct DataExportListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataExport>,
 }
+impl azure_core::Continuable for DataExportListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DataExportListResult {
     pub fn new() -> Self {
         Self::default()
@@ -354,6 +364,11 @@ pub struct DataSourceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataSourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataSourceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -448,6 +463,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -529,6 +549,11 @@ pub struct LinkedServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkedService>,
 }
+impl azure_core::Continuable for LinkedServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl LinkedServiceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -569,6 +594,11 @@ pub struct LinkedStorageAccountsListResult {
     #[doc = "A list of linked storage accounts instances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkedStorageAccountsResource>,
+}
+impl azure_core::Continuable for LinkedStorageAccountsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LinkedStorageAccountsListResult {
     pub fn new() -> Self {
@@ -733,6 +763,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -1098,6 +1133,11 @@ pub struct StorageInsightListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for StorageInsightListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl StorageInsightListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1186,6 +1226,11 @@ pub struct TablesListResult {
     #[doc = "A list of data tables."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Table>,
+}
+impl azure_core::Continuable for TablesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl TablesListResult {
     pub fn new() -> Self {
@@ -1319,6 +1364,11 @@ pub struct WorkspaceListManagementGroupsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroup>,
 }
+impl azure_core::Continuable for WorkspaceListManagementGroupsResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkspaceListManagementGroupsResult {
     pub fn new() -> Self {
         Self::default()
@@ -1331,6 +1381,11 @@ pub struct WorkspaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
 }
+impl azure_core::Continuable for WorkspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkspaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1342,6 +1397,11 @@ pub struct WorkspaceListUsagesResult {
     #[doc = "Gets or sets a list of usage metrics for a workspace."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UsageMetric>,
+}
+impl azure_core::Continuable for WorkspaceListUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkspaceListUsagesResult {
     pub fn new() -> Self {

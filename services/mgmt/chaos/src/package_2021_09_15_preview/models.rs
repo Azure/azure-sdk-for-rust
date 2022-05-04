@@ -48,6 +48,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -125,6 +130,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -271,6 +281,11 @@ pub struct CapabilityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
 }
+impl azure_core::Continuable for CapabilityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CapabilityListResult {
     pub fn new() -> Self {
         Self::default()
@@ -329,6 +344,11 @@ pub struct CapabilityTypeListResult {
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
+}
+impl azure_core::Continuable for CapabilityTypeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CapabilityTypeListResult {
     pub fn new() -> Self {
@@ -471,6 +491,11 @@ pub struct ExperimentExecutionDetailsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
 }
+impl azure_core::Continuable for ExperimentExecutionDetailsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ExperimentExecutionDetailsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -533,6 +558,11 @@ pub struct ExperimentListResult {
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
+}
+impl azure_core::Continuable for ExperimentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ExperimentListResult {
     pub fn new() -> Self {
@@ -604,6 +634,11 @@ pub struct ExperimentStatusListResult {
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
+}
+impl azure_core::Continuable for ExperimentStatusListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ExperimentStatusListResult {
     pub fn new() -> Self {
@@ -800,6 +835,11 @@ pub struct TargetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
 }
+impl azure_core::Continuable for TargetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TargetListResult {
     pub fn new() -> Self {
         Self::default()
@@ -868,6 +908,11 @@ pub struct TargetTypeListResult {
     #[doc = "Optional string that represents a URL."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
+}
+impl azure_core::Continuable for TargetTypeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TargetTypeListResult {
     pub fn new() -> Self {

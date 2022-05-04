@@ -81,6 +81,11 @@ pub struct AccountList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
+impl azure_core::Continuable for AccountList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AccountList {
     pub fn new() -> Self {
         Self::default()
@@ -245,6 +250,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -383,6 +393,11 @@ pub struct InstanceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Instance>,
 }
+impl azure_core::Continuable for InstanceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl InstanceList {
     pub fn new() -> Self {
         Self::default()
@@ -518,6 +533,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -557,6 +577,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -638,6 +663,11 @@ pub struct PrivateEndpointConnectionProxyListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionProxyListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PrivateEndpointConnectionProxyListResult {
     pub fn new() -> Self {
         Self::default()
@@ -709,6 +739,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "The URI that can be used to request the next list of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {

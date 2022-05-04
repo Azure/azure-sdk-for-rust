@@ -180,6 +180,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -675,6 +680,11 @@ pub struct IncidentCommentList {
     #[doc = "Array of comments."]
     pub value: Vec<IncidentComment>,
 }
+impl azure_core::Continuable for IncidentCommentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IncidentCommentList {
     pub fn new(value: Vec<IncidentComment>) -> Self {
         Self { next_link: None, value }
@@ -802,6 +812,11 @@ pub struct IncidentList {
     pub next_link: Option<String>,
     #[doc = "Array of incidents."]
     pub value: Vec<Incident>,
+}
+impl azure_core::Continuable for IncidentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IncidentList {
     pub fn new(value: Vec<Incident>) -> Self {
@@ -1377,6 +1392,11 @@ pub struct OperationsList {
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {
         Self { next_link: None, value }
@@ -1576,6 +1596,11 @@ pub struct RelationList {
     pub next_link: Option<String>,
     #[doc = "Array of relations."]
     pub value: Vec<Relation>,
+}
+impl azure_core::Continuable for RelationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RelationList {
     pub fn new(value: Vec<Relation>) -> Self {
@@ -2164,6 +2189,11 @@ pub struct ThreatIntelligenceInformationList {
     #[doc = "Array of threat intelligence information objects."]
     pub value: Vec<ThreatIntelligenceInformation>,
 }
+impl azure_core::Continuable for ThreatIntelligenceInformationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ThreatIntelligenceInformationList {
     pub fn new(value: Vec<ThreatIntelligenceInformation>) -> Self {
         Self { next_link: None, value }
@@ -2398,6 +2428,11 @@ pub struct WatchlistItemList {
     #[doc = "Array of watchlist items."]
     pub value: Vec<WatchlistItem>,
 }
+impl azure_core::Continuable for WatchlistItemList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WatchlistItemList {
     pub fn new(value: Vec<WatchlistItem>) -> Self {
         Self { next_link: None, value }
@@ -2461,6 +2496,11 @@ pub struct WatchlistList {
     pub next_link: Option<String>,
     #[doc = "Array of watchlist."]
     pub value: Vec<Watchlist>,
+}
+impl azure_core::Continuable for WatchlistList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WatchlistList {
     pub fn new(value: Vec<Watchlist>) -> Self {

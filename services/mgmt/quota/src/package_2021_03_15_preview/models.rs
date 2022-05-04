@@ -81,6 +81,11 @@ pub struct ExceptionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ServiceError>,
 }
+impl azure_core::Continuable for ExceptionResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ExceptionResponse {
     pub fn new() -> Self {
         Self::default()
@@ -157,6 +162,11 @@ pub struct OperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationList {
     pub fn new() -> Self {
         Self::default()
@@ -185,6 +195,11 @@ pub struct QuotaLimits {
     #[doc = "The URI used to fetch the next page of quota limits. When there are no more pages, this string is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for QuotaLimits {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl QuotaLimits {
     pub fn new() -> Self {
@@ -266,6 +281,11 @@ pub struct QuotaRequestDetailsList {
     #[doc = "The URI for fetching the next page of quota limits. When there are no more pages, this string is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for QuotaRequestDetailsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl QuotaRequestDetailsList {
     pub fn new() -> Self {
@@ -489,6 +509,11 @@ pub struct UsagesLimits {
     #[doc = "The URI used to fetch the next page of quota limits. When there are no more pages, this is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UsagesLimits {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UsagesLimits {
     pub fn new() -> Self {

@@ -396,6 +396,11 @@ pub struct DomainTopicsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DomainTopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DomainTopicsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -466,6 +471,11 @@ pub struct DomainsListResult {
     #[doc = "A link for the next page of domains."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DomainsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DomainsListResult {
     pub fn new() -> Self {
@@ -765,6 +775,11 @@ pub struct EventSubscriptionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EventSubscriptionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EventSubscriptionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -811,6 +826,11 @@ pub struct EventTypesListResult {
     #[doc = "A collection of event types"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventType>,
+}
+impl azure_core::Continuable for EventTypesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl EventTypesListResult {
     pub fn new() -> Self {
@@ -1234,6 +1254,11 @@ pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1273,6 +1298,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "A link for the next page of private endpoint connection resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -1358,6 +1388,11 @@ pub struct PrivateLinkResourcesListResult {
     #[doc = "A link for the next page of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateLinkResourcesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkResourcesListResult {
     pub fn new() -> Self {
@@ -1780,6 +1815,11 @@ pub struct SystemTopicsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SystemTopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SystemTopicsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1982,6 +2022,11 @@ pub struct TopicTypesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TopicTypeInfo>,
 }
+impl azure_core::Continuable for TopicTypesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl TopicTypesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2046,6 +2091,11 @@ pub struct TopicsListResult {
     #[doc = "A link for the next page of topics"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TopicsListResult {
     pub fn new() -> Self {

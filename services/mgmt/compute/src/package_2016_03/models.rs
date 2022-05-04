@@ -123,6 +123,11 @@ pub struct AvailabilitySetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailabilitySetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailabilitySetListResult {
     pub fn new(value: Vec<AvailabilitySet>) -> Self {
         Self { value, next_link: None }
@@ -376,6 +381,11 @@ pub struct ContainerServiceListResult {
     #[doc = "the list of container services."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
+}
+impl azure_core::Continuable for ContainerServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ContainerServiceListResult {
     pub fn new() -> Self {
@@ -897,6 +907,11 @@ pub struct ListUsagesResult {
     #[doc = "The URI to fetch the next page of compute resource usage information. Call ListNext() with this to fetch the next page of compute resource usage information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListUsagesResult {
     pub fn new(value: Vec<Usage>) -> Self {
@@ -1743,6 +1758,11 @@ pub struct VirtualMachineListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineListResult {
     pub fn new(value: Vec<VirtualMachine>) -> Self {
         Self { value, next_link: None }
@@ -1980,6 +2000,11 @@ pub struct VirtualMachineScaleSetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineScaleSetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineScaleSetListResult {
     pub fn new(value: Vec<VirtualMachineScaleSet>) -> Self {
         Self { value, next_link: None }
@@ -1994,6 +2019,11 @@ pub struct VirtualMachineScaleSetListSkusResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineScaleSetListSkusResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineScaleSetListSkusResult {
     pub fn new(value: Vec<VirtualMachineScaleSetSku>) -> Self {
         Self { value, next_link: None }
@@ -2007,6 +2037,11 @@ pub struct VirtualMachineScaleSetListWithLinkResult {
     #[doc = "The uri to fetch the next page of Virtual Machine Scale Sets. Call ListNext() with this to fetch the next page of Virtual Machine Scale Sets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualMachineScaleSetListWithLinkResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachineScaleSetListWithLinkResult {
     pub fn new(value: Vec<VirtualMachineScaleSet>) -> Self {
@@ -2333,6 +2368,11 @@ pub struct VirtualMachineScaleSetVmListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineScaleSetVmListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineScaleSetVmListResult {
     pub fn new(value: Vec<VirtualMachineScaleSetVm>) -> Self {
         Self { value, next_link: None }
@@ -2433,6 +2473,11 @@ pub struct VirtualMachineSizeListResult {
     #[doc = "The list of virtual machine sizes."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachineSize>,
+}
+impl azure_core::Continuable for VirtualMachineSizeListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl VirtualMachineSizeListResult {
     pub fn new() -> Self {

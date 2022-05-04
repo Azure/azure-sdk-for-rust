@@ -30,6 +30,11 @@ impl ErrorDetail {
 pub struct ErrorResponse {
     pub error: ErrorDetail,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new(error: ErrorDetail) -> Self {
         Self { error }
@@ -234,6 +239,11 @@ pub struct MachineExtensionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MachineExtensionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MachineExtensionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -247,6 +257,11 @@ pub struct MachineListResult {
     #[doc = "The URI to fetch the next page of Machines. Call ListNext() with this URI to fetch the next page of hybrid machines."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MachineListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MachineListResult {
     pub fn new(value: Vec<Machine>) -> Self {
@@ -387,6 +402,11 @@ pub struct OperationListResult {
     #[doc = "The list of compute operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

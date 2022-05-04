@@ -89,6 +89,11 @@ pub struct ApplicationResourceDescriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApplicationResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApplicationResourceDescriptionList {
     pub fn new() -> Self {
         Self::default()
@@ -651,6 +656,11 @@ pub struct ErrorModel {
     #[doc = "Error model information"]
     pub error: ErrorErrorModel,
 }
+impl azure_core::Continuable for ErrorModel {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorModel {
     pub fn new(error: ErrorErrorModel) -> Self {
         Self { error }
@@ -745,6 +755,11 @@ pub struct GatewayResourceDescriptionList {
     #[doc = "URI to fetch the next page of the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GatewayResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GatewayResourceDescriptionList {
     pub fn new() -> Self {
@@ -1009,6 +1024,11 @@ pub struct NetworkResourceDescriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NetworkResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NetworkResourceDescriptionList {
     pub fn new() -> Self {
         Self::default()
@@ -1070,6 +1090,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -1240,6 +1265,11 @@ pub struct SecretResourceDescriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecretResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecretResourceDescriptionList {
     pub fn new() -> Self {
         Self::default()
@@ -1340,6 +1370,11 @@ pub struct SecretValueResourceDescriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecretValueResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecretValueResourceDescriptionList {
     pub fn new() -> Self {
         Self::default()
@@ -1415,6 +1450,11 @@ pub struct ServiceReplicaDescriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ServiceReplicaDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ServiceReplicaDescriptionList {
     pub fn new() -> Self {
         Self::default()
@@ -1471,6 +1511,11 @@ pub struct ServiceResourceDescriptionList {
     #[doc = "URI to fetch the next page of the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ServiceResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ServiceResourceDescriptionList {
     pub fn new() -> Self {
@@ -1649,6 +1694,11 @@ pub struct VolumeResourceDescriptionList {
     #[doc = "URI to fetch the next page of the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VolumeResourceDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VolumeResourceDescriptionList {
     pub fn new() -> Self {

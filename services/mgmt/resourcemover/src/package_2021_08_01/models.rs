@@ -94,6 +94,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -426,6 +431,11 @@ pub struct MoveCollectionResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MoveCollectionResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MoveCollectionResultList {
     pub fn new() -> Self {
         Self::default()
@@ -482,6 +492,11 @@ pub struct MoveResourceCollection {
     #[doc = "Gets the total count."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
+}
+impl azure_core::Continuable for MoveResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MoveResourceCollection {
     pub fn new() -> Self {
@@ -1270,6 +1285,11 @@ pub struct UnresolvedDependencyCollection {
     #[doc = "Gets the total count."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
+}
+impl azure_core::Continuable for UnresolvedDependencyCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UnresolvedDependencyCollection {
     pub fn new() -> Self {

@@ -6,6 +6,7 @@ cargo run --package azure_mgmt_storage --example storage_account_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
+use futures::stream::StreamExt;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -14,10 +15,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_storage::ClientBuilder::new(credential).build();
 
-    let accounts = client.storage_accounts().list(subscription_id).into_future().await?;
-    println!("# of storage accounts {}", accounts.value.len());
-    for account in &accounts.value {
-        println!("{:?}", account.tracked_resource.resource.id);
+    let mut count = 0;
+    let mut stream = client.storage_accounts().list(subscription_id).into_stream();
+    while let Some(accounts) = stream.next().await {
+        let accounts = accounts?;
+        count += accounts.value.len();
+        for account in &accounts.value {
+            println!("{:?}", account.tracked_resource.resource.id);
+        }
     }
+
+    println!("# of storage accounts {}", count);
     Ok(())
 }

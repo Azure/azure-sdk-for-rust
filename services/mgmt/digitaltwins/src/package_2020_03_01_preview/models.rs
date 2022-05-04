@@ -82,6 +82,11 @@ pub struct DigitalTwinsDescriptionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DigitalTwinsDescription>,
 }
+impl azure_core::Continuable for DigitalTwinsDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DigitalTwinsDescriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -110,6 +115,11 @@ pub struct DigitalTwinsEndpointResourceListResult {
     #[doc = "A list of DigitalTwinsInstance Endpoints."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DigitalTwinsEndpointResource>,
+}
+impl azure_core::Continuable for DigitalTwinsEndpointResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DigitalTwinsEndpointResourceListResult {
     pub fn new() -> Self {
@@ -283,6 +293,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -405,6 +420,11 @@ pub struct OperationListResult {
     #[doc = "A list of DigitalTwins operations supported by the Microsoft.DigitalTwins resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

@@ -193,6 +193,11 @@ pub struct AdaptiveNetworkHardeningsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AdaptiveNetworkHardeningsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AdaptiveNetworkHardeningsList {
     pub fn new() -> Self {
         Self::default()
@@ -249,6 +254,11 @@ pub struct AlertList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AlertList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AlertList {
     pub fn new() -> Self {
@@ -379,6 +389,11 @@ pub struct AllowedConnectionsList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AllowedConnectionsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AllowedConnectionsList {
     pub fn new() -> Self {
@@ -556,6 +571,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -665,6 +685,11 @@ pub struct DiscoveredSecuritySolutionList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DiscoveredSecuritySolutionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DiscoveredSecuritySolutionList {
     pub fn new() -> Self {
@@ -805,6 +830,11 @@ pub struct ExternalSecuritySolutionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ExternalSecuritySolutionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ExternalSecuritySolutionList {
     pub fn new() -> Self {
         Self::default()
@@ -843,6 +873,11 @@ pub struct JitNetworkAccessPoliciesList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for JitNetworkAccessPoliciesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl JitNetworkAccessPoliciesList {
     pub fn new() -> Self {
@@ -1432,6 +1467,11 @@ pub struct SecureScoreControlList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecureScoreControlList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecureScoreControlList {
     pub fn new() -> Self {
         Self::default()
@@ -1527,6 +1567,11 @@ pub struct SecureScoresList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecureScoresList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecureScoresList {
     pub fn new() -> Self {
         Self::default()
@@ -1556,6 +1601,11 @@ pub struct SecurityAssessmentList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecurityAssessmentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecurityAssessmentList {
     pub fn new() -> Self {
         Self::default()
@@ -1583,6 +1633,11 @@ pub struct SecurityAssessmentMetadataList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecurityAssessmentMetadataList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SecurityAssessmentMetadataList {
     pub fn new() -> Self {
@@ -1774,6 +1829,11 @@ pub struct SecuritySolutionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecuritySolutionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecuritySolutionList {
     pub fn new() -> Self {
         Self::default()
@@ -1895,6 +1955,11 @@ pub struct TopologyList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TopologyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TopologyList {
     pub fn new() -> Self {
@@ -2030,6 +2095,11 @@ pub struct SecureScoreControlDefinitionList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecureScoreControlDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SecureScoreControlDefinitionList {
     pub fn new() -> Self {

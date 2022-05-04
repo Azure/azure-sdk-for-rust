@@ -70,6 +70,11 @@ pub struct MyWorkbookError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
+impl azure_core::Continuable for MyWorkbookError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MyWorkbookError {
     pub fn new() -> Self {
         Self::default()
@@ -197,6 +202,11 @@ pub struct MyWorkbooksListResult {
     pub value: Vec<MyWorkbook>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MyWorkbooksListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MyWorkbooksListResult {
     pub fn new() -> Self {

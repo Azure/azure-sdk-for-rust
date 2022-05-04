@@ -287,6 +287,11 @@ pub struct JobInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobInfoListResult {
     pub fn new() -> Self {
         Self::default()
@@ -533,6 +538,11 @@ pub struct JobPipelineInformationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobPipelineInformationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobPipelineInformationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -619,6 +629,11 @@ pub struct JobRecurrenceInformationListResult {
     #[doc = "the link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for JobRecurrenceInformationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl JobRecurrenceInformationListResult {
     pub fn new() -> Self {

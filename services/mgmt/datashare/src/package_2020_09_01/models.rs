@@ -524,6 +524,11 @@ pub struct AccountList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Account>,
 }
+impl azure_core::Continuable for AccountList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AccountList {
     pub fn new(value: Vec<Account>) -> Self {
         Self { next_link: None, value }
@@ -1000,6 +1005,11 @@ pub struct ConsumerInvitationList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ConsumerInvitation>,
 }
+impl azure_core::Continuable for ConsumerInvitationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ConsumerInvitationList {
     pub fn new(value: Vec<ConsumerInvitation>) -> Self {
         Self { next_link: None, value }
@@ -1109,6 +1119,11 @@ pub struct ConsumerSourceDataSetList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ConsumerSourceDataSet>,
 }
+impl azure_core::Continuable for ConsumerSourceDataSetList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ConsumerSourceDataSetList {
     pub fn new(value: Vec<ConsumerSourceDataSet>) -> Self {
         Self { next_link: None, value }
@@ -1207,6 +1222,11 @@ pub struct DataSetList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<DataSet>,
 }
+impl azure_core::Continuable for DataSetList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataSetList {
     pub fn new(value: Vec<DataSet>) -> Self {
         Self { next_link: None, value }
@@ -1257,6 +1277,11 @@ pub struct DataSetMappingList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<DataSetMapping>,
 }
+impl azure_core::Continuable for DataSetMappingList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataSetMappingList {
     pub fn new(value: Vec<DataSetMapping>) -> Self {
         Self { next_link: None, value }
@@ -1267,6 +1292,11 @@ impl DataSetMappingList {
 pub struct DataShareError {
     #[doc = "The data share error body model."]
     pub error: DataShareErrorInfo,
+}
+impl azure_core::Continuable for DataShareError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DataShareError {
     pub fn new(error: DataShareErrorInfo) -> Self {
@@ -1411,6 +1441,11 @@ pub struct InvitationList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Invitation>,
+}
+impl azure_core::Continuable for InvitationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InvitationList {
     pub fn new(value: Vec<Invitation>) -> Self {
@@ -1706,6 +1741,11 @@ pub struct OperationList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<OperationModel>,
 }
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationList {
     pub fn new(value: Vec<OperationModel>) -> Self {
         Self { next_link: None, value }
@@ -1903,6 +1943,11 @@ pub struct ProviderShareSubscriptionList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ProviderShareSubscription>,
+}
+impl azure_core::Continuable for ProviderShareSubscriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProviderShareSubscriptionList {
     pub fn new(value: Vec<ProviderShareSubscription>) -> Self {
@@ -2193,6 +2238,11 @@ pub struct ShareList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Share>,
 }
+impl azure_core::Continuable for ShareList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ShareList {
     pub fn new(value: Vec<Share>) -> Self {
         Self { next_link: None, value }
@@ -2270,6 +2320,11 @@ pub struct ShareSubscriptionList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ShareSubscription>,
+}
+impl azure_core::Continuable for ShareSubscriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ShareSubscriptionList {
     pub fn new(value: Vec<ShareSubscription>) -> Self {
@@ -2428,6 +2483,11 @@ pub struct ShareSubscriptionSynchronizationList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ShareSubscriptionSynchronization>,
 }
+impl azure_core::Continuable for ShareSubscriptionSynchronizationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ShareSubscriptionSynchronizationList {
     pub fn new(value: Vec<ShareSubscriptionSynchronization>) -> Self {
         Self { next_link: None, value }
@@ -2490,6 +2550,11 @@ pub struct ShareSynchronizationList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ShareSynchronization>,
 }
+impl azure_core::Continuable for ShareSynchronizationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ShareSynchronizationList {
     pub fn new(value: Vec<ShareSynchronization>) -> Self {
         Self { next_link: None, value }
@@ -2522,6 +2587,11 @@ pub struct SourceShareSynchronizationSettingList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<SourceShareSynchronizationSetting>,
+}
+impl azure_core::Continuable for SourceShareSynchronizationSettingList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SourceShareSynchronizationSettingList {
     pub fn new(value: Vec<SourceShareSynchronizationSetting>) -> Self {
@@ -2954,6 +3024,11 @@ pub struct SynchronizationDetailsList {
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<SynchronizationDetails>,
 }
+impl azure_core::Continuable for SynchronizationDetailsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SynchronizationDetailsList {
     pub fn new(value: Vec<SynchronizationDetails>) -> Self {
         Self { next_link: None, value }
@@ -2991,6 +3066,11 @@ pub struct SynchronizationSettingList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<SynchronizationSetting>,
+}
+impl azure_core::Continuable for SynchronizationSettingList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SynchronizationSettingList {
     pub fn new(value: Vec<SynchronizationSetting>) -> Self {
@@ -3096,6 +3176,11 @@ pub struct TriggerList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Trigger>,
+}
+impl azure_core::Continuable for TriggerList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TriggerList {
     pub fn new(value: Vec<Trigger>) -> Self {

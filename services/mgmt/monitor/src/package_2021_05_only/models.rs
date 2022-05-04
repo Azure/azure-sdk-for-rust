@@ -43,6 +43,11 @@ pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for ErrorContract {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorContract {
     pub fn new() -> Self {
         Self::default()
@@ -57,6 +62,11 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -238,6 +248,11 @@ impl MetricDefinition {
 pub struct MetricDefinitionCollection {
     #[doc = "the values for the metric definitions."]
     pub value: Vec<MetricDefinition>,
+}
+impl azure_core::Continuable for MetricDefinitionCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricDefinitionCollection {
     pub fn new(value: Vec<MetricDefinition>) -> Self {
@@ -559,6 +574,11 @@ impl SubscriptionScopeMetricDefinition {
 pub struct SubscriptionScopeMetricDefinitionCollection {
     #[doc = "The values for the metric definitions."]
     pub value: Vec<SubscriptionScopeMetricDefinition>,
+}
+impl azure_core::Continuable for SubscriptionScopeMetricDefinitionCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SubscriptionScopeMetricDefinitionCollection {
     pub fn new(value: Vec<SubscriptionScopeMetricDefinition>) -> Self {

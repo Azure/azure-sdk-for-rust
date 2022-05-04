@@ -132,6 +132,11 @@ pub struct AnalysisServicesServers {
     #[doc = "An array of Analysis Services resources."]
     pub value: Vec<AnalysisServicesServer>,
 }
+impl azure_core::Continuable for AnalysisServicesServers {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AnalysisServicesServers {
     pub fn new(value: Vec<AnalysisServicesServer>) -> Self {
         Self { value }
@@ -242,6 +247,11 @@ pub struct ErrorResponse {
     #[doc = "The error object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorObject>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -396,6 +406,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -434,6 +449,11 @@ pub struct OperationsErrorResponse {
     #[doc = "Describes the format of Error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for OperationsErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationsErrorResponse {
     pub fn new() -> Self {

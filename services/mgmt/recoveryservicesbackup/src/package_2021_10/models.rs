@@ -2679,6 +2679,11 @@ pub struct BackupEngineBaseResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupEngineBaseResource>,
 }
+impl azure_core::Continuable for BackupEngineBaseResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupEngineBaseResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -2763,6 +2768,11 @@ pub struct BackupManagementUsageList {
     #[doc = "The list of backup management usages for the given vault."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupManagementUsage>,
+}
+impl azure_core::Continuable for BackupManagementUsageList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl BackupManagementUsageList {
     pub fn new() -> Self {
@@ -3225,6 +3235,11 @@ pub struct ClientDiscoveryResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ClientDiscoveryResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClientDiscoveryResponse {
     pub fn new() -> Self {
         Self::default()
@@ -3281,6 +3296,11 @@ pub struct CloudError {
     #[doc = "An error response from the Container Instance service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -4531,6 +4551,11 @@ pub struct JobResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobResource>,
 }
+impl azure_core::Continuable for JobResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl JobResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -5772,6 +5797,11 @@ pub struct ProtectableContainerResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectableContainerResource>,
 }
+impl azure_core::Continuable for ProtectableContainerResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ProtectableContainerResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -6017,6 +6047,11 @@ pub struct ProtectedItemResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectedItemResource>,
 }
+impl azure_core::Continuable for ProtectedItemResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ProtectedItemResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -6122,6 +6157,11 @@ pub struct ProtectionContainerResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectionContainerResource>,
+}
+impl azure_core::Continuable for ProtectionContainerResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProtectionContainerResourceList {
     pub fn new() -> Self {
@@ -6270,6 +6310,11 @@ pub struct ProtectionIntentResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectionIntentResource>,
 }
+impl azure_core::Continuable for ProtectionIntentResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ProtectionIntentResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -6382,6 +6427,11 @@ pub struct ProtectionPolicyResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectionPolicyResource>,
 }
+impl azure_core::Continuable for ProtectionPolicyResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ProtectionPolicyResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -6478,6 +6528,11 @@ pub struct RecoveryPointResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RecoveryPointResource>,
+}
+impl azure_core::Continuable for RecoveryPointResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl RecoveryPointResourceList {
     pub fn new() -> Self {
@@ -6640,6 +6695,11 @@ pub struct ResourceGuardProxyBaseResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceGuardProxyBaseResource>,
+}
+impl azure_core::Continuable for ResourceGuardProxyBaseResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ResourceGuardProxyBaseResourceList {
     pub fn new() -> Self {
@@ -7344,6 +7404,11 @@ pub struct WorkloadItemResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkloadItemResource>,
 }
+impl azure_core::Continuable for WorkloadItemResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkloadItemResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -7413,6 +7478,11 @@ pub struct WorkloadProtectableItemResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkloadProtectableItemResource>,
+}
+impl azure_core::Continuable for WorkloadProtectableItemResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkloadProtectableItemResourceList {
     pub fn new() -> Self {

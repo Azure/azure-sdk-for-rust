@@ -69,6 +69,11 @@ pub struct AlertsSuppressionRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AlertsSuppressionRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertsSuppressionRulesList {
     pub fn new(value: Vec<AlertsSuppressionRule>) -> Self {
         Self { value, next_link: None }
@@ -123,6 +128,11 @@ pub struct CloudError {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -189,6 +199,11 @@ pub struct RegulatoryComplianceAssessmentList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RegulatoryComplianceAssessmentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RegulatoryComplianceAssessmentList {
     pub fn new(value: Vec<RegulatoryComplianceAssessment>) -> Self {
@@ -262,6 +277,11 @@ pub struct RegulatoryComplianceControlList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RegulatoryComplianceControlList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RegulatoryComplianceControlList {
     pub fn new(value: Vec<RegulatoryComplianceControl>) -> Self {
         Self { value, next_link: None }
@@ -323,6 +343,11 @@ pub struct RegulatoryComplianceStandardList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RegulatoryComplianceStandardList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RegulatoryComplianceStandardList {
     pub fn new(value: Vec<RegulatoryComplianceStandard>) -> Self {
@@ -439,6 +464,11 @@ pub struct SecurityAssessmentList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecurityAssessmentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecurityAssessmentList {
     pub fn new() -> Self {
         Self::default()
@@ -466,6 +496,11 @@ pub struct SecurityAssessmentMetadataList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecurityAssessmentMetadataList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SecurityAssessmentMetadataList {
     pub fn new() -> Self {

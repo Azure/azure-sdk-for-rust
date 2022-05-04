@@ -66,6 +66,11 @@ pub struct ConfigurationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -101,6 +106,11 @@ pub struct MetadataEntityListResult {
     #[doc = "The link used to get the next page of metadata."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MetadataEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MetadataEntityListResult {
     pub fn new() -> Self {
@@ -188,6 +198,11 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
+}
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationEntityListResult {
     pub fn new() -> Self {
@@ -304,6 +319,11 @@ pub struct ResourceRecommendationBaseListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceRecommendationBase>,
 }
+impl azure_core::Continuable for ResourceRecommendationBaseListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceRecommendationBaseListResult {
     pub fn new() -> Self {
         Self::default()
@@ -347,6 +367,11 @@ pub struct SuppressionContractListResult {
     #[doc = "The list of suppressions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SuppressionContract>,
+}
+impl azure_core::Continuable for SuppressionContractListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SuppressionContractListResult {
     pub fn new() -> Self {

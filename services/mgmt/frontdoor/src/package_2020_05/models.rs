@@ -451,6 +451,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -482,6 +487,11 @@ pub struct ExperimentList {
     #[doc = "URL to get the next set of Experiment objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ExperimentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ExperimentList {
     pub fn new() -> Self {
@@ -648,6 +658,11 @@ pub struct FrontDoorListResult {
     #[doc = "URL to get the next set of Front Door objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FrontDoorListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FrontDoorListResult {
     pub fn new() -> Self {
@@ -852,6 +867,11 @@ pub struct FrontendEndpointsListResult {
     #[doc = "URL to get the next set of frontend endpoints if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FrontendEndpointsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FrontendEndpointsListResult {
     pub fn new() -> Self {
@@ -1366,6 +1386,11 @@ pub struct ManagedRuleSetDefinitionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ManagedRuleSetDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ManagedRuleSetDefinitionList {
     pub fn new() -> Self {
         Self::default()
@@ -1549,6 +1574,11 @@ pub struct PreconfiguredEndpointList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PreconfiguredEndpointList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PreconfiguredEndpointList {
     pub fn new() -> Self {
         Self::default()
@@ -1618,6 +1648,11 @@ pub struct ProfileList {
     #[doc = "URL to get the next set of Profile objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProfileList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProfileList {
     pub fn new() -> Self {
@@ -1963,6 +1998,11 @@ pub struct RulesEngineListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RulesEngineListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RulesEngineListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2268,6 +2308,11 @@ pub struct WebApplicationFirewallPolicyList {
     #[doc = "URL to get the next set of WebApplicationFirewallPolicy objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WebApplicationFirewallPolicyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WebApplicationFirewallPolicyList {
     pub fn new() -> Self {

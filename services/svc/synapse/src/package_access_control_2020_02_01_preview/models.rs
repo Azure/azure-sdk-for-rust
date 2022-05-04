@@ -8,6 +8,11 @@ pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for ErrorContract {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorContract {
     pub fn new() -> Self {
         Self::default()
@@ -90,6 +95,11 @@ pub struct RolesListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RolesListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RolesListResponse {
     pub fn new(value: Vec<SynapseRole>) -> Self {

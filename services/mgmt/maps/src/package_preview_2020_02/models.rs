@@ -40,6 +40,11 @@ pub struct CreatorList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Creator>,
 }
+impl azure_core::Continuable for CreatorList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CreatorList {
     pub fn new() -> Self {
         Self::default()
@@ -114,6 +119,11 @@ pub struct ErrorResponse {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -213,6 +223,11 @@ pub struct MapsAccounts {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MapsAccount>,
 }
+impl azure_core::Continuable for MapsAccounts {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MapsAccounts {
     pub fn new() -> Self {
         Self::default()
@@ -247,6 +262,11 @@ pub struct MapsOperations {
     #[doc = "An operation available for Maps."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<serde_json::Value>,
+}
+impl azure_core::Continuable for MapsOperations {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MapsOperations {
     pub fn new() -> Self {
@@ -290,6 +310,11 @@ pub struct PrivateAtlasList {
     #[doc = "a Private Atlas."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateAtlas>,
+}
+impl azure_core::Continuable for PrivateAtlasList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateAtlasList {
     pub fn new() -> Self {

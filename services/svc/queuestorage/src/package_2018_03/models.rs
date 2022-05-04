@@ -245,6 +245,15 @@ pub struct ListQueuesSegmentResponse {
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
 }
+impl azure_core::Continuable for ListQueuesSegmentResponse {
+    fn continuation(&self) -> Option<String> {
+        if self.next_marker.is_empty() {
+            None
+        } else {
+            Some(self.next_marker.clone())
+        }
+    }
+}
 impl ListQueuesSegmentResponse {
     pub fn new(service_endpoint: String, prefix: String, max_results: i64, next_marker: String) -> Self {
         Self {
@@ -412,6 +421,11 @@ pub type SignedIdentifiers = Vec<SignedIdentifier>;
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for StorageError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StorageError {
     pub fn new() -> Self {

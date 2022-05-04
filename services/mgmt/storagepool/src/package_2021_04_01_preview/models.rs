@@ -133,6 +133,11 @@ pub struct DiskPoolListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DiskPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DiskPoolListResult {
     pub fn new(value: Vec<DiskPool>) -> Self {
         Self { value, next_link: None }
@@ -237,6 +242,11 @@ pub struct DiskPoolZoneListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DiskPoolZoneListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DiskPoolZoneListResult {
     pub fn new() -> Self {
         Self::default()
@@ -284,6 +294,11 @@ pub struct Error {
     #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {
@@ -421,6 +436,11 @@ pub struct IscsiTargetList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IscsiTargetList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IscsiTargetList {
     pub fn new(value: Vec<IscsiTarget>) -> Self {
         Self { value, next_link: None }
@@ -535,6 +555,11 @@ pub struct OutboundEnvironmentEndpointList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OutboundEnvironmentEndpointList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OutboundEnvironmentEndpointList {
     pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {
         Self { value, next_link: None }
@@ -625,6 +650,11 @@ pub struct StoragePoolOperationListResult {
     #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StoragePoolOperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StoragePoolOperationListResult {
     pub fn new(value: Vec<StoragePoolRpOperation>) -> Self {

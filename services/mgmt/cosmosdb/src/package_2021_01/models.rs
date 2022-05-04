@@ -207,6 +207,11 @@ pub struct CassandraKeyspaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CassandraKeyspaceGetResults>,
 }
+impl azure_core::Continuable for CassandraKeyspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CassandraKeyspaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -316,6 +321,11 @@ pub struct CassandraTableListResult {
     #[doc = "List of Cassandra tables and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CassandraTableGetResults>,
+}
+impl azure_core::Continuable for CassandraTableListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CassandraTableListResult {
     pub fn new() -> Self {
@@ -1011,6 +1021,11 @@ pub struct DatabaseAccountsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabaseAccountGetResults>,
 }
+impl azure_core::Continuable for DatabaseAccountsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DatabaseAccountsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1041,6 +1056,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1052,6 +1072,11 @@ pub struct ErrorResponseUpdatedFormat {
     #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for ErrorResponseUpdatedFormat {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponseUpdatedFormat {
     pub fn new() -> Self {
@@ -1181,6 +1206,11 @@ pub struct GremlinDatabaseListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GremlinDatabaseGetResults>,
 }
+impl azure_core::Continuable for GremlinDatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl GremlinDatabaseListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1260,6 +1290,11 @@ pub struct GremlinGraphListResult {
     #[doc = "List of graphs and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GremlinGraphGetResults>,
+}
+impl azure_core::Continuable for GremlinGraphListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl GremlinGraphListResult {
     pub fn new() -> Self {
@@ -1567,6 +1602,11 @@ pub struct MetricDefinitionsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricDefinition>,
 }
+impl azure_core::Continuable for MetricDefinitionsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MetricDefinitionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1578,6 +1618,11 @@ pub struct MetricListResult {
     #[doc = "The list of metrics for the account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Metric>,
+}
+impl azure_core::Continuable for MetricListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricListResult {
     pub fn new() -> Self {
@@ -1690,6 +1735,11 @@ pub struct MongoDbCollectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MongoDbCollectionGetResults>,
 }
+impl azure_core::Continuable for MongoDbCollectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MongoDbCollectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1783,6 +1833,11 @@ pub struct MongoDbDatabaseListResult {
     #[doc = "List of MongoDB databases and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MongoDbDatabaseGetResults>,
+}
+impl azure_core::Continuable for MongoDbDatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MongoDbDatabaseListResult {
     pub fn new() -> Self {
@@ -1895,6 +1950,11 @@ pub struct NotebookWorkspaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NotebookWorkspace>,
 }
+impl azure_core::Continuable for NotebookWorkspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl NotebookWorkspaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1964,6 +2024,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2007,6 +2072,11 @@ pub struct PartitionMetricListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PartitionMetric>,
 }
+impl azure_core::Continuable for PartitionMetricListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PartitionMetricListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2035,6 +2105,11 @@ pub struct PartitionUsagesResult {
     #[doc = "The list of partition-level usages for the database. A usage is a point in time metric"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PartitionUsage>,
+}
+impl azure_core::Continuable for PartitionUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PartitionUsagesResult {
     pub fn new() -> Self {
@@ -2075,6 +2150,11 @@ pub struct PercentileMetricListResult {
     #[doc = "The list of percentile metrics for the account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PercentileMetric>,
+}
+impl azure_core::Continuable for PercentileMetricListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PercentileMetricListResult {
     pub fn new() -> Self {
@@ -2166,6 +2246,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2224,6 +2309,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -2407,6 +2497,11 @@ pub struct SqlContainerListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlContainerGetResults>,
 }
+impl azure_core::Continuable for SqlContainerListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SqlContainerListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2539,6 +2634,11 @@ pub struct SqlDatabaseListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlDatabaseGetResults>,
 }
+impl azure_core::Continuable for SqlDatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SqlDatabaseListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2616,6 +2716,11 @@ pub struct SqlStoredProcedureListResult {
     #[doc = "List of storedProcedures and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlStoredProcedureGetResults>,
+}
+impl azure_core::Continuable for SqlStoredProcedureListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SqlStoredProcedureListResult {
     pub fn new() -> Self {
@@ -2697,6 +2802,11 @@ pub struct SqlTriggerListResult {
     #[doc = "List of triggers and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlTriggerGetResults>,
+}
+impl azure_core::Continuable for SqlTriggerListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SqlTriggerListResult {
     pub fn new() -> Self {
@@ -2808,6 +2918,11 @@ pub struct SqlUserDefinedFunctionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlUserDefinedFunctionGetResults>,
 }
+impl azure_core::Continuable for SqlUserDefinedFunctionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SqlUserDefinedFunctionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2890,6 +3005,11 @@ pub struct TableListResult {
     #[doc = "List of Table and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TableGetResults>,
+}
+impl azure_core::Continuable for TableListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl TableListResult {
     pub fn new() -> Self {
@@ -3068,6 +3188,11 @@ pub struct UsagesResult {
     #[doc = "The list of usages for the database. A usage is a point in time metric"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsagesResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl UsagesResult {
     pub fn new() -> Self {

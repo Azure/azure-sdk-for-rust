@@ -160,6 +160,11 @@ pub struct StorageAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageAccount>,
 }
+impl azure_core::Continuable for StorageAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl StorageAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -373,6 +378,11 @@ pub struct UsageListResult {
     #[doc = "The list Storage Resource Usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsageListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl UsageListResult {
     pub fn new() -> Self {

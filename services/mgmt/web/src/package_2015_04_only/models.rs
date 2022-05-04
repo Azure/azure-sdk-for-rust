@@ -85,6 +85,11 @@ pub struct CsmOperationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CsmOperationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CsmOperationCollection {
     pub fn new(value: Vec<CsmOperationDescription>) -> Self {
         Self { value, next_link: None }
@@ -354,6 +359,11 @@ pub struct DomainCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DomainCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DomainCollection {
     pub fn new(value: Vec<Domain>) -> Self {
         Self { value, next_link: None }
@@ -414,6 +424,11 @@ pub struct DomainOwnershipIdentifierCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DomainOwnershipIdentifierCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DomainOwnershipIdentifierCollection {
     pub fn new(value: Vec<DomainOwnershipIdentifier>) -> Self {
@@ -749,6 +764,11 @@ pub struct NameIdentifierCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NameIdentifierCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NameIdentifierCollection {
     pub fn new(value: Vec<NameIdentifier>) -> Self {
         Self { value, next_link: None }
@@ -852,6 +872,11 @@ pub struct TldLegalAgreementCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TldLegalAgreementCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TldLegalAgreementCollection {
     pub fn new(value: Vec<TldLegalAgreement>) -> Self {
         Self { value, next_link: None }
@@ -912,6 +937,11 @@ pub struct TopLevelDomainCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TopLevelDomainCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TopLevelDomainCollection {
     pub fn new(value: Vec<TopLevelDomain>) -> Self {

@@ -134,6 +134,11 @@ pub struct CertificateCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CertificateCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CertificateCollection {
     pub fn new(value: Vec<Certificate>) -> Self {
         Self { value, next_link: None }
@@ -265,6 +270,11 @@ pub struct DefaultErrorResponse {
     #[doc = "Error model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<default_error_response::Error>,
+}
+impl azure_core::Continuable for DefaultErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DefaultErrorResponse {
     pub fn new() -> Self {

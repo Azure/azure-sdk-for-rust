@@ -24,6 +24,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -233,6 +238,11 @@ pub struct ProfileListResult {
     #[doc = "Gets the list of Traffic manager profiles."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
+}
+impl azure_core::Continuable for ProfileListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProfileListResult {
     pub fn new() -> Self {

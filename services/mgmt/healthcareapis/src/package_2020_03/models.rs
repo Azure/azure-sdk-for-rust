@@ -23,6 +23,11 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetailsInternal>,
 }
+impl azure_core::Continuable for ErrorDetails {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorDetails {
     pub fn new() -> Self {
         Self::default()
@@ -100,6 +105,11 @@ pub struct OperationListResult {
     #[doc = "A list of service operations supported by the Microsoft.HealthcareApis resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -341,6 +351,11 @@ pub struct ServicesDescriptionListResult {
     #[doc = "A list of service description objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServicesDescription>,
+}
+impl azure_core::Continuable for ServicesDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ServicesDescriptionListResult {
     pub fn new() -> Self {

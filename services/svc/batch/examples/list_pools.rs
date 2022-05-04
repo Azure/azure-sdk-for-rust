@@ -5,10 +5,13 @@ cargo run --package azure_svc_batch --example list_pools
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
+use futures::stream::StreamExt;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
     let account_name = std::env::args().nth(1).expect("please specify batch account");
     let region = std::env::args().nth(2).expect("please specify region");
 
@@ -20,10 +23,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .scopes(scopes)
         .build();
 
-    let pools = client.pool().list().into_future().await?;
-
-    for pool in pools.value {
-        println!("id: {:?}", pool.id);
+    let mut stream = client.pool().list().into_stream();
+    while let Some(pools) = stream.next().await {
+        let pools = pools?;
+        for pool in pools.value {
+            println!("id: {:?}", pool.id);
+        }
     }
+
     Ok(())
 }

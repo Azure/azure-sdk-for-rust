@@ -98,6 +98,11 @@ pub struct AgreementListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AgreementListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AgreementListResult {
     pub fn new() -> Self {
         Self::default()
@@ -234,6 +239,11 @@ pub struct BillingAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BillingAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BillingAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -332,6 +342,11 @@ pub struct BillingPermissionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BillingPermissionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BillingPermissionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -420,6 +435,11 @@ pub struct BillingProfileListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for BillingProfileListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl BillingProfileListResult {
     pub fn new() -> Self {
@@ -654,6 +674,11 @@ pub struct BillingRoleAssignmentListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BillingRoleAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BillingRoleAssignmentListResult {
     pub fn new() -> Self {
         Self::default()
@@ -721,6 +746,11 @@ pub struct BillingRoleDefinitionListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for BillingRoleDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl BillingRoleDefinitionListResult {
     pub fn new() -> Self {
@@ -841,6 +871,11 @@ pub struct BillingSubscriptionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BillingSubscriptionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BillingSubscriptionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -872,6 +907,11 @@ pub struct CustomerListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CustomerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CustomerListResult {
     pub fn new() -> Self {
@@ -1176,6 +1216,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1223,6 +1268,11 @@ pub struct InstructionListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for InstructionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InstructionListResult {
     pub fn new() -> Self {
@@ -1280,6 +1330,11 @@ pub struct InvoiceListResult {
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<f64>,
+}
+impl azure_core::Continuable for InvoiceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InvoiceListResult {
     pub fn new() -> Self {
@@ -1433,6 +1488,11 @@ pub struct InvoiceSectionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for InvoiceSectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl InvoiceSectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1447,6 +1507,11 @@ pub struct InvoiceSectionListWithCreateSubPermissionResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for InvoiceSectionListWithCreateSubPermissionResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InvoiceSectionListWithCreateSubPermissionResult {
     pub fn new() -> Self {
@@ -1619,6 +1684,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1648,6 +1718,11 @@ pub struct OperationsErrorResponse {
     #[doc = "The details of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationsErrorDetails>,
+}
+impl azure_core::Continuable for OperationsErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationsErrorResponse {
     pub fn new() -> Self {
@@ -1904,6 +1979,11 @@ pub struct ProductsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ProductsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ProductsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1994,6 +2074,11 @@ pub struct PromotionList {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PromotionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PromotionList {
     pub fn new() -> Self {
@@ -2259,6 +2344,11 @@ pub struct ReservationsListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<ReservationSummary>,
 }
+impl azure_core::Continuable for ReservationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ReservationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2342,6 +2432,11 @@ pub struct TransactionListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TransactionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TransactionListResult {
     pub fn new() -> Self {

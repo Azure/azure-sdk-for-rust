@@ -63,6 +63,11 @@ pub struct AccountFilterCollection {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for AccountFilterCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl AccountFilterCollection {
     pub fn new() -> Self {
         Self::default()
@@ -109,6 +114,11 @@ pub struct ApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ODataError>,
 }
+impl azure_core::Continuable for ApiError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ApiError {
     pub fn new() -> Self {
         Self::default()
@@ -137,6 +147,11 @@ pub struct AssetCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for AssetCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl AssetCollection {
     pub fn new() -> Self {
@@ -200,6 +215,11 @@ pub struct AssetFilterCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for AssetFilterCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl AssetFilterCollection {
     pub fn new() -> Self {
@@ -525,6 +545,11 @@ pub struct ContentKeyPolicyCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for ContentKeyPolicyCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl ContentKeyPolicyCollection {
     pub fn new() -> Self {
@@ -1636,6 +1661,11 @@ pub struct JobCollection {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for JobCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl JobCollection {
     pub fn new() -> Self {
         Self::default()
@@ -2211,6 +2241,11 @@ pub struct LiveEventListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for LiveEventListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl LiveEventListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2344,6 +2379,11 @@ pub struct LiveOutputListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for LiveOutputListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl LiveOutputListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2459,6 +2499,11 @@ pub struct MediaServiceCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for MediaServiceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl MediaServiceCollection {
     pub fn new() -> Self {
@@ -2649,6 +2694,11 @@ pub struct OperationCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl OperationCollection {
     pub fn new() -> Self {
@@ -2978,6 +3028,11 @@ pub struct StreamingEndpointListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for StreamingEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl StreamingEndpointListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3105,6 +3160,11 @@ pub struct StreamingLocatorCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for StreamingLocatorCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl StreamingLocatorCollection {
     pub fn new() -> Self {
@@ -3269,6 +3329,11 @@ pub struct StreamingPolicyCollection {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for StreamingPolicyCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl StreamingPolicyCollection {
     pub fn new() -> Self {
         Self::default()
@@ -3403,6 +3468,11 @@ pub struct SubscriptionMediaServiceCollection {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for SubscriptionMediaServiceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl SubscriptionMediaServiceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -3508,6 +3578,11 @@ pub struct TransformCollection {
     #[doc = "A link to the next page of the collection (when the collection contains too many results to return in one response)."]
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for TransformCollection {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl TransformCollection {
     pub fn new() -> Self {

@@ -48,6 +48,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -213,6 +218,11 @@ pub struct ApplianceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Appliance>,
 }
+impl azure_core::Continuable for ApplianceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApplianceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -268,6 +278,11 @@ pub struct ApplianceOperationsList {
     pub next_link: Option<String>,
     #[doc = "Array of applianceOperation"]
     pub value: Vec<ApplianceOperation>,
+}
+impl azure_core::Continuable for ApplianceOperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ApplianceOperationsList {
     pub fn new(value: Vec<ApplianceOperation>) -> Self {

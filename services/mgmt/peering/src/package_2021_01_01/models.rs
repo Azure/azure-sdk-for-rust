@@ -101,6 +101,11 @@ pub struct CdnPeeringPrefixListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CdnPeeringPrefixListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CdnPeeringPrefixListResult {
     pub fn new() -> Self {
         Self::default()
@@ -293,6 +298,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -419,6 +429,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -447,6 +462,11 @@ pub struct PeerAsnListResult {
     #[doc = "The link to fetch the next page of peer ASNs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeerAsnListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeerAsnListResult {
     pub fn new() -> Self {
@@ -552,6 +572,11 @@ pub struct PeeringListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PeeringListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PeeringListResult {
     pub fn new() -> Self {
         Self::default()
@@ -592,6 +617,11 @@ pub struct PeeringLocationListResult {
     #[doc = "The link to fetch the next page of peering locations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringLocationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringLocationListResult {
     pub fn new() -> Self {
@@ -771,6 +801,11 @@ pub struct PeeringReceivedRouteListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PeeringReceivedRouteListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PeeringReceivedRouteListResult {
     pub fn new() -> Self {
         Self::default()
@@ -799,6 +834,11 @@ pub struct PeeringRegisteredAsnListResult {
     #[doc = "The link to fetch the next page of peering registered ASNs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringRegisteredAsnListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringRegisteredAsnListResult {
     pub fn new() -> Self {
@@ -857,6 +897,11 @@ pub struct PeeringRegisteredPrefixListResult {
     #[doc = "The link to fetch the next page of peering registered prefixes."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringRegisteredPrefixListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringRegisteredPrefixListResult {
     pub fn new() -> Self {
@@ -958,6 +1003,11 @@ pub struct PeeringServiceCountryListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PeeringServiceCountryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PeeringServiceCountryListResult {
     pub fn new() -> Self {
         Self::default()
@@ -972,6 +1022,11 @@ pub struct PeeringServiceListResult {
     #[doc = "The link to fetch the next page of peering services."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringServiceListResult {
     pub fn new() -> Self {
@@ -1001,6 +1056,11 @@ pub struct PeeringServiceLocationListResult {
     #[doc = "The link to fetch the next page of peering service locations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringServiceLocationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringServiceLocationListResult {
     pub fn new() -> Self {
@@ -1072,6 +1132,11 @@ pub struct PeeringServicePrefixListResult {
     #[doc = "The link to fetch the next page of peering service prefixes."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringServicePrefixListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringServicePrefixListResult {
     pub fn new() -> Self {
@@ -1195,6 +1260,11 @@ pub struct PeeringServiceProviderListResult {
     #[doc = "The link to fetch the next page of peering service providers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PeeringServiceProviderListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PeeringServiceProviderListResult {
     pub fn new() -> Self {

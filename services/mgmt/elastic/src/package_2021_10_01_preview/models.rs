@@ -156,6 +156,11 @@ pub struct ElasticMonitorResourceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ElasticMonitorResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ElasticMonitorResourceListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -381,6 +386,11 @@ pub struct MonitoredResourceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MonitoredResourceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MonitoredResourceListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -425,6 +435,11 @@ pub struct MonitoringTagRulesListResponse {
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MonitoringTagRulesListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MonitoringTagRulesListResponse {
     pub fn new() -> Self {
@@ -477,6 +492,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -528,6 +548,11 @@ pub struct ResourceProviderDefaultErrorResponse {
     #[doc = "Error response body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl azure_core::Continuable for ResourceProviderDefaultErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ResourceProviderDefaultErrorResponse {
     pub fn new() -> Self {
@@ -620,6 +645,11 @@ pub struct VmHostListResponse {
     #[doc = "Link to the next Vm resource Id, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VmHostListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VmHostListResponse {
     pub fn new() -> Self {

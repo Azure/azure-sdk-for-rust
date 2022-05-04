@@ -71,6 +71,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -118,6 +123,11 @@ pub struct EligibleChildResourcesListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EligibleChildResourcesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EligibleChildResourcesListResult {
     pub fn new() -> Self {
@@ -442,6 +452,11 @@ pub struct RoleAssignmentScheduleInstanceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RoleAssignmentScheduleInstanceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RoleAssignmentScheduleInstanceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -570,6 +585,11 @@ pub struct RoleAssignmentScheduleListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleAssignmentScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleAssignmentScheduleListResult {
     pub fn new() -> Self {
@@ -734,6 +754,11 @@ pub struct RoleAssignmentScheduleRequestListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleAssignmentScheduleRequestListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleAssignmentScheduleRequestListResult {
     pub fn new() -> Self {
@@ -1032,6 +1057,11 @@ pub struct RoleEligibilityScheduleInstanceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RoleEligibilityScheduleInstanceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RoleEligibilityScheduleInstanceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1138,6 +1168,11 @@ pub struct RoleEligibilityScheduleListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleEligibilityScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleEligibilityScheduleListResult {
     pub fn new() -> Self {
@@ -1290,6 +1325,11 @@ pub struct RoleEligibilityScheduleRequestListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleEligibilityScheduleRequestListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleEligibilityScheduleRequestListResult {
     pub fn new() -> Self {
@@ -1563,6 +1603,11 @@ pub struct RoleManagementPolicyAssignmentListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RoleManagementPolicyAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RoleManagementPolicyAssignmentListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1660,6 +1705,11 @@ pub struct RoleManagementPolicyListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleManagementPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleManagementPolicyListResult {
     pub fn new() -> Self {

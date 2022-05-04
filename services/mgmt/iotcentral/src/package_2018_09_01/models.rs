@@ -50,6 +50,11 @@ pub struct AppListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<App>,
 }
+impl azure_core::Continuable for AppListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AppListResult {
     pub fn new() -> Self {
         Self::default()
@@ -178,6 +183,11 @@ pub struct AppTemplatesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AppTemplate>,
 }
+impl azure_core::Continuable for AppTemplatesResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AppTemplatesResult {
     pub fn new() -> Self {
         Self::default()
@@ -189,6 +199,11 @@ pub struct CloudError {
     #[doc = "Details of error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -281,6 +296,11 @@ pub struct OperationListResult {
     #[doc = "A list of operations supported by the Microsoft.IoTCentral resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

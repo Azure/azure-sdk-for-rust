@@ -102,6 +102,11 @@ pub struct AzureBareMetalInstancesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AzureBareMetalInstancesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AzureBareMetalInstancesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -170,6 +175,11 @@ pub struct ErrorResponse {
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -321,6 +331,11 @@ pub struct OperationList {
     #[doc = "List of AzureBareMetal operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationList {
     pub fn new() -> Self {

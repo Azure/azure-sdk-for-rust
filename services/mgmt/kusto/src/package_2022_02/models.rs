@@ -38,6 +38,11 @@ pub struct AttachedDatabaseConfigurationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AttachedDatabaseConfiguration>,
 }
+impl azure_core::Continuable for AttachedDatabaseConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AttachedDatabaseConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -359,6 +364,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -451,6 +461,11 @@ pub struct ClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cluster>,
 }
+impl azure_core::Continuable for ClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ClusterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -499,6 +514,11 @@ pub struct ClusterPrincipalAssignmentListResult {
     #[doc = "The list of Kusto cluster principal assignments."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ClusterPrincipalAssignment>,
+}
+impl azure_core::Continuable for ClusterPrincipalAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ClusterPrincipalAssignmentListResult {
     pub fn new() -> Self {
@@ -804,6 +824,11 @@ pub struct DataConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataConnection>,
 }
+impl azure_core::Continuable for DataConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DataConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -883,6 +908,11 @@ pub struct DatabaseListResult {
     #[doc = "The list of Kusto databases."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Database>,
+}
+impl azure_core::Continuable for DatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DatabaseListResult {
     pub fn new() -> Self {
@@ -989,6 +1019,11 @@ pub struct DatabasePrincipalAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabasePrincipalAssignment>,
 }
+impl azure_core::Continuable for DatabasePrincipalAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DatabasePrincipalAssignmentListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1012,6 +1047,11 @@ pub struct DatabasePrincipalListResult {
     #[doc = "The list of Kusto database principals."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabasePrincipal>,
+}
+impl azure_core::Continuable for DatabasePrincipalListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DatabasePrincipalListResult {
     pub fn new() -> Self {
@@ -1412,6 +1452,11 @@ pub struct FollowerDatabaseListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FollowerDatabaseDefinition>,
 }
+impl azure_core::Continuable for FollowerDatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl FollowerDatabaseListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1615,6 +1660,11 @@ pub struct LanguageExtensionsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LanguageExtension>,
 }
+impl azure_core::Continuable for LanguageExtensionsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl LanguageExtensionsList {
     pub fn new() -> Self {
         Self::default()
@@ -1626,6 +1676,11 @@ pub struct ListResourceSkusResult {
     #[doc = "The collection of available SKUs for an existing resource."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureResourceSku>,
+}
+impl azure_core::Continuable for ListResourceSkusResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ListResourceSkusResult {
     pub fn new() -> Self {
@@ -1655,6 +1710,11 @@ pub struct ManagedPrivateEndpointListResult {
     #[doc = "The list of managed private endpoints."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedPrivateEndpoint>,
+}
+impl azure_core::Continuable for ManagedPrivateEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ManagedPrivateEndpointListResult {
     pub fn new() -> Self {
@@ -1757,6 +1817,11 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -1878,6 +1943,11 @@ pub struct OutboundNetworkDependenciesEndpointListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OutboundNetworkDependenciesEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OutboundNetworkDependenciesEndpointListResult {
     pub fn new(value: Vec<OutboundNetworkDependenciesEndpoint>) -> Self {
         Self { value, next_link: None }
@@ -1924,6 +1994,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -1991,6 +2066,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -2217,6 +2297,11 @@ pub struct ScriptListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Script>,
 }
+impl azure_core::Continuable for ScriptListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ScriptListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2282,6 +2367,11 @@ pub struct SkuDescriptionList {
     #[doc = "SKU descriptions"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuDescription>,
+}
+impl azure_core::Continuable for SkuDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SkuDescriptionList {
     pub fn new() -> Self {

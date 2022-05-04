@@ -39,6 +39,11 @@ pub struct AddsConfiguration {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
+impl azure_core::Continuable for AddsConfiguration {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AddsConfiguration {
     pub fn new() -> Self {
         Self::default()
@@ -184,6 +189,11 @@ pub struct AddsServiceMembers {
     #[doc = "The continuation token for paginated calls."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl azure_core::Continuable for AddsServiceMembers {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AddsServiceMembers {
     pub fn new() -> Self {
@@ -345,6 +355,11 @@ pub struct AlertFeedbacks {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertFeedback>,
 }
+impl azure_core::Continuable for AlertFeedbacks {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AlertFeedbacks {
     pub fn new() -> Self {
         Self::default()
@@ -365,6 +380,11 @@ pub struct Alerts {
     #[doc = "The continuation token for paginated calls."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl azure_core::Continuable for Alerts {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl Alerts {
     pub fn new() -> Self {
@@ -795,6 +815,11 @@ pub struct Connectors {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Connector>,
 }
+impl azure_core::Continuable for Connectors {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Connectors {
     pub fn new() -> Self {
         Self::default()
@@ -825,6 +850,11 @@ pub struct Credentials {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Credential>,
 }
+impl azure_core::Continuable for Credentials {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Credentials {
     pub fn new() -> Self {
         Self::default()
@@ -836,6 +866,11 @@ pub struct DataFreshnessDetails {
     #[doc = "The value returned by the operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Item>,
+}
+impl azure_core::Continuable for DataFreshnessDetails {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DataFreshnessDetails {
     pub fn new() -> Self {
@@ -906,6 +941,11 @@ pub struct Dimensions {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
+impl azure_core::Continuable for Dimensions {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl Dimensions {
     pub fn new() -> Self {
         Self::default()
@@ -954,6 +994,11 @@ pub struct ErrorCounts {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ErrorCount>,
 }
+impl azure_core::Continuable for ErrorCounts {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorCounts {
     pub fn new() -> Self {
         Self::default()
@@ -989,6 +1034,11 @@ pub struct ErrorReportUsersEntries {
     #[doc = "The value returned by the operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ErrorReportUsersEntry>,
+}
+impl azure_core::Continuable for ErrorReportUsersEntries {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorReportUsersEntries {
     pub fn new() -> Self {
@@ -1188,6 +1238,11 @@ pub struct ExportStatuses {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
+impl azure_core::Continuable for ExportStatuses {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ExportStatuses {
     pub fn new() -> Self {
         Self::default()
@@ -1271,6 +1326,11 @@ pub struct GlobalConfigurations {
     #[doc = "The value returned by the operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GlobalConfiguration>,
+}
+impl azure_core::Continuable for GlobalConfigurations {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl GlobalConfigurations {
     pub fn new() -> Self {
@@ -1432,6 +1492,11 @@ pub struct IpAddressAggregates {
     #[doc = "The continuation token for paginated calls."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl azure_core::Continuable for IpAddressAggregates {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IpAddressAggregates {
     pub fn new() -> Self {
@@ -1600,6 +1665,11 @@ pub struct Items {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Item>,
 }
+impl azure_core::Continuable for Items {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Items {
     pub fn new() -> Self {
         Self::default()
@@ -1687,6 +1757,11 @@ pub struct MergedExportErrors {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MergedExportError>,
 }
+impl azure_core::Continuable for MergedExportErrors {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MergedExportErrors {
     pub fn new() -> Self {
         Self::default()
@@ -1768,6 +1843,11 @@ pub struct MetricMetadataList {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
+impl azure_core::Continuable for MetricMetadataList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MetricMetadataList {
     pub fn new() -> Self {
         Self::default()
@@ -1818,6 +1898,11 @@ pub struct Metrics {
     #[doc = "The continuation token for paginated calls."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl azure_core::Continuable for Metrics {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl Metrics {
     pub fn new() -> Self {
@@ -1941,6 +2026,11 @@ pub struct OperationListResponse {
     #[doc = "The continuation token to get next set of operations."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl azure_core::Continuable for OperationListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResponse {
     pub fn new() -> Self {
@@ -2084,6 +2174,11 @@ pub struct ReplicationDetailsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ReplicationDetailsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ReplicationDetailsList {
     pub fn new() -> Self {
         Self::default()
@@ -2144,6 +2239,11 @@ pub struct ReplicationSummaryList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReplicationSummary>,
 }
+impl azure_core::Continuable for ReplicationSummaryList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ReplicationSummaryList {
     pub fn new() -> Self {
         Self::default()
@@ -2194,6 +2294,11 @@ pub struct RiskyIpBlobUris {
     #[doc = "The list of blob uris."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RiskyIpBlobUri>,
+}
+impl azure_core::Continuable for RiskyIpBlobUris {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl RiskyIpBlobUris {
     pub fn new() -> Self {
@@ -2437,6 +2542,11 @@ pub struct ServiceMembers {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
+impl azure_core::Continuable for ServiceMembers {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ServiceMembers {
     pub fn new() -> Self {
         Self::default()
@@ -2546,6 +2656,11 @@ pub struct Services {
     #[doc = "The continuation token for paginated calls."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl azure_core::Continuable for Services {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl Services {
     pub fn new() -> Self {

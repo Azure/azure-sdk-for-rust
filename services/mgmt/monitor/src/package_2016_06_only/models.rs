@@ -48,6 +48,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -120,6 +125,11 @@ impl Metric {
 pub struct MetricCollection {
     #[doc = "the value of the collection."]
     pub value: Vec<Metric>,
+}
+impl azure_core::Continuable for MetricCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricCollection {
     pub fn new(value: Vec<Metric>) -> Self {

@@ -9,6 +9,11 @@ pub struct ExceptionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ServiceError>,
 }
+impl azure_core::Continuable for ExceptionResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ExceptionResponse {
     pub fn new() -> Self {
         Self::default()
@@ -95,6 +100,11 @@ pub struct OperationsListResult {
     #[doc = "The list of operations supported by Microsoft Support resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationsListResult {
     pub fn new() -> Self {

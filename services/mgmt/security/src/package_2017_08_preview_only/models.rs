@@ -121,6 +121,11 @@ pub struct AutoProvisioningSettingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AutoProvisioningSettingList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AutoProvisioningSettingList {
     pub fn new() -> Self {
         Self::default()
@@ -153,6 +158,11 @@ pub struct CloudError {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -206,6 +216,11 @@ pub struct ComplianceList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ComplianceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ComplianceList {
     pub fn new() -> Self {
@@ -349,6 +364,11 @@ pub struct DeviceSecurityGroupList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceSecurityGroupList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeviceSecurityGroupList {
     pub fn new() -> Self {
@@ -514,6 +534,11 @@ pub struct InformationProtectionPolicyList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for InformationProtectionPolicyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl InformationProtectionPolicyList {
     pub fn new() -> Self {
         Self::default()
@@ -594,6 +619,11 @@ pub struct IoTSecurityAggregatedAlertList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IoTSecurityAggregatedAlertList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IoTSecurityAggregatedAlertList {
     pub fn new(value: Vec<IoTSecurityAggregatedAlert>) -> Self {
@@ -680,6 +710,11 @@ pub struct IoTSecurityAggregatedRecommendationList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IoTSecurityAggregatedRecommendationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IoTSecurityAggregatedRecommendationList {
     pub fn new(value: Vec<IoTSecurityAggregatedRecommendation>) -> Self {
@@ -993,6 +1028,11 @@ pub struct IoTSecuritySolutionsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IoTSecuritySolutionsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IoTSecuritySolutionsList {
     pub fn new(value: Vec<IoTSecuritySolutionModel>) -> Self {
         Self { value, next_link: None }
@@ -1116,6 +1156,11 @@ pub struct PricingList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PricingList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PricingList {
     pub fn new(value: Vec<Pricing>) -> Self {
@@ -1285,6 +1330,11 @@ pub struct SecurityContactList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecurityContactList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecurityContactList {
     pub fn new() -> Self {
         Self::default()
@@ -1404,6 +1454,11 @@ pub struct SettingsList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SettingsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SettingsList {
     pub fn new() -> Self {
@@ -1541,6 +1596,11 @@ pub struct WorkspaceSettingList {
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkspaceSettingList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkspaceSettingList {
     pub fn new(value: Vec<WorkspaceSetting>) -> Self {

@@ -53,6 +53,11 @@ pub struct CustomDomainListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomDomain>,
 }
+impl azure_core::Continuable for CustomDomainListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CustomDomainListResult {
     pub fn new() -> Self {
         Self::default()
@@ -188,6 +193,11 @@ pub struct EndpointListResult {
     #[doc = "List of CDN endpoints within a profile"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Endpoint>,
+}
+impl azure_core::Continuable for EndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl EndpointListResult {
     pub fn new() -> Self {
@@ -340,6 +350,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -397,6 +412,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -420,6 +440,11 @@ pub struct OriginListResult {
     #[doc = "List of CDN origins within an endpoint"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Origin>,
+}
+impl azure_core::Continuable for OriginListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OriginListResult {
     pub fn new() -> Self {
@@ -538,6 +563,11 @@ pub struct ProfileListResult {
     #[doc = "List of CDN profiles within a resource group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
+}
+impl azure_core::Continuable for ProfileListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProfileListResult {
     pub fn new() -> Self {

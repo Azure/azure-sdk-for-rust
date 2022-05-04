@@ -116,6 +116,11 @@ pub struct EventListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EventListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EventListResult {
     pub fn new() -> Self {
         Self::default()
@@ -402,6 +407,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -568,6 +578,11 @@ pub struct RegistryListResult {
     #[doc = "The URI that can be used to request the next list of container registries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RegistryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RegistryListResult {
     pub fn new() -> Self {
@@ -804,6 +819,11 @@ pub struct ReplicationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ReplicationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ReplicationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -925,6 +945,11 @@ pub struct ScopeMapListResult {
     #[doc = "The URI that can be used to request the next list of scope maps."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ScopeMapListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ScopeMapListResult {
     pub fn new() -> Self {
@@ -1229,6 +1254,11 @@ pub struct TokenListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TokenListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TokenListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1457,6 +1487,11 @@ pub struct WebhookListResult {
     #[doc = "The URI that can be used to request the next list of webhooks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WebhookListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WebhookListResult {
     pub fn new() -> Self {

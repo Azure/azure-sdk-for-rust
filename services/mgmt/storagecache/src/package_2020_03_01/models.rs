@@ -87,6 +87,11 @@ pub struct ApiOperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApiOperation>,
 }
+impl azure_core::Continuable for ApiOperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApiOperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -376,6 +381,11 @@ pub struct CachesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cache>,
 }
+impl azure_core::Continuable for CachesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CachesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -410,6 +420,11 @@ pub struct CloudError {
     #[doc = "An error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -648,6 +663,11 @@ pub struct ResourceSkusResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceSku>,
 }
+impl azure_core::Continuable for ResourceSkusResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceSkusResult {
     pub fn new() -> Self {
         Self::default()
@@ -785,6 +805,11 @@ pub struct StorageTargetsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageTarget>,
 }
+impl azure_core::Continuable for StorageTargetsResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StorageTargetsResult {
     pub fn new() -> Self {
         Self::default()
@@ -864,6 +889,11 @@ pub struct UsageModelsResult {
     #[doc = "The list of usage models available for the subscription."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UsageModel>,
+}
+impl azure_core::Continuable for UsageModelsResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UsageModelsResult {
     pub fn new() -> Self {

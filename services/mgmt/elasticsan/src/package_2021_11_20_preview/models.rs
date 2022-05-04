@@ -29,6 +29,11 @@ pub struct ElasticSanList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ElasticSanList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ElasticSanList {
     pub fn new(value: Vec<ElasticSan>) -> Self {
         Self { value, next_link: None }
@@ -64,6 +69,11 @@ pub struct ElasticSanOperationListResult {
     #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ElasticSanOperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ElasticSanOperationListResult {
     pub fn new(value: Vec<ElasticSanRpOperation>) -> Self {
@@ -187,6 +197,11 @@ pub struct Error {
     #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {
@@ -414,6 +429,11 @@ pub struct SkuInformationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SkuInformationList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SkuInformationList {
     pub fn new() -> Self {
         Self::default()
@@ -586,6 +606,11 @@ pub struct VolumeGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VolumeGroupList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VolumeGroupList {
     pub fn new(value: Vec<VolumeGroup>) -> Self {
         Self { value, next_link: None }
@@ -672,6 +697,11 @@ pub struct VolumeList {
     #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VolumeList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VolumeList {
     pub fn new(value: Vec<Volume>) -> Self {

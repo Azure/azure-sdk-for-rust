@@ -135,6 +135,11 @@ pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for ErrorContract {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorContract {
     pub fn new() -> Self {
         Self::default()
@@ -289,6 +294,11 @@ pub struct LogSearchRuleResourceCollection {
     #[doc = "The values for the Log Search Rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LogSearchRuleResource>,
+}
+impl azure_core::Continuable for LogSearchRuleResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LogSearchRuleResourceCollection {
     pub fn new() -> Self {

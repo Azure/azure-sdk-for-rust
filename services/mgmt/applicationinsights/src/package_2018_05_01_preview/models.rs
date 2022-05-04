@@ -31,6 +31,11 @@ pub struct ApplicationInsightsComponentListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApplicationInsightsComponentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApplicationInsightsComponentListResult {
     pub fn new(value: Vec<ApplicationInsightsComponent>) -> Self {
         Self { value, next_link: None }
@@ -428,6 +433,11 @@ pub struct OperationsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -723,6 +733,11 @@ pub struct WebTestListResult {
     #[doc = "The link to get the next part of the returned list of WebTest, should the return set be too large for a single request. May be null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WebTestListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WebTestListResult {
     pub fn new(value: Vec<WebTest>) -> Self {

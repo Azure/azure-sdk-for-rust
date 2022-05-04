@@ -15,6 +15,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -43,6 +48,11 @@ pub struct MetadataEntityListResult {
     #[doc = "The link used to get the next page of metadata."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MetadataEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MetadataEntityListResult {
     pub fn new() -> Self {
@@ -231,6 +241,11 @@ pub struct AvailabilityStatusListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailabilityStatusListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailabilityStatusListResult {
     pub fn new(value: Vec<AvailabilityStatus>) -> Self {
         Self { value, next_link: None }
@@ -281,6 +296,11 @@ pub struct EmergingIssueListResult {
     #[doc = "The link used to get the next page of emerging issues."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EmergingIssueListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EmergingIssueListResult {
     pub fn new() -> Self {
@@ -475,6 +495,11 @@ pub struct Events {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for Events {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl Events {
     pub fn new(value: Vec<Event>) -> Self {
         Self { value, next_link: None }
@@ -536,6 +561,11 @@ pub struct ImpactedResourceListResult {
     #[doc = "The URI to fetch the next page of impactedResourceStatus."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ImpactedResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ImpactedResourceListResult {
     pub fn new(value: Vec<ImpactedResourceStatus>) -> Self {

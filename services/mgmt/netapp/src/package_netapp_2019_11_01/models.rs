@@ -105,6 +105,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -299,6 +304,11 @@ pub struct CapacityPoolList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CapacityPool>,
 }
+impl azure_core::Continuable for CapacityPoolList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CapacityPoolList {
     pub fn new() -> Self {
         Self::default()
@@ -478,6 +488,11 @@ pub struct NetAppAccountList {
     #[doc = "Multiple NetApp accounts"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetAppAccount>,
+}
+impl azure_core::Continuable for NetAppAccountList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl NetAppAccountList {
     pub fn new() -> Self {
@@ -745,6 +760,11 @@ pub struct SnapshotsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Snapshot>,
 }
+impl azure_core::Continuable for SnapshotsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SnapshotsList {
     pub fn new() -> Self {
         Self::default()
@@ -788,6 +808,11 @@ pub struct VolumeList {
     #[doc = "List of volumes"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Volume>,
+}
+impl azure_core::Continuable for VolumeList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl VolumeList {
     pub fn new() -> Self {

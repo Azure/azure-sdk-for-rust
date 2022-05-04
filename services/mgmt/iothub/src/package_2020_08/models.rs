@@ -221,6 +221,11 @@ pub struct EndpointHealthDataListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EndpointHealthDataListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EndpointHealthDataListResult {
     pub fn new() -> Self {
         Self::default()
@@ -261,6 +266,11 @@ pub struct ErrorDetails {
     #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
+}
+impl azure_core::Continuable for ErrorDetails {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorDetails {
     pub fn new() -> Self {
@@ -324,6 +334,11 @@ pub struct EventHubConsumerGroupsListResult {
     #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EventHubConsumerGroupsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EventHubConsumerGroupsListResult {
     pub fn new() -> Self {
@@ -623,6 +638,11 @@ pub struct IotHubDescriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IotHubDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IotHubDescriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -784,6 +804,11 @@ pub struct IotHubQuotaMetricInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IotHubQuotaMetricInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IotHubQuotaMetricInfoListResult {
     pub fn new() -> Self {
         Self::default()
@@ -818,6 +843,11 @@ pub struct IotHubSkuDescriptionListResult {
     #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IotHubSkuDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IotHubSkuDescriptionListResult {
     pub fn new() -> Self {
@@ -982,6 +1012,11 @@ pub struct JobResponseListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobResponseListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobResponseListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1091,6 +1126,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -1732,6 +1772,11 @@ pub struct SharedAccessSignatureAuthorizationRuleListResult {
     #[doc = "The next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SharedAccessSignatureAuthorizationRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SharedAccessSignatureAuthorizationRuleListResult {
     pub fn new() -> Self {

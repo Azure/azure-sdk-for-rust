@@ -194,6 +194,11 @@ pub struct FileSystemList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filesystems: Vec<FileSystem>,
 }
+impl azure_core::Continuable for FileSystemList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl FileSystemList {
     pub fn new() -> Self {
         Self::default()
@@ -218,6 +223,11 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub segment: BlobHierarchyListSegment,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
+}
+impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_marker.clone()
+    }
 }
 impl ListBlobsHierarchySegmentResponse {
     pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
@@ -266,6 +276,11 @@ pub struct PathList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<Path>,
 }
+impl azure_core::Continuable for PathList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PathList {
     pub fn new() -> Self {
         Self::default()
@@ -292,6 +307,11 @@ pub struct StorageError {
     #[doc = "The service error response object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<storage_error::Error>,
+}
+impl azure_core::Continuable for StorageError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StorageError {
     pub fn new() -> Self {

@@ -380,6 +380,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -467,6 +472,11 @@ pub struct FrontDoorListResult {
     #[doc = "URL to get the next set of Front Door objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FrontDoorListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FrontDoorListResult {
     pub fn new() -> Self {
@@ -665,6 +675,11 @@ pub struct FrontendEndpointsListResult {
     #[doc = "URL to get the next set of frontend endpoints if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FrontendEndpointsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FrontendEndpointsListResult {
     pub fn new() -> Self {
@@ -975,6 +990,11 @@ pub struct ManagedRuleSetDefinitionList {
     #[doc = "URL to retrieve next set of managed rule set definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedRuleSetDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ManagedRuleSetDefinitionList {
     pub fn new() -> Self {
@@ -1412,6 +1432,11 @@ pub struct WebApplicationFirewallPolicyList {
     #[doc = "URL to get the next set of WebApplicationFirewallPolicy objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WebApplicationFirewallPolicyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WebApplicationFirewallPolicyList {
     pub fn new() -> Self {

@@ -85,6 +85,11 @@ pub struct CloudEndpointArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CloudEndpoint>,
 }
+impl azure_core::Continuable for CloudEndpointArray {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudEndpointArray {
     pub fn new() -> Self {
         Self::default()
@@ -250,6 +255,11 @@ pub struct OperationEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationEntityListResult {
     pub fn new() -> Self {
         Self::default()
@@ -402,6 +412,11 @@ pub struct RegisteredServerArray {
     #[doc = "Collection of Registered Server."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegisteredServer>,
+}
+impl azure_core::Continuable for RegisteredServerArray {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl RegisteredServerArray {
     pub fn new() -> Self {
@@ -595,6 +610,11 @@ pub struct ServerEndpointArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerEndpoint>,
 }
+impl azure_core::Continuable for ServerEndpointArray {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ServerEndpointArray {
     pub fn new() -> Self {
         Self::default()
@@ -739,6 +759,11 @@ pub struct StorageSyncError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<StorageSyncApiError>,
 }
+impl azure_core::Continuable for StorageSyncError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl StorageSyncError {
     pub fn new() -> Self {
         Self::default()
@@ -785,6 +810,11 @@ pub struct StorageSyncServiceArray {
     #[doc = "Collection of StorageSyncServices."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageSyncService>,
+}
+impl azure_core::Continuable for StorageSyncServiceArray {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StorageSyncServiceArray {
     pub fn new() -> Self {
@@ -902,6 +932,11 @@ pub struct SyncGroupArray {
     #[doc = "Collection of SyncGroup."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncGroup>,
+}
+impl azure_core::Continuable for SyncGroupArray {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SyncGroupArray {
     pub fn new() -> Self {

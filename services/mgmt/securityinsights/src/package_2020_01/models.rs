@@ -183,6 +183,11 @@ pub struct ActionsList {
     #[doc = "Array of actions."]
     pub value: Vec<ActionResponse>,
 }
+impl azure_core::Continuable for ActionsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ActionsList {
     pub fn new(value: Vec<ActionResponse>) -> Self {
         Self { next_link: None, value }
@@ -258,6 +263,11 @@ pub struct AlertRuleTemplatesList {
     #[doc = "Array of alert rule templates."]
     pub value: Vec<AlertRuleTemplate>,
 }
+impl azure_core::Continuable for AlertRuleTemplatesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertRuleTemplatesList {
     pub fn new(value: Vec<AlertRuleTemplate>) -> Self {
         Self { next_link: None, value }
@@ -279,6 +289,11 @@ pub struct AlertRulesList {
     pub next_link: Option<String>,
     #[doc = "Array of alert rules."]
     pub value: Vec<AlertRule>,
+}
+impl azure_core::Continuable for AlertRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AlertRulesList {
     pub fn new(value: Vec<AlertRule>) -> Self {
@@ -388,6 +403,11 @@ pub struct BookmarkList {
     #[doc = "Array of bookmarks."]
     pub value: Vec<Bookmark>,
 }
+impl azure_core::Continuable for BookmarkList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BookmarkList {
     pub fn new(value: Vec<Bookmark>) -> Self {
         Self { next_link: None, value }
@@ -482,6 +502,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -544,6 +569,11 @@ pub struct DataConnectorList {
     pub next_link: Option<String>,
     #[doc = "Array of data connectors."]
     pub value: Vec<DataConnector>,
+}
+impl azure_core::Continuable for DataConnectorList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataConnectorList {
     pub fn new(value: Vec<DataConnector>) -> Self {
@@ -781,6 +811,11 @@ pub struct IncidentCommentList {
     #[doc = "Array of comments."]
     pub value: Vec<IncidentComment>,
 }
+impl azure_core::Continuable for IncidentCommentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IncidentCommentList {
     pub fn new(value: Vec<IncidentComment>) -> Self {
         Self { next_link: None, value }
@@ -863,6 +898,11 @@ pub struct IncidentList {
     pub next_link: Option<String>,
     #[doc = "Array of incidents."]
     pub value: Vec<Incident>,
+}
+impl azure_core::Continuable for IncidentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IncidentList {
     pub fn new(value: Vec<Incident>) -> Self {
@@ -1388,6 +1428,11 @@ pub struct OperationsList {
     pub next_link: Option<String>,
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {

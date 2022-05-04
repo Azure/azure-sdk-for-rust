@@ -51,6 +51,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -105,6 +110,11 @@ pub struct MyWorkbookError {
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl azure_core::Continuable for MyWorkbookError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MyWorkbookError {
     pub fn new() -> Self {
@@ -234,6 +244,11 @@ pub struct MyWorkbooksListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MyWorkbooksListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MyWorkbooksListResult {
     pub fn new() -> Self {
         Self::default()
@@ -284,6 +299,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -357,6 +377,11 @@ pub struct WorkbookError {
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl azure_core::Continuable for WorkbookError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkbookError {
     pub fn new() -> Self {
@@ -522,6 +547,11 @@ pub struct WorkbooksListResult {
     pub value: Vec<Workbook>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkbooksListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkbooksListResult {
     pub fn new() -> Self {

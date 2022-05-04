@@ -8,6 +8,11 @@ pub struct CloudError {
     #[doc = "The object that defines the structure of an Azure Synapse error."]
     pub error: CloudErrorBody,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new(error: CloudErrorBody) -> Self {
         Self { error }
@@ -140,6 +145,11 @@ pub struct LinkConnectionListResponse {
     #[doc = "List link connections next link"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LinkConnectionListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LinkConnectionListResponse {
     pub fn new(value: Vec<LinkConnectionResource>) -> Self {

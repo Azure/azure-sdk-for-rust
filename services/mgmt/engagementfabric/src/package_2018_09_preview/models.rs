@@ -20,6 +20,11 @@ pub struct AccountList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
+impl azure_core::Continuable for AccountList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AccountList {
     pub fn new() -> Self {
         Self::default()
@@ -57,6 +62,11 @@ pub struct ChannelList {
     #[doc = "EngagementFabric channels"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Channel>,
+}
+impl azure_core::Continuable for ChannelList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ChannelList {
     pub fn new() -> Self {
@@ -160,6 +170,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -210,6 +225,11 @@ pub struct KeyDescriptionList {
     #[doc = "Account keys"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<KeyDescription>,
+}
+impl azure_core::Continuable for KeyDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl KeyDescriptionList {
     pub fn new() -> Self {
@@ -264,6 +284,11 @@ pub struct OperationList {
     #[doc = "The EngagementFabric operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationList {
     pub fn new() -> Self {
@@ -359,6 +384,11 @@ pub struct SkuDescriptionList {
     #[doc = "SKU descriptions"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuDescription>,
+}
+impl azure_core::Continuable for SkuDescriptionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SkuDescriptionList {
     pub fn new() -> Self {

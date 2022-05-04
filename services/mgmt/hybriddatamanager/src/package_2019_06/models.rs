@@ -66,6 +66,11 @@ pub struct AvailableProviderOperations {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailableProviderOperations {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailableProviderOperations {
     pub fn new() -> Self {
         Self::default()
@@ -129,6 +134,11 @@ pub struct DataManagerList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataManagerList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DataManagerList {
     pub fn new() -> Self {
         Self::default()
@@ -174,6 +184,11 @@ pub struct DataServiceList {
     #[doc = "Link for the next set of data services."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataServiceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataServiceList {
     pub fn new() -> Self {
@@ -249,6 +264,11 @@ pub struct DataStoreList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataStoreList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataStoreList {
     pub fn new() -> Self {
         Self::default()
@@ -318,6 +338,11 @@ pub struct DataStoreTypeList {
     #[doc = "Link for the next set of data store types."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataStoreTypeList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataStoreTypeList {
     pub fn new() -> Self {
@@ -515,6 +540,11 @@ pub struct JobDefinitionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobDefinitionList {
     pub fn new() -> Self {
         Self::default()
@@ -704,6 +734,11 @@ pub struct JobList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobList {
     pub fn new() -> Self {
         Self::default()
@@ -848,6 +883,11 @@ pub struct PublicKeyList {
     #[doc = "Link for the next set of public keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PublicKeyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PublicKeyList {
     pub fn new() -> Self {

@@ -99,6 +99,11 @@ pub struct EnergyServiceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnergyService>,
 }
+impl azure_core::Continuable for EnergyServiceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EnergyServiceList {
     pub fn new() -> Self {
         Self::default()

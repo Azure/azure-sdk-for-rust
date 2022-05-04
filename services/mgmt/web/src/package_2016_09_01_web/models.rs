@@ -223,6 +223,11 @@ pub struct AppServiceEnvironmentCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AppServiceEnvironmentCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AppServiceEnvironmentCollection {
     pub fn new(value: Vec<AppServiceEnvironmentResource>) -> Self {
         Self { value, next_link: None }
@@ -387,6 +392,11 @@ pub struct AppServicePlanCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AppServicePlanCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AppServicePlanCollection {
     pub fn new(value: Vec<AppServicePlan>) -> Self {
@@ -741,6 +751,11 @@ pub struct CsmUsageQuotaCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CsmUsageQuotaCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CsmUsageQuotaCollection {
     pub fn new(value: Vec<CsmUsageQuota>) -> Self {
         Self { value, next_link: None }
@@ -937,6 +952,11 @@ pub struct HybridConnectionCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HybridConnectionCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HybridConnectionCollection {
     pub fn new(value: Vec<HybridConnection>) -> Self {
@@ -1366,6 +1386,11 @@ pub struct ResourceCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceCollection {
     pub fn new(value: Vec<String>) -> Self {
         Self { value, next_link: None }
@@ -1431,6 +1456,11 @@ pub struct ResourceMetricCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceMetricCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceMetricCollection {
     pub fn new(value: Vec<ResourceMetric>) -> Self {
         Self { value, next_link: None }
@@ -1491,6 +1521,11 @@ pub struct ResourceMetricDefinitionCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResourceMetricDefinitionCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResourceMetricDefinitionCollection {
     pub fn new(value: Vec<ResourceMetricDefinition>) -> Self {
@@ -2012,6 +2047,11 @@ pub struct SkuInfoCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SkuInfoCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SkuInfoCollection {
     pub fn new(value: Vec<SkuInfo>) -> Self {
         Self { value, next_link: None }
@@ -2183,6 +2223,11 @@ pub struct StampCapacityCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for StampCapacityCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StampCapacityCollection {
     pub fn new(value: Vec<StampCapacity>) -> Self {
         Self { value, next_link: None }
@@ -2283,6 +2328,11 @@ pub struct UsageCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UsageCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UsageCollection {
     pub fn new(value: Vec<Usage>) -> Self {
@@ -2506,6 +2556,11 @@ pub struct WebAppCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for WebAppCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WebAppCollection {
     pub fn new(value: Vec<Site>) -> Self {
         Self { value, next_link: None }
@@ -2553,6 +2608,11 @@ pub struct WorkerPoolCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkerPoolCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkerPoolCollection {
     pub fn new(value: Vec<WorkerPoolResource>) -> Self {

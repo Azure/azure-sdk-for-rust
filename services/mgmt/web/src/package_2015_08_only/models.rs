@@ -47,6 +47,11 @@ pub struct AppServiceCertificateCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AppServiceCertificateCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AppServiceCertificateCollection {
     pub fn new(value: Vec<AppServiceCertificateResource>) -> Self {
         Self { value, next_link: None }
@@ -202,6 +207,11 @@ pub struct AppServiceCertificateOrderCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AppServiceCertificateOrderCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AppServiceCertificateOrderCollection {
     pub fn new(value: Vec<AppServiceCertificateOrder>) -> Self {
@@ -507,6 +517,11 @@ pub struct CsmOperationCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CsmOperationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CsmOperationCollection {
     pub fn new(value: Vec<CsmOperationDescription>) -> Self {

@@ -282,6 +282,11 @@ pub struct HyperVClusterCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for HyperVClusterCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl HyperVClusterCollection {
     pub fn new() -> Self {
         Self::default()
@@ -381,6 +386,11 @@ pub struct HyperVHostCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for HyperVHostCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl HyperVHostCollection {
     pub fn new() -> Self {
         Self::default()
@@ -444,6 +454,11 @@ pub struct HyperVJobCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for HyperVJobCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl HyperVJobCollection {
     pub fn new() -> Self {
         Self::default()
@@ -479,6 +494,11 @@ pub struct HyperVMachineCollection {
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HyperVMachineCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HyperVMachineCollection {
     pub fn new() -> Self {
@@ -666,6 +686,11 @@ pub struct HyperVRunAsAccountCollection {
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HyperVRunAsAccountCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HyperVRunAsAccountCollection {
     pub fn new() -> Self {
@@ -1022,6 +1047,11 @@ pub struct OperationResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1260,6 +1290,11 @@ pub struct SiteHealthSummaryCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SiteHealthSummaryCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SiteHealthSummaryCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1374,6 +1409,11 @@ pub struct VCenterCollection {
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VCenterCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VCenterCollection {
     pub fn new() -> Self {
@@ -1505,6 +1545,11 @@ pub struct VMwareJobCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VMwareJobCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VMwareJobCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1540,6 +1585,11 @@ pub struct VMwareMachineCollection {
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VMwareMachineCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VMwareMachineCollection {
     pub fn new() -> Self {
@@ -1720,6 +1770,11 @@ pub struct VMwareRunAsAccountCollection {
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VMwareRunAsAccountCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VMwareRunAsAccountCollection {
     pub fn new() -> Self {

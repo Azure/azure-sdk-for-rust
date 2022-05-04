@@ -563,6 +563,11 @@ pub struct AssessedMachineResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssessedMachine>,
 }
+impl azure_core::Continuable for AssessedMachineResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AssessedMachineResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1034,6 +1039,11 @@ pub struct AssessmentResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Assessment>,
 }
+impl azure_core::Continuable for AssessmentResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AssessmentResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1096,6 +1106,11 @@ pub struct CloudError {
     #[doc = "An error response from the Azure Migrate service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -1214,6 +1229,11 @@ pub struct GroupResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Group>,
 }
+impl azure_core::Continuable for GroupResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl GroupResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1319,6 +1339,11 @@ pub struct MachineResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Machine>,
 }
+impl azure_core::Continuable for MachineResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MachineResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1384,6 +1409,11 @@ pub struct OperationResultList {
     #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationResultList {
     pub fn new() -> Self {
@@ -1507,6 +1537,11 @@ pub struct ProjectResultList {
     #[doc = "List of projects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Project>,
+}
+impl azure_core::Continuable for ProjectResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProjectResultList {
     pub fn new() -> Self {

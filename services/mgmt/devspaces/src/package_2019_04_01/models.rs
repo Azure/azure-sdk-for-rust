@@ -65,6 +65,11 @@ pub struct ControllerList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ControllerList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ControllerList {
     pub fn new() -> Self {
         Self::default()
@@ -147,6 +152,11 @@ impl ControllerUpdateParametersProperties {
 pub struct DevSpacesErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
+}
+impl azure_core::Continuable for DevSpacesErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DevSpacesErrorResponse {
     pub fn new() -> Self {
@@ -269,6 +279,11 @@ pub struct ResourceProviderOperationList {
     #[doc = "The URI that can be used to request the next page for list of Azure operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResourceProviderOperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResourceProviderOperationList {
     pub fn new() -> Self {

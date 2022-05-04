@@ -41,6 +41,11 @@ pub struct DedicatedHsmError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
+impl azure_core::Continuable for DedicatedHsmError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DedicatedHsmError {
     pub fn new() -> Self {
         Self::default()
@@ -55,6 +60,11 @@ pub struct DedicatedHsmListResult {
     #[doc = "The URL to get the next set of dedicated hsms."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DedicatedHsmListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DedicatedHsmListResult {
     pub fn new() -> Self {
@@ -109,6 +119,11 @@ pub struct DedicatedHsmOperationListResult {
     #[doc = "List of Dedicated HSM Resource Provider operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DedicatedHsmOperation>,
+}
+impl azure_core::Continuable for DedicatedHsmOperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DedicatedHsmOperationListResult {
     pub fn new() -> Self {
@@ -280,6 +295,11 @@ pub struct OutboundEnvironmentEndpointCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OutboundEnvironmentEndpointCollection {
     pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {

@@ -181,6 +181,11 @@ pub struct ContainerServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
 }
+impl azure_core::Continuable for ContainerServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ContainerServiceListResult {
     pub fn new() -> Self {
         Self::default()

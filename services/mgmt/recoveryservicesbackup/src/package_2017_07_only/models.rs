@@ -487,6 +487,11 @@ pub struct BackupManagementUsageList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupManagementUsage>,
 }
+impl azure_core::Continuable for BackupManagementUsageList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupManagementUsageList {
     pub fn new() -> Self {
         Self::default()
@@ -1171,6 +1176,11 @@ pub struct ProtectionIntentResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectionIntentResource>,
+}
+impl azure_core::Continuable for ProtectionIntentResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProtectionIntentResourceList {
     pub fn new() -> Self {

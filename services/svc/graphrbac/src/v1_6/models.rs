@@ -119,6 +119,11 @@ pub struct AppRoleAssignmentListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for AppRoleAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl AppRoleAssignmentListResult {
     pub fn new() -> Self {
         Self::default()
@@ -392,6 +397,11 @@ pub struct ApplicationListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for ApplicationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl ApplicationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -473,6 +483,11 @@ pub struct DirectoryObjectListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for DirectoryObjectListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl DirectoryObjectListResult {
     pub fn new() -> Self {
         Self::default()
@@ -509,6 +524,11 @@ pub struct DomainListResult {
     #[doc = "the list of domains."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Domain>,
+}
+impl azure_core::Continuable for DomainListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DomainListResult {
     pub fn new() -> Self {
@@ -551,6 +571,11 @@ pub struct GraphError {
     #[doc = "Active Directory OData error information."]
     #[serde(rename = "odata.error", default, skip_serializing_if = "Option::is_none")]
     pub odata_error: Option<OdataError>,
+}
+impl azure_core::Continuable for GraphError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl GraphError {
     pub fn new() -> Self {
@@ -627,6 +652,11 @@ pub struct GroupGetMemberGroupsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
 }
+impl azure_core::Continuable for GroupGetMemberGroupsResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl GroupGetMemberGroupsResult {
     pub fn new() -> Self {
         Self::default()
@@ -641,6 +671,11 @@ pub struct GroupListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for GroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl GroupListResult {
     pub fn new() -> Self {
@@ -711,6 +746,11 @@ pub struct KeyCredentialListResult {
     #[doc = "A collection of KeyCredentials."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<KeyCredential>,
+}
+impl azure_core::Continuable for KeyCredentialListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl KeyCredentialListResult {
     pub fn new() -> Self {
@@ -815,6 +855,11 @@ pub struct OAuth2PermissionGrantListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for OAuth2PermissionGrantListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl OAuth2PermissionGrantListResult {
     pub fn new() -> Self {
         Self::default()
@@ -903,6 +948,11 @@ pub struct PasswordCredentialListResult {
     #[doc = "A collection of PasswordCredentials."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PasswordCredential>,
+}
+impl azure_core::Continuable for PasswordCredentialListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PasswordCredentialListResult {
     pub fn new() -> Self {
@@ -1164,6 +1214,11 @@ pub struct ServicePrincipalListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for ServicePrincipalListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl ServicePrincipalListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1370,6 +1425,11 @@ pub struct UserGetMemberGroupsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
 }
+impl azure_core::Continuable for UserGetMemberGroupsResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl UserGetMemberGroupsResult {
     pub fn new() -> Self {
         Self::default()
@@ -1384,6 +1444,11 @@ pub struct UserListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for UserListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl UserListResult {
     pub fn new() -> Self {

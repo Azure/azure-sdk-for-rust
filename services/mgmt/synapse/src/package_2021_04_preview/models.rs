@@ -154,6 +154,11 @@ pub struct BigDataPoolResourceInfoListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BigDataPoolResourceInfo>,
 }
+impl azure_core::Continuable for BigDataPoolResourceInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BigDataPoolResourceInfoListResult {
     pub fn new() -> Self {
         Self::default()
@@ -477,6 +482,11 @@ pub struct DataMaskingRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataMaskingRule>,
 }
+impl azure_core::Continuable for DataMaskingRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DataMaskingRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -649,6 +659,11 @@ pub struct EncryptionProtectorListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EncryptionProtectorListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EncryptionProtectorListResult {
     pub fn new() -> Self {
         Self::default()
@@ -798,6 +813,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -826,6 +846,11 @@ pub struct ExtendedServerBlobAuditingPolicyListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ExtendedServerBlobAuditingPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ExtendedServerBlobAuditingPolicyListResult {
     pub fn new() -> Self {
@@ -913,6 +938,11 @@ pub struct ExtendedSqlPoolBlobAuditingPolicyListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ExtendedSqlPoolBlobAuditingPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ExtendedSqlPoolBlobAuditingPolicyListResult {
     pub fn new() -> Self {
@@ -1007,6 +1037,11 @@ pub struct GeoBackupPolicyListResult {
     #[doc = "The list of geo backup policies."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GeoBackupPolicy>,
+}
+impl azure_core::Continuable for GeoBackupPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl GeoBackupPolicyListResult {
     pub fn new() -> Self {
@@ -1207,6 +1242,11 @@ pub struct IntegrationRuntimeListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IntegrationRuntimeListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IntegrationRuntimeListResponse {
     pub fn new(value: Vec<IntegrationRuntimeResource>) -> Self {
@@ -1485,6 +1525,11 @@ pub struct IpFirewallRuleInfoListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IpFirewallRuleInfo>,
 }
+impl azure_core::Continuable for IpFirewallRuleInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IpFirewallRuleInfoListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1544,6 +1589,11 @@ pub struct KeyInfoListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Key>,
 }
+impl azure_core::Continuable for KeyInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl KeyInfoListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1602,6 +1652,11 @@ pub struct LibraryListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LibraryListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LibraryListResponse {
     pub fn new(value: Vec<LibraryResource>) -> Self {
@@ -1738,6 +1793,11 @@ pub struct ListSqlPoolSecurityAlertPolicies {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListSqlPoolSecurityAlertPolicies {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListSqlPoolSecurityAlertPolicies {
     pub fn new() -> Self {
@@ -2356,6 +2416,11 @@ pub struct PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse 
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
     pub fn new() -> Self {
         Self::default()
@@ -2370,6 +2435,11 @@ pub struct PrivateEndpointConnectionList {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointConnectionList {
     pub fn new() -> Self {
@@ -2420,6 +2490,11 @@ pub struct PrivateLinkHubInfoListResult {
     #[doc = "List of privateLinkHubs"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkHub>,
+}
+impl azure_core::Continuable for PrivateLinkHubInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkHubInfoListResult {
     pub fn new() -> Self {
@@ -2476,6 +2551,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -2683,6 +2763,11 @@ pub struct RecoverableSqlPoolListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RecoverableSqlPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RecoverableSqlPoolListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2762,6 +2847,11 @@ pub struct ReplicationLinkListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ReplicationLinkListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ReplicationLinkListResult {
     pub fn new() -> Self {
@@ -2892,6 +2982,11 @@ pub struct RestorableDroppedSqlPoolListResult {
     #[doc = "A list of restorable dropped Sql pools"]
     pub value: Vec<RestorableDroppedSqlPool>,
 }
+impl azure_core::Continuable for RestorableDroppedSqlPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl RestorableDroppedSqlPoolListResult {
     pub fn new(value: Vec<RestorableDroppedSqlPool>) -> Self {
         Self { value }
@@ -2956,6 +3051,11 @@ pub struct RestorePointListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RestorePointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RestorePointListResult {
     pub fn new() -> Self {
@@ -3304,6 +3404,11 @@ pub struct SensitivityLabelListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SensitivityLabelListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SensitivityLabelListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3439,6 +3544,11 @@ pub struct ServerBlobAuditingPolicyListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ServerBlobAuditingPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ServerBlobAuditingPolicyListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3521,6 +3631,11 @@ pub struct ServerSecurityAlertPolicyListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ServerSecurityAlertPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ServerSecurityAlertPolicyListResult {
     pub fn new() -> Self {
@@ -3617,6 +3732,11 @@ pub struct ServerUsageListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ServerUsageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ServerUsageListResult {
     pub fn new(value: Vec<ServerUsage>) -> Self {
         Self { value, next_link: None }
@@ -3645,6 +3765,11 @@ pub struct ServerVulnerabilityAssessmentListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ServerVulnerabilityAssessmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ServerVulnerabilityAssessmentListResult {
     pub fn new() -> Self {
@@ -3743,6 +3868,11 @@ pub struct SqlPoolBlobAuditingPolicyListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SqlPoolBlobAuditingPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SqlPoolBlobAuditingPolicyListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3808,6 +3938,11 @@ pub struct SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3836,6 +3971,11 @@ pub struct SqlPoolColumnListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlPoolColumnListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SqlPoolColumnListResult {
     pub fn new() -> Self {
@@ -3991,6 +4131,11 @@ pub struct SqlPoolInfoListResult {
     #[doc = "List of SQL pools"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlPool>,
+}
+impl azure_core::Continuable for SqlPoolInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SqlPoolInfoListResult {
     pub fn new() -> Self {
@@ -4177,6 +4322,11 @@ pub struct SqlPoolSchemaListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SqlPoolSchemaListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SqlPoolSchemaListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4216,6 +4366,11 @@ pub struct SqlPoolTableListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlPoolTableListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SqlPoolTableListResult {
     pub fn new() -> Self {
@@ -4261,6 +4416,11 @@ pub struct SqlPoolUsageListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SqlPoolUsageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SqlPoolUsageListResult {
     pub fn new(value: Vec<SqlPoolUsage>) -> Self {
         Self { value, next_link: None }
@@ -4289,6 +4449,11 @@ pub struct SqlPoolVulnerabilityAssessmentListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlPoolVulnerabilityAssessmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SqlPoolVulnerabilityAssessmentListResult {
     pub fn new() -> Self {
@@ -4780,6 +4945,11 @@ pub struct TransparentDataEncryptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TransparentDataEncryptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TransparentDataEncryptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4902,6 +5072,11 @@ pub struct VulnerabilityAssessmentScanRecordListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VulnerabilityAssessmentScanRecordListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VulnerabilityAssessmentScanRecordListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4981,6 +5156,11 @@ pub struct WorkloadClassifierListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for WorkloadClassifierListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WorkloadClassifierListResult {
     pub fn new() -> Self {
         Self::default()
@@ -5043,6 +5223,11 @@ pub struct WorkloadGroupListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkloadGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkloadGroupListResult {
     pub fn new() -> Self {
@@ -5127,6 +5312,11 @@ pub struct WorkspaceInfoListResult {
     #[doc = "List of workspaces"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
+}
+impl azure_core::Continuable for WorkspaceInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkspaceInfoListResult {
     pub fn new() -> Self {

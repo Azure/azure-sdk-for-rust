@@ -91,6 +91,11 @@ pub struct ActivityLogAlertList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActivityLogAlertResource>,
 }
+impl azure_core::Continuable for ActivityLogAlertList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActivityLogAlertList {
     pub fn new() -> Self {
         Self::default()
@@ -151,6 +156,11 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {

@@ -444,6 +444,11 @@ pub struct AssemblyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssemblyDefinition>,
 }
+impl azure_core::Continuable for AssemblyCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AssemblyCollection {
     pub fn new() -> Self {
         Self::default()
@@ -547,6 +552,11 @@ impl BatchConfiguration {
 pub struct BatchConfigurationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BatchConfiguration>,
+}
+impl azure_core::Continuable for BatchConfigurationCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl BatchConfigurationCollection {
     pub fn new() -> Self {
@@ -1511,6 +1521,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorProperties>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1560,6 +1575,11 @@ impl ExpressionRoot {
 pub struct ExpressionTraces {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<ExpressionRoot>,
+}
+impl azure_core::Continuable for ExpressionTraces {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ExpressionTraces {
     pub fn new() -> Self {
@@ -1660,6 +1680,11 @@ pub struct IntegrationAccountAgreementListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IntegrationAccountAgreementListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IntegrationAccountAgreementListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1742,6 +1767,11 @@ pub struct IntegrationAccountCertificateListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IntegrationAccountCertificateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IntegrationAccountCertificateListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1780,6 +1810,11 @@ pub struct IntegrationAccountListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IntegrationAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IntegrationAccountListResult {
     pub fn new() -> Self {
@@ -1822,6 +1857,11 @@ pub struct IntegrationAccountMapListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IntegrationAccountMapListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IntegrationAccountMapListResult {
     pub fn new() -> Self {
@@ -1921,6 +1961,11 @@ pub struct IntegrationAccountPartnerListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IntegrationAccountPartnerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IntegrationAccountPartnerListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1997,6 +2042,11 @@ pub struct IntegrationAccountSchemaListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IntegrationAccountSchemaListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IntegrationAccountSchemaListResult {
     pub fn new() -> Self {
@@ -2089,6 +2139,11 @@ pub struct IntegrationAccountSessionListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IntegrationAccountSessionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IntegrationAccountSessionListResult {
     pub fn new() -> Self {
@@ -2195,6 +2250,11 @@ pub struct KeyVaultKeyCollection {
     #[doc = "The skip token."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
+}
+impl azure_core::Continuable for KeyVaultKeyCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl KeyVaultKeyCollection {
     pub fn new() -> Self {
@@ -2342,6 +2402,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -2552,6 +2617,11 @@ pub struct RequestHistoryListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RequestHistoryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RequestHistoryListResult {
     pub fn new() -> Self {
@@ -2899,6 +2969,11 @@ pub struct WorkflowListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for WorkflowListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WorkflowListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3053,6 +3128,11 @@ pub struct WorkflowRunActionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for WorkflowRunActionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WorkflowRunActionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3119,6 +3199,11 @@ pub struct WorkflowRunActionRepetitionDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkflowRunActionRepetitionDefinition>,
 }
+impl azure_core::Continuable for WorkflowRunActionRepetitionDefinitionCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkflowRunActionRepetitionDefinitionCollection {
     pub fn new() -> Self {
         Self::default()
@@ -3158,6 +3243,11 @@ pub struct WorkflowRunListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkflowRunListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkflowRunListResult {
     pub fn new() -> Self {
@@ -3377,6 +3467,11 @@ pub struct WorkflowTriggerHistoryListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for WorkflowTriggerHistoryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WorkflowTriggerHistoryListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3455,6 +3550,11 @@ pub struct WorkflowTriggerListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkflowTriggerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkflowTriggerListResult {
     pub fn new() -> Self {
@@ -3564,6 +3664,11 @@ pub struct WorkflowVersionListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkflowVersionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkflowVersionListResult {
     pub fn new() -> Self {

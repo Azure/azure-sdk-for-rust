@@ -27,6 +27,11 @@ pub struct ConfidentialLedgerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConfidentialLedgerErrorBody>,
 }
+impl azure_core::Continuable for ConfidentialLedgerError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ConfidentialLedgerError {
     pub fn new() -> Self {
         Self::default()
@@ -223,6 +228,11 @@ pub struct PagedLedgerEntries {
     pub next_link: Option<String>,
     #[doc = "Array of ledger entries."]
     pub entries: LedgerEntries,
+}
+impl azure_core::Continuable for PagedLedgerEntries {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PagedLedgerEntries {
     pub fn new(state: LedgerQueryState, entries: LedgerEntries) -> Self {

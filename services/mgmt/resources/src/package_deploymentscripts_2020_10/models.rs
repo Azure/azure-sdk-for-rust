@@ -155,6 +155,11 @@ pub struct DeploymentScriptListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeploymentScriptListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeploymentScriptListResult {
     pub fn new() -> Self {
         Self::default()
@@ -232,6 +237,11 @@ pub struct DeploymentScriptsError {
     #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for DeploymentScriptsError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DeploymentScriptsError {
     pub fn new() -> Self {

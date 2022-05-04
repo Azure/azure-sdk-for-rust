@@ -209,6 +209,11 @@ pub struct CognitiveServicesAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesAccount>,
 }
+impl azure_core::Continuable for CognitiveServicesAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CognitiveServicesAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -355,6 +360,11 @@ pub struct Error {
     #[doc = "Cognitive Services error body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {
@@ -527,6 +537,11 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
+}
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationEntityListResult {
     pub fn new() -> Self {
@@ -795,6 +810,11 @@ pub struct ResourceSkusResult {
     #[doc = "The uri to fetch the next page of Skus."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResourceSkusResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResourceSkusResult {
     pub fn new(value: Vec<ResourceSku>) -> Self {

@@ -27,6 +27,11 @@ pub struct ApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ApiError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ApiError {
     pub fn new() -> Self {
         Self::default()
@@ -94,6 +99,11 @@ pub struct MediaServiceCollection {
     #[doc = "The collection of Media Service resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MediaService>,
+}
+impl azure_core::Continuable for MediaServiceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MediaServiceCollection {
     pub fn new() -> Self {

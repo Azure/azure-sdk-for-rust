@@ -81,6 +81,11 @@ impl ErrorDetail {
 pub struct ErrorResponse {
     pub error: ErrorDetail,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new(error: ErrorDetail) -> Self {
         Self { error }
@@ -109,6 +114,11 @@ pub struct ErrorResponseV2 {
     #[doc = "The error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response_v2::Error>,
+}
+impl azure_core::Continuable for ErrorResponseV2 {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponseV2 {
     pub fn new() -> Self {
@@ -167,6 +177,11 @@ pub struct HybridComputePrivateLinkScopeListResult {
     #[doc = "The URI to get the next set of Azure Arc PrivateLinkScope definitions if too many PrivateLinkScopes where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HybridComputePrivateLinkScopeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HybridComputePrivateLinkScopeListResult {
     pub fn new(value: Vec<HybridComputePrivateLinkScope>) -> Self {
@@ -487,6 +502,11 @@ pub struct MachineExtensionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MachineExtensionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MachineExtensionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -638,6 +658,11 @@ pub struct MachineListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MachineListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MachineListResult {
     pub fn new(value: Vec<Machine>) -> Self {
         Self { value, next_link: None }
@@ -770,6 +795,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -838,6 +868,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -896,6 +931,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -1032,6 +1072,11 @@ pub struct ScopedResourceListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ScopedResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ScopedResourceListResult {
     pub fn new() -> Self {

@@ -94,6 +94,11 @@ pub mod address_validation_properties {
 pub struct ApiError {
     pub error: ErrorDetail,
 }
+impl azure_core::Continuable for ApiError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ApiError {
     pub fn new(error: ErrorDetail) -> Self {
         Self { error }
@@ -174,6 +179,11 @@ pub struct AvailableSkusResult {
     #[doc = "Link for the next set of skus."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AvailableSkusResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AvailableSkusResult {
     pub fn new() -> Self {
@@ -1786,6 +1796,11 @@ pub struct JobResourceList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobResourceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -2130,6 +2145,11 @@ pub struct OperationList {
     #[doc = "Link for the next set of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationList {
     pub fn new() -> Self {
@@ -3027,6 +3047,11 @@ pub struct UnencryptedCredentialsList {
     #[doc = "Link for the next set of unencrypted credentials."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UnencryptedCredentialsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl UnencryptedCredentialsList {
     pub fn new() -> Self {

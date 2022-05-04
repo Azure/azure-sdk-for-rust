@@ -55,6 +55,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -163,6 +168,11 @@ pub struct RegistrationAssignmentList {
     #[doc = "Link to next page of registration assignments."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RegistrationAssignmentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RegistrationAssignmentList {
     pub fn new() -> Self {
@@ -322,6 +332,11 @@ pub struct RegistrationDefinitionList {
     #[doc = "Link to next page of registration definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RegistrationDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RegistrationDefinitionList {
     pub fn new() -> Self {

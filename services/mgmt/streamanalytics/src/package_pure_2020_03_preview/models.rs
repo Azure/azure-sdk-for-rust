@@ -50,6 +50,11 @@ pub struct ClusterJobListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ClusterJobListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClusterJobListResult {
     pub fn new() -> Self {
         Self::default()
@@ -64,6 +69,11 @@ pub struct ClusterListResult {
     #[doc = "The URL to fetch the next set of clusters."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ClusterListResult {
     pub fn new() -> Self {
@@ -131,6 +141,11 @@ pub struct Error {
     #[doc = "Error definition properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error::Error>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {
@@ -219,6 +234,11 @@ pub struct PrivateEndpointListResult {
     #[doc = "The URL to fetch the next set of private endpoints."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointListResult {
     pub fn new() -> Self {

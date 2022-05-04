@@ -22,6 +22,7 @@ futures = "0.3"
 [dev-dependencies]
 azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
+env_logger = "0.9"
 
 [package.metadata.docs.rs]
 features = ["no-default-tag", "package-2021-04-04-preview"]

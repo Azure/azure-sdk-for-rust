@@ -520,6 +520,11 @@ pub struct EncryptionScopeListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EncryptionScopeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EncryptionScopeListResult {
     pub fn new() -> Self {
         Self::default()
@@ -653,6 +658,11 @@ pub struct ErrorResponse {
     #[doc = "Error response body contract."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -801,6 +811,11 @@ pub struct ListBlobInventoryPolicy {
     #[doc = "List of blob inventory policies."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BlobInventoryPolicy>,
+}
+impl azure_core::Continuable for ListBlobInventoryPolicy {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ListBlobInventoryPolicy {
     pub fn new() -> Self {
@@ -1100,6 +1115,11 @@ pub struct ObjectReplicationPolicies {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ObjectReplicationPolicy>,
 }
+impl azure_core::Continuable for ObjectReplicationPolicies {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ObjectReplicationPolicies {
     pub fn new() -> Self {
         Self::default()
@@ -1242,6 +1262,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1291,6 +1316,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -1880,6 +1910,11 @@ pub struct StorageAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for StorageAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StorageAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2237,6 +2272,11 @@ pub struct StorageSkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuInformation>,
 }
+impl azure_core::Continuable for StorageSkuListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl StorageSkuListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2323,6 +2363,11 @@ pub struct UsageListResult {
     #[doc = "Gets or sets the list of Storage Resource Usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsageListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl UsageListResult {
     pub fn new() -> Self {

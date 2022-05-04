@@ -24,6 +24,11 @@ pub struct AccessControlRecordList {
     #[doc = "The value."]
     pub value: Vec<AccessControlRecord>,
 }
+impl azure_core::Continuable for AccessControlRecordList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AccessControlRecordList {
     pub fn new(value: Vec<AccessControlRecord>) -> Self {
         Self { value }
@@ -129,6 +134,11 @@ pub struct AlertList {
     #[doc = "Id of the next page of alerts"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AlertList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AlertList {
     pub fn new(value: Vec<Alert>) -> Self {
@@ -407,6 +417,11 @@ pub struct AvailableProviderOperations {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailableProviderOperations {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailableProviderOperations {
     pub fn new(value: Vec<AvailableProviderOperation>) -> Self {
         Self { value, next_link: None }
@@ -510,6 +525,11 @@ pub struct BackupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BackupList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BackupList {
     pub fn new(value: Vec<Backup>) -> Self {
         Self { value, next_link: None }
@@ -587,6 +607,11 @@ pub struct BackupScheduleGroupList {
     #[doc = "The value."]
     pub value: Vec<BackupScheduleGroup>,
 }
+impl azure_core::Continuable for BackupScheduleGroupList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupScheduleGroupList {
     pub fn new(value: Vec<BackupScheduleGroup>) -> Self {
         Self { value }
@@ -654,6 +679,11 @@ impl ChapSettings {
 pub struct ChapSettingsList {
     #[doc = "The chap settings entity collection"]
     pub value: Vec<ChapSettings>,
+}
+impl azure_core::Continuable for ChapSettingsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ChapSettingsList {
     pub fn new(value: Vec<ChapSettings>) -> Self {
@@ -776,6 +806,11 @@ impl DeviceDetails {
 pub struct DeviceList {
     #[doc = "The value."]
     pub value: Vec<Device>,
+}
+impl azure_core::Continuable for DeviceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DeviceList {
     pub fn new(value: Vec<Device>) -> Self {
@@ -936,6 +971,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<Item>,
 }
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Error {
     pub fn new(error_code: String, message: Message) -> Self {
         Self {
@@ -983,6 +1023,11 @@ impl FileServer {
 pub struct FileServerList {
     #[doc = "The value."]
     pub value: Vec<FileServer>,
+}
+impl azure_core::Continuable for FileServerList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl FileServerList {
     pub fn new(value: Vec<FileServer>) -> Self {
@@ -1036,6 +1081,11 @@ impl FileShare {
 pub struct FileShareList {
     #[doc = "The value."]
     pub value: Vec<FileShare>,
+}
+impl azure_core::Continuable for FileShareList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl FileShareList {
     pub fn new(value: Vec<FileShare>) -> Self {
@@ -1156,6 +1206,11 @@ pub struct IscsiDiskList {
     #[doc = "The value."]
     pub value: Vec<IscsiDisk>,
 }
+impl azure_core::Continuable for IscsiDiskList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl IscsiDiskList {
     pub fn new(value: Vec<IscsiDisk>) -> Self {
         Self { value }
@@ -1253,6 +1308,11 @@ impl IscsiServer {
 pub struct IscsiServerList {
     #[doc = "The value."]
     pub value: Vec<IscsiServer>,
+}
+impl azure_core::Continuable for IscsiServerList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl IscsiServerList {
     pub fn new(value: Vec<IscsiServer>) -> Self {
@@ -1441,6 +1501,11 @@ pub struct JobList {
     #[doc = "The NextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for JobList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl JobList {
     pub fn new(value: Vec<Job>) -> Self {
@@ -1686,6 +1751,11 @@ pub struct ManagerList {
     #[doc = "List of Managers"]
     pub value: Vec<Manager>,
 }
+impl azure_core::Continuable for ManagerList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ManagerList {
     pub fn new(value: Vec<Manager>) -> Self {
         Self { value }
@@ -1867,6 +1937,11 @@ pub struct MetricDefinitionList {
     #[doc = "The list of metric definition"]
     pub value: Vec<MetricDefinition>,
 }
+impl azure_core::Continuable for MetricDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MetricDefinitionList {
     pub fn new(value: Vec<MetricDefinition>) -> Self {
         Self { value }
@@ -1911,6 +1986,11 @@ impl MetricFilter {
 pub struct MetricList {
     #[doc = "The value."]
     pub value: Vec<Metrics>,
+}
+impl azure_core::Continuable for MetricList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricList {
     pub fn new(value: Vec<Metrics>) -> Self {
@@ -2316,6 +2396,11 @@ pub struct StorageAccountCredentialList {
     #[doc = "The value."]
     pub value: Vec<StorageAccountCredential>,
 }
+impl azure_core::Continuable for StorageAccountCredentialList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl StorageAccountCredentialList {
     pub fn new(value: Vec<StorageAccountCredential>) -> Self {
         Self { value }
@@ -2400,6 +2485,11 @@ impl StorageDomain {
 pub struct StorageDomainList {
     #[doc = "The value."]
     pub value: Vec<StorageDomain>,
+}
+impl azure_core::Continuable for StorageDomainList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StorageDomainList {
     pub fn new(value: Vec<StorageDomain>) -> Self {

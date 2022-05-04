@@ -62,6 +62,11 @@ pub struct AlertRuleResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertRuleResource>,
 }
+impl azure_core::Continuable for AlertRuleResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AlertRuleResourceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -193,6 +198,11 @@ pub struct AutoscaleSettingResourceCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AutoscaleSettingResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AutoscaleSettingResourceCollection {
     pub fn new(value: Vec<AutoscaleSettingResource>) -> Self {
         Self { value, next_link: None }
@@ -249,6 +259,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -259,6 +274,11 @@ impl ErrorResponse {
 pub struct EventCategoryCollection {
     #[doc = "the list that includes the Azure event categories."]
     pub value: Vec<LocalizableString>,
+}
+impl azure_core::Continuable for EventCategoryCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl EventCategoryCollection {
     pub fn new(value: Vec<LocalizableString>) -> Self {
@@ -366,6 +386,11 @@ pub struct EventDataCollection {
     #[doc = "Provides the link to retrieve the next set of events."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EventDataCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EventDataCollection {
     pub fn new(value: Vec<EventData>) -> Self {

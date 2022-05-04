@@ -100,6 +100,11 @@ pub struct AlertProcessingRulesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertProcessingRule>,
 }
+impl azure_core::Continuable for AlertProcessingRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertProcessingRulesList {
     pub fn new() -> Self {
         Self::default()
@@ -498,6 +503,11 @@ pub struct AlertsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Alert>,
 }
+impl azure_core::Continuable for AlertsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertsList {
     pub fn new() -> Self {
         Self::default()
@@ -605,6 +615,11 @@ pub struct ErrorResponse {
     #[doc = "Details of error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -805,6 +820,11 @@ pub struct OperationsList {
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {
         Self { next_link: None, value }
@@ -991,6 +1011,11 @@ pub struct SmartGroupsList {
     #[doc = "List of alerts"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SmartGroup>,
+}
+impl azure_core::Continuable for SmartGroupsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SmartGroupsList {
     pub fn new() -> Self {

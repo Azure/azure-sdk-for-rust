@@ -12,6 +12,11 @@ pub struct AvailableOperations {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailableOperations {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AvailableOperations {
     pub fn new() -> Self {
         Self::default()
@@ -23,6 +28,11 @@ pub struct CloudError {
     #[doc = "An error response from the Azure Migrate service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -368,6 +378,11 @@ pub struct ProjectResultList {
     pub value: Vec<MigrateProject>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProjectResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProjectResultList {
     pub fn new() -> Self {

@@ -66,6 +66,11 @@ pub struct CommitmentAssociationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CommitmentAssociation>,
 }
+impl azure_core::Continuable for CommitmentAssociationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CommitmentAssociationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -123,6 +128,11 @@ pub struct CommitmentPlanListResult {
     #[doc = "The set of results for this page."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CommitmentPlan>,
+}
+impl azure_core::Continuable for CommitmentPlanListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CommitmentPlanListResult {
     pub fn new() -> Self {
@@ -238,6 +248,11 @@ pub struct OperationEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationEntityListResult {
     pub fn new() -> Self {
         Self::default()
@@ -303,6 +318,11 @@ pub struct PlanUsageHistoryListResult {
     #[doc = "The set of results for this page."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PlanUsageHistory>,
+}
+impl azure_core::Continuable for PlanUsageHistoryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PlanUsageHistoryListResult {
     pub fn new() -> Self {
@@ -425,6 +445,11 @@ impl SkuCost {
 pub struct SkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CatalogSku>,
+}
+impl azure_core::Continuable for SkuListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SkuListResult {
     pub fn new() -> Self {

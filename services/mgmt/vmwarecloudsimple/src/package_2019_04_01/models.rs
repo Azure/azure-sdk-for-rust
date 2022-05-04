@@ -137,6 +137,11 @@ pub struct AvailableOperationsListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableOperation>,
 }
+impl azure_core::Continuable for AvailableOperationsListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailableOperationsListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -148,6 +153,11 @@ pub struct CsrpError {
     #[doc = "Error properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CsrpErrorBody>,
+}
+impl azure_core::Continuable for CsrpError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CsrpError {
     pub fn new() -> Self {
@@ -323,6 +333,11 @@ pub struct CustomizationPoliciesListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomizationPolicy>,
 }
+impl azure_core::Continuable for CustomizationPoliciesListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CustomizationPoliciesListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -446,6 +461,11 @@ pub struct DedicatedCloudNodeListResponse {
     #[doc = "Results of the DedicatedCloudNode list"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DedicatedCloudNode>,
+}
+impl azure_core::Continuable for DedicatedCloudNodeListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DedicatedCloudNodeListResponse {
     pub fn new() -> Self {
@@ -571,6 +591,11 @@ pub struct DedicatedCloudServiceListResponse {
     #[doc = "Results of the DedicatedCloudService list"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DedicatedCloudService>,
+}
+impl azure_core::Continuable for DedicatedCloudServiceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DedicatedCloudServiceListResponse {
     pub fn new() -> Self {
@@ -777,6 +802,11 @@ pub struct PrivateCloudList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateCloud>,
 }
+impl azure_core::Continuable for PrivateCloudList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateCloudList {
     pub fn new() -> Self {
         Self::default()
@@ -918,6 +948,11 @@ pub struct ResourcePoolsListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourcePool>,
 }
+impl azure_core::Continuable for ResourcePoolsListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourcePoolsListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1003,6 +1038,11 @@ pub struct SkuAvailabilityListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuAvailability>,
 }
+impl azure_core::Continuable for SkuAvailabilityListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SkuAvailabilityListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1076,6 +1116,11 @@ pub struct UsageListResponse {
     #[doc = "The list of usages"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsageListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UsageListResponse {
     pub fn new() -> Self {
@@ -1203,6 +1248,11 @@ pub struct VirtualMachineListResponse {
     #[doc = "Results of the VirtualMachine list"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachine>,
+}
+impl azure_core::Continuable for VirtualMachineListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachineListResponse {
     pub fn new() -> Self {
@@ -1397,6 +1447,11 @@ pub struct VirtualMachineTemplateListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachineTemplate>,
 }
+impl azure_core::Continuable for VirtualMachineTemplateListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineTemplateListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1510,6 +1565,11 @@ pub struct VirtualNetworkListResponse {
     #[doc = "Results of the VirtualNetwork list"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetwork>,
+}
+impl azure_core::Continuable for VirtualNetworkListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkListResponse {
     pub fn new() -> Self {

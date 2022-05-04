@@ -53,6 +53,11 @@ pub struct AccountList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
+impl azure_core::Continuable for AccountList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AccountList {
     pub fn new() -> Self {
         Self::default()
@@ -114,6 +119,11 @@ pub struct ConfigurationProfileAssignmentList {
     #[doc = "Result of the list configuration profile assignment operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfileAssignment>,
+}
+impl azure_core::Continuable for ConfigurationProfileAssignmentList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ConfigurationProfileAssignmentList {
     pub fn new() -> Self {
@@ -237,6 +247,11 @@ pub struct ConfigurationProfilePreferenceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfilePreference>,
 }
+impl azure_core::Continuable for ConfigurationProfilePreferenceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ConfigurationProfilePreferenceList {
     pub fn new() -> Self {
         Self::default()
@@ -338,6 +353,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -406,6 +426,11 @@ pub struct OperationList {
     #[doc = "List of Automanage operations supported by the Automanage resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationList {
     pub fn new() -> Self {

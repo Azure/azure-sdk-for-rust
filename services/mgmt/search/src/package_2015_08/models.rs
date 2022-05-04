@@ -74,6 +74,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -138,6 +143,11 @@ pub struct ListQueryKeysResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<QueryKey>,
 }
+impl azure_core::Continuable for ListQueryKeysResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ListQueryKeysResult {
     pub fn new() -> Self {
         Self::default()
@@ -191,6 +201,11 @@ pub struct OperationListResult {
     #[doc = "The URL to get the next set of operation list results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -262,6 +277,11 @@ pub struct SearchServiceListResult {
     #[doc = "The list of Search services."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SearchService>,
+}
+impl azure_core::Continuable for SearchServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SearchServiceListResult {
     pub fn new() -> Self {

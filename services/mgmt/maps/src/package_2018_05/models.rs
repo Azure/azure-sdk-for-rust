@@ -18,6 +18,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<serde_json::Value>,
 }
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Error {
     pub fn new() -> Self {
         Self::default()
@@ -114,6 +119,11 @@ pub struct MapsAccounts {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MapsAccount>,
 }
+impl azure_core::Continuable for MapsAccounts {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MapsAccounts {
     pub fn new() -> Self {
         Self::default()
@@ -166,6 +176,11 @@ pub struct MapsOperations {
     #[doc = "An operation available for Maps."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<serde_json::Value>,
+}
+impl azure_core::Continuable for MapsOperations {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MapsOperations {
     pub fn new() -> Self {

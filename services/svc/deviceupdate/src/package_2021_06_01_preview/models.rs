@@ -102,6 +102,11 @@ pub struct DeploymentDeviceStatesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeploymentDeviceStatesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeploymentDeviceStatesList {
     pub fn new(value: Vec<DeploymentDeviceState>) -> Self {
         Self { value, next_link: None }
@@ -174,6 +179,11 @@ pub struct DeploymentsList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeploymentsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeploymentsList {
     pub fn new(value: Vec<Deployment>) -> Self {
@@ -267,6 +277,11 @@ pub struct DeviceClassesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeviceClassesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeviceClassesList {
     pub fn new(value: Vec<DeviceClass>) -> Self {
         Self { value, next_link: None }
@@ -339,6 +354,11 @@ pub struct DeviceOperationsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeviceOperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeviceOperationsList {
     pub fn new(value: Vec<DeviceOperation>) -> Self {
         Self { value, next_link: None }
@@ -379,6 +399,11 @@ pub struct DeviceTagsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeviceTagsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeviceTagsList {
     pub fn new(value: Vec<DeviceTag>) -> Self {
         Self { value, next_link: None }
@@ -410,6 +435,11 @@ pub struct DevicesList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DevicesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DevicesList {
     pub fn new(value: Vec<Device>) -> Self {
@@ -453,6 +483,11 @@ impl Error {
 pub struct ErrorResponse {
     #[doc = "Error details."]
     pub error: Error,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new(error: Error) -> Self {
@@ -542,6 +577,11 @@ pub struct GroupsList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GroupsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GroupsList {
     pub fn new(value: Vec<Group>) -> Self {
@@ -776,6 +816,11 @@ pub struct LogCollectionOperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LogCollectionOperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LogCollectionOperationList {
     pub fn new(value: Vec<LogCollectionOperation>) -> Self {
         Self { value, next_link: None }
@@ -898,6 +943,11 @@ pub struct StringsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for StringsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StringsList {
     pub fn new(value: Vec<String>) -> Self {
         Self { value, next_link: None }
@@ -926,6 +976,11 @@ pub struct UpdatableDevicesList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UpdatableDevicesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UpdatableDevicesList {
     pub fn new(value: Vec<UpdatableDevices>) -> Self {
@@ -1110,6 +1165,11 @@ pub struct UpdateIdsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for UpdateIdsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl UpdateIdsList {
     pub fn new(value: Vec<UpdateId>) -> Self {
         Self { value, next_link: None }
@@ -1123,6 +1183,11 @@ pub struct UpdateList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UpdateList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UpdateList {
     pub fn new(value: Vec<Update>) -> Self {
@@ -1182,6 +1247,11 @@ pub struct UpdateOperationsList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UpdateOperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UpdateOperationsList {
     pub fn new(value: Vec<UpdateOperation>) -> Self {
