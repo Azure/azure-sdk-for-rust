@@ -323,7 +323,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         WebVerb::Options => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
         WebVerb::Head => quote! { req_builder = req_builder.method(http::Method::HEAD); },
     };
-    ts_request_builder.extend(quote!{ #req_verb });
+    ts_request_builder.extend(quote! { #req_verb });
 
     // auth
     let auth = quote! {
@@ -334,7 +334,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             .map_err(Error::GetToken)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     };
-    ts_request_builder.extend(quote!{#auth});
+    ts_request_builder.extend(quote! {#auth});
 
     // api-version param
     if has_param_api_version {
@@ -542,9 +542,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 #success_responses_ts
             }
         });
-    
+
         if let Some(_pageable) = &operation.0.pageable {
-            response_enum.extend(quote!{
+            response_enum.extend(quote! {
                 impl azure_core::Continuable for Response {
                     fn continuation(&self) -> Option<String> {
                         match self {
@@ -707,7 +707,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let builder_instance_code = create_builder_instance_code(operation, &parameters, in_group)?;
     let builder_struct_code = create_builder_struct_code(&parameters, in_group)?;
     let builder_setters_code = create_builder_setters_code(&parameters)?;
-   
+
     let basic_future = quote! {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
             Box::pin({
@@ -740,13 +740,14 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             // from the response.
             //
             // Note, this is only *sometimes* this is specified in the spec.
-            // 
+            //
             // Ref: https://github.com/Azure/azure-sdk-for-rust/issues/446
-            let mut fut = quote! { #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]};
+            let mut fut =
+                quote! { #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]};
             fut.extend(basic_future);
             fut
         } else {
-            let mut stream_api_version = quote!{};
+            let mut stream_api_version = quote! {};
 
             // per discussion in SDK meeting, we should always set the
             // api-version on the request if we have a version.
@@ -767,7 +768,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         async move {
                             let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
                             let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                            
+
                             let mut req_builder = http::request::Builder::new();
                             let rsp = match continuation {
                                 Some(token) => {
@@ -795,7 +796,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                             }
                         }
                     };
-    
+
                     azure_core::Pageable::new(make_request)
                 }
             }
@@ -806,12 +807,12 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         // continuation token is often not returned in the response body, but
         // instead a header which we don't include as part of the response
         // model.
-        // 
+        //
         // As is, Pageable requires implementing the Continuable trait on the
         // response object.
         //
         // ref: https://github.com/Azure/azure-sdk-for-rust/issues/741
-        let mut fut = quote!{#[doc = "only the first response will be fetched as long running operations are not supported yet"]};
+        let mut fut = quote! {#[doc = "only the first response will be fetched as long running operations are not supported yet"]};
         fut.extend(basic_future);
         fut
     } else {

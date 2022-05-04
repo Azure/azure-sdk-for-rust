@@ -321,10 +321,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
                         }
                     }
 
-                    pageable_response_names.insert(
-                        pageable_name.clone(),
-                        pageable.clone(),
-                    );
+                    pageable_response_names.insert(pageable_name.clone(), pageable.clone());
                 }
             }
         }
@@ -530,9 +527,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
-        
-        field_names.insert(format!("{}", field_name), is_required);
 
+        field_names.insert(format!("{}", field_name), is_required);
 
         let is_vec = is_vec(&type_name);
         if !is_vec {
@@ -606,8 +602,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         None => quote! {},
     };
 
-       
-    let mut continuable = quote!{};
+    let mut continuable = quote! {};
     if let Some(pageable) = pageable {
         if let Some(name) = &pageable.next_link_name {
             let field_name = name.to_snake_case_ident().map_err(Error::StructName)?;
@@ -664,7 +659,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             };
         }
     }
-    
+
     let struct_code = quote! {
         #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
