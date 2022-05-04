@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blobs"
-version = "0.1.0"
+version = "0.2.0"
 description = "Azure Blob Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -34,7 +34,7 @@ thiserror = "1.0"
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
 env_logger = "0.9"
-azure_identity = { path = "../identity", version = "0.1" }
+azure_identity = { path = "../identity", version = "0.2" }
 reqwest = "0.11"
 oauth2 = { version = "4.0.0", default-features = false }
 

@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_queues"
-version = "0.1.0"
+version = "0.2.0"
 description = "Azure Queue Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
