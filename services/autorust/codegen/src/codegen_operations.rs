@@ -293,7 +293,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         .iter()
         .map(|s| {
             let param = s.to_snake_case_ident().map_err(Error::ParamName)?;
-            Ok(quote! { &self.#param })
+            Ok(quote! { &this.#param })
         })
         .collect();
     let params = params?;
@@ -323,17 +323,18 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         WebVerb::Options => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
         WebVerb::Head => quote! { req_builder = req_builder.method(http::Method::HEAD); },
     };
-    ts_request_builder.extend(req_verb);
+    ts_request_builder.extend(quote!{ #req_verb });
 
     // auth
-    ts_request_builder.extend(quote! {
-        let credential = self.client.token_credential();
+    let auth = quote! {
+        let credential = this.client.token_credential();
         let token_response = credential
-            .get_token(&self.client.scopes().join(" "))
+            .get_token(&this.client.scopes().join(" "))
             .await
             .map_err(Error::GetToken)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    });
+    };
+    ts_request_builder.extend(quote!{#auth});
 
     // api-version param
     if has_param_api_version {
@@ -362,13 +363,13 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         CollectionFormat::Multi => Some(
                             if param.is_string(){
                                 quote! {
-                                    for value in &self.#param_name_var {
+                                    for value in &this.#param_name_var {
                                         url.query_pairs_mut().append_pair(#param_name, value);
                                     }
                                 }
                             } else {
                                 quote! {
-                                    for value in &self.#param_name_var {
+                                    for value in &this.#param_name_var {
                                         url.query_pairs_mut().append_pair(#param_name, &value.to_string());
                                     }
                                 }
@@ -393,12 +394,12 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 if let Some(query_body) = query_body {
                     if required || is_array {
                         ts_request_builder.extend(quote! {
-                            let #param_name_var = &self.#param_name_var;
+                            let #param_name_var = &this.#param_name_var;
                             #query_body
                         });
                     } else {
                         ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = &self.#param_name_var {
+                            if let Some(#param_name_var) = &this.#param_name_var {
                                 #query_body
                             }
                         });
@@ -410,22 +411,22 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 if required {
                     if param.is_string() {
                         ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, &self.#param_name_var);
+                            req_builder = req_builder.header(#param_name, &this.#param_name_var);
                         });
                     } else {
                         ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, &self.#param_name_var.to_string());
+                            req_builder = req_builder.header(#param_name, &this.#param_name_var.to_string());
                         });
                     }
                 } else if param.is_string() {
                     ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = &self.#param_name_var {
+                        if let Some(#param_name_var) = &this.#param_name_var {
                             req_builder = req_builder.header(#param_name, #param_name_var);
                         }
                     });
                 } else {
                     ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = &self.#param_name_var {
+                        if let Some(#param_name_var) = &this.#param_name_var {
                             req_builder = req_builder.header(#param_name, &#param_name_var.to_string());
                         }
                     });
@@ -444,12 +445,12 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 if required {
                     ts_request_builder.extend(quote! {
                         #set_content_type
-                        let req_body = azure_core::to_json(&self.#param_name_var).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.#param_name_var).map_err(Error::Serialize)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
-                            if let Some(#param_name_var) = &self.#param_name_var {
+                            if let Some(#param_name_var) = &this.#param_name_var {
                                 #set_content_type
                                 azure_core::to_json(#param_name_var).map_err(Error::Serialize)?
                             } else {
@@ -498,24 +499,42 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let is_single_response = success_responses.len() == 1;
     let has_default_response = has_default_response(responses);
 
+    /*
     let fresponse = if is_single_response {
         let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
         quote! { std::result::Result<#tp, Error> }
     } else {
         quote! { std::result::Result<Response, Error> }
     };
+     */
 
     let mut response_enum = TokenStream::new();
-    if !is_single_response {
+    if is_single_response {
+        let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
+        response_enum.extend(quote! {
+            type Response = #tp;
+        });
+    } else {
         let mut success_responses_ts = TokenStream::new();
+        let mut continuation_response = TokenStream::new();
         for (status_code, rsp) in &success_responses {
             let tp = create_response_type(rsp)?;
+            let has_tp = tp.is_some();
+
             let tp = match tp {
                 Some(tp) => quote! { (#tp) },
                 None => quote! {},
             };
             let enum_type_name = get_response_type_ident(status_code)?;
-            success_responses_ts.extend(quote! { #enum_type_name#tp, })
+            success_responses_ts.extend(quote! { #enum_type_name#tp, });
+
+            if has_tp {
+                continuation_response.extend(quote! {
+                    Self::#enum_type_name(x) => x.continuation(),
+                });
+            } else {
+                continuation_response.extend(quote! { Self::#enum_type_name => None, });
+            }
         }
         response_enum.extend(quote! {
             #[derive(Debug)]
@@ -523,6 +542,18 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 #success_responses_ts
             }
         });
+    
+        if let Some(_pageable) = &operation.0.pageable {
+            response_enum.extend(quote!{
+                impl azure_core::Continuable for Response {
+                    fn continuation(&self) -> Option<String> {
+                        match self {
+                            #continuation_response
+                        }
+                    }
+                }
+            });
+        }
     }
 
     let mut error_responses_ts = TokenStream::new();
@@ -561,9 +592,10 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 let rsp_value = create_rsp_value(tp.as_ref());
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
+
                 if is_single_response {
                     match tp {
-                        Some(_tp) => {
+                        Some(_) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
@@ -582,7 +614,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                     }
                 } else {
                     match tp {
-                        Some(_tp) => {
+                        Some(_) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
@@ -675,6 +707,116 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let builder_instance_code = create_builder_instance_code(operation, &parameters, in_group)?;
     let builder_struct_code = create_builder_struct_code(&parameters, in_group)?;
     let builder_setters_code = create_builder_setters_code(&parameters)?;
+   
+    let basic_future = quote! {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            Box::pin({
+                let this = self.clone();
+                async move {
+                    let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    #ts_request_builder
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        #match_status
+                    }
+                }
+            })
+        }
+    };
+
+    let fut = if let Some(pageable) = &operation.0.pageable {
+        // TODO: Pageable requires the values to be part of the response schema,
+        // however, some schemas do this via the header x-ms-continuation rather than
+        // provide a next_link_name.  For now, those cases get documented that we don't
+        // poll and move on.
+        if pageable.next_link_name.is_none() {
+            // most often when this happens, the continuation token is provided
+            // by an HTTP Header x-ms-continuation, which should be extracted
+            // from the response.
+            //
+            // Note, this is only *sometimes* this is specified in the spec.
+            // 
+            // Ref: https://github.com/Azure/azure-sdk-for-rust/issues/446
+            let mut fut = quote! { #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]};
+            fut.extend(basic_future);
+            fut
+        } else {
+            let mut stream_api_version = quote!{};
+
+            // per discussion in SDK meeting, we should always set the
+            // api-version on the request if we have a version.
+            if has_param_api_version {
+                let api_version = operation.api_version();
+                stream_api_version = quote! {
+                    let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                    if !has_api_version_already {
+                        url.query_pairs_mut().append_pair("api-version", #api_version);
+                    }
+                };
+            }
+
+            quote! {
+                pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                    let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                        let this = self.clone();
+                        async move {
+                            let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
+                            let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                            
+                            let mut req_builder = http::request::Builder::new();
+                            let rsp = match continuation {
+                                Some(token) => {
+                                    url.set_path("");
+                                    url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                    #stream_api_version
+                                    req_builder = req_builder.uri(url.as_str());
+                                    #req_verb
+                                    #auth
+                                    let req_body = azure_core::EMPTY_BODY;
+                                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                    this.client.send(req).await.map_err(Error::SendRequest)?
+                                }
+                                None => {
+                                    #ts_request_builder
+                                    req_builder = req_builder.uri(url.as_str());
+                                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                    this.client.send(req).await.map_err(Error::SendRequest)?
+                                }
+                            };
+                            // let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                            let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                            match rsp_status {
+                                #match_status
+                            }
+                        }
+                    };
+    
+                    azure_core::Pageable::new(make_request)
+                }
+            }
+        }
+    } else if operation.0.long_running_operation {
+        // TODO:  Long running options should also move to the Pageable stream
+        // model, however this is not possible at the moment because the
+        // continuation token is often not returned in the response body, but
+        // instead a header which we don't include as part of the response
+        // model.
+        // 
+        // As is, Pageable requires implementing the Continuable trait on the
+        // response object.
+        //
+        // ref: https://github.com/Azure/azure-sdk-for-rust/issues/741
+        let mut fut = quote!{#[doc = "only the first response will be fetched as long running operations are not supported yet"]};
+        fut.extend(basic_future);
+        fut
+    } else {
+        basic_future
+    };
 
     let fname = operation.function_name()?;
     let module_code = quote! {
@@ -707,21 +849,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
             impl Builder {
                 #builder_setters_code
-                pub fn into_future(self) -> futures::future::BoxFuture<'static, #fresponse> {
-                    Box::pin(async move {
-                        let url_str = &format!(#fpath, self.client.endpoint(), #url_str_args);
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        #ts_request_builder
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            #match_status
-                        }
-                    })
-                }
+                #fut
             }
 
         }
@@ -876,7 +1004,7 @@ fn get_param_type(param: &WebParameter, as_ref: bool, may_be_option: bool) -> Re
     Ok(add_option(is_option, tp))
 }
 
-fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
+pub fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
     if let Some(schema) = &rsp.schema {
         Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?, false, true)?))
     } else {

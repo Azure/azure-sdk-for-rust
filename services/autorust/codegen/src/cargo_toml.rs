@@ -53,6 +53,7 @@ futures = "0.3"
 [dev-dependencies]
 azure_identity = {{ path = "../../../sdk/identity", version = "0.1" }}
 tokio = {{ version = "1.0", features = ["macros"] }}
+env_logger = "0.9"
 
 [package.metadata.docs.rs]
 features = [{}]

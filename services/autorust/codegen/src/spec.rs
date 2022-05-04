@@ -1,7 +1,7 @@
 use crate::io;
 use autorust_openapi::{
-    AdditionalProperties, CollectionFormat, DataType, MsExamples, OpenAPI, Operation, Parameter, ParameterType, PathItem, Reference,
-    ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
+    AdditionalProperties, CollectionFormat, DataType, MsExamples, MsPageable, OpenAPI, Operation, Parameter, ParameterType, PathItem,
+    Reference, ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
 };
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::{IndexMap, IndexSet};
@@ -263,6 +263,8 @@ impl Spec {
                         examples: op.examples,
                         summary: op.summary,
                         api_version: self.doc(&op.doc_file)?.version()?.to_owned(),
+                        pageable: op.pageable,
+                        long_running_operation: op.long_running_operation,
                     })
                 }
             })
@@ -434,6 +436,8 @@ struct WebOperationUnresolved {
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
     pub summary: Option<String>,
+    pub pageable: Option<MsPageable>,
+    pub long_running_operation: bool,
 }
 
 // contains resolved parameters
@@ -446,6 +450,8 @@ pub struct WebOperation {
     pub examples: MsExamples,
     pub summary: Option<String>,
     pub api_version: String,
+    pub pageable: Option<MsPageable>,
+    pub long_running_operation: bool,
 }
 
 impl Default for WebOperation {
@@ -459,6 +465,8 @@ impl Default for WebOperation {
             examples: Default::default(),
             summary: Default::default(),
             api_version: Default::default(),
+            pageable: Default::default(),
+            long_running_operation: Default::default(),
         }
     }
 }
@@ -613,6 +621,8 @@ fn path_operations_unresolved(doc_file: impl AsRef<Utf8Path>, path: &str, item: 
                 responses: op.responses.clone(),
                 examples: op.x_ms_examples.clone(),
                 summary: op.summary.clone(),
+                pageable: op.x_ms_pageable.clone(),
+                long_running_operation: op.x_ms_long_running_operation.unwrap_or(false),
             })
         }
         None => None,
