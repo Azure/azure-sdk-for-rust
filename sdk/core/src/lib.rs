@@ -26,8 +26,8 @@ mod request;
 mod request_options;
 mod response;
 mod seekable_stream;
-mod sleep;
 
+pub mod sleep;
 pub mod auth;
 pub mod headers;
 #[cfg(feature = "mock_transport_framework")]
@@ -53,6 +53,7 @@ pub use policies::*;
 pub use request::*;
 pub use response::*;
 pub use seekable_stream::*;
+pub use sleep::sleep;
 
 /// A unique identifier for a request.
 // NOTE: only used for Storage?

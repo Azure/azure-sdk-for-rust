@@ -1,5 +1,5 @@
 use crate::{client::API_VERSION_PARAM, DeviceUpdateClient, Error, Result};
-use azure_core::{Error as CoreError, HttpError};
+use azure_core::{Error as CoreError, HttpError, sleep};
 use chrono::{DateTime, Utc};
 use getset::Getters;
 use log::debug;
@@ -176,7 +176,7 @@ impl DeviceUpdateClient {
         debug!("Import response: {}", &resp_body);
 
         loop {
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            sleep(std::time::Duration::from_secs(5)).await;
             let mut uri = self.device_update_url.clone();
             uri.set_path(&resp_body);
             debug!("Requesting operational status: {}", &uri);
