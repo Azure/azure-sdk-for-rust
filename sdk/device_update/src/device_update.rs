@@ -1,5 +1,5 @@
 use crate::{client::API_VERSION_PARAM, DeviceUpdateClient, Error, Result};
-use azure_core::{Error as CoreError, HttpError, sleep};
+use azure_core::{sleep, Error as CoreError, HttpError};
 use chrono::{DateTime, Utc};
 use getset::Getters;
 use log::debug;

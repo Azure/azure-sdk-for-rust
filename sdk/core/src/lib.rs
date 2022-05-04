@@ -27,13 +27,13 @@ mod request_options;
 mod response;
 mod seekable_stream;
 
-pub mod sleep;
 pub mod auth;
 pub mod headers;
 #[cfg(feature = "mock_transport_framework")]
 pub mod mock;
 pub mod parsing;
 pub mod prelude;
+pub mod sleep;
 pub mod util;
 
 use uuid::Uuid;
