@@ -351,6 +351,15 @@ pub struct ListFilesAndDirectoriesSegmentResponse {
     #[serde(rename = "DirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub directory_id: Option<String>,
 }
+impl azure_core::Continuable for ListFilesAndDirectoriesSegmentResponse {
+    fn continuation(&self) -> Option<String> {
+        if self.next_marker.is_empty() {
+            None
+        } else {
+            Some(self.next_marker.clone())
+        }
+    }
+}
 impl ListFilesAndDirectoriesSegmentResponse {
     pub fn new(
         service_endpoint: String,
@@ -405,6 +414,15 @@ pub struct ListSharesResponse {
     pub share_items: Vec<ShareItemInternal>,
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
+}
+impl azure_core::Continuable for ListSharesResponse {
+    fn continuation(&self) -> Option<String> {
+        if self.next_marker.is_empty() {
+            None
+        } else {
+            Some(self.next_marker.clone())
+        }
+    }
 }
 impl ListSharesResponse {
     pub fn new(service_endpoint: String, next_marker: String) -> Self {
@@ -661,6 +679,11 @@ impl SmbMultichannel {
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for StorageError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StorageError {
     pub fn new() -> Self {

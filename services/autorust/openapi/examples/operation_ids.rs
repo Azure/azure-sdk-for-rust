@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ReferenceOr::Item(item) => {
                         for op in item.operations() {
                             if let Some(operation_id) = &op.operation_id {
-                                operation_ids.push(operation_id);
+                                operation_ids.push(operation_id.clone());
                             }
                         }
                     }

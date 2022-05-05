@@ -246,6 +246,11 @@ pub struct ChannelsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ChannelsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ChannelsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -562,6 +567,11 @@ pub struct DomainTopicsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DomainTopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DomainTopicsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -644,6 +654,11 @@ pub struct DomainsListResult {
     #[doc = "A link for the next page of domains"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DomainsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DomainsListResult {
     pub fn new() -> Self {
@@ -801,6 +816,11 @@ pub struct EventChannelsListResult {
     #[doc = "A link for the next page of event channels"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EventChannelsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EventChannelsListResult {
     pub fn new() -> Self {
@@ -1072,6 +1092,11 @@ pub struct EventSubscriptionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EventSubscriptionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EventSubscriptionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1141,6 +1166,11 @@ pub struct EventTypesListResult {
     #[doc = "A collection of event types"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventType>,
+}
+impl azure_core::Continuable for EventTypesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl EventTypesListResult {
     pub fn new() -> Self {
@@ -1600,6 +1630,11 @@ pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1754,6 +1789,11 @@ pub struct PartnerConfigurationsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PartnerConfigurationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PartnerConfigurationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1897,6 +1937,11 @@ pub struct PartnerDestinationsListResult {
     #[doc = "A link for the next page of partner destinations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PartnerDestinationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PartnerDestinationsListResult {
     pub fn new() -> Self {
@@ -2119,6 +2164,11 @@ pub struct PartnerNamespacesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PartnerNamespacesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PartnerNamespacesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2256,6 +2306,11 @@ pub struct PartnerRegistrationsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PartnerRegistrationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PartnerRegistrationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2388,6 +2443,11 @@ pub struct PartnerTopicsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PartnerTopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PartnerTopicsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2464,6 +2524,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "A link for the next page of private endpoint connection resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -2549,6 +2614,11 @@ pub struct PrivateLinkResourcesListResult {
     #[doc = "A link for the next page of private link resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateLinkResourcesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkResourcesListResult {
     pub fn new() -> Self {
@@ -3015,6 +3085,11 @@ pub struct SystemTopicsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SystemTopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SystemTopicsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3252,6 +3327,11 @@ pub struct TopicTypesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TopicTypeInfo>,
 }
+impl azure_core::Continuable for TopicTypesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl TopicTypesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3328,6 +3408,11 @@ pub struct TopicsListResult {
     #[doc = "A link for the next page of topics"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TopicsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TopicsListResult {
     pub fn new() -> Self {
@@ -3435,6 +3520,11 @@ pub struct VerifiedPartnersListResult {
     #[doc = "A link for the next page of verified partners if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VerifiedPartnersListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VerifiedPartnersListResult {
     pub fn new() -> Self {

@@ -131,6 +131,11 @@ pub struct ProfileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
 }
+impl azure_core::Continuable for ProfileListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ProfileListResult {
     pub fn new() -> Self {
         Self::default()

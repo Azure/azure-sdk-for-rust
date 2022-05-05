@@ -127,6 +127,11 @@ pub struct CommunicationsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CommunicationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CommunicationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -203,6 +208,11 @@ pub struct ExceptionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ServiceError>,
 }
+impl azure_core::Continuable for ExceptionResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ExceptionResponse {
     pub fn new() -> Self {
         Self::default()
@@ -254,6 +264,11 @@ pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -298,6 +313,11 @@ pub struct ProblemClassificationsListResult {
     #[doc = "List of ProblemClassification resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProblemClassification>,
+}
+impl azure_core::Continuable for ProblemClassificationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProblemClassificationsListResult {
     pub fn new() -> Self {
@@ -436,6 +456,11 @@ pub struct ServicesListResult {
     #[doc = "List of Service resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Service>,
+}
+impl azure_core::Continuable for ServicesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ServicesListResult {
     pub fn new() -> Self {
@@ -593,6 +618,11 @@ pub struct SupportTicketsListResult {
     #[doc = "The URI to fetch the next page of SupportTicket resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SupportTicketsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SupportTicketsListResult {
     pub fn new() -> Self {

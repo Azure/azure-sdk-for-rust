@@ -10,6 +10,11 @@ pub struct AccountListSupportedImagesResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for AccountListSupportedImagesResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl AccountListSupportedImagesResult {
     pub fn new() -> Self {
         Self::default()
@@ -32,6 +37,11 @@ pub struct ApplicationListResult {
     pub value: Vec<ApplicationSummary>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for ApplicationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl ApplicationListResult {
     pub fn new() -> Self {
@@ -250,6 +260,11 @@ pub struct BatchError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<BatchErrorDetail>,
 }
+impl azure_core::Continuable for BatchError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BatchError {
     pub fn new() -> Self {
         Self::default()
@@ -409,6 +424,11 @@ pub struct CertificateListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for CertificateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl CertificateListResult {
     pub fn new() -> Self {
         Self::default()
@@ -561,6 +581,11 @@ pub struct CloudJobListPreparationAndReleaseTaskStatusResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for CloudJobListPreparationAndReleaseTaskStatusResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl CloudJobListPreparationAndReleaseTaskStatusResult {
     pub fn new() -> Self {
         Self::default()
@@ -572,6 +597,11 @@ pub struct CloudJobListResult {
     pub value: Vec<CloudJob>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for CloudJobListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl CloudJobListResult {
     pub fn new() -> Self {
@@ -635,6 +665,11 @@ pub struct CloudJobScheduleListResult {
     pub value: Vec<CloudJobSchedule>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for CloudJobScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl CloudJobScheduleListResult {
     pub fn new() -> Self {
@@ -776,6 +811,11 @@ pub struct CloudPoolListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for CloudPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl CloudPoolListResult {
     pub fn new() -> Self {
         Self::default()
@@ -887,6 +927,11 @@ pub struct CloudTaskListResult {
     pub value: Vec<CloudTask>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for CloudTaskListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl CloudTaskListResult {
     pub fn new() -> Self {
@@ -1106,6 +1151,11 @@ pub struct ComputeNodeListResult {
     pub value: Vec<ComputeNode>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for ComputeNodeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl ComputeNodeListResult {
     pub fn new() -> Self {
@@ -2718,6 +2768,11 @@ pub struct NodeFileListResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for NodeFileListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl NodeFileListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2872,6 +2927,11 @@ pub struct NodeVmExtensionList {
     pub value: Vec<NodeVmExtension>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for NodeVmExtensionList {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl NodeVmExtensionList {
     pub fn new() -> Self {
@@ -3120,6 +3180,11 @@ pub struct PoolListUsageMetricsResult {
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for PoolListUsageMetricsResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl PoolListUsageMetricsResult {
     pub fn new() -> Self {
         Self::default()
@@ -3150,6 +3215,11 @@ pub struct PoolNodeCountsListResult {
     pub value: Vec<PoolNodeCounts>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl azure_core::Continuable for PoolNodeCountsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
 }
 impl PoolNodeCountsListResult {
     pub fn new() -> Self {

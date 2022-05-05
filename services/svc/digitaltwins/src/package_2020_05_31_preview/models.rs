@@ -30,6 +30,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -67,6 +72,11 @@ pub struct EventRouteCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EventRouteCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EventRouteCollection {
     pub fn new() -> Self {
         Self::default()
@@ -101,6 +111,11 @@ pub struct IncomingRelationshipCollection {
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IncomingRelationshipCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IncomingRelationshipCollection {
     pub fn new() -> Self {
@@ -166,6 +181,11 @@ pub struct PagedModelDataCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PagedModelDataCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PagedModelDataCollection {
     pub fn new() -> Self {
         Self::default()
@@ -210,6 +230,11 @@ pub struct RelationshipCollection {
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RelationshipCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RelationshipCollection {
     pub fn new() -> Self {

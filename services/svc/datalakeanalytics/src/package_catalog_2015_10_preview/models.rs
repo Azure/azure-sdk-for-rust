@@ -212,6 +212,11 @@ pub struct USqlAssemblyList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlAssemblyClr>,
 }
+impl azure_core::Continuable for USqlAssemblyList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlAssemblyList {
     pub fn new() -> Self {
         Self::default()
@@ -249,6 +254,11 @@ pub struct USqlCredentialList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlCredential>,
 }
+impl azure_core::Continuable for USqlCredentialList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlCredentialList {
     pub fn new() -> Self {
         Self::default()
@@ -276,6 +286,11 @@ pub struct USqlDatabaseList {
     #[doc = "the list of databases"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlDatabase>,
+}
+impl azure_core::Continuable for USqlDatabaseList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl USqlDatabaseList {
     pub fn new() -> Self {
@@ -353,6 +368,11 @@ pub struct USqlExternalDataSourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlExternalDataSource>,
 }
+impl azure_core::Continuable for USqlExternalDataSourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlExternalDataSourceList {
     pub fn new() -> Self {
         Self::default()
@@ -429,6 +449,11 @@ pub struct USqlProcedureList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlProcedure>,
 }
+impl azure_core::Continuable for USqlProcedureList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlProcedureList {
     pub fn new() -> Self {
         Self::default()
@@ -459,6 +484,11 @@ pub struct USqlSchemaList {
     #[doc = "the list of schemas in the database"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlSchema>,
+}
+impl azure_core::Continuable for USqlSchemaList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl USqlSchemaList {
     pub fn new() -> Self {
@@ -550,6 +580,11 @@ pub struct USqlTableList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTable>,
 }
+impl azure_core::Continuable for USqlTableList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlTableList {
     pub fn new() -> Self {
         Self::default()
@@ -595,6 +630,11 @@ pub struct USqlTablePartitionList {
     #[doc = "the list of table partitions in the database, schema and table combination"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTablePartition>,
+}
+impl azure_core::Continuable for USqlTablePartitionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl USqlTablePartitionList {
     pub fn new() -> Self {
@@ -660,6 +700,11 @@ pub struct USqlTableStatisticsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTableStatistics>,
 }
+impl azure_core::Continuable for USqlTableStatisticsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlTableStatisticsList {
     pub fn new() -> Self {
         Self::default()
@@ -687,6 +732,11 @@ pub struct USqlTableTypeList {
     #[doc = "the list of table types in the database and schema combination"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTableType>,
+}
+impl azure_core::Continuable for USqlTableTypeList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl USqlTableTypeList {
     pub fn new() -> Self {
@@ -724,6 +774,11 @@ pub struct USqlTableValuedFunctionList {
     #[doc = "the list of table valued functions in the database and schema combination"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTableValuedFunction>,
+}
+impl azure_core::Continuable for USqlTableValuedFunctionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl USqlTableValuedFunctionList {
     pub fn new() -> Self {
@@ -795,6 +850,11 @@ pub struct USqlTypeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlType>,
 }
+impl azure_core::Continuable for USqlTypeList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl USqlTypeList {
     pub fn new() -> Self {
         Self::default()
@@ -831,6 +891,11 @@ pub struct USqlViewList {
     #[doc = "the list of view in the database and schema combination"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlView>,
+}
+impl azure_core::Continuable for USqlViewList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl USqlViewList {
     pub fn new() -> Self {

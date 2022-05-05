@@ -106,6 +106,11 @@ pub struct ScopeMapListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ScopeMapListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ScopeMapListResult {
     pub fn new() -> Self {
         Self::default()
@@ -295,6 +300,11 @@ pub struct TokenListResult {
     #[doc = "The URI that can be used to request the next list of tokens."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TokenListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TokenListResult {
     pub fn new() -> Self {

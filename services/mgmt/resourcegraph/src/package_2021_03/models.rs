@@ -68,6 +68,11 @@ pub struct ErrorResponse {
     #[doc = "Error details."]
     pub error: Error,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new(error: Error) -> Self {
         Self { error }
@@ -222,6 +227,11 @@ pub struct OperationListResult {
     #[doc = "List of Resource Graph operations supported by the Resource Graph resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

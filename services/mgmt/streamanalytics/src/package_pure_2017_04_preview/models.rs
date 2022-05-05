@@ -995,6 +995,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error::Error>,
 }
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Error {
     pub fn new() -> Self {
         Self::default()
@@ -1267,6 +1272,11 @@ pub struct FunctionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for FunctionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl FunctionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1355,6 +1365,11 @@ pub struct InputListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for InputListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InputListResult {
     pub fn new() -> Self {
@@ -1616,6 +1631,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1662,6 +1682,11 @@ pub struct OutputListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OutputListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OutputListResult {
     pub fn new() -> Self {
@@ -2279,6 +2304,11 @@ pub struct StreamingJobListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StreamingJobListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl StreamingJobListResult {
     pub fn new() -> Self {

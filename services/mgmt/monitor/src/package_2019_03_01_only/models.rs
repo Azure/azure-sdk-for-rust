@@ -69,6 +69,11 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActionGroupList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActionGroupList {
     pub fn new() -> Self {
         Self::default()
@@ -317,6 +322,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -404,6 +414,11 @@ pub struct MetricBaselinesResponse {
     #[doc = "The list of metric baselines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SingleMetricBaseline>,
+}
+impl azure_core::Continuable for MetricBaselinesResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricBaselinesResponse {
     pub fn new() -> Self {

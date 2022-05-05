@@ -802,6 +802,11 @@ pub struct ListBlobsFlatSegmentResponse {
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
+impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_marker.clone()
+    }
+}
 impl ListBlobsFlatSegmentResponse {
     pub fn new(service_endpoint: String, container_name: String, segment: BlobFlatListSegment) -> Self {
         Self {
@@ -835,6 +840,11 @@ pub struct ListBlobsHierarchySegmentResponse {
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
+impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_marker.clone()
+    }
+}
 impl ListBlobsHierarchySegmentResponse {
     pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
         Self {
@@ -864,6 +874,11 @@ pub struct ListContainersSegmentResponse {
     pub container_items: Vec<ContainerItem>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
+}
+impl azure_core::Continuable for ListContainersSegmentResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_marker.clone()
+    }
 }
 impl ListContainersSegmentResponse {
     pub fn new(service_endpoint: String, container_items: Vec<ContainerItem>) -> Self {
@@ -949,6 +964,11 @@ pub struct PageList {
     pub clear_range: Vec<ClearRange>,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
+}
+impl azure_core::Continuable for PageList {
+    fn continuation(&self) -> Option<String> {
+        self.next_marker.clone()
+    }
 }
 impl PageList {
     pub fn new() -> Self {
@@ -1140,6 +1160,11 @@ impl StaticWebsite {
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for StorageError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StorageError {
     pub fn new() -> Self {

@@ -62,6 +62,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -146,6 +151,11 @@ pub struct NotificationListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NotificationListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NotificationListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -199,6 +209,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -296,6 +311,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -358,6 +378,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -630,6 +655,11 @@ pub struct RedisFirewallRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RedisFirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RedisFirewallRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -788,6 +818,11 @@ pub struct RedisLinkedServerWithPropertiesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RedisLinkedServerWithPropertiesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RedisLinkedServerWithPropertiesList {
     pub fn new() -> Self {
         Self::default()
@@ -802,6 +837,11 @@ pub struct RedisListResult {
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RedisListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RedisListResult {
     pub fn new() -> Self {
@@ -837,6 +877,11 @@ pub struct RedisPatchScheduleListResult {
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RedisPatchScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RedisPatchScheduleListResult {
     pub fn new() -> Self {

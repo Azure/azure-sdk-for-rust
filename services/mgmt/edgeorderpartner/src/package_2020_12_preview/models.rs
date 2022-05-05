@@ -168,6 +168,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -385,6 +390,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -435,6 +445,11 @@ pub struct PartnerInventoryList {
     #[doc = "Link for the next set of partner inventories."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PartnerInventoryList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PartnerInventoryList {
     pub fn new() -> Self {

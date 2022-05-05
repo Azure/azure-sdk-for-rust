@@ -105,6 +105,11 @@ pub struct AccountResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccountResource>,
 }
+impl azure_core::Continuable for AccountResourceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AccountResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -269,6 +274,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -398,6 +408,11 @@ pub struct ModelingResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ModelingResource>,
 }
+impl azure_core::Continuable for ModelingResourceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ModelingResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -475,6 +490,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -621,6 +641,11 @@ pub struct ServiceEndpointResourceList {
     #[doc = "The list of ServiceEndpoint resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceEndpointResource>,
+}
+impl azure_core::Continuable for ServiceEndpointResourceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ServiceEndpointResourceList {
     pub fn new() -> Self {

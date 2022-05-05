@@ -112,6 +112,11 @@ pub struct NamespaceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NamespaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NamespaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -249,6 +254,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -284,6 +294,11 @@ pub struct QueueListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of queues."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for QueueListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl QueueListResult {
     pub fn new() -> Self {
@@ -473,6 +488,11 @@ pub struct SharedAccessAuthorizationRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SharedAccessAuthorizationRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SharedAccessAuthorizationRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -571,6 +591,11 @@ pub struct SubscriptionListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of subscriptions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SubscriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SubscriptionListResult {
     pub fn new() -> Self {
@@ -682,6 +707,11 @@ pub struct TopicListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TopicListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TopicListResult {
     pub fn new() -> Self {

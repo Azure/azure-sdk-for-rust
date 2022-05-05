@@ -29,6 +29,11 @@ pub struct AccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -140,6 +145,11 @@ pub struct ErrorResponse {
     #[doc = "error message"]
     pub message: String,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new(code: String, message: String) -> Self {
         Self { code, message }
@@ -191,6 +201,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -222,6 +237,11 @@ pub struct ProjectListResult {
     #[doc = "The URI that can be used to request the next list of projects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProjectListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProjectListResult {
     pub fn new() -> Self {
@@ -388,6 +408,11 @@ pub struct WorkspaceListResult {
     #[doc = "The URI that can be used to request the next list of machine learning workspaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkspaceListResult {
     pub fn new() -> Self {

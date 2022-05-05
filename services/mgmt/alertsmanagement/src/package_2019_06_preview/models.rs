@@ -130,6 +130,11 @@ pub struct ActionRulesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActionRule>,
 }
+impl azure_core::Continuable for ActionRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ActionRulesList {
     pub fn new() -> Self {
         Self::default()
@@ -289,6 +294,11 @@ pub struct AlertRulesList {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AlertRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AlertRulesList {
     pub fn new() -> Self {
@@ -559,6 +569,11 @@ pub struct SmartDetectorErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for SmartDetectorErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SmartDetectorErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -784,6 +799,11 @@ pub struct AlertsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Alert>,
 }
+impl azure_core::Continuable for AlertsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertsList {
     pub fn new() -> Self {
         Self::default()
@@ -891,6 +911,11 @@ pub struct ErrorResponse {
     #[doc = "Details of error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -1091,6 +1116,11 @@ pub struct OperationsList {
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {
         Self { next_link: None, value }
@@ -1277,6 +1307,11 @@ pub struct SmartGroupsList {
     #[doc = "List of alerts"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SmartGroup>,
+}
+impl azure_core::Continuable for SmartGroupsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SmartGroupsList {
     pub fn new() -> Self {

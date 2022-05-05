@@ -149,6 +149,11 @@ pub struct BotResponseList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Bot>,
 }
+impl azure_core::Continuable for BotResponseList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BotResponseList {
     pub fn new() -> Self {
         Self::default()
@@ -175,6 +180,11 @@ pub struct ChannelResponseList {
     #[doc = "Gets the list of bot service channel results and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BotChannel>,
+}
+impl azure_core::Continuable for ChannelResponseList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ChannelResponseList {
     pub fn new() -> Self {
@@ -291,6 +301,11 @@ pub struct ConnectionSettingResponseList {
     #[doc = "Gets the list of bot service connection settings and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionSetting>,
+}
+impl azure_core::Continuable for ConnectionSettingResponseList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ConnectionSettingResponseList {
     pub fn new() -> Self {
@@ -455,6 +470,11 @@ pub struct Error {
     #[doc = "Bot Service error body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {
@@ -729,6 +749,11 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
+}
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationEntityListResult {
     pub fn new() -> Self {

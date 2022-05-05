@@ -41,6 +41,11 @@ pub struct ArtifactList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ArtifactList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ArtifactList {
     pub fn new() -> Self {
         Self::default()
@@ -86,6 +91,11 @@ pub struct AssignmentList {
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AssignmentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AssignmentList {
     pub fn new() -> Self {
@@ -230,6 +240,11 @@ pub struct BlueprintList {
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for BlueprintList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl BlueprintList {
     pub fn new() -> Self {
@@ -504,6 +519,11 @@ pub struct PublishedBlueprintList {
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PublishedBlueprintList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PublishedBlueprintList {
     pub fn new() -> Self {

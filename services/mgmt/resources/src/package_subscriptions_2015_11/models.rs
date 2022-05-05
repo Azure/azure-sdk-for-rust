@@ -177,6 +177,11 @@ pub struct LocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Location>,
 }
+impl azure_core::Continuable for LocationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl LocationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -245,6 +250,15 @@ pub struct SubscriptionListResult {
     #[serde(rename = "nextLink")]
     pub next_link: String,
 }
+impl azure_core::Continuable for SubscriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        if self.next_link.is_empty() {
+            None
+        } else {
+            Some(self.next_link.clone())
+        }
+    }
+}
 impl SubscriptionListResult {
     pub fn new(next_link: String) -> Self {
         Self {
@@ -292,6 +306,15 @@ pub struct TenantListResult {
     #[doc = "Gets or sets the URL to get the next set of results."]
     #[serde(rename = "nextLink")]
     pub next_link: String,
+}
+impl azure_core::Continuable for TenantListResult {
+    fn continuation(&self) -> Option<String> {
+        if self.next_link.is_empty() {
+            None
+        } else {
+            Some(self.next_link.clone())
+        }
+    }
 }
 impl TenantListResult {
     pub fn new(next_link: String) -> Self {

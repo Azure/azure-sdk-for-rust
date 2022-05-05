@@ -2191,6 +2191,11 @@ pub struct ListAmlUserFeatureResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ListAmlUserFeatureResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListAmlUserFeatureResult {
     pub fn new() -> Self {
         Self::default()
@@ -2205,6 +2210,11 @@ pub struct ListUsagesResult {
     #[doc = "The URI to fetch the next page of AML resource usage information. Call ListNext() with this to fetch the next page of AML resource usage information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListUsagesResult {
     pub fn new() -> Self {
@@ -2236,6 +2246,11 @@ pub struct ListWorkspaceQuotas {
     #[doc = "The URI to fetch the next page of workspace quota information by VM Family. Call ListNext() with this to fetch the next page of Workspace Quota information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListWorkspaceQuotas {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListWorkspaceQuotas {
     pub fn new() -> Self {
@@ -2272,6 +2287,11 @@ pub struct MachineLearningServiceError {
     #[doc = "Error response information."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for MachineLearningServiceError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MachineLearningServiceError {
     pub fn new() -> Self {
@@ -2592,6 +2612,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2612,6 +2637,11 @@ pub struct PaginatedComputeResourcesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PaginatedComputeResourcesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PaginatedComputeResourcesList {
     pub fn new() -> Self {
         Self::default()
@@ -2626,6 +2656,11 @@ pub struct PaginatedDatasetResourcesList {
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PaginatedDatasetResourcesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PaginatedDatasetResourcesList {
     pub fn new() -> Self {
@@ -2642,6 +2677,11 @@ pub struct PaginatedDatastoreResourcesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PaginatedDatastoreResourcesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PaginatedDatastoreResourcesList {
     pub fn new() -> Self {
         Self::default()
@@ -2656,6 +2696,11 @@ pub struct PaginatedServiceList {
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PaginatedServiceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PaginatedServiceList {
     pub fn new() -> Self {
@@ -3298,6 +3343,11 @@ pub struct SkuListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SkuListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SkuListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3719,6 +3769,11 @@ pub struct WorkspaceListResult {
     #[doc = "The URI that can be used to request the next list of machine learning workspaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkspaceListResult {
     pub fn new() -> Self {

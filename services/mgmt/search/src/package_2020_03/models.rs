@@ -74,6 +74,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -153,6 +158,11 @@ pub struct ListQueryKeysResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ListQueryKeysResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListQueryKeysResult {
     pub fn new() -> Self {
         Self::default()
@@ -219,6 +229,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -254,6 +269,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Request URL that can be used to query next page of private endpoint connections. Returned when the total number of requested private endpoint connections exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -365,6 +385,11 @@ pub struct PrivateLinkResourcesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
+impl azure_core::Continuable for PrivateLinkResourcesResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PrivateLinkResourcesResult {
     pub fn new() -> Self {
         Self::default()
@@ -438,6 +463,11 @@ pub struct SearchServiceListResult {
     #[doc = "Request URL that can be used to query next page of search services. Returned when the total number of requested search services exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SearchServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SearchServiceListResult {
     pub fn new() -> Self {

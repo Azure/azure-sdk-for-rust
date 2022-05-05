@@ -33,6 +33,11 @@ pub struct ClassicAdministratorListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ClassicAdministratorListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClassicAdministratorListResult {
     pub fn new() -> Self {
         Self::default()
@@ -113,6 +118,11 @@ pub struct DenyAssignmentListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DenyAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DenyAssignmentListResult {
     pub fn new() -> Self {
@@ -219,6 +229,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -254,6 +269,11 @@ pub struct PermissionGetResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PermissionGetResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PermissionGetResult {
     pub fn new() -> Self {
@@ -345,6 +365,11 @@ pub struct ProviderOperationsMetadataListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ProviderOperationsMetadataListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ProviderOperationsMetadataListResult {
     pub fn new() -> Self {
         Self::default()
@@ -424,6 +449,11 @@ pub struct RoleAssignmentListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleAssignmentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleAssignmentListResult {
     pub fn new() -> Self {
@@ -570,6 +600,11 @@ pub struct RoleDefinitionListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleDefinitionListResult {
     pub fn new() -> Self {

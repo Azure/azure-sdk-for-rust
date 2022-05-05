@@ -170,6 +170,11 @@ pub struct ListApplyUpdate {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplyUpdate>,
 }
+impl azure_core::Continuable for ListApplyUpdate {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ListApplyUpdate {
     pub fn new() -> Self {
         Self::default()
@@ -181,6 +186,11 @@ pub struct ListConfigurationAssignmentsResult {
     #[doc = "The list of configuration Assignments"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationAssignment>,
+}
+impl azure_core::Continuable for ListConfigurationAssignmentsResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ListConfigurationAssignmentsResult {
     pub fn new() -> Self {
@@ -194,6 +204,11 @@ pub struct ListMaintenanceConfigurationsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MaintenanceConfiguration>,
 }
+impl azure_core::Continuable for ListMaintenanceConfigurationsResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ListMaintenanceConfigurationsResult {
     pub fn new() -> Self {
         Self::default()
@@ -205,6 +220,11 @@ pub struct ListUpdatesResult {
     #[doc = "The pending updates"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Update>,
+}
+impl azure_core::Continuable for ListUpdatesResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ListUpdatesResult {
     pub fn new() -> Self {
@@ -287,6 +307,11 @@ pub struct MaintenanceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
+impl azure_core::Continuable for MaintenanceError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MaintenanceError {
     pub fn new() -> Self {
         Self::default()
@@ -367,6 +392,11 @@ pub struct OperationsListResult {
     #[doc = "A collection of operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationsListResult {
     pub fn new() -> Self {

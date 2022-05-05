@@ -142,6 +142,11 @@ pub struct AuthConfigCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AuthConfigCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AuthConfigCollection {
     pub fn new(value: Vec<AuthConfig>) -> Self {
         Self { value, next_link: None }
@@ -171,6 +176,11 @@ pub struct AvailableOperations {
     #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AvailableOperations {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AvailableOperations {
     pub fn new() -> Self {
@@ -423,6 +433,11 @@ pub struct CertificateCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CertificateCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CertificateCollection {
     pub fn new(value: Vec<Certificate>) -> Self {
         Self { value, next_link: None }
@@ -599,6 +614,11 @@ pub struct ContainerAppCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ContainerAppCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ContainerAppCollection {
     pub fn new(value: Vec<ContainerApp>) -> Self {
@@ -989,6 +1009,11 @@ pub struct DaprComponentsCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DaprComponentsCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DaprComponentsCollection {
     pub fn new(value: Vec<DaprComponent>) -> Self {
         Self { value, next_link: None }
@@ -1033,6 +1058,11 @@ pub struct DefaultErrorResponse {
     #[doc = "Error model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<default_error_response::Error>,
+}
+impl azure_core::Continuable for DefaultErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DefaultErrorResponse {
     pub fn new() -> Self {
@@ -1558,6 +1588,11 @@ pub struct ManagedEnvironmentsCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ManagedEnvironmentsCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ManagedEnvironmentsCollection {
     pub fn new(value: Vec<ManagedEnvironment>) -> Self {
         Self { value, next_link: None }
@@ -1969,6 +2004,11 @@ pub struct RevisionCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RevisionCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RevisionCollection {
     pub fn new(value: Vec<Revision>) -> Self {
         Self { value, next_link: None }
@@ -2111,6 +2151,11 @@ pub struct SourceControlCollection {
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SourceControlCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SourceControlCollection {
     pub fn new(value: Vec<SourceControl>) -> Self {

@@ -144,6 +144,11 @@ pub struct CustomerSubscriptionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomerSubscription>,
 }
+impl azure_core::Continuable for CustomerSubscriptionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CustomerSubscriptionList {
     pub fn new() -> Self {
         Self::default()
@@ -247,6 +252,11 @@ pub struct ErrorResponse {
     #[doc = "The details of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -364,6 +374,11 @@ pub struct OperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationList {
     pub fn new() -> Self {
         Self::default()
@@ -422,6 +437,11 @@ pub struct ProductList {
     #[doc = "List of products."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Product>,
+}
+impl azure_core::Continuable for ProductList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProductList {
     pub fn new() -> Self {
@@ -579,6 +599,11 @@ pub struct RegistrationList {
     #[doc = "List of Registrations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Registration>,
+}
+impl azure_core::Continuable for RegistrationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RegistrationList {
     pub fn new() -> Self {

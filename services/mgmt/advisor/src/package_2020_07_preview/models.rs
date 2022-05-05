@@ -74,6 +74,11 @@ pub struct OperationEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationEntityListResult {
     pub fn new() -> Self {
         Self::default()

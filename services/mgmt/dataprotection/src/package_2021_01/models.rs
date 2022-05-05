@@ -348,6 +348,11 @@ pub struct AzureBackupJobResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureBackupJobResource>,
 }
+impl azure_core::Continuable for AzureBackupJobResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AzureBackupJobResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -419,6 +424,11 @@ pub struct AzureBackupRecoveryPointResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureBackupRecoveryPointResource>,
+}
+impl azure_core::Continuable for AzureBackupRecoveryPointResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl AzureBackupRecoveryPointResourceList {
     pub fn new() -> Self {
@@ -682,6 +692,11 @@ pub struct BackupInstanceResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupInstanceResource>,
 }
+impl azure_core::Continuable for BackupInstanceResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupInstanceResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -783,6 +798,11 @@ pub struct BackupVaultResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupVaultResource>,
 }
+impl azure_core::Continuable for BackupVaultResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupVaultResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -827,6 +847,11 @@ pub struct BaseBackupPolicyResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BaseBackupPolicyResource>,
+}
+impl azure_core::Continuable for BaseBackupPolicyResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl BaseBackupPolicyResourceList {
     pub fn new() -> Self {
@@ -951,6 +976,11 @@ pub struct ClientDiscoveryResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ClientDiscoveryValueForSingleApi>,
 }
+impl azure_core::Continuable for ClientDiscoveryResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClientDiscoveryResponse {
     pub fn new() -> Self {
         Self::default()
@@ -986,6 +1016,11 @@ pub struct CloudError {
     #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {

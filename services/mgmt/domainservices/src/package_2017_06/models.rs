@@ -9,6 +9,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -59,6 +64,11 @@ pub struct DefaultErrorResponse {
     #[doc = "Error model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<default_error_response::Error>,
+}
+impl azure_core::Continuable for DefaultErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DefaultErrorResponse {
     pub fn new() -> Self {
@@ -197,6 +207,11 @@ pub struct DomainServiceListResult {
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DomainServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DomainServiceListResult {
     pub fn new() -> Self {
@@ -526,6 +541,11 @@ pub struct OperationEntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationEntityListResult {
     pub fn new() -> Self {
         Self::default()
@@ -554,6 +574,11 @@ pub struct OuContainerListResult {
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OuContainerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OuContainerListResult {
     pub fn new() -> Self {

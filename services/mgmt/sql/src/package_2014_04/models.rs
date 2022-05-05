@@ -82,6 +82,11 @@ pub struct DatabaseListResult {
     #[doc = "The list of databases housed in the server."]
     pub value: Vec<Database>,
 }
+impl azure_core::Continuable for DatabaseListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DatabaseListResult {
     pub fn new(value: Vec<Database>) -> Self {
         Self { value }
@@ -580,6 +585,11 @@ pub struct ElasticPoolActivityListResult {
     #[doc = "The list of elastic pool activities."]
     pub value: Vec<ElasticPoolActivity>,
 }
+impl azure_core::Continuable for ElasticPoolActivityListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ElasticPoolActivityListResult {
     pub fn new(value: Vec<ElasticPoolActivity>) -> Self {
         Self { value }
@@ -677,6 +687,11 @@ pub struct ElasticPoolDatabaseActivityListResult {
     #[doc = "The list of elastic pool database activities."]
     pub value: Vec<ElasticPoolDatabaseActivity>,
 }
+impl azure_core::Continuable for ElasticPoolDatabaseActivityListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ElasticPoolDatabaseActivityListResult {
     pub fn new(value: Vec<ElasticPoolDatabaseActivity>) -> Self {
         Self { value }
@@ -741,6 +756,11 @@ impl ElasticPoolDatabaseActivityProperties {
 pub struct ElasticPoolListResult {
     #[doc = "The list of elastic pools hosted in the server."]
     pub value: Vec<ElasticPool>,
+}
+impl azure_core::Continuable for ElasticPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ElasticPoolListResult {
     pub fn new(value: Vec<ElasticPool>) -> Self {
@@ -907,6 +927,11 @@ pub struct FirewallRuleListResult {
     #[doc = "The list of server firewall rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallRule>,
+}
+impl azure_core::Continuable for FirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl FirewallRuleListResult {
     pub fn new() -> Self {
@@ -1238,6 +1263,11 @@ pub struct RecommendedElasticPoolListMetricsResult {
     #[doc = "The list of recommended elastic pools metrics."]
     pub value: Vec<RecommendedElasticPoolMetric>,
 }
+impl azure_core::Continuable for RecommendedElasticPoolListMetricsResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl RecommendedElasticPoolListMetricsResult {
     pub fn new(value: Vec<RecommendedElasticPoolMetric>) -> Self {
         Self { value }
@@ -1248,6 +1278,11 @@ impl RecommendedElasticPoolListMetricsResult {
 pub struct RecommendedElasticPoolListResult {
     #[doc = "The list of recommended elastic pools hosted in the server."]
     pub value: Vec<RecommendedElasticPool>,
+}
+impl azure_core::Continuable for RecommendedElasticPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl RecommendedElasticPoolListResult {
     pub fn new(value: Vec<RecommendedElasticPool>) -> Self {
@@ -1450,6 +1485,11 @@ pub struct ReplicationLinkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReplicationLink>,
 }
+impl azure_core::Continuable for ReplicationLinkListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ReplicationLinkListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1564,6 +1604,11 @@ impl ServiceTierAdvisor {
 pub struct ServiceTierAdvisorListResult {
     #[doc = "The list of service tier advisors for specified database."]
     pub value: Vec<ServiceTierAdvisor>,
+}
+impl azure_core::Continuable for ServiceTierAdvisorListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ServiceTierAdvisorListResult {
     pub fn new(value: Vec<ServiceTierAdvisor>) -> Self {
@@ -1854,6 +1899,11 @@ impl TransparentDataEncryptionActivity {
 pub struct TransparentDataEncryptionActivityListResult {
     #[doc = "The list of database transparent data encryption activities."]
     pub value: Vec<TransparentDataEncryptionActivity>,
+}
+impl azure_core::Continuable for TransparentDataEncryptionActivityListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl TransparentDataEncryptionActivityListResult {
     pub fn new(value: Vec<TransparentDataEncryptionActivity>) -> Self {

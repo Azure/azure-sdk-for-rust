@@ -23,6 +23,11 @@ pub struct AndroidMamPolicyCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
+impl azure_core::Continuable for AndroidMamPolicyCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
+}
 impl AndroidMamPolicyCollection {
     pub fn new(value: Vec<AndroidMamPolicy>) -> Self {
         Self { value, nextlink: None }
@@ -94,6 +99,11 @@ pub struct ApplicationCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
+impl azure_core::Continuable for ApplicationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
+}
 impl ApplicationCollection {
     pub fn new(value: Vec<Application>) -> Self {
         Self { value, nextlink: None }
@@ -153,6 +163,11 @@ pub struct DeviceCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
+impl azure_core::Continuable for DeviceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
+}
 impl DeviceCollection {
     pub fn new(value: Vec<Device>) -> Self {
         Self { value, nextlink: None }
@@ -186,6 +201,11 @@ pub struct Error {
     pub code: String,
     pub message: String,
 }
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Error {
     pub fn new(code: String, message: String) -> Self {
         Self { code, message }
@@ -211,6 +231,11 @@ pub struct FlaggedEnrolledAppCollection {
     #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
+}
+impl azure_core::Continuable for FlaggedEnrolledAppCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
 }
 impl FlaggedEnrolledAppCollection {
     pub fn new(value: Vec<FlaggedEnrolledApp>) -> Self {
@@ -268,6 +293,11 @@ pub struct FlaggedUserCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
+impl azure_core::Continuable for FlaggedUserCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
+}
 impl FlaggedUserCollection {
     pub fn new(value: Vec<FlaggedUser>) -> Self {
         Self { value, nextlink: None }
@@ -315,6 +345,11 @@ pub struct GroupsCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
+impl azure_core::Continuable for GroupsCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
+}
 impl GroupsCollection {
     pub fn new(value: Vec<GroupItem>) -> Self {
         Self { value, nextlink: None }
@@ -326,6 +361,11 @@ pub struct IosmamPolicyCollection {
     #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
+}
+impl azure_core::Continuable for IosmamPolicyCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
 }
 impl IosmamPolicyCollection {
     pub fn new(value: Vec<IOsmamPolicy>) -> Self {
@@ -351,6 +391,11 @@ pub struct LocationCollection {
     #[doc = "Gets the URL to get the next set of results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
+}
+impl azure_core::Continuable for LocationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
 }
 impl LocationCollection {
     pub fn new(value: Vec<Location>) -> Self {
@@ -603,6 +648,11 @@ pub struct OperationResultCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
+impl azure_core::Continuable for OperationResultCollection {
+    fn continuation(&self) -> Option<String> {
+        self.nextlink.clone()
+    }
+}
 impl OperationResultCollection {
     pub fn new(value: Vec<OperationResult>) -> Self {
         Self { value, nextlink: None }
@@ -662,6 +712,11 @@ pub struct StatusesDefault {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StatusesProperties>,
+}
+impl azure_core::Continuable for StatusesDefault {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StatusesDefault {
     pub fn new() -> Self {

@@ -4236,6 +4236,11 @@ pub struct CloudError {
     #[doc = "The object that defines the structure of an Azure Synapse error."]
     pub error: CloudErrorBody,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new(error: CloudErrorBody) -> Self {
         Self { error }
@@ -5575,6 +5580,11 @@ pub struct DataFlowListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataFlowListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataFlowListResponse {
     pub fn new(value: Vec<DataFlowResource>) -> Self {
         Self { value, next_link: None }
@@ -6021,6 +6031,11 @@ pub struct DatasetListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatasetListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DatasetListResponse {
     pub fn new(value: Vec<DatasetResource>) -> Self {
@@ -10647,6 +10662,11 @@ pub struct LibraryListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LibraryListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LibraryListResponse {
     pub fn new(value: Vec<LibraryResource>) -> Self {
         Self { value, next_link: None }
@@ -10806,6 +10826,11 @@ pub struct LinkedServiceListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LinkedServiceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LinkedServiceListResponse {
     pub fn new(value: Vec<LinkedServiceResource>) -> Self {
@@ -12132,6 +12157,11 @@ pub struct NotebookListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NotebookListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NotebookListResponse {
     pub fn new(value: Vec<NotebookResource>) -> Self {
         Self { value, next_link: None }
@@ -13453,6 +13483,11 @@ pub struct PipelineListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PipelineListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PipelineListResponse {
     pub fn new(value: Vec<PipelineResource>) -> Self {
         Self { value, next_link: None }
@@ -13946,6 +13981,11 @@ pub struct QueryDataFlowDebugSessionsResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for QueryDataFlowDebugSessionsResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl QueryDataFlowDebugSessionsResponse {
     pub fn new() -> Self {
@@ -17325,6 +17365,11 @@ pub struct SparkJobDefinitionsListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SparkJobDefinitionsListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SparkJobDefinitionsListResponse {
     pub fn new(value: Vec<SparkJobDefinitionResource>) -> Self {
         Self { value, next_link: None }
@@ -18127,6 +18172,11 @@ pub struct SqlScriptsListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SqlScriptsListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SqlScriptsListResponse {
     pub fn new(value: Vec<SqlScriptResource>) -> Self {
@@ -19446,6 +19496,11 @@ pub struct TriggerListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TriggerListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TriggerListResponse {
     pub fn new(value: Vec<TriggerResource>) -> Self {

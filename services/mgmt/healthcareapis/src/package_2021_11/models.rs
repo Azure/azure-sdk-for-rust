@@ -64,6 +64,11 @@ pub struct DicomServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DicomService>,
 }
+impl azure_core::Continuable for DicomServiceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DicomServiceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -124,6 +129,11 @@ pub struct ErrorDetails {
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetailsInternal>,
+}
+impl azure_core::Continuable for ErrorDetails {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorDetails {
     pub fn new() -> Self {
@@ -247,6 +257,11 @@ pub struct FhirServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FhirService>,
 }
+impl azure_core::Continuable for FhirServiceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl FhirServiceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -369,6 +384,11 @@ pub struct IotConnectorCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotConnector>,
 }
+impl azure_core::Continuable for IotConnectorCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IotConnectorCollection {
     pub fn new() -> Self {
         Self::default()
@@ -465,6 +485,11 @@ pub struct IotFhirDestinationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotFhirDestination>,
 }
+impl azure_core::Continuable for IotFhirDestinationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IotFhirDestinationCollection {
     pub fn new() -> Self {
         Self::default()
@@ -526,6 +551,11 @@ pub struct ListOperations {
     #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListOperations {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListOperations {
     pub fn new() -> Self {
@@ -790,6 +820,11 @@ pub struct PrivateEndpointConnectionListResultDescription {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnectionDescription>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionListResultDescription {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl PrivateEndpointConnectionListResultDescription {
     pub fn new() -> Self {
         Self::default()
@@ -866,6 +901,11 @@ pub struct PrivateLinkResourceListResultDescription {
     #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResourceDescription>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResultDescription {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateLinkResourceListResultDescription {
     pub fn new() -> Self {
@@ -1221,6 +1261,11 @@ pub struct ServicesDescriptionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServicesDescription>,
 }
+impl azure_core::Continuable for ServicesDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ServicesDescriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1497,6 +1542,11 @@ pub struct WorkspaceList {
     #[doc = "Collection of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
+}
+impl azure_core::Continuable for WorkspaceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkspaceList {
     pub fn new() -> Self {

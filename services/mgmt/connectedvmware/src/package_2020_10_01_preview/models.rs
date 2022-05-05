@@ -105,6 +105,11 @@ pub struct ClustersList {
     #[doc = "Array of Clusters"]
     pub value: Vec<Cluster>,
 }
+impl azure_core::Continuable for ClustersList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClustersList {
     pub fn new(value: Vec<Cluster>) -> Self {
         Self { next_link: None, value }
@@ -238,6 +243,11 @@ pub struct DatastoresList {
     #[doc = "Array of Datastores"]
     pub value: Vec<Datastore>,
 }
+impl azure_core::Continuable for DatastoresList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DatastoresList {
     pub fn new(value: Vec<Datastore>) -> Self {
         Self { next_link: None, value }
@@ -319,6 +329,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -375,6 +390,11 @@ pub struct GuestAgentList {
     pub next_link: Option<String>,
     #[doc = "Array of GuestAgent"]
     pub value: Vec<GuestAgent>,
+}
+impl azure_core::Continuable for GuestAgentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GuestAgentList {
     pub fn new(value: Vec<GuestAgent>) -> Self {
@@ -593,6 +613,11 @@ pub struct HostsList {
     #[doc = "Array of Hosts"]
     pub value: Vec<Host>,
 }
+impl azure_core::Continuable for HostsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl HostsList {
     pub fn new(value: Vec<Host>) -> Self {
         Self { next_link: None, value }
@@ -638,6 +663,11 @@ pub struct HybridIdentityMetadataList {
     pub next_link: Option<String>,
     #[doc = "Array of HybridIdentityMetadata"]
     pub value: Vec<HybridIdentityMetadata>,
+}
+impl azure_core::Continuable for HybridIdentityMetadataList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HybridIdentityMetadataList {
     pub fn new(value: Vec<HybridIdentityMetadata>) -> Self {
@@ -789,6 +819,11 @@ pub struct InventoryItemsList {
     pub next_link: Option<String>,
     #[doc = "Array of InventoryItems"]
     pub value: Vec<InventoryItem>,
+}
+impl azure_core::Continuable for InventoryItemsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InventoryItemsList {
     pub fn new(value: Vec<InventoryItem>) -> Self {
@@ -983,6 +1018,11 @@ pub struct MachineExtensionsListResult {
     #[doc = "The uri to fetch the next page of machine extensions. Call ListNext() with this to fetch the next page of extensions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MachineExtensionsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MachineExtensionsListResult {
     pub fn new() -> Self {
@@ -1387,6 +1427,11 @@ pub struct ResourcePoolsList {
     #[doc = "Array of ResourcePools"]
     pub value: Vec<ResourcePool>,
 }
+impl azure_core::Continuable for ResourcePoolsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourcePoolsList {
     pub fn new(value: Vec<ResourcePool>) -> Self {
         Self { next_link: None, value }
@@ -1583,6 +1628,11 @@ pub struct VCentersList {
     pub next_link: Option<String>,
     #[doc = "Array of VCenters"]
     pub value: Vec<VCenter>,
+}
+impl azure_core::Continuable for VCentersList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VCentersList {
     pub fn new(value: Vec<VCenter>) -> Self {
@@ -2016,6 +2066,11 @@ pub struct VirtualMachineTemplatesList {
     #[doc = "Array of VirtualMachineTemplates"]
     pub value: Vec<VirtualMachineTemplate>,
 }
+impl azure_core::Continuable for VirtualMachineTemplatesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineTemplatesList {
     pub fn new(value: Vec<VirtualMachineTemplate>) -> Self {
         Self { next_link: None, value }
@@ -2065,6 +2120,11 @@ pub struct VirtualMachinesList {
     pub next_link: Option<String>,
     #[doc = "Array of VirtualMachines"]
     pub value: Vec<VirtualMachine>,
+}
+impl azure_core::Continuable for VirtualMachinesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachinesList {
     pub fn new(value: Vec<VirtualMachine>) -> Self {
@@ -2168,6 +2228,11 @@ pub struct VirtualNetworksList {
     #[doc = "Array of VirtualNetworks"]
     pub value: Vec<VirtualNetwork>,
 }
+impl azure_core::Continuable for VirtualNetworksList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualNetworksList {
     pub fn new(value: Vec<VirtualNetwork>) -> Self {
         Self { next_link: None, value }
@@ -2257,6 +2322,11 @@ pub struct OperationsList {
     pub next_link: Option<String>,
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {

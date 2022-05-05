@@ -234,6 +234,11 @@ pub struct NamespaceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NamespaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NamespaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -346,6 +351,11 @@ pub struct NotificationHubListResult {
     #[doc = "Gets or sets link to the next set of results. Not empty if Value contains incomplete list of NotificationHub"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for NotificationHubListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl NotificationHubListResult {
     pub fn new() -> Self {
@@ -488,6 +498,11 @@ pub struct SharedAccessAuthorizationRuleListResult {
     #[doc = "Gets or sets link to the next set of results. Not empty if Value contains incomplete list of AuthorizationRules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SharedAccessAuthorizationRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SharedAccessAuthorizationRuleListResult {
     pub fn new() -> Self {

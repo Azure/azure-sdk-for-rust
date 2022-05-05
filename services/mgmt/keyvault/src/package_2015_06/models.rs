@@ -83,6 +83,11 @@ pub struct ResourceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -159,6 +164,11 @@ pub struct VaultListResult {
     #[doc = "Gets or sets the URL to get the next set of vaults."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VaultListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VaultListResult {
     pub fn new() -> Self {

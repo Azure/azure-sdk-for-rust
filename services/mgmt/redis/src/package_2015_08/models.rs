@@ -55,6 +55,11 @@ pub struct RedisListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RedisListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RedisListResult {
     pub fn new() -> Self {
         Self::default()

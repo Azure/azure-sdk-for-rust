@@ -331,6 +331,11 @@ pub struct AmlComputeNodesInformation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AmlComputeNodesInformation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AmlComputeNodesInformation {
     pub fn new(compute_nodes_information: ComputeNodesInformation) -> Self {
         Self {
@@ -761,6 +766,11 @@ pub struct BatchDeploymentTrackedResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BatchDeploymentTrackedResource>,
 }
+impl azure_core::Continuable for BatchDeploymentTrackedResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BatchDeploymentTrackedResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -832,6 +842,11 @@ pub struct BatchEndpointTrackedResourceArmPaginatedResult {
     #[doc = "An array of objects of type BatchEndpoint."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BatchEndpointTrackedResource>,
+}
+impl azure_core::Continuable for BatchEndpointTrackedResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl BatchEndpointTrackedResourceArmPaginatedResult {
     pub fn new() -> Self {
@@ -1044,6 +1059,11 @@ pub struct CodeContainerResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CodeContainerResource>,
 }
+impl azure_core::Continuable for CodeContainerResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CodeContainerResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -1111,6 +1131,11 @@ pub struct CodeVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type CodeVersion."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CodeVersionResource>,
+}
+impl azure_core::Continuable for CodeVersionResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CodeVersionResourceArmPaginatedResult {
     pub fn new() -> Self {
@@ -1810,6 +1835,11 @@ pub struct DataContainerResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataContainerResource>,
 }
+impl azure_core::Continuable for DataContainerResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataContainerResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -1939,6 +1969,11 @@ pub struct DataVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type DataVersion."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataVersionResource>,
+}
+impl azure_core::Continuable for DataVersionResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataVersionResourceArmPaginatedResult {
     pub fn new() -> Self {
@@ -2103,6 +2138,11 @@ pub struct DatastorePropertiesResourceArmPaginatedResult {
     #[doc = "An array of objects of type DatastoreProperties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatastorePropertiesResource>,
+}
+impl azure_core::Continuable for DatastorePropertiesResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DatastorePropertiesResourceArmPaginatedResult {
     pub fn new() -> Self {
@@ -2412,6 +2452,11 @@ pub struct EnvironmentContainerResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnvironmentContainerResource>,
 }
+impl azure_core::Continuable for EnvironmentContainerResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EnvironmentContainerResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -2485,6 +2530,11 @@ pub struct EnvironmentSpecificationVersionResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnvironmentSpecificationVersionResource>,
 }
+impl azure_core::Continuable for EnvironmentSpecificationVersionResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EnvironmentSpecificationVersionResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -2535,6 +2585,11 @@ pub struct ErrorResponse {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -2907,6 +2962,11 @@ pub struct JobBaseResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobBaseResource>,
 }
+impl azure_core::Continuable for JobBaseResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobBaseResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -3217,6 +3277,11 @@ pub struct LabelingJobResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LabelingJobResource>,
 }
+impl azure_core::Continuable for LabelingJobResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LabelingJobResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -3267,6 +3332,11 @@ pub struct ListAmlUserFeatureResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ListAmlUserFeatureResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListAmlUserFeatureResult {
     pub fn new() -> Self {
         Self::default()
@@ -3304,6 +3374,11 @@ pub struct ListUsagesResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ListUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListUsagesResult {
     pub fn new() -> Self {
         Self::default()
@@ -3336,6 +3411,11 @@ pub struct ListWorkspaceQuotas {
     #[doc = "The URI to fetch the next page of workspace quota information by VM Family. Call ListNext() with this to fetch the next page of Workspace Quota information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListWorkspaceQuotas {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListWorkspaceQuotas {
     pub fn new() -> Self {
@@ -3484,6 +3564,11 @@ pub struct ModelContainerResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ModelContainerResource>,
 }
+impl azure_core::Continuable for ModelContainerResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ModelContainerResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -3555,6 +3640,11 @@ pub struct ModelVersionResourceArmPaginatedResult {
     #[doc = "An array of objects of type ModelVersion."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ModelVersionResource>,
+}
+impl azure_core::Continuable for ModelVersionResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ModelVersionResourceArmPaginatedResult {
     pub fn new() -> Self {
@@ -3790,6 +3880,11 @@ pub struct OnlineDeploymentTrackedResourceArmPaginatedResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OnlineDeploymentTrackedResource>,
 }
+impl azure_core::Continuable for OnlineDeploymentTrackedResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OnlineDeploymentTrackedResourceArmPaginatedResult {
     pub fn new() -> Self {
         Self::default()
@@ -3877,6 +3972,11 @@ pub struct OnlineEndpointTrackedResourceArmPaginatedResult {
     #[doc = "An array of objects of type OnlineEndpoint."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OnlineEndpointTrackedResource>,
+}
+impl azure_core::Continuable for OnlineEndpointTrackedResourceArmPaginatedResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OnlineEndpointTrackedResourceArmPaginatedResult {
     pub fn new() -> Self {
@@ -3974,6 +4074,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4042,6 +4147,11 @@ pub struct PaginatedComputeResourcesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PaginatedComputeResourcesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PaginatedComputeResourcesList {
     pub fn new() -> Self {
         Self::default()
@@ -4056,6 +4166,11 @@ pub struct PaginatedWorkspaceConnectionsList {
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PaginatedWorkspaceConnectionsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PaginatedWorkspaceConnectionsList {
     pub fn new() -> Self {
@@ -4330,6 +4445,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -5111,6 +5231,11 @@ pub struct SkuListResult {
     #[doc = "The URI to fetch the next page of Workspace Skus. Call ListNext() with this URI to fetch the next page of Workspace Skus"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SkuListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SkuListResult {
     pub fn new() -> Self {
@@ -5894,6 +6019,11 @@ pub struct WorkspaceListResult {
     #[doc = "The URI that can be used to request the next list of machine learning workspaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WorkspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WorkspaceListResult {
     pub fn new() -> Self {

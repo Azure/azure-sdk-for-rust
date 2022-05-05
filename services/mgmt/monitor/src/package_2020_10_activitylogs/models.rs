@@ -100,6 +100,11 @@ pub struct AlertRuleList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AlertRuleList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertRuleList {
     pub fn new() -> Self {
         Self::default()
@@ -192,6 +197,11 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -299,6 +309,11 @@ pub struct EventDataCollection {
     #[doc = "Provides the link to retrieve the next set of events."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EventDataCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EventDataCollection {
     pub fn new(value: Vec<EventData>) -> Self {

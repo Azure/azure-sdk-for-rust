@@ -39,6 +39,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for ErrorResponseBody {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponseBody {
     pub fn new() -> Self {
         Self::default()
@@ -110,6 +115,11 @@ pub struct GrantListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for GrantListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl GrantListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -150,6 +160,11 @@ pub struct JoinRequestList {
     #[doc = "the link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for JoinRequestList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl JoinRequestList {
     pub fn new() -> Self {
@@ -209,6 +224,11 @@ pub struct LabListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LabListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LabListResult {
     pub fn new() -> Self {
@@ -432,6 +452,11 @@ pub struct StudentLabListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for StudentLabListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StudentLabListResult {
     pub fn new() -> Self {
         Self::default()
@@ -500,6 +525,11 @@ pub struct StudentListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StudentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl StudentListResult {
     pub fn new() -> Self {

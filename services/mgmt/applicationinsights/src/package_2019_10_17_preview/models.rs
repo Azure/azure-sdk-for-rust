@@ -33,6 +33,11 @@ pub struct WorkbookError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
+impl azure_core::Continuable for WorkbookError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkbookError {
     pub fn new() -> Self {
         Self::default()
@@ -173,6 +178,11 @@ pub struct WorkbookTemplatesListResult {
     #[doc = "An array of workbook templates."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkbookTemplate>,
+}
+impl azure_core::Continuable for WorkbookTemplatesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkbookTemplatesListResult {
     pub fn new() -> Self {

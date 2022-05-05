@@ -51,6 +51,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -162,6 +167,11 @@ pub struct CloudServiceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CloudServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CloudServiceListResult {
     pub fn new(value: Vec<CloudService>) -> Self {
         Self { value, next_link: None }
@@ -267,6 +277,11 @@ pub struct CloudServiceRoleListResult {
     pub value: Vec<CloudServiceRole>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CloudServiceRoleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CloudServiceRoleListResult {
     pub fn new(value: Vec<CloudServiceRole>) -> Self {
@@ -582,6 +597,11 @@ pub struct RoleInstanceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RoleInstanceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RoleInstanceListResult {
     pub fn new(value: Vec<RoleInstance>) -> Self {
         Self { value, next_link: None }
@@ -670,6 +690,11 @@ pub struct UpdateDomainListResult {
     pub value: Vec<UpdateDomain>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UpdateDomainListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UpdateDomainListResult {
     pub fn new(value: Vec<UpdateDomain>) -> Self {

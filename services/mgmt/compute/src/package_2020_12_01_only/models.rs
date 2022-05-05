@@ -195,6 +195,11 @@ pub struct AvailabilitySetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailabilitySetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailabilitySetListResult {
     pub fn new(value: Vec<AvailabilitySet>) -> Self {
         Self { value, next_link: None }
@@ -350,6 +355,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -361,6 +371,11 @@ pub struct ComputeOperationListResult {
     #[doc = "The list of compute operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ComputeOperationValue>,
+}
+impl azure_core::Continuable for ComputeOperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ComputeOperationListResult {
     pub fn new() -> Self {
@@ -634,6 +649,11 @@ pub struct DedicatedHostGroupListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DedicatedHostGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DedicatedHostGroupListResult {
     pub fn new(value: Vec<DedicatedHostGroup>) -> Self {
         Self { value, next_link: None }
@@ -730,6 +750,11 @@ pub struct DedicatedHostListResult {
     #[doc = "The URI to fetch the next page of dedicated hosts. Call ListNext() with this URI to fetch the next page of dedicated hosts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DedicatedHostListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DedicatedHostListResult {
     pub fn new(value: Vec<DedicatedHost>) -> Self {
@@ -909,6 +934,11 @@ pub struct DiskAccessList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DiskAccessList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DiskAccessList {
     pub fn new(value: Vec<DiskAccess>) -> Self {
         Self { value, next_link: None }
@@ -971,6 +1001,11 @@ pub struct DiskEncryptionSetList {
     #[doc = "The uri to fetch the next page of disk encryption sets. Call ListNext() with this to fetch the next page of disk encryption sets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DiskEncryptionSetList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DiskEncryptionSetList {
     pub fn new(value: Vec<DiskEncryptionSet>) -> Self {
@@ -1074,6 +1109,11 @@ pub struct DiskList {
     #[doc = "The uri to fetch the next page of disks. Call ListNext() with this to fetch the next page of disks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DiskList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DiskList {
     pub fn new(value: Vec<Disk>) -> Self {
@@ -1227,6 +1267,11 @@ pub struct DiskRestorePointList {
     #[doc = "The uri to fetch the next page of disk restore points. Call ListNext() with this to fetch the next page of disk restore points."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DiskRestorePointList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DiskRestorePointList {
     pub fn new(value: Vec<DiskRestorePoint>) -> Self {
@@ -2041,6 +2086,11 @@ pub struct ImageListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ImageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ImageListResult {
     pub fn new(value: Vec<Image>) -> Self {
         Self { value, next_link: None }
@@ -2410,6 +2460,11 @@ pub struct ListUsagesResult {
     #[doc = "The URI to fetch the next page of compute resource usage information. Call ListNext() with this to fetch the next page of compute resource usage information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ListUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ListUsagesResult {
     pub fn new(value: Vec<Usage>) -> Self {
@@ -2899,6 +2954,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3047,6 +3107,11 @@ pub struct ProximityPlacementGroupListResult {
     #[doc = "The URI to fetch the next page of proximity placement groups."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProximityPlacementGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProximityPlacementGroupListResult {
     pub fn new(value: Vec<ProximityPlacementGroup>) -> Self {
@@ -3218,6 +3283,11 @@ pub struct ResourceUriList {
     #[doc = "The uri to fetch the next page of encrypted resources. Call ListNext() with this to fetch the next page of encrypted resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResourceUriList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResourceUriList {
     pub fn new(value: Vec<String>) -> Self {
@@ -3481,6 +3551,11 @@ pub struct RunCommandListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RunCommandListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RunCommandListResult {
     pub fn new(value: Vec<RunCommandDocumentBase>) -> Self {
         Self { value, next_link: None }
@@ -3636,6 +3711,11 @@ pub struct SnapshotList {
     #[doc = "The uri to fetch the next page of snapshots. Call ListNext() with this to fetch the next page of snapshots."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SnapshotList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SnapshotList {
     pub fn new(value: Vec<Snapshot>) -> Self {
@@ -3927,6 +4007,11 @@ pub struct SshPublicKeysGroupListResult {
     #[doc = "The URI to fetch the next page of SSH public keys. Call ListNext() with this URI to fetch the next page of SSH public keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SshPublicKeysGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SshPublicKeysGroupListResult {
     pub fn new(value: Vec<SshPublicKeyResource>) -> Self {
@@ -4923,6 +5008,11 @@ pub struct VirtualMachineListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineListResult {
     pub fn new(value: Vec<VirtualMachine>) -> Self {
         Self { value, next_link: None }
@@ -5172,6 +5262,11 @@ pub struct VirtualMachineRunCommandsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineRunCommandsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineRunCommandsListResult {
     pub fn new(value: Vec<VirtualMachineRunCommand>) -> Self {
         Self { value, next_link: None }
@@ -5287,6 +5382,11 @@ pub struct VirtualMachineScaleSetExtensionListResult {
     #[doc = "The uri to fetch the next page of VM scale set extensions. Call ListNext() with this to fetch the next page of VM scale set extensions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualMachineScaleSetExtensionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachineScaleSetExtensionListResult {
     pub fn new(value: Vec<VirtualMachineScaleSetExtension>) -> Self {
@@ -5519,6 +5619,11 @@ pub struct VirtualMachineScaleSetListOsUpgradeHistory {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineScaleSetListOsUpgradeHistory {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineScaleSetListOsUpgradeHistory {
     pub fn new(value: Vec<UpgradeOperationHistoricalStatusInfo>) -> Self {
         Self { value, next_link: None }
@@ -5532,6 +5637,11 @@ pub struct VirtualMachineScaleSetListResult {
     #[doc = "The uri to fetch the next page of Virtual Machine Scale Sets. Call ListNext() with this to fetch the next page of VMSS."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualMachineScaleSetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachineScaleSetListResult {
     pub fn new(value: Vec<VirtualMachineScaleSet>) -> Self {
@@ -5547,6 +5657,11 @@ pub struct VirtualMachineScaleSetListSkusResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineScaleSetListSkusResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineScaleSetListSkusResult {
     pub fn new(value: Vec<VirtualMachineScaleSetSku>) -> Self {
         Self { value, next_link: None }
@@ -5560,6 +5675,11 @@ pub struct VirtualMachineScaleSetListWithLinkResult {
     #[doc = "The uri to fetch the next page of Virtual Machine Scale Sets. Call ListNext() with this to fetch the next page of Virtual Machine Scale Sets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualMachineScaleSetListWithLinkResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachineScaleSetListWithLinkResult {
     pub fn new(value: Vec<VirtualMachineScaleSet>) -> Self {
@@ -6443,6 +6563,11 @@ pub struct VirtualMachineScaleSetVmListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineScaleSetVmListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineScaleSetVmListResult {
     pub fn new(value: Vec<VirtualMachineScaleSetVm>) -> Self {
         Self { value, next_link: None }
@@ -6616,6 +6741,11 @@ pub struct VirtualMachineSizeListResult {
     #[doc = "The list of virtual machine sizes."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachineSize>,
+}
+impl azure_core::Continuable for VirtualMachineSizeListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl VirtualMachineSizeListResult {
     pub fn new() -> Self {

@@ -30,6 +30,11 @@ pub struct ActivityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActivityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ActivityListResult {
     pub fn new() -> Self {
         Self::default()
@@ -327,6 +332,11 @@ pub struct AutomationAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AutomationAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AutomationAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -510,6 +520,11 @@ pub struct CertificateListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CertificateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CertificateListResult {
     pub fn new() -> Self {
         Self::default()
@@ -628,6 +643,11 @@ pub struct ConnectionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -730,6 +750,11 @@ pub struct ConnectionTypeListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ConnectionTypeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ConnectionTypeListResult {
     pub fn new() -> Self {
@@ -910,6 +935,11 @@ pub struct CredentialListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CredentialListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CredentialListResult {
     pub fn new() -> Self {
@@ -1097,6 +1127,11 @@ pub struct DscCompilationJobListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DscCompilationJobListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DscCompilationJobListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1268,6 +1303,11 @@ pub struct DscConfigurationListResult {
     #[doc = "Gets the total number of configurations matching filter criteria."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
+}
+impl azure_core::Continuable for DscConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DscConfigurationListResult {
     pub fn new() -> Self {
@@ -1488,6 +1528,11 @@ pub struct DscNodeConfigurationListResult {
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
 }
+impl azure_core::Continuable for DscNodeConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DscNodeConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1547,6 +1592,11 @@ pub struct DscNodeListResult {
     #[doc = "Gets the total number of nodes matching filter criteria."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
+}
+impl azure_core::Continuable for DscNodeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DscNodeListResult {
     pub fn new() -> Self {
@@ -1667,6 +1717,11 @@ pub struct DscNodeReportListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DscNodeReportListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DscNodeReportListResult {
     pub fn new() -> Self {
@@ -1830,6 +1885,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -1989,6 +2049,11 @@ pub struct HybridRunbookWorkerGroupsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for HybridRunbookWorkerGroupsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl HybridRunbookWorkerGroupsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2072,6 +2137,11 @@ pub struct HybridRunbookWorkersListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HybridRunbookWorkersListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HybridRunbookWorkersListResult {
     pub fn new() -> Self {
@@ -2234,6 +2304,11 @@ pub struct JobListResultV2 {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobListResultV2 {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobListResultV2 {
     pub fn new() -> Self {
         Self::default()
@@ -2384,6 +2459,11 @@ pub struct JobScheduleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobScheduleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2437,6 +2517,11 @@ pub struct JobStreamListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for JobStreamListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl JobStreamListResult {
     pub fn new() -> Self {
@@ -2669,6 +2754,11 @@ pub struct ModuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ModuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ModuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2870,6 +2960,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2895,6 +2990,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -2951,6 +3051,11 @@ pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl azure_core::Continuable for PrivateLinkResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -3360,6 +3465,11 @@ pub struct RunbookListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RunbookListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RunbookListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3643,6 +3753,11 @@ pub struct ScheduleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ScheduleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3836,6 +3951,11 @@ pub struct SourceControlListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SourceControlListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SourceControlListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4028,6 +4148,11 @@ pub struct SourceControlSyncJobListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SourceControlSyncJobListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SourceControlSyncJobListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4182,6 +4307,11 @@ pub struct SourceControlSyncJobStreamsListBySyncJob {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SourceControlSyncJobStreamsListBySyncJob {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SourceControlSyncJobStreamsListBySyncJob {
     pub fn new() -> Self {
         Self::default()
@@ -4255,6 +4385,11 @@ pub struct StatisticsListResult {
     #[doc = "Gets or sets a list of statistics."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Statistics>,
+}
+impl azure_core::Continuable for StatisticsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl StatisticsListResult {
     pub fn new() -> Self {
@@ -4396,6 +4531,11 @@ pub struct TypeFieldListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TypeField>,
 }
+impl azure_core::Continuable for TypeFieldListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl TypeFieldListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4449,6 +4589,11 @@ pub struct UsageListResult {
     #[doc = "Gets or sets usage."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsageListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl UsageListResult {
     pub fn new() -> Self {
@@ -4509,6 +4654,11 @@ pub struct VariableListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VariableListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VariableListResult {
     pub fn new() -> Self {
@@ -4601,6 +4751,11 @@ pub struct WatcherListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WatcherListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WatcherListResult {
     pub fn new() -> Self {
@@ -4732,6 +4887,11 @@ pub struct WebhookListResult {
     #[doc = "Gets or sets the next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WebhookListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WebhookListResult {
     pub fn new() -> Self {

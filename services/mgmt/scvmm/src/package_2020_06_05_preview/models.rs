@@ -52,6 +52,11 @@ pub struct AvailabilitySetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AvailabilitySetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AvailabilitySetListResult {
     pub fn new() -> Self {
         Self::default()
@@ -175,6 +180,11 @@ pub struct CloudListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CloudListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CloudListResult {
     pub fn new() -> Self {
         Self::default()
@@ -234,6 +244,11 @@ pub struct ErrorResponse {
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -427,6 +442,11 @@ pub struct InventoryItemsList {
     pub next_link: Option<String>,
     #[doc = "Array of InventoryItems"]
     pub value: Vec<InventoryItem>,
+}
+impl azure_core::Continuable for InventoryItemsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl InventoryItemsList {
     pub fn new(value: Vec<InventoryItem>) -> Self {
@@ -658,6 +678,11 @@ pub struct ResourceProviderOperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceProviderOperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceProviderOperationList {
     pub fn new() -> Self {
         Self::default()
@@ -790,6 +815,11 @@ pub struct VmmServerListResult {
     #[doc = "Url to follow for getting next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VmmServerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VmmServerListResult {
     pub fn new() -> Self {
@@ -1060,6 +1090,11 @@ pub struct VirtualMachineListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualMachineListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualMachineListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1212,6 +1247,11 @@ pub struct VirtualMachineTemplateListResult {
     #[doc = "Url to follow for getting next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualMachineTemplateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualMachineTemplateListResult {
     pub fn new() -> Self {
@@ -1404,6 +1444,11 @@ pub struct VirtualNetworkListResult {
     #[doc = "Url to follow for getting next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkListResult {
     pub fn new() -> Self {

@@ -251,6 +251,11 @@ pub struct CertificateIssuerListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CertificateIssuerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CertificateIssuerListResult {
     pub fn new() -> Self {
         Self::default()
@@ -332,6 +337,11 @@ pub struct CertificateListResult {
     #[doc = "The URL to get the next set of certificates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CertificateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CertificateListResult {
     pub fn new() -> Self {
@@ -548,6 +558,11 @@ pub struct DeletedCertificateListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeletedCertificateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeletedCertificateListResult {
     pub fn new() -> Self {
         Self::default()
@@ -602,6 +617,11 @@ pub struct DeletedKeyListResult {
     #[doc = "The URL to get the next set of deleted keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeletedKeyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeletedKeyListResult {
     pub fn new() -> Self {
@@ -658,6 +678,11 @@ pub struct DeletedSasDefinitionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeletedSasDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeletedSasDefinitionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -713,6 +738,11 @@ pub struct DeletedSecretListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeletedSecretListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeletedSecretListResult {
     pub fn new() -> Self {
         Self::default()
@@ -767,6 +797,11 @@ pub struct DeletedStorageListResult {
     #[doc = "The URL to get the next set of deleted storage accounts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeletedStorageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeletedStorageListResult {
     pub fn new() -> Self {
@@ -1116,6 +1151,11 @@ pub struct KeyListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for KeyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl KeyListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1289,6 +1329,11 @@ pub struct KeyVaultError {
     #[doc = "The key vault server error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
+}
+impl azure_core::Continuable for KeyVaultError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl KeyVaultError {
     pub fn new() -> Self {
@@ -1540,6 +1585,11 @@ pub struct SasDefinitionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SasDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SasDefinitionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1670,6 +1720,11 @@ pub struct SecretListResult {
     #[doc = "The URL to get the next set of secrets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecretListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SecretListResult {
     pub fn new() -> Self {
@@ -1906,6 +1961,11 @@ pub struct StorageListResult {
     #[doc = "The URL to get the next set of storage accounts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StorageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl StorageListResult {
     pub fn new() -> Self {

@@ -86,6 +86,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorInfo>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -127,6 +132,11 @@ pub struct LogAnalyticsQueryPackListResult {
     #[doc = "The URI to get the next set of Log Analytics QueryPack definitions if too many QueryPacks where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LogAnalyticsQueryPackListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LogAnalyticsQueryPackListResult {
     pub fn new(value: Vec<LogAnalyticsQueryPack>) -> Self {
@@ -176,6 +186,11 @@ pub struct LogAnalyticsQueryPackQueryListResult {
     #[doc = "The URI to get the next set of Log Analytics QueryPack definitions if too many QueryPack-Queries where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LogAnalyticsQueryPackQueryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LogAnalyticsQueryPackQueryListResult {
     pub fn new(value: Vec<LogAnalyticsQueryPackQuery>) -> Self {
@@ -339,6 +354,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

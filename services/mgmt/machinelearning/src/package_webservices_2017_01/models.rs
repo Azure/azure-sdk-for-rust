@@ -469,6 +469,11 @@ pub struct OperationEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationEntityListResult {
     pub fn new() -> Self {
         Self::default()
@@ -508,6 +513,11 @@ pub struct PaginatedWebServicesList {
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PaginatedWebServicesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PaginatedWebServicesList {
     pub fn new() -> Self {

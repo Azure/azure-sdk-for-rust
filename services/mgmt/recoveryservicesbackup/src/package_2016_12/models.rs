@@ -1000,6 +1000,11 @@ pub struct BackupEngineBaseResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupEngineBaseResource>,
 }
+impl azure_core::Continuable for BackupEngineBaseResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupEngineBaseResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -1796,6 +1801,11 @@ pub struct ProtectableContainerResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectableContainerResource>,
 }
+impl azure_core::Continuable for ProtectableContainerResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ProtectableContainerResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -1891,6 +1901,11 @@ pub struct ProtectionContainerResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectionContainerResource>,
+}
+impl azure_core::Continuable for ProtectionContainerResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ProtectionContainerResourceList {
     pub fn new() -> Self {
@@ -2071,6 +2086,11 @@ pub struct WorkloadItemResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkloadItemResource>,
 }
+impl azure_core::Continuable for WorkloadItemResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkloadItemResourceList {
     pub fn new() -> Self {
         Self::default()
@@ -2134,6 +2154,11 @@ pub struct WorkloadProtectableItemResourceList {
     #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkloadProtectableItemResource>,
+}
+impl azure_core::Continuable for WorkloadProtectableItemResourceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkloadProtectableItemResourceList {
     pub fn new() -> Self {

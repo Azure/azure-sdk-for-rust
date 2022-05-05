@@ -1326,6 +1326,11 @@ pub struct OperationResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationResultList {
     pub fn new() -> Self {
         Self::default()

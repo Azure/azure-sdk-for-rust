@@ -142,6 +142,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -313,6 +318,11 @@ pub struct ExtensionTypeList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ExtensionTypeList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ExtensionTypeList {
     pub fn new() -> Self {
         Self::default()
@@ -360,6 +370,11 @@ pub struct ExtensionVersionList {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl azure_core::Continuable for ExtensionVersionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ExtensionVersionList {
     pub fn new() -> Self {
         Self::default()
@@ -374,6 +389,11 @@ pub struct ExtensionsList {
     #[doc = "URL to get the next set of extension objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ExtensionsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ExtensionsList {
     pub fn new() -> Self {
@@ -514,6 +534,11 @@ pub struct FluxConfigurationsList {
     #[doc = "URL to get the next set of configuration objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FluxConfigurationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FluxConfigurationsList {
     pub fn new() -> Self {
@@ -743,6 +768,11 @@ pub struct OperationStatusList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationStatusList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationStatusList {
     pub fn new() -> Self {
         Self::default()
@@ -910,6 +940,11 @@ pub struct ResourceProviderOperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceProviderOperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceProviderOperationList {
     pub fn new() -> Self {
         Self::default()
@@ -1056,6 +1091,11 @@ pub struct SourceControlConfigurationList {
     #[doc = "URL to get the next set of configuration objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SourceControlConfigurationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SourceControlConfigurationList {
     pub fn new() -> Self {

@@ -87,6 +87,11 @@ pub struct ClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cluster>,
 }
+impl azure_core::Continuable for ClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClusterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -250,6 +255,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -339,6 +349,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -441,6 +456,11 @@ pub struct TablesListResult {
     #[doc = "A list of data tables."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Table>,
+}
+impl azure_core::Continuable for TablesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl TablesListResult {
     pub fn new() -> Self {
@@ -568,6 +588,11 @@ pub struct WorkspaceListResult {
     #[doc = "A list of workspaces."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
+}
+impl azure_core::Continuable for WorkspaceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkspaceListResult {
     pub fn new() -> Self {

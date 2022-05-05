@@ -2,6 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+#![allow(clippy::redundant_clone)]
 use super::models;
 #[derive(Clone)]
 pub struct Client {
@@ -170,6 +171,7 @@ pub mod metrics {
     }
     pub mod list_at_subscription_scope {
         use super::models;
+        type Response = models::SubscriptionScopeMetricResponse;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -254,82 +256,83 @@ pub mod metrics {
                 self.validate_dimensions = Some(validate_dimensions);
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::SubscriptionScopeMetricResponse, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/subscriptions/{}/providers/Microsoft.Insights/metrics",
-                        self.client.endpoint(),
-                        &self.subscription_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-05-01");
-                    let region = &self.region;
-                    url.query_pairs_mut().append_pair("region", region);
-                    if let Some(timespan) = &self.timespan {
-                        url.query_pairs_mut().append_pair("timespan", timespan);
-                    }
-                    if let Some(interval) = &self.interval {
-                        url.query_pairs_mut().append_pair("interval", interval);
-                    }
-                    if let Some(metricnames) = &self.metricnames {
-                        url.query_pairs_mut().append_pair("metricnames", metricnames);
-                    }
-                    if let Some(aggregation) = &self.aggregation {
-                        url.query_pairs_mut().append_pair("aggregation", aggregation);
-                    }
-                    if let Some(top) = &self.top {
-                        url.query_pairs_mut().append_pair("top", &top.to_string());
-                    }
-                    if let Some(orderby) = &self.orderby {
-                        url.query_pairs_mut().append_pair("orderby", orderby);
-                    }
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(result_type) = &self.result_type {
-                        url.query_pairs_mut().append_pair("resultType", result_type);
-                    }
-                    if let Some(metricnamespace) = &self.metricnamespace {
-                        url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
-                    }
-                    if let Some(auto_adjust_timegrain) = &self.auto_adjust_timegrain {
-                        url.query_pairs_mut()
-                            .append_pair("AutoAdjustTimegrain", &auto_adjust_timegrain.to_string());
-                    }
-                    if let Some(validate_dimensions) = &self.validate_dimensions {
-                        url.query_pairs_mut()
-                            .append_pair("ValidateDimensions", &validate_dimensions.to_string());
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::SubscriptionScopeMetricResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Insights/metrics",
+                            this.client.endpoint(),
+                            &this.subscription_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-05-01");
+                        let region = &this.region;
+                        url.query_pairs_mut().append_pair("region", region);
+                        if let Some(timespan) = &this.timespan {
+                            url.query_pairs_mut().append_pair("timespan", timespan);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorContract =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(interval) = &this.interval {
+                            url.query_pairs_mut().append_pair("interval", interval);
+                        }
+                        if let Some(metricnames) = &this.metricnames {
+                            url.query_pairs_mut().append_pair("metricnames", metricnames);
+                        }
+                        if let Some(aggregation) = &this.aggregation {
+                            url.query_pairs_mut().append_pair("aggregation", aggregation);
+                        }
+                        if let Some(top) = &this.top {
+                            url.query_pairs_mut().append_pair("top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            url.query_pairs_mut().append_pair("orderby", orderby);
+                        }
+                        if let Some(filter) = &this.filter {
+                            url.query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(result_type) = &this.result_type {
+                            url.query_pairs_mut().append_pair("resultType", result_type);
+                        }
+                        if let Some(metricnamespace) = &this.metricnamespace {
+                            url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
+                        }
+                        if let Some(auto_adjust_timegrain) = &this.auto_adjust_timegrain {
+                            url.query_pairs_mut()
+                                .append_pair("AutoAdjustTimegrain", &auto_adjust_timegrain.to_string());
+                        }
+                        if let Some(validate_dimensions) = &this.validate_dimensions {
+                            url.query_pairs_mut()
+                                .append_pair("ValidateDimensions", &validate_dimensions.to_string());
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SubscriptionScopeMetricResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorContract =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -338,6 +341,7 @@ pub mod metrics {
     }
     pub mod list_at_subscription_scope_post {
         use super::models;
+        type Response = models::SubscriptionScopeMetricResponse;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -427,87 +431,88 @@ pub mod metrics {
                 self.body = Some(body.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::SubscriptionScopeMetricResponse, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/subscriptions/{}/providers/Microsoft.Insights/metrics",
-                        self.client.endpoint(),
-                        &self.subscription_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-05-01");
-                    let region = &self.region;
-                    url.query_pairs_mut().append_pair("region", region);
-                    if let Some(timespan) = &self.timespan {
-                        url.query_pairs_mut().append_pair("timespan", timespan);
-                    }
-                    if let Some(interval) = &self.interval {
-                        url.query_pairs_mut().append_pair("interval", interval);
-                    }
-                    if let Some(metricnames) = &self.metricnames {
-                        url.query_pairs_mut().append_pair("metricnames", metricnames);
-                    }
-                    if let Some(aggregation) = &self.aggregation {
-                        url.query_pairs_mut().append_pair("aggregation", aggregation);
-                    }
-                    if let Some(top) = &self.top {
-                        url.query_pairs_mut().append_pair("top", &top.to_string());
-                    }
-                    if let Some(orderby) = &self.orderby {
-                        url.query_pairs_mut().append_pair("orderby", orderby);
-                    }
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(result_type) = &self.result_type {
-                        url.query_pairs_mut().append_pair("resultType", result_type);
-                    }
-                    if let Some(metricnamespace) = &self.metricnamespace {
-                        url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
-                    }
-                    if let Some(auto_adjust_timegrain) = &self.auto_adjust_timegrain {
-                        url.query_pairs_mut()
-                            .append_pair("AutoAdjustTimegrain", &auto_adjust_timegrain.to_string());
-                    }
-                    if let Some(validate_dimensions) = &self.validate_dimensions {
-                        url.query_pairs_mut()
-                            .append_pair("ValidateDimensions", &validate_dimensions.to_string());
-                    }
-                    let req_body = if let Some(body) = &self.body {
-                        req_builder = req_builder.header("content-type", "application/json");
-                        azure_core::to_json(body).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::SubscriptionScopeMetricResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Insights/metrics",
+                            this.client.endpoint(),
+                            &this.subscription_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-05-01");
+                        let region = &this.region;
+                        url.query_pairs_mut().append_pair("region", region);
+                        if let Some(timespan) = &this.timespan {
+                            url.query_pairs_mut().append_pair("timespan", timespan);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorContract =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(interval) = &this.interval {
+                            url.query_pairs_mut().append_pair("interval", interval);
+                        }
+                        if let Some(metricnames) = &this.metricnames {
+                            url.query_pairs_mut().append_pair("metricnames", metricnames);
+                        }
+                        if let Some(aggregation) = &this.aggregation {
+                            url.query_pairs_mut().append_pair("aggregation", aggregation);
+                        }
+                        if let Some(top) = &this.top {
+                            url.query_pairs_mut().append_pair("top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            url.query_pairs_mut().append_pair("orderby", orderby);
+                        }
+                        if let Some(filter) = &this.filter {
+                            url.query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(result_type) = &this.result_type {
+                            url.query_pairs_mut().append_pair("resultType", result_type);
+                        }
+                        if let Some(metricnamespace) = &this.metricnamespace {
+                            url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
+                        }
+                        if let Some(auto_adjust_timegrain) = &this.auto_adjust_timegrain {
+                            url.query_pairs_mut()
+                                .append_pair("AutoAdjustTimegrain", &auto_adjust_timegrain.to_string());
+                        }
+                        if let Some(validate_dimensions) = &this.validate_dimensions {
+                            url.query_pairs_mut()
+                                .append_pair("ValidateDimensions", &validate_dimensions.to_string());
+                        }
+                        let req_body = if let Some(body) = &this.body {
+                            req_builder = req_builder.header("content-type", "application/json");
+                            azure_core::to_json(body).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SubscriptionScopeMetricResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorContract =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -516,6 +521,7 @@ pub mod metrics {
     }
     pub mod list {
         use super::models;
+        type Response = models::Response;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -599,78 +605,81 @@ pub mod metrics {
                 self.validate_dimensions = Some(validate_dimensions);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Response, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/providers/Microsoft.Insights/metrics",
-                        self.client.endpoint(),
-                        &self.resource_uri
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-05-01");
-                    if let Some(timespan) = &self.timespan {
-                        url.query_pairs_mut().append_pair("timespan", timespan);
-                    }
-                    if let Some(interval) = &self.interval {
-                        url.query_pairs_mut().append_pair("interval", interval);
-                    }
-                    if let Some(metricnames) = &self.metricnames {
-                        url.query_pairs_mut().append_pair("metricnames", metricnames);
-                    }
-                    if let Some(aggregation) = &self.aggregation {
-                        url.query_pairs_mut().append_pair("aggregation", aggregation);
-                    }
-                    if let Some(top) = &self.top {
-                        url.query_pairs_mut().append_pair("top", &top.to_string());
-                    }
-                    if let Some(orderby) = &self.orderby {
-                        url.query_pairs_mut().append_pair("orderby", orderby);
-                    }
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(result_type) = &self.result_type {
-                        url.query_pairs_mut().append_pair("resultType", result_type);
-                    }
-                    if let Some(metricnamespace) = &self.metricnamespace {
-                        url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
-                    }
-                    if let Some(auto_adjust_timegrain) = &self.auto_adjust_timegrain {
-                        url.query_pairs_mut()
-                            .append_pair("AutoAdjustTimegrain", &auto_adjust_timegrain.to_string());
-                    }
-                    if let Some(validate_dimensions) = &self.validate_dimensions {
-                        url.query_pairs_mut()
-                            .append_pair("ValidateDimensions", &validate_dimensions.to_string());
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Response =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/providers/Microsoft.Insights/metrics",
+                            this.client.endpoint(),
+                            &this.resource_uri
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-05-01");
+                        if let Some(timespan) = &this.timespan {
+                            url.query_pairs_mut().append_pair("timespan", timespan);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(interval) = &this.interval {
+                            url.query_pairs_mut().append_pair("interval", interval);
+                        }
+                        if let Some(metricnames) = &this.metricnames {
+                            url.query_pairs_mut().append_pair("metricnames", metricnames);
+                        }
+                        if let Some(aggregation) = &this.aggregation {
+                            url.query_pairs_mut().append_pair("aggregation", aggregation);
+                        }
+                        if let Some(top) = &this.top {
+                            url.query_pairs_mut().append_pair("top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            url.query_pairs_mut().append_pair("orderby", orderby);
+                        }
+                        if let Some(filter) = &this.filter {
+                            url.query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(result_type) = &this.result_type {
+                            url.query_pairs_mut().append_pair("resultType", result_type);
+                        }
+                        if let Some(metricnamespace) = &this.metricnamespace {
+                            url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
+                        }
+                        if let Some(auto_adjust_timegrain) = &this.auto_adjust_timegrain {
+                            url.query_pairs_mut()
+                                .append_pair("AutoAdjustTimegrain", &auto_adjust_timegrain.to_string());
+                        }
+                        if let Some(validate_dimensions) = &this.validate_dimensions {
+                            url.query_pairs_mut()
+                                .append_pair("ValidateDimensions", &validate_dimensions.to_string());
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::Response =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -704,6 +713,7 @@ pub mod metric_definitions {
     }
     pub mod list_at_subscription_scope {
         use super::models;
+        type Response = models::SubscriptionScopeMetricDefinitionCollection;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -738,51 +748,52 @@ pub mod metric_definitions {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::SubscriptionScopeMetricDefinitionCollection, Error>>
-            {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/subscriptions/{}/providers/Microsoft.Insights/metricDefinitions",
-                        self.client.endpoint(),
-                        &self.subscription_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-05-01");
-                    let region = &self.region;
-                    url.query_pairs_mut().append_pair("region", region);
-                    if let Some(metricnamespace) = &self.metricnamespace {
-                        url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::SubscriptionScopeMetricDefinitionCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Insights/metricDefinitions",
+                            this.client.endpoint(),
+                            &this.subscription_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-05-01");
+                        let region = &this.region;
+                        url.query_pairs_mut().append_pair("region", region);
+                        if let Some(metricnamespace) = &this.metricnamespace {
+                            url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorContract =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SubscriptionScopeMetricDefinitionCollection =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorContract =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -791,6 +802,7 @@ pub mod metric_definitions {
     }
     pub mod list {
         use super::models;
+        type Response = models::MetricDefinitionCollection;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -824,48 +836,50 @@ pub mod metric_definitions {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::MetricDefinitionCollection, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/providers/Microsoft.Insights/metricDefinitions",
-                        self.client.endpoint(),
-                        &self.resource_uri
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-05-01");
-                    if let Some(metricnamespace) = &self.metricnamespace {
-                        url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::MetricDefinitionCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/providers/Microsoft.Insights/metricDefinitions",
+                            this.client.endpoint(),
+                            &this.resource_uri
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-05-01");
+                        if let Some(metricnamespace) = &this.metricnamespace {
+                            url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::MetricDefinitionCollection =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -883,6 +897,7 @@ pub mod operations {
     }
     pub mod list {
         use super::models;
+        type Response = models::OperationListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -910,39 +925,42 @@ pub mod operations {
             pub(crate) client: super::super::Client,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Insights/operations", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-05-01");
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::OperationListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
-                        }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorContract =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/providers/Microsoft.Insights/operations", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-05-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::OperationListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorContract =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })

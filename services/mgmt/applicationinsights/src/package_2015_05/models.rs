@@ -60,6 +60,11 @@ pub struct AnnotationError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
 }
+impl azure_core::Continuable for AnnotationError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AnnotationError {
     pub fn new() -> Self {
         Self::default()
@@ -71,6 +76,11 @@ pub struct AnnotationsListResult {
     #[doc = "An array of annotations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Annotation>,
+}
+impl azure_core::Continuable for AnnotationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl AnnotationsListResult {
     pub fn new() -> Self {
@@ -129,6 +139,11 @@ impl ApplicationInsightsComponentApiKey {
 pub struct ApplicationInsightsComponentApiKeyListResult {
     #[doc = "List of API Key definitions."]
     pub value: Vec<ApplicationInsightsComponentApiKey>,
+}
+impl azure_core::Continuable for ApplicationInsightsComponentApiKeyListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ApplicationInsightsComponentApiKeyListResult {
     pub fn new(value: Vec<ApplicationInsightsComponentApiKey>) -> Self {
@@ -545,6 +560,11 @@ pub struct ApplicationInsightsComponentListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApplicationInsightsComponentListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApplicationInsightsComponentListResult {
     pub fn new(value: Vec<ApplicationInsightsComponent>) -> Self {
         Self { value, next_link: None }
@@ -785,6 +805,11 @@ pub struct ApplicationInsightsWebTestLocationsListResult {
     #[doc = "List of web test locations."]
     pub value: Vec<ApplicationInsightsComponentWebTestLocation>,
 }
+impl azure_core::Continuable for ApplicationInsightsWebTestLocationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ApplicationInsightsWebTestLocationsListResult {
     pub fn new(value: Vec<ApplicationInsightsComponentWebTestLocation>) -> Self {
         Self { value }
@@ -915,6 +940,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -994,6 +1024,11 @@ pub struct MyWorkbookError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
+impl azure_core::Continuable for MyWorkbookError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MyWorkbookError {
     pub fn new() -> Self {
         Self::default()
@@ -1071,6 +1106,11 @@ pub struct MyWorkbooksListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MyWorkbook>,
 }
+impl azure_core::Continuable for MyWorkbooksListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl MyWorkbooksListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1121,6 +1161,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -1351,6 +1396,11 @@ pub struct WorkItemConfigurationError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
 }
+impl azure_core::Continuable for WorkItemConfigurationError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkItemConfigurationError {
     pub fn new() -> Self {
         Self::default()
@@ -1362,6 +1412,11 @@ pub struct WorkItemConfigurationsListResult {
     #[doc = "An array of work item configurations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkItemConfiguration>,
+}
+impl azure_core::Continuable for WorkItemConfigurationsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkItemConfigurationsListResult {
     pub fn new() -> Self {
@@ -1429,6 +1484,11 @@ pub struct WorkbookError {
     #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
+}
+impl azure_core::Continuable for WorkbookError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkbookError {
     pub fn new() -> Self {
@@ -1536,6 +1596,11 @@ pub struct WorkbooksListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workbook>,
 }
+impl azure_core::Continuable for WorkbooksListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkbooksListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1549,6 +1614,11 @@ pub struct WebTestListResult {
     #[doc = "The link to get the next part of the returned list of web tests, should the return set be too large for a single request. May be null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WebTestListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WebTestListResult {
     pub fn new(value: Vec<WebTest>) -> Self {

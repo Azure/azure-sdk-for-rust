@@ -65,6 +65,11 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActionGroupList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActionGroupList {
     pub fn new() -> Self {
         Self::default()
@@ -297,6 +302,11 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -541,6 +551,11 @@ pub struct MetricAlertResourceCollection {
     #[doc = "the values for the alert rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricAlertResource>,
+}
+impl azure_core::Continuable for MetricAlertResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl MetricAlertResourceCollection {
     pub fn new() -> Self {

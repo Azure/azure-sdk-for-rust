@@ -9,6 +9,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -69,6 +74,11 @@ pub struct DnsForwardingRulesetListResult {
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DnsForwardingRulesetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DnsForwardingRulesetListResult {
     pub fn new() -> Self {
@@ -139,6 +149,11 @@ pub struct DnsResolverListResult {
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DnsResolverListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DnsResolverListResult {
     pub fn new() -> Self {
@@ -221,6 +236,11 @@ pub struct ForwardingRuleListResult {
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ForwardingRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ForwardingRuleListResult {
     pub fn new() -> Self {
@@ -345,6 +365,11 @@ pub struct InboundEndpointListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for InboundEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl InboundEndpointListResult {
     pub fn new() -> Self {
         Self::default()
@@ -447,6 +472,11 @@ pub struct OutboundEndpointListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OutboundEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OutboundEndpointListResult {
     pub fn new() -> Self {
         Self::default()
@@ -544,6 +574,11 @@ pub struct SubResourceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SubResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SubResourceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -609,6 +644,11 @@ pub struct VirtualNetworkDnsForwardingRulesetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualNetworkDnsForwardingRulesetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualNetworkDnsForwardingRulesetListResult {
     pub fn new() -> Self {
         Self::default()
@@ -643,6 +683,11 @@ pub struct VirtualNetworkLinkListResult {
     #[doc = "The continuation token for the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkLinkListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkLinkListResult {
     pub fn new() -> Self {

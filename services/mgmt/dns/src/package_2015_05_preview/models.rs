@@ -144,6 +144,11 @@ pub struct RecordSetListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RecordSetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RecordSetListResult {
     pub fn new() -> Self {
         Self::default()
@@ -333,6 +338,11 @@ pub struct ZoneListResult {
     #[doc = "Gets or sets the continuation token for the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ZoneListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ZoneListResult {
     pub fn new() -> Self {

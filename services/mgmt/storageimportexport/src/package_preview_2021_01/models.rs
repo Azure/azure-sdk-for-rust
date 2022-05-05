@@ -146,6 +146,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -217,6 +222,11 @@ pub struct GetBitLockerKeysResponse {
     #[doc = "drive status"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DriveBitLockerKey>,
+}
+impl azure_core::Continuable for GetBitLockerKeysResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl GetBitLockerKeysResponse {
     pub fn new() -> Self {
@@ -362,6 +372,11 @@ pub struct ListJobsResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobResponse>,
 }
+impl azure_core::Continuable for ListJobsResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListJobsResponse {
     pub fn new() -> Self {
         Self::default()
@@ -373,6 +388,11 @@ pub struct ListOperationsResponse {
     #[doc = "operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for ListOperationsResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ListOperationsResponse {
     pub fn new() -> Self {
@@ -451,6 +471,11 @@ pub struct LocationsResponse {
     #[doc = "locations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Location>,
+}
+impl azure_core::Continuable for LocationsResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LocationsResponse {
     pub fn new() -> Self {

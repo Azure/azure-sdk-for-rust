@@ -140,6 +140,11 @@ pub struct JobDetailsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobDetailsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobDetailsList {
     pub fn new() -> Self {
         Self::default()
@@ -225,6 +230,11 @@ pub struct ProviderStatusList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ProviderStatusList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ProviderStatusList {
     pub fn new() -> Self {
         Self::default()
@@ -284,6 +294,11 @@ pub struct QuotaList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for QuotaList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl QuotaList {
     pub fn new() -> Self {
         Self::default()
@@ -295,6 +310,11 @@ pub struct RestError {
     #[doc = "An error response from Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorData>,
+}
+impl azure_core::Continuable for RestError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl RestError {
     pub fn new() -> Self {

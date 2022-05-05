@@ -182,6 +182,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -224,6 +229,11 @@ pub struct GuestConfigurationAssignmentList {
     #[doc = "Result of the list guest configuration assignment operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestConfigurationAssignment>,
+}
+impl azure_core::Continuable for GuestConfigurationAssignmentList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl GuestConfigurationAssignmentList {
     pub fn new() -> Self {
@@ -476,6 +486,11 @@ pub struct OperationList {
     #[doc = "List of Automation operations supported by the Automation resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationList {
     pub fn new() -> Self {

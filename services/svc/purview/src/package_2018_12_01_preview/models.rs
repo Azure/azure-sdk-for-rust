@@ -974,6 +974,11 @@ pub struct AzureKeyVaultList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl azure_core::Continuable for AzureKeyVaultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AzureKeyVaultList {
     pub fn new() -> Self {
         Self::default()
@@ -2154,6 +2159,11 @@ pub struct ClassificationRuleList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl azure_core::Continuable for ClassificationRuleList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClassificationRuleList {
     pub fn new() -> Self {
         Self::default()
@@ -2435,6 +2445,11 @@ pub struct DataSourceList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl azure_core::Continuable for DataSourceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataSourceList {
     pub fn new() -> Self {
         Self::default()
@@ -2490,6 +2505,11 @@ impl ErrorModel {
 pub struct ErrorResponseModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
+}
+impl azure_core::Continuable for ErrorResponseModel {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponseModel {
     pub fn new() -> Self {
@@ -3363,6 +3383,11 @@ pub struct ScanHistoryList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl azure_core::Continuable for ScanHistoryList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ScanHistoryList {
     pub fn new() -> Self {
         Self::default()
@@ -3376,6 +3401,11 @@ pub struct ScanList {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl azure_core::Continuable for ScanList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ScanList {
     pub fn new() -> Self {
@@ -3554,6 +3584,11 @@ pub struct ScanRulesetList {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl azure_core::Continuable for ScanRulesetList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ScanRulesetList {
     pub fn new() -> Self {
@@ -3789,6 +3824,11 @@ pub struct SystemScanRulesetList {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl azure_core::Continuable for SystemScanRulesetList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SystemScanRulesetList {
     pub fn new() -> Self {

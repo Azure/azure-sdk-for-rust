@@ -65,6 +65,11 @@ pub struct AfdDomainListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AfdDomainListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AfdDomainListResult {
     pub fn new() -> Self {
         Self::default()
@@ -164,6 +169,11 @@ pub struct AfdEndpointListResult {
     #[doc = "URL to get the next set of endpoint objects if there is any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AfdEndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AfdEndpointListResult {
     pub fn new() -> Self {
@@ -269,6 +279,11 @@ pub struct AfdOriginGroupListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AfdOriginGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AfdOriginGroupListResult {
     pub fn new() -> Self {
         Self::default()
@@ -349,6 +364,11 @@ pub struct AfdOriginListResult {
     #[doc = "URL to get the next set of origin objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AfdOriginListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AfdOriginListResult {
     pub fn new() -> Self {
@@ -475,6 +495,11 @@ pub struct AfdErrorResponse {
     #[doc = "Error response indicates CDN service is not able to process the incoming request. The reason is provided in the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for AfdErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl AfdErrorResponse {
     pub fn new() -> Self {
@@ -687,6 +712,11 @@ pub struct CdnWebApplicationFirewallPolicyList {
     #[doc = "URL to get the next set of WebApplicationFirewallPolicy objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CdnWebApplicationFirewallPolicyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CdnWebApplicationFirewallPolicyList {
     pub fn new() -> Self {
@@ -958,6 +988,11 @@ pub struct CustomDomainListResult {
     #[doc = "URL to get the next set of custom domain objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CustomDomainListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CustomDomainListResult {
     pub fn new() -> Self {
@@ -1709,6 +1744,11 @@ pub struct EdgenodeResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EdgenodeResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EdgenodeResult {
     pub fn new() -> Self {
         Self::default()
@@ -1740,6 +1780,11 @@ pub struct EndpointListResult {
     #[doc = "URL to get the next set of endpoint objects if there is any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EndpointListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EndpointListResult {
     pub fn new() -> Self {
@@ -1895,6 +1940,11 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -2446,6 +2496,11 @@ pub struct ManagedRuleSetDefinitionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ManagedRuleSetDefinitionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ManagedRuleSetDefinitionList {
     pub fn new() -> Self {
         Self::default()
@@ -2625,6 +2680,11 @@ pub struct OperationsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2676,6 +2736,11 @@ pub struct OriginGroupListResult {
     #[doc = "URL to get the next set of origin objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OriginGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OriginGroupListResult {
     pub fn new() -> Self {
@@ -2801,6 +2866,11 @@ pub struct OriginListResult {
     #[doc = "URL to get the next set of origin objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OriginListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OriginListResult {
     pub fn new() -> Self {
@@ -2991,6 +3061,11 @@ pub struct ProfileListResult {
     #[doc = "URL to get the next set of profile objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProfileListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProfileListResult {
     pub fn new() -> Self {
@@ -3530,6 +3605,11 @@ pub struct ResourceUsageListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceUsageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceUsageListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3603,6 +3683,11 @@ pub struct RouteListResult {
     #[doc = "URL to get the next set of route objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RouteListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RouteListResult {
     pub fn new() -> Self {
@@ -3741,6 +3826,11 @@ pub struct RuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3785,6 +3875,11 @@ pub struct RuleSetListResult {
     #[doc = "URL to get the next set of rule set objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RuleSetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RuleSetListResult {
     pub fn new() -> Self {
@@ -3868,6 +3963,11 @@ pub struct SecretListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SecretListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SecretListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3932,6 +4032,11 @@ pub struct SecurityPolicyListResult {
     #[doc = "URL to get the next set of security policy objects if there is any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecurityPolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SecurityPolicyListResult {
     pub fn new() -> Self {
@@ -4637,6 +4742,11 @@ pub struct UsagesListResult {
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UsagesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UsagesListResult {
     pub fn new() -> Self {

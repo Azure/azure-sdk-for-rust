@@ -53,6 +53,11 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActionGroupList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActionGroupList {
     pub fn new() -> Self {
         Self::default()
@@ -194,6 +199,11 @@ pub struct ActivityLogAlertList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ActivityLogAlertList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ActivityLogAlertList {
     pub fn new() -> Self {
         Self::default()
@@ -302,6 +312,11 @@ pub struct AlertRuleResourceCollection {
     #[doc = "the values for the alert rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertRuleResource>,
+}
+impl azure_core::Continuable for AlertRuleResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl AlertRuleResourceCollection {
     pub fn new() -> Self {
@@ -467,6 +482,11 @@ pub struct AutoscaleSettingResourceCollection {
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AutoscaleSettingResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AutoscaleSettingResourceCollection {
     pub fn new(value: Vec<AutoscaleSettingResource>) -> Self {
@@ -677,6 +697,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -712,6 +737,11 @@ pub struct IncidentListResult {
     #[doc = "the incident collection."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Incident>,
+}
+impl azure_core::Continuable for IncidentListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl IncidentListResult {
     pub fn new() -> Self {
@@ -772,6 +802,11 @@ impl LocationThresholdRuleCondition {
 pub struct LogProfileCollection {
     #[doc = "the values of the log profiles."]
     pub value: Vec<LogProfileResource>,
+}
+impl azure_core::Continuable for LogProfileCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LogProfileCollection {
     pub fn new(value: Vec<LogProfileResource>) -> Self {

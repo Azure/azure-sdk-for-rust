@@ -52,6 +52,11 @@ pub struct AuthorizationRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AuthorizationRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AuthorizationRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -107,6 +112,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -135,6 +145,11 @@ pub struct HybridConnectionListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of HybridConnection operation"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HybridConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HybridConnectionListResult {
     pub fn new() -> Self {
@@ -211,6 +226,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -267,6 +287,11 @@ pub struct RelayNamespaceListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Namespaces"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RelayNamespaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RelayNamespaceListResult {
     pub fn new() -> Self {
@@ -451,6 +476,11 @@ pub struct WcfRelaysListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of WcfRelays operation"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for WcfRelaysListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WcfRelaysListResult {
     pub fn new() -> Self {

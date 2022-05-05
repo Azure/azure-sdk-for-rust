@@ -158,6 +158,11 @@ pub struct JobInfoListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl azure_core::Continuable for JobInfoListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobInfoListResult {
     pub fn new() -> Self {
         Self::default()

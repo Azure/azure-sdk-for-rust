@@ -82,6 +82,11 @@ pub struct ConversionList {
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ConversionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ConversionList {
     pub fn new(conversions: Vec<Conversion>) -> Self {
         Self {
@@ -205,6 +210,11 @@ pub struct ErrorResponse {
     #[doc = "The error object containing details of why the request failed."]
     pub error: Error,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new(error: Error) -> Self {
         Self { error }
@@ -284,6 +294,11 @@ pub struct SessionsList {
     #[doc = "If more rendering sessions are available this field will contain a URL where the next batch of sessions can be requested. This URL will need the same authentication as all calls to the Azure Remote Rendering API."]
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SessionsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SessionsList {
     pub fn new(sessions: Vec<SessionProperties>) -> Self {

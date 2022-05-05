@@ -116,6 +116,11 @@ pub struct DataCollectionRuleAssociationProxyOnlyResourceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataCollectionRuleAssociationProxyOnlyResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataCollectionRuleAssociationProxyOnlyResourceListResult {
     pub fn new(value: Vec<DataCollectionRuleAssociationProxyOnlyResource>) -> Self {
         Self { value, next_link: None }
@@ -179,6 +184,11 @@ pub struct DataCollectionRuleResourceListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataCollectionRuleResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataCollectionRuleResourceListResult {
     pub fn new(value: Vec<DataCollectionRuleResource>) -> Self {
@@ -281,6 +291,11 @@ pub struct ErrorResponse {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {

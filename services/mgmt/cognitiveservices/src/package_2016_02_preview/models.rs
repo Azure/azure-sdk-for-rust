@@ -132,6 +132,11 @@ pub struct CognitiveServicesAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesAccount>,
 }
+impl azure_core::Continuable for CognitiveServicesAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CognitiveServicesAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -204,6 +209,11 @@ impl CognitiveServicesResourceAndSku {
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {

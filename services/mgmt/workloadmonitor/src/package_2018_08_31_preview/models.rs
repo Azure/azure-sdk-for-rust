@@ -118,6 +118,11 @@ pub struct ComponentsCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Component>,
 }
+impl azure_core::Continuable for ComponentsCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ComponentsCollection {
     pub fn new() -> Self {
         Self::default()
@@ -153,6 +158,11 @@ pub struct ErrorResponse {
     #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -390,6 +400,11 @@ pub struct MonitorInstancesCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MonitorInstance>,
 }
+impl azure_core::Continuable for MonitorInstancesCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MonitorInstancesCollection {
     pub fn new() -> Self {
         Self::default()
@@ -502,6 +517,11 @@ pub struct MonitorsCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Monitor>,
 }
+impl azure_core::Continuable for MonitorsCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MonitorsCollection {
     pub fn new() -> Self {
         Self::default()
@@ -545,6 +565,11 @@ pub struct NotificationSettingsCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NotificationSettingsCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NotificationSettingsCollection {
     pub fn new() -> Self {
         Self::default()
@@ -577,6 +602,11 @@ pub struct OperationListResult {
     #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

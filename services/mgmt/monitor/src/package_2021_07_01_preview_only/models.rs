@@ -77,6 +77,11 @@ pub struct AzureMonitorPrivateLinkScopeListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AzureMonitorPrivateLinkScopeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AzureMonitorPrivateLinkScopeListResult {
     pub fn new(value: Vec<AzureMonitorPrivateLinkScope>) -> Self {
         Self { value, next_link: None }
@@ -110,6 +115,11 @@ pub struct DefaultErrorResponse {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for DefaultErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DefaultErrorResponse {
     pub fn new() -> Self {
@@ -374,6 +384,11 @@ pub struct ScopedResourceListResult {
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ScopedResourceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ScopedResourceListResult {
     pub fn new() -> Self {

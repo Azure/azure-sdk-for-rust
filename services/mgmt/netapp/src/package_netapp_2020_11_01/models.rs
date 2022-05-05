@@ -132,6 +132,11 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -409,6 +414,11 @@ pub struct BackupPoliciesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupPolicy>,
 }
+impl azure_core::Continuable for BackupPoliciesList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupPoliciesList {
     pub fn new() -> Self {
         Self::default()
@@ -582,6 +592,11 @@ pub struct BackupsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Backup>,
 }
+impl azure_core::Continuable for BackupsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BackupsList {
     pub fn new() -> Self {
         Self::default()
@@ -640,6 +655,11 @@ pub struct CapacityPoolList {
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CapacityPoolList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CapacityPoolList {
     pub fn new() -> Self {
@@ -918,6 +938,11 @@ pub struct NetAppAccountList {
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for NetAppAccountList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl NetAppAccountList {
     pub fn new() -> Self {
@@ -1198,6 +1223,11 @@ pub struct SnapshotPoliciesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SnapshotPolicy>,
 }
+impl azure_core::Continuable for SnapshotPoliciesList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SnapshotPoliciesList {
     pub fn new() -> Self {
         Self::default()
@@ -1356,6 +1386,11 @@ pub struct SnapshotsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Snapshot>,
 }
+impl azure_core::Continuable for SnapshotsList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl SnapshotsList {
     pub fn new() -> Self {
         Self::default()
@@ -1441,6 +1476,11 @@ pub struct VaultList {
     #[doc = "A list of vaults"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Vault>,
+}
+impl azure_core::Continuable for VaultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl VaultList {
     pub fn new() -> Self {
@@ -1539,6 +1579,11 @@ pub struct VolumeList {
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VolumeList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VolumeList {
     pub fn new() -> Self {

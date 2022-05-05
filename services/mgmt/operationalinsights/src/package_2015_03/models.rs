@@ -462,6 +462,11 @@ pub struct StorageInsightListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl azure_core::Continuable for StorageInsightListResult {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl StorageInsightListResult {
     pub fn new() -> Self {
         Self::default()

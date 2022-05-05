@@ -12,6 +12,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -64,6 +69,11 @@ pub struct ManagementGroupDiagnosticSettingsResourceCollection {
     #[doc = "The collection of management group diagnostic settings resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroupDiagnosticSettingsResource>,
+}
+impl azure_core::Continuable for ManagementGroupDiagnosticSettingsResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ManagementGroupDiagnosticSettingsResourceCollection {
     pub fn new() -> Self {

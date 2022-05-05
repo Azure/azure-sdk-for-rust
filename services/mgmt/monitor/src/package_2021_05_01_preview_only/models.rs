@@ -12,6 +12,11 @@ pub struct AutoscaleErrorResponse {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl azure_core::Continuable for AutoscaleErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AutoscaleErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -179,6 +184,11 @@ pub struct AutoscaleSettingResourceCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AutoscaleSettingResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AutoscaleSettingResourceCollection {
     pub fn new(value: Vec<AutoscaleSettingResource>) -> Self {
         Self { value, next_link: None }
@@ -283,6 +293,11 @@ pub struct DiagnosticSettingsCategoryResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
 }
+impl azure_core::Continuable for DiagnosticSettingsCategoryResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DiagnosticSettingsCategoryResourceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -311,6 +326,11 @@ pub struct DiagnosticSettingsResourceCollection {
     #[doc = "The collection of diagnostic settings resources;."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsResource>,
+}
+impl azure_core::Continuable for DiagnosticSettingsResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DiagnosticSettingsResourceCollection {
     pub fn new() -> Self {
@@ -344,6 +364,11 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -428,6 +453,11 @@ pub struct ManagementGroupDiagnosticSettingsResourceCollection {
     #[doc = "The collection of management group diagnostic settings resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroupDiagnosticSettingsResource>,
+}
+impl azure_core::Continuable for ManagementGroupDiagnosticSettingsResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ManagementGroupDiagnosticSettingsResourceCollection {
     pub fn new() -> Self {
@@ -883,6 +913,11 @@ pub struct SubscriptionDiagnosticSettingsResourceCollection {
     #[doc = "The collection of subscription diagnostic settings resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionDiagnosticSettingsResource>,
+}
+impl azure_core::Continuable for SubscriptionDiagnosticSettingsResourceCollection {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl SubscriptionDiagnosticSettingsResourceCollection {
     pub fn new() -> Self {

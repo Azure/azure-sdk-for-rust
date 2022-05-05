@@ -47,6 +47,11 @@ pub struct EnabledResourceTypesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnabledResourceType>,
 }
+impl azure_core::Continuable for EnabledResourceTypesListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EnabledResourceTypesListResult {
     pub fn new() -> Self {
         Self::default()
@@ -97,6 +102,11 @@ pub struct ErrorResponse {
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -238,6 +248,11 @@ pub struct CustomLocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomLocation>,
 }
+impl azure_core::Continuable for CustomLocationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CustomLocationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -293,6 +308,11 @@ pub struct CustomLocationOperationsList {
     pub next_link: Option<String>,
     #[doc = "Array of customLocationOperation"]
     pub value: Vec<CustomLocationOperation>,
+}
+impl azure_core::Continuable for CustomLocationOperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl CustomLocationOperationsList {
     pub fn new(value: Vec<CustomLocationOperation>) -> Self {
@@ -434,6 +454,11 @@ pub struct ResourceSyncRuleListResult {
     #[doc = "The list of Resource Sync Rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceSyncRule>,
+}
+impl azure_core::Continuable for ResourceSyncRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResourceSyncRuleListResult {
     pub fn new() -> Self {

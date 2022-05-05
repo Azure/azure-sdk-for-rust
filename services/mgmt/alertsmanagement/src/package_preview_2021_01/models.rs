@@ -165,6 +165,11 @@ pub struct OperationsList {
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {
         Self { next_link: None, value }

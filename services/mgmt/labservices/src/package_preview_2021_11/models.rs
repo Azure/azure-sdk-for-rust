@@ -110,6 +110,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -642,6 +647,11 @@ pub struct ListUsagesResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ListUsagesResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListUsagesResult {
     pub fn new() -> Self {
         Self::default()
@@ -720,6 +730,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -784,6 +799,11 @@ pub struct PagedImages {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PagedImages {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PagedImages {
     pub fn new() -> Self {
         Self::default()
@@ -798,6 +818,11 @@ pub struct PagedLabPlans {
     #[doc = "The link to get the next page of lab plan results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PagedLabPlans {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PagedLabPlans {
     pub fn new() -> Self {
@@ -814,6 +839,11 @@ pub struct PagedLabServicesSkus {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PagedLabServicesSkus {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PagedLabServicesSkus {
     pub fn new() -> Self {
         Self::default()
@@ -828,6 +858,11 @@ pub struct PagedLabs {
     #[doc = "The link to get the next page of image results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PagedLabs {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PagedLabs {
     pub fn new() -> Self {
@@ -844,6 +879,11 @@ pub struct PagedSchedules {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PagedSchedules {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PagedSchedules {
     pub fn new() -> Self {
         Self::default()
@@ -859,6 +899,11 @@ pub struct PagedUsers {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PagedUsers {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PagedUsers {
     pub fn new() -> Self {
         Self::default()
@@ -873,6 +918,11 @@ pub struct PagedVirtualMachines {
     #[doc = "The link to get the next page of virtual machine results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PagedVirtualMachines {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PagedVirtualMachines {
     pub fn new() -> Self {

@@ -21,6 +21,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -1081,6 +1086,11 @@ pub struct ProviderOperationResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ProviderOperationResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ProviderOperationResult {
     pub fn new() -> Self {
         Self::default()
@@ -1378,6 +1388,11 @@ pub struct ResponseWithContinuationEnvironmentSetting {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResponseWithContinuationEnvironmentSetting {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResponseWithContinuationEnvironmentSetting {
     pub fn new() -> Self {
         Self::default()
@@ -1392,6 +1407,11 @@ pub struct ResponseWithContinuationEnvironment {
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResponseWithContinuationEnvironment {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResponseWithContinuationEnvironment {
     pub fn new() -> Self {
@@ -1408,6 +1428,11 @@ pub struct ResponseWithContinuationGalleryImage {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResponseWithContinuationGalleryImage {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResponseWithContinuationGalleryImage {
     pub fn new() -> Self {
         Self::default()
@@ -1422,6 +1447,11 @@ pub struct ResponseWithContinuationLabAccount {
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResponseWithContinuationLabAccount {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResponseWithContinuationLabAccount {
     pub fn new() -> Self {
@@ -1438,6 +1468,11 @@ pub struct ResponseWithContinuationLab {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResponseWithContinuationLab {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResponseWithContinuationLab {
     pub fn new() -> Self {
         Self::default()
@@ -1452,6 +1487,11 @@ pub struct ResponseWithContinuationUser {
     #[doc = "Link for next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ResponseWithContinuationUser {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ResponseWithContinuationUser {
     pub fn new() -> Self {

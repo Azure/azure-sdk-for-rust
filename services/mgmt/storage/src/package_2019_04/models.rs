@@ -207,6 +207,11 @@ pub struct BlobServiceItems {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BlobServiceProperties>,
 }
+impl azure_core::Continuable for BlobServiceItems {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl BlobServiceItems {
     pub fn new() -> Self {
         Self::default()
@@ -298,6 +303,11 @@ pub struct CloudError {
     #[doc = "An error response from the Storage service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -697,6 +707,11 @@ pub struct FileShareItems {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for FileShareItems {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl FileShareItems {
     pub fn new() -> Self {
         Self::default()
@@ -1008,6 +1023,11 @@ pub struct ListContainerItems {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ListContainerItems {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ListContainerItems {
     pub fn new() -> Self {
         Self::default()
@@ -1316,6 +1336,11 @@ pub struct OperationListResult {
     #[doc = "List of Storage operations supported by the Storage resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -1762,6 +1787,11 @@ pub struct StorageAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for StorageAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StorageAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2077,6 +2107,11 @@ pub struct StorageSkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Sku>,
 }
+impl azure_core::Continuable for StorageSkuListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl StorageSkuListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2206,6 +2241,11 @@ pub struct UsageListResult {
     #[doc = "Gets or sets the list of Storage Resource Usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsageListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl UsageListResult {
     pub fn new() -> Self {

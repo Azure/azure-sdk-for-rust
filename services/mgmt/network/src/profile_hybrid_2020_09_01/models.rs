@@ -926,6 +926,11 @@ pub struct InboundNatRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for InboundNatRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl InboundNatRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1221,6 +1226,11 @@ pub struct LoadBalancerBackendAddressPoolListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LoadBalancerBackendAddressPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LoadBalancerBackendAddressPoolListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1235,6 +1245,11 @@ pub struct LoadBalancerFrontendIpConfigurationListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LoadBalancerFrontendIpConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LoadBalancerFrontendIpConfigurationListResult {
     pub fn new() -> Self {
@@ -1251,6 +1266,11 @@ pub struct LoadBalancerListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LoadBalancerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LoadBalancerListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1265,6 +1285,11 @@ pub struct LoadBalancerLoadBalancingRuleListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LoadBalancerLoadBalancingRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LoadBalancerLoadBalancingRuleListResult {
     pub fn new() -> Self {
@@ -1281,6 +1306,11 @@ pub struct LoadBalancerOutboundRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LoadBalancerOutboundRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LoadBalancerOutboundRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1295,6 +1325,11 @@ pub struct LoadBalancerProbeListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LoadBalancerProbeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LoadBalancerProbeListResult {
     pub fn new() -> Self {
@@ -1476,6 +1511,11 @@ pub struct LocalNetworkGatewayListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LocalNetworkGatewayListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl LocalNetworkGatewayListResult {
     pub fn new() -> Self {
@@ -1679,6 +1719,11 @@ pub struct NetworkInterfaceIpConfigurationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NetworkInterfaceIpConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NetworkInterfaceIpConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1754,6 +1799,11 @@ pub struct NetworkInterfaceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NetworkInterfaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NetworkInterfaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1768,6 +1818,11 @@ pub struct NetworkInterfaceLoadBalancerListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for NetworkInterfaceLoadBalancerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl NetworkInterfaceLoadBalancerListResult {
     pub fn new() -> Self {
@@ -1855,6 +1910,11 @@ pub struct NetworkInterfaceTapConfigurationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NetworkInterfaceTapConfigurationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NetworkInterfaceTapConfigurationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1901,6 +1961,11 @@ pub struct NetworkSecurityGroupListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for NetworkSecurityGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl NetworkSecurityGroupListResult {
     pub fn new() -> Self {
@@ -1988,6 +2053,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -2212,6 +2282,11 @@ pub struct PublicIpAddressListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PublicIpAddressListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PublicIpAddressListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2387,6 +2462,11 @@ pub struct RouteListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RouteListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RouteListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2457,6 +2537,11 @@ pub struct RouteTableListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RouteTableListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RouteTableListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2512,6 +2597,11 @@ pub struct SecurityRuleListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecurityRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SecurityRuleListResult {
     pub fn new() -> Self {
@@ -2810,6 +2900,11 @@ pub struct SubnetListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SubnetListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SubnetListResult {
     pub fn new() -> Self {
@@ -3117,6 +3212,11 @@ pub struct VirtualNetworkGatewayConnectionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualNetworkGatewayConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualNetworkGatewayConnectionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3291,6 +3391,11 @@ pub struct VirtualNetworkGatewayListConnectionsResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualNetworkGatewayListConnectionsResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualNetworkGatewayListConnectionsResult {
     pub fn new() -> Self {
         Self::default()
@@ -3305,6 +3410,11 @@ pub struct VirtualNetworkGatewayListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkGatewayListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkGatewayListResult {
     pub fn new() -> Self {
@@ -3445,6 +3555,11 @@ pub struct VirtualNetworkListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for VirtualNetworkListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl VirtualNetworkListResult {
     pub fn new() -> Self {
         Self::default()
@@ -3459,6 +3574,11 @@ pub struct VirtualNetworkListUsageResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkListUsageResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkListUsageResult {
     pub fn new() -> Self {
@@ -3494,6 +3614,11 @@ pub struct VirtualNetworkPeeringListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkPeeringListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkPeeringListResult {
     pub fn new() -> Self {

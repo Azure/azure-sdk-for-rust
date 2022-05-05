@@ -9,6 +9,7 @@ image reference: ImageReference { publisher: Some("canonical"), offer: Some("ubu
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
+use futures::stream::StreamExt;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -20,29 +21,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_batch::ClientBuilder::new(credential).build();
 
-    let pools = client
+    let mut pools = client
         .pool()
         .list_by_batch_account(resource_group_name, account_name, subscription_id)
-        .into_future()
-        .await?;
+        .into_stream();
 
-    for pool in pools.value {
-        println!("name: {:?}", pool.proxy_resource.name.unwrap_or_default());
-        if let Some(properties) = &pool.properties {
-            if let Some(provisioning_state) = &properties.provisioning_state {
-                println!("provisioning state: {:?}", provisioning_state);
-            }
-            if let Some(vm_size) = &properties.vm_size {
-                println!("vm_size: {}", vm_size);
-            }
+    while let Some(pools) = pools.next().await {
+        let pools = pools?;
+        for pool in pools.value {
+            println!("name: {:?}", pool.proxy_resource.name.unwrap_or_default());
+            if let Some(properties) = &pool.properties {
+                if let Some(provisioning_state) = &properties.provisioning_state {
+                    println!("provisioning state: {:?}", provisioning_state);
+                }
+                if let Some(vm_size) = &properties.vm_size {
+                    println!("vm_size: {}", vm_size);
+                }
 
-            if let Some(image_reference) = properties
-                .deployment_configuration
-                .as_ref()
-                .map(|x| x.virtual_machine_configuration.as_ref().map(|x| &x.image_reference))
-                .flatten()
-            {
-                println!("image reference: {:?}", image_reference);
+                if let Some(image_reference) = properties
+                    .deployment_configuration
+                    .as_ref()
+                    .map(|x| x.virtual_machine_configuration.as_ref().map(|x| &x.image_reference))
+                    .flatten()
+                {
+                    println!("image reference: {:?}", image_reference);
+                }
             }
         }
     }

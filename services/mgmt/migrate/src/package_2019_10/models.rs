@@ -635,6 +635,11 @@ pub struct AssessedMachineResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AssessedMachineResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AssessedMachineResultList {
     pub fn new() -> Self {
         Self::default()
@@ -785,6 +790,11 @@ pub struct AssessmentOptionsResultList {
     #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssessmentOptions>,
+}
+impl azure_core::Continuable for AssessmentOptionsResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl AssessmentOptionsResultList {
     pub fn new() -> Self {
@@ -1210,6 +1220,11 @@ pub struct AssessmentResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Assessment>,
 }
+impl azure_core::Continuable for AssessmentResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AssessmentResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1221,6 +1236,11 @@ pub struct CloudError {
     #[doc = "An error response from the Azure Migrate service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -1438,6 +1458,11 @@ pub struct GroupResultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Group>,
 }
+impl azure_core::Continuable for GroupResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl GroupResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1468,6 +1493,11 @@ pub struct HyperVCollectorList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVCollector>,
 }
+impl azure_core::Continuable for HyperVCollectorList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl HyperVCollectorList {
     pub fn new() -> Self {
         Self::default()
@@ -1497,6 +1527,11 @@ pub struct ImportCollectorList {
     #[doc = "List of Import collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ImportCollector>,
+}
+impl azure_core::Continuable for ImportCollectorList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ImportCollectorList {
     pub fn new() -> Self {
@@ -1619,6 +1654,11 @@ pub struct MachineResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MachineResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MachineResultList {
     pub fn new() -> Self {
         Self::default()
@@ -1687,6 +1727,11 @@ pub struct OperationResultList {
     #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationResultList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationResultList {
     pub fn new() -> Self {
@@ -1960,6 +2005,11 @@ pub struct ProjectResultList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ProjectResultList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ProjectResultList {
     pub fn new() -> Self {
         Self::default()
@@ -2000,6 +2050,11 @@ pub struct ServerCollectorList {
     #[doc = "List of Server collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerCollector>,
+}
+impl azure_core::Continuable for ServerCollectorList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ServerCollectorList {
     pub fn new() -> Self {
@@ -2045,6 +2100,11 @@ pub struct VMwareCollectorList {
     #[doc = "List of VMware collectors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareCollector>,
+}
+impl azure_core::Continuable for VMwareCollectorList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl VMwareCollectorList {
     pub fn new() -> Self {

@@ -114,6 +114,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -270,6 +275,11 @@ pub struct RedisFirewallRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RedisFirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RedisFirewallRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -425,6 +435,11 @@ pub struct RedisLinkedServerWithPropertiesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RedisLinkedServerWithPropertiesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RedisLinkedServerWithPropertiesList {
     pub fn new() -> Self {
         Self::default()
@@ -439,6 +454,11 @@ pub struct RedisListResult {
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RedisListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RedisListResult {
     pub fn new() -> Self {
@@ -470,6 +490,11 @@ pub struct RedisPatchScheduleListResult {
     #[doc = "Link for next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RedisPatchScheduleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RedisPatchScheduleListResult {
     pub fn new() -> Self {

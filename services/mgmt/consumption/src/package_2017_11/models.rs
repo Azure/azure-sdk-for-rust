@@ -24,6 +24,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -105,6 +110,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -130,6 +140,11 @@ pub struct ReservationDetailsListResult {
     #[doc = "The list of reservation details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReservationDetails>,
+}
+impl azure_core::Continuable for ReservationDetailsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ReservationDetailsListResult {
     pub fn new() -> Self {
@@ -189,6 +204,11 @@ pub struct ReservationSummariesListResult {
     #[doc = "The list of reservation summaries."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReservationSummaries>,
+}
+impl azure_core::Continuable for ReservationSummariesListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ReservationSummariesListResult {
     pub fn new() -> Self {
@@ -350,6 +370,11 @@ pub struct UsageDetailsListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UsageDetailsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UsageDetailsListResult {
     pub fn new() -> Self {

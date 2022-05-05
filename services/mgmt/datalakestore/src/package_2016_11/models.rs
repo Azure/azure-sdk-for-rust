@@ -321,6 +321,11 @@ pub struct DataLakeStoreAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataLakeStoreAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataLakeStoreAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -572,6 +577,11 @@ pub struct FirewallRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for FirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl FirewallRuleListResult {
     pub fn new() -> Self {
         Self::default()
@@ -764,6 +774,11 @@ pub struct TrustedIdProviderListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TrustedIdProviderListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TrustedIdProviderListResult {
     pub fn new() -> Self {
@@ -1056,6 +1071,11 @@ pub struct UsageListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
+impl azure_core::Continuable for UsageListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl UsageListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1099,6 +1119,11 @@ pub struct VirtualNetworkRuleListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VirtualNetworkRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl VirtualNetworkRuleListResult {
     pub fn new() -> Self {

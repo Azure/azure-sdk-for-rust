@@ -96,6 +96,11 @@ pub struct ConnectorDefinitionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectorDefinition>,
 }
+impl azure_core::Continuable for ConnectorDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ConnectorDefinitionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -300,6 +305,11 @@ pub struct DimensionsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Dimension>,
 }
+impl azure_core::Continuable for DimensionsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl DimensionsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -351,6 +361,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -386,6 +401,11 @@ pub struct ExternalBillingAccountDefinitionListResult {
     #[doc = "The list of ExternalBillingAccount definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExternalBillingAccountDefinition>,
+}
+impl azure_core::Continuable for ExternalBillingAccountDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ExternalBillingAccountDefinitionListResult {
     pub fn new() -> Self {
@@ -443,6 +463,11 @@ pub struct ExternalSubscriptionDefinitionListResult {
     #[doc = "The list of ExternalSubscription definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExternalSubscriptionDefinition>,
+}
+impl azure_core::Continuable for ExternalSubscriptionDefinitionListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ExternalSubscriptionDefinitionListResult {
     pub fn new() -> Self {
@@ -545,6 +570,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -595,6 +625,11 @@ pub struct QueryResult {
     #[doc = "The list of usage data."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Query>,
+}
+impl azure_core::Continuable for QueryResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl QueryResult {
     pub fn new() -> Self {

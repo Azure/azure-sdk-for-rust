@@ -2,6 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+#![allow(clippy::redundant_clone)]
 use super::models;
 #[derive(Clone)]
 pub struct Client {
@@ -231,6 +232,7 @@ pub mod service {
     }
     pub mod get_properties {
         use super::models;
+        type Response = models::StorageServiceProperties;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -266,46 +268,49 @@ pub mod service {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageServiceProperties, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=properties", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageServiceProperties =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/?restype=service&comp=properties", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageServiceProperties =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -314,6 +319,7 @@ pub mod service {
     }
     pub mod set_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -350,42 +356,45 @@ pub mod service {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=properties", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&self.storage_service_properties).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/?restype=service&comp=properties", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.storage_service_properties).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -394,6 +403,7 @@ pub mod service {
     }
     pub mod list_shares_segment {
         use super::models;
+        type Response = models::ListSharesResponse;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -448,56 +458,81 @@ pub mod service {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListSharesResponse, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/?comp=list", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(prefix) = &self.prefix {
-                        url.query_pairs_mut().append_pair("prefix", prefix);
-                    }
-                    if let Some(marker) = &self.marker {
-                        url.query_pairs_mut().append_pair("marker", marker);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ListSharesResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/?comp=list", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let comp = &this.comp;
+                                url.query_pairs_mut().append_pair("comp", comp);
+                                if let Some(prefix) = &this.prefix {
+                                    url.query_pairs_mut().append_pair("prefix", prefix);
+                                }
+                                if let Some(marker) = &this.marker {
+                                    url.query_pairs_mut().append_pair("marker", marker);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ListSharesResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -834,6 +869,7 @@ pub mod share {
     }
     pub mod get_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -879,45 +915,48 @@ pub mod share {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -926,6 +965,7 @@ pub mod share {
     }
     pub mod create {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -986,54 +1026,57 @@ pub mod share {
                 self.x_ms_root_squash = Some(x_ms_root_squash.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    if let Some(x_ms_share_quota) = &self.x_ms_share_quota {
-                        req_builder = req_builder.header("x-ms-share-quota", &x_ms_share_quota.to_string());
-                    }
-                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
-                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_enabled_protocols) = &self.x_ms_enabled_protocols {
-                        req_builder = req_builder.header("x-ms-enabled-protocols", x_ms_enabled_protocols);
-                    }
-                    if let Some(x_ms_root_squash) = &self.x_ms_root_squash {
-                        req_builder = req_builder.header("x-ms-root-squash", x_ms_root_squash);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        if let Some(x_ms_share_quota) = &this.x_ms_share_quota {
+                            req_builder = req_builder.header("x-ms-share-quota", &x_ms_share_quota.to_string());
+                        }
+                        if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
+                            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_enabled_protocols) = &this.x_ms_enabled_protocols {
+                            req_builder = req_builder.header("x-ms-enabled-protocols", x_ms_enabled_protocols);
+                        }
+                        if let Some(x_ms_root_squash) = &this.x_ms_root_squash {
+                            req_builder = req_builder.header("x-ms-root-squash", x_ms_root_squash);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1042,6 +1085,7 @@ pub mod share {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1092,48 +1136,51 @@ pub mod share {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_delete_snapshots) = &self.x_ms_delete_snapshots {
-                        req_builder = req_builder.header("x-ms-delete-snapshots", x_ms_delete_snapshots);
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_delete_snapshots) = &this.x_ms_delete_snapshots {
+                            req_builder = req_builder.header("x-ms-delete-snapshots", x_ms_delete_snapshots);
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1142,6 +1189,7 @@ pub mod share {
     }
     pub mod acquire_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1199,54 +1247,57 @@ pub mod share {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&acquire", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_lease_duration) = &self.x_ms_lease_duration {
-                        req_builder = req_builder.header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
-                    }
-                    if let Some(x_ms_proposed_lease_id) = &self.x_ms_proposed_lease_id {
-                        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=lease&acquire", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
+                            req_builder = req_builder.header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                        }
+                        if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
+                            req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1255,6 +1306,7 @@ pub mod share {
     }
     pub mod release_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1303,49 +1355,52 @@ pub mod share {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&release", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=lease&release", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-lease-id", &this.x_ms_lease_id);
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1354,6 +1409,7 @@ pub mod share {
     }
     pub mod change_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1407,52 +1463,55 @@ pub mod share {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&change", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
-                    if let Some(x_ms_proposed_lease_id) = &self.x_ms_proposed_lease_id {
-                        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=lease&change", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-lease-id", &this.x_ms_lease_id);
+                        if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
+                            req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1461,6 +1520,7 @@ pub mod share {
     }
     pub mod renew_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1509,49 +1569,52 @@ pub mod share {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&renew", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=lease&renew", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-lease-id", &this.x_ms_lease_id);
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1560,6 +1623,7 @@ pub mod share {
     }
     pub mod break_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1617,54 +1681,57 @@ pub mod share {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&break", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_lease_break_period) = &self.x_ms_lease_break_period {
-                        req_builder = req_builder.header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=lease&break", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_lease_break_period) = &this.x_ms_lease_break_period {
+                            req_builder = req_builder.header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1673,6 +1740,7 @@ pub mod share {
     }
     pub mod create_snapshot {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1714,44 +1782,47 @@ pub mod share {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=snapshot", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=snapshot", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1760,6 +1831,7 @@ pub mod share {
     }
     pub mod get_permission {
         use super::models;
+        type Response = models::SharePermission;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1797,47 +1869,50 @@ pub mod share {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SharePermission, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=filepermission", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-file-permission-key", &self.x_ms_file_permission_key);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::SharePermission =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=filepermission", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-file-permission-key", &this.x_ms_file_permission_key);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SharePermission =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1846,6 +1921,7 @@ pub mod share {
     }
     pub mod create_permission {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1883,42 +1959,45 @@ pub mod share {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=filepermission", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&self.share_permission).map_err(Error::Serialize)?;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=filepermission", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.share_permission).map_err(Error::Serialize)?;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1927,6 +2006,7 @@ pub mod share {
     }
     pub mod set_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1983,53 +2063,56 @@ pub mod share {
                 self.x_ms_root_squash = Some(x_ms_root_squash.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=properties", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_share_quota) = &self.x_ms_share_quota {
-                        req_builder = req_builder.header("x-ms-share-quota", &x_ms_share_quota.to_string());
-                    }
-                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
-                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    if let Some(x_ms_root_squash) = &self.x_ms_root_squash {
-                        req_builder = req_builder.header("x-ms-root-squash", x_ms_root_squash);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=properties", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_share_quota) = &this.x_ms_share_quota {
+                            req_builder = req_builder.header("x-ms-share-quota", &x_ms_share_quota.to_string());
+                        }
+                        if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
+                            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        if let Some(x_ms_root_squash) = &this.x_ms_root_squash {
+                            req_builder = req_builder.header("x-ms-root-squash", x_ms_root_squash);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2038,6 +2121,7 @@ pub mod share {
     }
     pub mod set_metadata {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2084,47 +2168,50 @@ pub mod share {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=metadata", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=metadata", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2133,6 +2220,7 @@ pub mod share {
     }
     pub mod get_access_policy {
         use super::models;
+        type Response = models::SignedIdentifiers;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2174,49 +2262,52 @@ pub mod share {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SignedIdentifiers, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=acl", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::SignedIdentifiers =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=acl", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SignedIdentifiers =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2225,6 +2316,7 @@ pub mod share {
     }
     pub mod set_access_policy {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2271,49 +2363,52 @@ pub mod share {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=acl", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    let req_body = if let Some(share_acl) = &self.share_acl {
-                        req_builder = req_builder.header("content-type", "application/json");
-                        azure_core::to_json(share_acl).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=acl", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        let req_body = if let Some(share_acl) = &this.share_acl {
+                            req_builder = req_builder.header("content-type", "application/json");
+                            azure_core::to_json(share_acl).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2322,6 +2417,7 @@ pub mod share {
     }
     pub mod get_statistics {
         use super::models;
+        type Response = models::ShareStats;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2363,49 +2459,52 @@ pub mod share {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ShareStats, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=stats", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ShareStats =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=stats", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ShareStats =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2414,6 +2513,7 @@ pub mod share {
     }
     pub mod restore {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2465,50 +2565,53 @@ pub mod share {
                 self.x_ms_deleted_share_version = Some(x_ms_deleted_share_version.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=undelete", self.client.endpoint(), &self.share_name);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    if let Some(x_ms_deleted_share_name) = &self.x_ms_deleted_share_name {
-                        req_builder = req_builder.header("x-ms-deleted-share-name", x_ms_deleted_share_name);
-                    }
-                    if let Some(x_ms_deleted_share_version) = &self.x_ms_deleted_share_version {
-                        req_builder = req_builder.header("x-ms-deleted-share-version", x_ms_deleted_share_version);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/{}?restype=share&comp=undelete", this.client.endpoint(), &this.share_name);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        if let Some(x_ms_deleted_share_name) = &this.x_ms_deleted_share_name {
+                            req_builder = req_builder.header("x-ms-deleted-share-name", x_ms_deleted_share_name);
+                        }
+                        if let Some(x_ms_deleted_share_version) = &this.x_ms_deleted_share_version {
+                            req_builder = req_builder.header("x-ms-deleted-share-version", x_ms_deleted_share_version);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2691,6 +2794,7 @@ pub mod directory {
     }
     pub mod get_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2732,47 +2836,50 @@ pub mod directory {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?restype=directory",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?restype=directory",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2781,6 +2888,7 @@ pub mod directory {
     }
     pub mod create {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2835,56 +2943,59 @@ pub mod directory {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?restype=directory",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_file_permission) = &self.x_ms_file_permission {
-                        req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
-                    }
-                    if let Some(x_ms_file_permission_key) = &self.x_ms_file_permission_key {
-                        req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
-                    }
-                    req_builder = req_builder.header("x-ms-file-attributes", &self.x_ms_file_attributes);
-                    req_builder = req_builder.header("x-ms-file-creation-time", &self.x_ms_file_creation_time);
-                    req_builder = req_builder.header("x-ms-file-last-write-time", &self.x_ms_file_last_write_time);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?restype=directory",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_file_permission) = &this.x_ms_file_permission {
+                            req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
+                        }
+                        if let Some(x_ms_file_permission_key) = &this.x_ms_file_permission_key {
+                            req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
+                        }
+                        req_builder = req_builder.header("x-ms-file-attributes", &this.x_ms_file_attributes);
+                        req_builder = req_builder.header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
+                        req_builder = req_builder.header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2893,6 +3004,7 @@ pub mod directory {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2929,44 +3041,47 @@ pub mod directory {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?restype=directory",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?restype=directory",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2975,6 +3090,7 @@ pub mod directory {
     }
     pub mod set_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3025,55 +3141,58 @@ pub mod directory {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?restype=directory&comp=properties",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_file_permission) = &self.x_ms_file_permission {
-                        req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
-                    }
-                    if let Some(x_ms_file_permission_key) = &self.x_ms_file_permission_key {
-                        req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
-                    }
-                    req_builder = req_builder.header("x-ms-file-attributes", &self.x_ms_file_attributes);
-                    req_builder = req_builder.header("x-ms-file-creation-time", &self.x_ms_file_creation_time);
-                    req_builder = req_builder.header("x-ms-file-last-write-time", &self.x_ms_file_last_write_time);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?restype=directory&comp=properties",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_file_permission) = &this.x_ms_file_permission {
+                            req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
+                        }
+                        if let Some(x_ms_file_permission_key) = &this.x_ms_file_permission_key {
+                            req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
+                        }
+                        req_builder = req_builder.header("x-ms-file-attributes", &this.x_ms_file_attributes);
+                        req_builder = req_builder.header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
+                        req_builder = req_builder.header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3082,6 +3201,7 @@ pub mod directory {
     }
     pub mod set_metadata {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3124,49 +3244,52 @@ pub mod directory {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?restype=directory&comp=metadata",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?restype=directory&comp=metadata",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let restype = &this.restype;
+                        url.query_pairs_mut().append_pair("restype", restype);
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3175,6 +3298,7 @@ pub mod directory {
     }
     pub mod list_files_and_directories_segment {
         use super::models;
+        type Response = models::ListFilesAndDirectoriesSegmentResponse;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3242,77 +3366,100 @@ pub mod directory {
                 self.x_ms_file_extended_info = Some(x_ms_file_extended_info);
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ListFilesAndDirectoriesSegmentResponse, Error>>
-            {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?restype=directory&comp=list",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(prefix) = &self.prefix {
-                        url.query_pairs_mut().append_pair("prefix", prefix);
-                    }
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(marker) = &self.marker {
-                        url.query_pairs_mut().append_pair("marker", marker);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_file_extended_info) = &self.x_ms_file_extended_info {
-                        req_builder = req_builder.header("x-ms-file-extended-info", &x_ms_file_extended_info.to_string());
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ListFilesAndDirectoriesSegmentResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?restype=directory&comp=list",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let restype = &this.restype;
+                                url.query_pairs_mut().append_pair("restype", restype);
+                                let comp = &this.comp;
+                                url.query_pairs_mut().append_pair("comp", comp);
+                                if let Some(prefix) = &this.prefix {
+                                    url.query_pairs_mut().append_pair("prefix", prefix);
+                                }
+                                if let Some(sharesnapshot) = &this.sharesnapshot {
+                                    url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                                }
+                                if let Some(marker) = &this.marker {
+                                    url.query_pairs_mut().append_pair("marker", marker);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                                if let Some(x_ms_file_extended_info) = &this.x_ms_file_extended_info {
+                                    req_builder = req_builder.header("x-ms-file-extended-info", &x_ms_file_extended_info.to_string());
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ListFilesAndDirectoriesSegmentResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod list_handles {
         use super::models;
+        type Response = models::ListHandlesResponse;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3369,61 +3516,64 @@ pub mod directory {
                 self.x_ms_recursive = Some(x_ms_recursive);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListHandlesResponse, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?comp=listhandles",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(marker) = &self.marker {
-                        url.query_pairs_mut().append_pair("marker", marker);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(x_ms_recursive) = &self.x_ms_recursive {
-                        req_builder = req_builder.header("x-ms-recursive", &x_ms_recursive.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ListHandlesResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?comp=listhandles",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(marker) = &this.marker {
+                            url.query_pairs_mut().append_pair("marker", marker);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(maxresults) = &this.maxresults {
+                            url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(x_ms_recursive) = &this.x_ms_recursive {
+                            req_builder = req_builder.header("x-ms-recursive", &x_ms_recursive.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ListHandlesResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3432,6 +3582,7 @@ pub mod directory {
     }
     pub mod force_close_handles {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3484,54 +3635,57 @@ pub mod directory {
                 self.x_ms_recursive = Some(x_ms_recursive);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}?comp=forceclosehandles",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(marker) = &self.marker {
-                        url.query_pairs_mut().append_pair("marker", marker);
-                    }
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    req_builder = req_builder.header("x-ms-handle-id", &self.x_ms_handle_id);
-                    if let Some(x_ms_recursive) = &self.x_ms_recursive {
-                        req_builder = req_builder.header("x-ms-recursive", &x_ms_recursive.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}?comp=forceclosehandles",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(marker) = &this.marker {
+                            url.query_pairs_mut().append_pair("marker", marker);
+                        }
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        req_builder = req_builder.header("x-ms-handle-id", &this.x_ms_handle_id);
+                        if let Some(x_ms_recursive) = &this.x_ms_recursive {
+                            req_builder = req_builder.header("x-ms-recursive", &x_ms_recursive.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4014,62 +4168,65 @@ pub mod file {
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_range) = &self.x_ms_range {
-                        req_builder = req_builder.header("x-ms-range", x_ms_range);
-                    }
-                    if let Some(x_ms_range_get_content_md5) = &self.x_ms_range_get_content_md5 {
-                        req_builder = req_builder.header("x-ms-range-get-content-md5", &x_ms_range_get_content_md5.to_string());
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: serde_json::Value =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(Response::Ok200(rsp_value))
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        http::StatusCode::PARTIAL_CONTENT => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: serde_json::Value =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(Response::PartialContent206(rsp_value))
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_range) = &this.x_ms_range {
+                            req_builder = req_builder.header("x-ms-range", x_ms_range);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(x_ms_range_get_content_md5) = &this.x_ms_range_get_content_md5 {
+                            req_builder = req_builder.header("x-ms-range-get-content-md5", &x_ms_range_get_content_md5.to_string());
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: serde_json::Value =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
+                            http::StatusCode::PARTIAL_CONTENT => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: serde_json::Value =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(Response::PartialContent206(rsp_value))
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4078,6 +4235,7 @@ pub mod file {
     }
     pub mod create {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4169,78 +4327,81 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    req_builder = req_builder.header("x-ms-content-length", &self.x_ms_content_length.to_string());
-                    req_builder = req_builder.header("x-ms-type", &self.x_ms_type);
-                    if let Some(x_ms_content_type) = &self.x_ms_content_type {
-                        req_builder = req_builder.header("x-ms-content-type", x_ms_content_type);
-                    }
-                    if let Some(x_ms_content_encoding) = &self.x_ms_content_encoding {
-                        req_builder = req_builder.header("x-ms-content-encoding", x_ms_content_encoding);
-                    }
-                    if let Some(x_ms_content_language) = &self.x_ms_content_language {
-                        req_builder = req_builder.header("x-ms-content-language", x_ms_content_language);
-                    }
-                    if let Some(x_ms_cache_control) = &self.x_ms_cache_control {
-                        req_builder = req_builder.header("x-ms-cache-control", x_ms_cache_control);
-                    }
-                    if let Some(x_ms_content_md5) = &self.x_ms_content_md5 {
-                        req_builder = req_builder.header("x-ms-content-md5", x_ms_content_md5);
-                    }
-                    if let Some(x_ms_content_disposition) = &self.x_ms_content_disposition {
-                        req_builder = req_builder.header("x-ms-content-disposition", x_ms_content_disposition);
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    if let Some(x_ms_file_permission) = &self.x_ms_file_permission {
-                        req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
-                    }
-                    if let Some(x_ms_file_permission_key) = &self.x_ms_file_permission_key {
-                        req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
-                    }
-                    req_builder = req_builder.header("x-ms-file-attributes", &self.x_ms_file_attributes);
-                    req_builder = req_builder.header("x-ms-file-creation-time", &self.x_ms_file_creation_time);
-                    req_builder = req_builder.header("x-ms-file-last-write-time", &self.x_ms_file_last_write_time);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        req_builder = req_builder.header("x-ms-content-length", &this.x_ms_content_length.to_string());
+                        req_builder = req_builder.header("x-ms-type", &this.x_ms_type);
+                        if let Some(x_ms_content_type) = &this.x_ms_content_type {
+                            req_builder = req_builder.header("x-ms-content-type", x_ms_content_type);
+                        }
+                        if let Some(x_ms_content_encoding) = &this.x_ms_content_encoding {
+                            req_builder = req_builder.header("x-ms-content-encoding", x_ms_content_encoding);
+                        }
+                        if let Some(x_ms_content_language) = &this.x_ms_content_language {
+                            req_builder = req_builder.header("x-ms-content-language", x_ms_content_language);
+                        }
+                        if let Some(x_ms_cache_control) = &this.x_ms_cache_control {
+                            req_builder = req_builder.header("x-ms-cache-control", x_ms_cache_control);
+                        }
+                        if let Some(x_ms_content_md5) = &this.x_ms_content_md5 {
+                            req_builder = req_builder.header("x-ms-content-md5", x_ms_content_md5);
+                        }
+                        if let Some(x_ms_content_disposition) = &this.x_ms_content_disposition {
+                            req_builder = req_builder.header("x-ms-content-disposition", x_ms_content_disposition);
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        if let Some(x_ms_file_permission) = &this.x_ms_file_permission {
+                            req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
+                        }
+                        if let Some(x_ms_file_permission_key) = &this.x_ms_file_permission_key {
+                            req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
+                        }
+                        req_builder = req_builder.header("x-ms-file-attributes", &this.x_ms_file_attributes);
+                        req_builder = req_builder.header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
+                        req_builder = req_builder.header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4249,6 +4410,7 @@ pub mod file {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4290,46 +4452,49 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4338,6 +4503,7 @@ pub mod file {
     }
     pub mod get_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4384,49 +4550,52 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::HEAD);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::HEAD);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4435,6 +4604,7 @@ pub mod file {
     }
     pub mod set_http_headers {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4525,78 +4695,81 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=properties",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_content_length) = &self.x_ms_content_length {
-                        req_builder = req_builder.header("x-ms-content-length", &x_ms_content_length.to_string());
-                    }
-                    if let Some(x_ms_content_type) = &self.x_ms_content_type {
-                        req_builder = req_builder.header("x-ms-content-type", x_ms_content_type);
-                    }
-                    if let Some(x_ms_content_encoding) = &self.x_ms_content_encoding {
-                        req_builder = req_builder.header("x-ms-content-encoding", x_ms_content_encoding);
-                    }
-                    if let Some(x_ms_content_language) = &self.x_ms_content_language {
-                        req_builder = req_builder.header("x-ms-content-language", x_ms_content_language);
-                    }
-                    if let Some(x_ms_cache_control) = &self.x_ms_cache_control {
-                        req_builder = req_builder.header("x-ms-cache-control", x_ms_cache_control);
-                    }
-                    if let Some(x_ms_content_md5) = &self.x_ms_content_md5 {
-                        req_builder = req_builder.header("x-ms-content-md5", x_ms_content_md5);
-                    }
-                    if let Some(x_ms_content_disposition) = &self.x_ms_content_disposition {
-                        req_builder = req_builder.header("x-ms-content-disposition", x_ms_content_disposition);
-                    }
-                    if let Some(x_ms_file_permission) = &self.x_ms_file_permission {
-                        req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
-                    }
-                    if let Some(x_ms_file_permission_key) = &self.x_ms_file_permission_key {
-                        req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
-                    }
-                    req_builder = req_builder.header("x-ms-file-attributes", &self.x_ms_file_attributes);
-                    req_builder = req_builder.header("x-ms-file-creation-time", &self.x_ms_file_creation_time);
-                    req_builder = req_builder.header("x-ms-file-last-write-time", &self.x_ms_file_last_write_time);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=properties",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_content_length) = &this.x_ms_content_length {
+                            req_builder = req_builder.header("x-ms-content-length", &x_ms_content_length.to_string());
+                        }
+                        if let Some(x_ms_content_type) = &this.x_ms_content_type {
+                            req_builder = req_builder.header("x-ms-content-type", x_ms_content_type);
+                        }
+                        if let Some(x_ms_content_encoding) = &this.x_ms_content_encoding {
+                            req_builder = req_builder.header("x-ms-content-encoding", x_ms_content_encoding);
+                        }
+                        if let Some(x_ms_content_language) = &this.x_ms_content_language {
+                            req_builder = req_builder.header("x-ms-content-language", x_ms_content_language);
+                        }
+                        if let Some(x_ms_cache_control) = &this.x_ms_cache_control {
+                            req_builder = req_builder.header("x-ms-cache-control", x_ms_cache_control);
+                        }
+                        if let Some(x_ms_content_md5) = &this.x_ms_content_md5 {
+                            req_builder = req_builder.header("x-ms-content-md5", x_ms_content_md5);
+                        }
+                        if let Some(x_ms_content_disposition) = &this.x_ms_content_disposition {
+                            req_builder = req_builder.header("x-ms-content-disposition", x_ms_content_disposition);
+                        }
+                        if let Some(x_ms_file_permission) = &this.x_ms_file_permission {
+                            req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
+                        }
+                        if let Some(x_ms_file_permission_key) = &this.x_ms_file_permission_key {
+                            req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
+                        }
+                        req_builder = req_builder.header("x-ms-file-attributes", &this.x_ms_file_attributes);
+                        req_builder = req_builder.header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
+                        req_builder = req_builder.header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4605,6 +4778,7 @@ pub mod file {
     }
     pub mod set_metadata {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4652,51 +4826,54 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=metadata",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=metadata",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4705,6 +4882,7 @@ pub mod file {
     }
     pub mod acquire_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4758,55 +4936,58 @@ pub mod file {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=lease&acquire",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_lease_duration) = &self.x_ms_lease_duration {
-                        req_builder = req_builder.header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
-                    }
-                    if let Some(x_ms_proposed_lease_id) = &self.x_ms_proposed_lease_id {
-                        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=lease&acquire",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
+                            req_builder = req_builder.header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                        }
+                        if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
+                            req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4815,6 +4996,7 @@ pub mod file {
     }
     pub mod release_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4859,50 +5041,53 @@ pub mod file {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=lease&release",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=lease&release",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-lease-id", &this.x_ms_lease_id);
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4911,6 +5096,7 @@ pub mod file {
     }
     pub mod change_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4960,53 +5146,56 @@ pub mod file {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=lease&change",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
-                    if let Some(x_ms_proposed_lease_id) = &self.x_ms_proposed_lease_id {
-                        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=lease&change",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-lease-id", &this.x_ms_lease_id);
+                        if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
+                            req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5015,6 +5204,7 @@ pub mod file {
     }
     pub mod break_lease {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5063,52 +5253,55 @@ pub mod file {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=lease&break",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
-                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=lease&break",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5117,6 +5310,7 @@ pub mod file {
     }
     pub mod upload_range {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5172,59 +5366,62 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=range",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    let req_body = if let Some(optionalbody) = &self.optionalbody {
-                        req_builder = req_builder.header("content-type", "application/json");
-                        azure_core::to_json(optionalbody).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-range", &self.x_ms_range);
-                    req_builder = req_builder.header("x-ms-write", &self.x_ms_write);
-                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
-                    if let Some(content_md5) = &self.content_md5 {
-                        req_builder = req_builder.header("Content-MD5", content_md5);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=range",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        let req_body = if let Some(optionalbody) = &this.optionalbody {
+                            req_builder = req_builder.header("content-type", "application/json");
+                            azure_core::to_json(optionalbody).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-range", &this.x_ms_range);
+                        req_builder = req_builder.header("x-ms-write", &this.x_ms_write);
+                        req_builder = req_builder.header("Content-Length", &this.content_length.to_string());
+                        if let Some(content_md5) = &this.content_md5 {
+                            req_builder = req_builder.header("Content-MD5", content_md5);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5233,6 +5430,7 @@ pub mod file {
     }
     pub mod upload_range_from_url {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5304,67 +5502,70 @@ pub mod file {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=range&fromURL",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-range", &self.x_ms_range);
-                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
-                    if let Some(x_ms_source_range) = &self.x_ms_source_range {
-                        req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
-                    }
-                    req_builder = req_builder.header("x-ms-write", &self.x_ms_write);
-                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
-                    if let Some(x_ms_source_content_crc64) = &self.x_ms_source_content_crc64 {
-                        req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
-                    }
-                    if let Some(x_ms_source_if_match_crc64) = &self.x_ms_source_if_match_crc64 {
-                        req_builder = req_builder.header("x-ms-source-if-match-crc64", x_ms_source_if_match_crc64);
-                    }
-                    if let Some(x_ms_source_if_none_match_crc64) = &self.x_ms_source_if_none_match_crc64 {
-                        req_builder = req_builder.header("x-ms-source-if-none-match-crc64", x_ms_source_if_none_match_crc64);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
-                        req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=range&fromURL",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-range", &this.x_ms_range);
+                        req_builder = req_builder.header("x-ms-copy-source", &this.x_ms_copy_source);
+                        if let Some(x_ms_source_range) = &this.x_ms_source_range {
+                            req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
+                        }
+                        req_builder = req_builder.header("x-ms-write", &this.x_ms_write);
+                        req_builder = req_builder.header("Content-Length", &this.content_length.to_string());
+                        if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
+                            req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
+                        }
+                        if let Some(x_ms_source_if_match_crc64) = &this.x_ms_source_if_match_crc64 {
+                            req_builder = req_builder.header("x-ms-source-if-match-crc64", x_ms_source_if_match_crc64);
+                        }
+                        if let Some(x_ms_source_if_none_match_crc64) = &this.x_ms_source_if_none_match_crc64 {
+                            req_builder = req_builder.header("x-ms-source-if-none-match-crc64", x_ms_source_if_none_match_crc64);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        if let Some(x_ms_copy_source_authorization) = &this.x_ms_copy_source_authorization {
+                            req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5373,6 +5574,7 @@ pub mod file {
     }
     pub mod get_range_list {
         use super::models;
+        type Response = models::ShareFileRangeList;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5430,62 +5632,65 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ShareFileRangeList, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=rangelist",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    if let Some(prevsharesnapshot) = &self.prevsharesnapshot {
-                        url.query_pairs_mut().append_pair("prevsharesnapshot", prevsharesnapshot);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_range) = &self.x_ms_range {
-                        req_builder = req_builder.header("x-ms-range", x_ms_range);
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ShareFileRangeList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=rangelist",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(prevsharesnapshot) = &this.prevsharesnapshot {
+                            url.query_pairs_mut().append_pair("prevsharesnapshot", prevsharesnapshot);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_range) = &this.x_ms_range {
+                            req_builder = req_builder.header("x-ms-range", x_ms_range);
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ShareFileRangeList =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5494,6 +5699,7 @@ pub mod file {
     }
     pub mod start_copy {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5581,74 +5787,77 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=copy",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_meta) = &self.x_ms_meta {
-                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-                    }
-                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
-                    if let Some(x_ms_file_permission) = &self.x_ms_file_permission {
-                        req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
-                    }
-                    if let Some(x_ms_file_permission_key) = &self.x_ms_file_permission_key {
-                        req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
-                    }
-                    if let Some(x_ms_file_permission_copy_mode) = &self.x_ms_file_permission_copy_mode {
-                        req_builder = req_builder.header("x-ms-file-permission-copy-mode", x_ms_file_permission_copy_mode);
-                    }
-                    if let Some(x_ms_file_copy_ignore_readonly) = &self.x_ms_file_copy_ignore_readonly {
-                        req_builder = req_builder.header("x-ms-file-copy-ignore-readonly", &x_ms_file_copy_ignore_readonly.to_string());
-                    }
-                    if let Some(x_ms_file_attributes) = &self.x_ms_file_attributes {
-                        req_builder = req_builder.header("x-ms-file-attributes", x_ms_file_attributes);
-                    }
-                    if let Some(x_ms_file_creation_time) = &self.x_ms_file_creation_time {
-                        req_builder = req_builder.header("x-ms-file-creation-time", x_ms_file_creation_time);
-                    }
-                    if let Some(x_ms_file_last_write_time) = &self.x_ms_file_last_write_time {
-                        req_builder = req_builder.header("x-ms-file-last-write-time", x_ms_file_last_write_time);
-                    }
-                    if let Some(x_ms_file_copy_set_archive) = &self.x_ms_file_copy_set_archive {
-                        req_builder = req_builder.header("x-ms-file-copy-set-archive", &x_ms_file_copy_set_archive.to_string());
-                    }
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=copy",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_meta) = &this.x_ms_meta {
+                            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                        }
+                        req_builder = req_builder.header("x-ms-copy-source", &this.x_ms_copy_source);
+                        if let Some(x_ms_file_permission) = &this.x_ms_file_permission {
+                            req_builder = req_builder.header("x-ms-file-permission", x_ms_file_permission);
+                        }
+                        if let Some(x_ms_file_permission_key) = &this.x_ms_file_permission_key {
+                            req_builder = req_builder.header("x-ms-file-permission-key", x_ms_file_permission_key);
+                        }
+                        if let Some(x_ms_file_permission_copy_mode) = &this.x_ms_file_permission_copy_mode {
+                            req_builder = req_builder.header("x-ms-file-permission-copy-mode", x_ms_file_permission_copy_mode);
+                        }
+                        if let Some(x_ms_file_copy_ignore_readonly) = &this.x_ms_file_copy_ignore_readonly {
+                            req_builder = req_builder.header("x-ms-file-copy-ignore-readonly", &x_ms_file_copy_ignore_readonly.to_string());
+                        }
+                        if let Some(x_ms_file_attributes) = &this.x_ms_file_attributes {
+                            req_builder = req_builder.header("x-ms-file-attributes", x_ms_file_attributes);
+                        }
+                        if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
+                            req_builder = req_builder.header("x-ms-file-creation-time", x_ms_file_creation_time);
+                        }
+                        if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
+                            req_builder = req_builder.header("x-ms-file-last-write-time", x_ms_file_last_write_time);
+                        }
+                        if let Some(x_ms_file_copy_set_archive) = &this.x_ms_file_copy_set_archive {
+                            req_builder = req_builder.header("x-ms-file-copy-set-archive", &x_ms_file_copy_set_archive.to_string());
+                        }
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5657,6 +5866,7 @@ pub mod file {
     }
     pub mod abort_copy {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5701,51 +5911,54 @@ pub mod file {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=copy&copyid",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    let copyid = &self.copyid;
-                    url.query_pairs_mut().append_pair("copyid", copyid);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("x-ms-copy-action", &self.x_ms_copy_action);
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
-                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=copy&copyid",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        let copyid = &this.copyid;
+                        url.query_pairs_mut().append_pair("copyid", copyid);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("x-ms-copy-action", &this.x_ms_copy_action);
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
+                            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5754,6 +5967,7 @@ pub mod file {
     }
     pub mod list_handles {
         use super::models;
+        type Response = models::ListHandlesResponse;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5806,59 +6020,62 @@ pub mod file {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListHandlesResponse, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=listhandles",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(marker) = &self.marker {
-                        url.query_pairs_mut().append_pair("marker", marker);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ListHandlesResponse =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=listhandles",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(marker) = &this.marker {
+                            url.query_pairs_mut().append_pair("marker", marker);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(maxresults) = &this.maxresults {
+                            url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ListHandlesResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5867,6 +6084,7 @@ pub mod file {
     }
     pub mod force_close_handles {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5915,52 +6133,55 @@ pub mod file {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/{}/{}/{}?comp=forceclosehandles",
-                        self.client.endpoint(),
-                        &self.share_name,
-                        &self.directory,
-                        &self.file_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(marker) = &self.marker {
-                        url.query_pairs_mut().append_pair("marker", marker);
-                    }
-                    if let Some(sharesnapshot) = &self.sharesnapshot {
-                        url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
-                    }
-                    req_builder = req_builder.header("x-ms-handle-id", &self.x_ms_handle_id);
-                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StorageError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/{}/{}/{}?comp=forceclosehandles",
+                            this.client.endpoint(),
+                            &this.share_name,
+                            &this.directory,
+                            &this.file_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        let comp = &this.comp;
+                        url.query_pairs_mut().append_pair("comp", comp);
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(marker) = &this.marker {
+                            url.query_pairs_mut().append_pair("marker", marker);
+                        }
+                        if let Some(sharesnapshot) = &this.sharesnapshot {
+                            url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
+                        }
+                        req_builder = req_builder.header("x-ms-handle-id", &this.x_ms_handle_id);
+                        req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::StorageError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })

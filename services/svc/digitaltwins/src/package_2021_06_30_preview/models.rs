@@ -63,6 +63,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -99,6 +104,11 @@ pub struct EventRouteCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EventRouteCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EventRouteCollection {
     pub fn new() -> Self {
         Self::default()
@@ -134,6 +144,11 @@ pub struct IncomingRelationshipCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IncomingRelationshipCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IncomingRelationshipCollection {
     pub fn new() -> Self {
         Self::default()
@@ -164,6 +179,11 @@ pub struct PagedDigitalTwinsModelDataCollection {
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PagedDigitalTwinsModelDataCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PagedDigitalTwinsModelDataCollection {
     pub fn new() -> Self {
@@ -209,6 +229,11 @@ pub struct RelationshipCollection {
     #[doc = "A URI to retrieve the next page of objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RelationshipCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RelationshipCollection {
     pub fn new() -> Self {

@@ -162,6 +162,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl azure_core::Continuable for ErrorResponseBody {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponseBody {
     pub fn new() -> Self {
         Self::default()
@@ -176,6 +181,11 @@ pub struct GetTenantPolicyListResponse {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GetTenantPolicyListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl GetTenantPolicyListResponse {
     pub fn new() -> Self {
@@ -240,6 +250,11 @@ pub struct LocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Location>,
 }
+impl azure_core::Continuable for LocationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl LocationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -296,6 +311,11 @@ pub struct OperationListResult {
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -550,6 +570,11 @@ pub struct SubscriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SubscriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SubscriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -619,6 +644,15 @@ pub struct TenantListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink")]
     pub next_link: String,
+}
+impl azure_core::Continuable for TenantListResult {
+    fn continuation(&self) -> Option<String> {
+        if self.next_link.is_empty() {
+            None
+        } else {
+            Some(self.next_link.clone())
+        }
+    }
 }
 impl TenantListResult {
     pub fn new(next_link: String) -> Self {

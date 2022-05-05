@@ -103,6 +103,11 @@ pub struct ArmDisasterRecoveryListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ArmDisasterRecoveryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ArmDisasterRecoveryListResult {
     pub fn new() -> Self {
         Self::default()
@@ -148,6 +153,11 @@ pub struct AuthorizationRuleListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains an incomplete list of Authorization Rules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AuthorizationRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AuthorizationRuleListResult {
     pub fn new() -> Self {
@@ -297,6 +307,11 @@ pub struct ClusterListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClusterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -409,6 +424,11 @@ pub struct ConsumerGroupListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Consumer Group"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ConsumerGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ConsumerGroupListResult {
     pub fn new() -> Self {
@@ -574,6 +594,11 @@ pub struct EhNamespaceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EhNamespaceListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EhNamespaceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -657,6 +682,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -671,6 +701,11 @@ pub struct EventHubListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of EventHubs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for EventHubListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EventHubListResult {
     pub fn new() -> Self {
@@ -968,6 +1003,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1011,6 +1051,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "A link for the next page of private endpoint connection resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -1237,6 +1282,11 @@ pub struct SchemaGroupListResult {
     #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Schema Groups."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SchemaGroupListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SchemaGroupListResult {
     pub fn new() -> Self {

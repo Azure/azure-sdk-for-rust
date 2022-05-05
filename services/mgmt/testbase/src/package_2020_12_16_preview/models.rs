@@ -12,6 +12,11 @@ pub struct AnalysisResultListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AnalysisResultListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl AnalysisResultListResult {
     pub fn new() -> Self {
         Self::default()
@@ -77,6 +82,11 @@ pub struct AvailableOsListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AvailableOsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AvailableOsListResult {
     pub fn new() -> Self {
@@ -264,6 +274,11 @@ pub struct CustomerEventListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CustomerEventListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CustomerEventListResult {
     pub fn new() -> Self {
         Self::default()
@@ -337,6 +352,11 @@ pub struct EmailEventListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for EmailEventListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EmailEventListResult {
     pub fn new() -> Self {
         Self::default()
@@ -405,6 +425,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -419,6 +444,11 @@ pub struct FavoriteProcessListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FavoriteProcessListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FavoriteProcessListResult {
     pub fn new() -> Self {
@@ -478,6 +508,11 @@ pub struct FlightingRingListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FlightingRingListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FlightingRingListResult {
     pub fn new() -> Self {
@@ -635,6 +670,11 @@ pub struct OsUpdateListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OsUpdateListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OsUpdateListResult {
     pub fn new() -> Self {
@@ -821,6 +861,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -867,6 +912,11 @@ pub struct PackageListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PackageListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PackageListResult {
     pub fn new() -> Self {
@@ -1384,6 +1434,11 @@ pub struct TestBaseAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TestBaseAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TestBaseAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1490,6 +1545,11 @@ pub struct TestBaseAccountSkuListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TestBaseAccountSkuListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TestBaseAccountSkuListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1555,6 +1615,11 @@ pub struct TestBaseAccountUsageDataList {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TestBaseAccountUsageDataList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TestBaseAccountUsageDataList {
     pub fn new() -> Self {
@@ -1637,6 +1702,11 @@ pub struct TestResultListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TestResultListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TestResultListResult {
     pub fn new() -> Self {
@@ -1751,6 +1821,11 @@ pub struct TestSummaryListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TestSummaryListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TestSummaryListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1827,6 +1902,11 @@ pub struct TestTypeListResult {
     #[doc = "Link to the next set of results. Not empty if value contains incomplete list of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TestTypeListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TestTypeListResult {
     pub fn new() -> Self {

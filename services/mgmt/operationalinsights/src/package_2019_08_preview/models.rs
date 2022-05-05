@@ -31,6 +31,11 @@ pub struct ClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cluster>,
 }
+impl azure_core::Continuable for ClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ClusterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -117,6 +122,11 @@ pub struct DataExportListResult {
     #[doc = "List of data export instances within a workspace.."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataExport>,
+}
+impl azure_core::Continuable for DataExportListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl DataExportListResult {
     pub fn new() -> Self {
@@ -225,6 +235,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -284,6 +299,11 @@ pub struct LinkedServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkedService>,
 }
+impl azure_core::Continuable for LinkedServiceListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl LinkedServiceListResult {
     pub fn new() -> Self {
         Self::default()
@@ -326,6 +346,11 @@ pub struct LinkedStorageAccountsListResult {
     #[doc = "A list of linked storage accounts instances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkedStorageAccounts>,
+}
+impl azure_core::Continuable for LinkedStorageAccountsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl LinkedStorageAccountsListResult {
     pub fn new() -> Self {

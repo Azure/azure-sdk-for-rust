@@ -162,6 +162,11 @@ pub struct ComputePolicyListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ComputePolicyListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ComputePolicyListResult {
     pub fn new() -> Self {
         Self::default()
@@ -472,6 +477,11 @@ pub struct DataLakeAnalyticsAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataLakeAnalyticsAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataLakeAnalyticsAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -699,6 +709,11 @@ pub struct DataLakeStoreAccountInformationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataLakeStoreAccountInformationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataLakeStoreAccountInformationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -762,6 +777,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -790,6 +810,11 @@ pub struct FirewallRuleListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FirewallRuleListResult {
     pub fn new() -> Self {
@@ -1087,6 +1112,11 @@ pub struct SasTokenInformationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for SasTokenInformationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SasTokenInformationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1115,6 +1145,11 @@ pub struct StorageAccountInformationListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StorageAccountInformationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl StorageAccountInformationListResult {
     pub fn new() -> Self {
@@ -1156,6 +1191,11 @@ pub struct StorageContainerListResult {
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StorageContainerListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl StorageContainerListResult {
     pub fn new() -> Self {

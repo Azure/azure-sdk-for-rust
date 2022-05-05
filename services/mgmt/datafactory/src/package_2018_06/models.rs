@@ -4296,6 +4296,11 @@ pub struct CloudError {
     #[doc = "The object that defines the structure of an Azure Data Factory error."]
     pub error: CloudErrorBody,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new(error: CloudErrorBody) -> Self {
         Self { error }
@@ -5767,6 +5772,11 @@ pub struct DataFlowListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DataFlowListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataFlowListResponse {
     pub fn new(value: Vec<DataFlowResource>) -> Self {
         Self { value, next_link: None }
@@ -6193,6 +6203,11 @@ pub struct DatasetListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DatasetListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DatasetListResponse {
     pub fn new(value: Vec<DatasetResource>) -> Self {
@@ -7997,6 +8012,11 @@ pub struct FactoryListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FactoryListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl FactoryListResponse {
     pub fn new(value: Vec<Factory>) -> Self {
@@ -10974,6 +10994,11 @@ pub struct IntegrationRuntimeListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for IntegrationRuntimeListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IntegrationRuntimeListResponse {
     pub fn new(value: Vec<IntegrationRuntimeResource>) -> Self {
         Self { value, next_link: None }
@@ -11753,6 +11778,11 @@ pub struct LinkedServiceListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for LinkedServiceListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl LinkedServiceListResponse {
     pub fn new(value: Vec<LinkedServiceResource>) -> Self {
         Self { value, next_link: None }
@@ -12218,6 +12248,11 @@ pub struct ManagedVirtualNetworkListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedVirtualNetworkListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ManagedVirtualNetworkListResponse {
     pub fn new(value: Vec<ManagedVirtualNetworkResource>) -> Self {
@@ -13621,6 +13656,11 @@ pub struct OperationListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResponse {
     pub fn new() -> Self {
         Self::default()
@@ -14682,6 +14722,11 @@ pub struct PipelineListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PipelineListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PipelineListResponse {
     pub fn new(value: Vec<PipelineResource>) -> Self {
         Self { value, next_link: None }
@@ -15190,6 +15235,11 @@ pub struct PrivateEndpointConnectionListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateEndpointConnectionListResponse {
     pub fn new(value: Vec<PrivateEndpointConnectionResource>) -> Self {
         Self { value, next_link: None }
@@ -15307,6 +15357,11 @@ pub struct QueryDataFlowDebugSessionsResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for QueryDataFlowDebugSessionsResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl QueryDataFlowDebugSessionsResponse {
     pub fn new() -> Self {
@@ -20338,6 +20393,11 @@ pub struct TriggerListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for TriggerListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl TriggerListResponse {
     pub fn new(value: Vec<TriggerResource>) -> Self {
         Self { value, next_link: None }
@@ -21647,6 +21707,11 @@ pub struct ManagedPrivateEndpointListResponse {
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedPrivateEndpointListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ManagedPrivateEndpointListResponse {
     pub fn new(value: Vec<ManagedPrivateEndpointResource>) -> Self {

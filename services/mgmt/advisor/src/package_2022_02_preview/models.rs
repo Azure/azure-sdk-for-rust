@@ -23,6 +23,11 @@ pub struct ArmErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ArmErrorResponseBody>,
 }
+impl azure_core::Continuable for ArmErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ArmErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -100,6 +105,11 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationEntityListResult {
     pub fn new() -> Self {

@@ -9,6 +9,11 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinitionProperties>,
 }
+impl azure_core::Continuable for ErrorDefinition {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorDefinition {
     pub fn new() -> Self {
         Self::default()
@@ -81,6 +86,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -148,6 +158,11 @@ pub struct RoleAssignmentApprovalListResult {
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleAssignmentApprovalListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleAssignmentApprovalListResult {
     pub fn new() -> Self {

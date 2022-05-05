@@ -2,6 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+#![allow(clippy::redundant_clone)]
 use super::models;
 #[derive(Clone)]
 pub struct Client {
@@ -295,6 +296,7 @@ pub mod application {
     }
     pub mod list {
         use super::models;
+        type Response = models::ApplicationListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -347,62 +349,92 @@ pub mod application {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/applications", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ApplicationListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/applications", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ApplicationListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod get {
         use super::models;
+        type Response = models::ApplicationSummary;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -451,51 +483,54 @@ pub mod application {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationSummary, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/applications/{}", self.client.endpoint(), &self.application_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ApplicationSummary =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/applications/{}", this.client.endpoint(), &this.application_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ApplicationSummary =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -734,6 +769,7 @@ pub mod pool {
     }
     pub mod list_usage_metrics {
         use super::models;
+        type Response = models::PoolListUsageMetricsResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -801,73 +837,101 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolListUsageMetricsResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/poolusagemetrics", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(starttime) = &self.starttime {
-                        url.query_pairs_mut().append_pair("starttime", starttime);
-                    }
-                    if let Some(endtime) = &self.endtime {
-                        url.query_pairs_mut().append_pair("endtime", endtime);
-                    }
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::PoolListUsageMetricsResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/poolusagemetrics", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(starttime) = &this.starttime {
+                                    url.query_pairs_mut().append_pair("starttime", starttime);
+                                }
+                                if let Some(endtime) = &this.endtime {
+                                    url.query_pairs_mut().append_pair("endtime", endtime);
+                                }
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::PoolListUsageMetricsResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod get_all_lifetime_statistics {
         use super::models;
+        type Response = models::PoolStatistics;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -915,51 +979,54 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolStatistics, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/lifetimepoolstats", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::PoolStatistics =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/lifetimepoolstats", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::PoolStatistics =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -968,6 +1035,7 @@ pub mod pool {
     }
     pub mod list {
         use super::models;
+        type Response = models::CloudPoolListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1035,71 +1103,101 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPoolListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudPoolListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(expand) = &this.expand {
+                                    url.query_pairs_mut().append_pair("$expand", expand);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudPoolListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod add {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1148,47 +1246,50 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.pool).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.pool).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1197,6 +1298,7 @@ pub mod pool {
     }
     pub mod get {
         use super::models;
+        type Response = models::CloudPool;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1275,69 +1377,72 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPool, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudPool =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(expand) = &this.expand {
+                            url.query_pairs_mut().append_pair("$expand", expand);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudPool =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1346,6 +1451,7 @@ pub mod pool {
     }
     pub mod patch {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1415,59 +1521,62 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.pool_patch_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PATCH);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.pool_patch_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1476,6 +1585,7 @@ pub mod pool {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1544,58 +1654,61 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1604,6 +1717,7 @@ pub mod pool {
     }
     pub mod exists {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -1674,59 +1788,62 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::HEAD);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::HEAD);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1735,6 +1852,7 @@ pub mod pool {
     }
     pub mod disable_auto_scale {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1783,47 +1901,50 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/disableautoscale", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/disableautoscale", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1832,6 +1953,7 @@ pub mod pool {
     }
     pub mod enable_auto_scale {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1901,59 +2023,62 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/enableautoscale", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.pool_enable_auto_scale_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/enableautoscale", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.pool_enable_auto_scale_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -1962,6 +2087,7 @@ pub mod pool {
     }
     pub mod evaluate_auto_scale {
         use super::models;
+        type Response = models::AutoScaleRun;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2011,52 +2137,55 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AutoScaleRun, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/evaluateautoscale", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.pool_evaluate_auto_scale_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::AutoScaleRun =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/evaluateautoscale", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.pool_evaluate_auto_scale_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::AutoScaleRun =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2065,6 +2194,7 @@ pub mod pool {
     }
     pub mod resize {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2134,59 +2264,62 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/resize", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.pool_resize_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/resize", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.pool_resize_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2195,6 +2328,7 @@ pub mod pool {
     }
     pub mod stop_resize {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2263,59 +2397,62 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/stopresize", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/stopresize", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2324,6 +2461,7 @@ pub mod pool {
     }
     pub mod update_properties {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2373,47 +2511,50 @@ pub mod pool {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/updateproperties", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.pool_update_properties_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/updateproperties", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.pool_update_properties_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2422,6 +2563,7 @@ pub mod pool {
     }
     pub mod remove_nodes {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2491,59 +2633,62 @@ pub mod pool {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/removenodes", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.node_remove_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/removenodes", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.node_remove_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -2581,6 +2726,7 @@ pub mod account {
     }
     pub mod list_supported_images {
         use super::models;
+        type Response = models::AccountListSupportedImagesResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2638,67 +2784,95 @@ pub mod account {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AccountListSupportedImagesResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/supportedimages", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::AccountListSupportedImagesResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/supportedimages", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::AccountListSupportedImagesResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod list_pool_node_counts {
         use super::models;
+        type Response = models::PoolNodeCountsListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2756,60 +2930,89 @@ pub mod account {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolNodeCountsListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/nodecounts", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::PoolNodeCountsListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/nodecounts", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::PoolNodeCountsListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -3014,6 +3217,7 @@ pub mod job {
     }
     pub mod get_all_lifetime_statistics {
         use super::models;
+        type Response = models::JobStatistics;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3061,51 +3265,54 @@ pub mod job {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobStatistics, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/lifetimejobstats", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::JobStatistics =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/lifetimejobstats", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::JobStatistics =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3114,6 +3321,7 @@ pub mod job {
     }
     pub mod get {
         use super::models;
+        type Response = models::CloudJob;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3192,69 +3400,72 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJob, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudJob =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(expand) = &this.expand {
+                            url.query_pairs_mut().append_pair("$expand", expand);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudJob =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3263,6 +3474,7 @@ pub mod job {
     }
     pub mod update {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3332,59 +3544,62 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.job_update_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.job_update_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3393,6 +3608,7 @@ pub mod job {
     }
     pub mod patch {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3462,59 +3678,62 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.job_patch_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PATCH);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.job_patch_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3523,6 +3742,7 @@ pub mod job {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3591,58 +3811,61 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3651,6 +3874,7 @@ pub mod job {
     }
     pub mod disable {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3720,59 +3944,62 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/disable", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.job_disable_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/disable", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.job_disable_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3781,6 +4008,7 @@ pub mod job {
     }
     pub mod enable {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3849,59 +4077,62 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/enable", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/enable", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -3910,6 +4141,7 @@ pub mod job {
     }
     pub mod terminate {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3983,63 +4215,66 @@ pub mod job {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/terminate", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    let req_body = if let Some(job_terminate_parameter) = &self.job_terminate_parameter {
-                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                        azure_core::to_json(job_terminate_parameter).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/terminate", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        let req_body = if let Some(job_terminate_parameter) = &this.job_terminate_parameter {
+                            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                            azure_core::to_json(job_terminate_parameter).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4048,6 +4283,7 @@ pub mod job {
     }
     pub mod list {
         use super::models;
+        type Response = models::CloudJobListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4115,71 +4351,101 @@ pub mod job {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudJobListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(expand) = &this.expand {
+                                    url.query_pairs_mut().append_pair("$expand", expand);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudJobListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod add {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4228,47 +4494,50 @@ pub mod job {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.job).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.job).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4277,6 +4546,7 @@ pub mod job {
     }
     pub mod list_from_job_schedule {
         use super::models;
+        type Response = models::CloudJobListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4345,71 +4615,101 @@ pub mod job {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}/jobs", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudJobListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}/jobs", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(expand) = &this.expand {
+                                    url.query_pairs_mut().append_pair("$expand", expand);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudJobListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod list_preparation_and_release_task_status {
         use super::models;
+        type Response = models::CloudJobListPreparationAndReleaseTaskStatusResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4473,75 +4773,102 @@ pub mod job {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListPreparationAndReleaseTaskStatusResult, Error>>
-            {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/jobs/{}/jobpreparationandreleasetaskstatus",
-                        self.client.endpoint(),
-                        &self.job_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudJobListPreparationAndReleaseTaskStatusResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/jobs/{}/jobpreparationandreleasetaskstatus",
+                            this.client.endpoint(),
+                            &this.job_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudJobListPreparationAndReleaseTaskStatusResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod get_task_counts {
         use super::models;
+        type Response = models::TaskCountsResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4590,51 +4917,54 @@ pub mod job {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskCountsResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/taskcounts", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::TaskCountsResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/taskcounts", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::TaskCountsResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4709,6 +5039,7 @@ pub mod certificate {
     }
     pub mod list {
         use super::models;
+        type Response = models::CertificateListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4771,68 +5102,98 @@ pub mod certificate {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/certificates", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CertificateListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/certificates", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CertificateListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod add {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4881,47 +5242,50 @@ pub mod certificate {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/certificates", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.certificate).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/certificates", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.certificate).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -4930,6 +5294,7 @@ pub mod certificate {
     }
     pub mod cancel_deletion {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4979,52 +5344,55 @@ pub mod certificate {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
-                        self.client.endpoint(),
-                        &self.thumbprint_algorithm,
-                        &self.thumbprint
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
+                            this.client.endpoint(),
+                            &this.thumbprint_algorithm,
+                            &this.thumbprint
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5033,6 +5401,7 @@ pub mod certificate {
     }
     pub mod get {
         use super::models;
+        type Response = models::Certificate;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5087,59 +5456,62 @@ pub mod certificate {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Certificate, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-                        self.client.endpoint(),
-                        &self.thumbprint_algorithm,
-                        &self.thumbprint
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Certificate =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
+                            this.client.endpoint(),
+                            &this.thumbprint_algorithm,
+                            &this.thumbprint
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::Certificate =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5148,6 +5520,7 @@ pub mod certificate {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5197,51 +5570,54 @@ pub mod certificate {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-                        self.client.endpoint(),
-                        &self.thumbprint_algorithm,
-                        &self.thumbprint
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
+                            this.client.endpoint(),
+                            &this.thumbprint_algorithm,
+                            &this.thumbprint
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5402,6 +5778,7 @@ pub mod file {
     }
     pub mod get_from_task {
         use super::models;
+        type Response = serde_json::Value;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5467,66 +5844,69 @@ pub mod file {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/jobs/{}/tasks/{}/files/{}",
-                        self.client.endpoint(),
-                        &self.job_id,
-                        &self.task_id,
-                        &self.file_path
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(ocp_range) = &self.ocp_range {
-                        req_builder = req_builder.header("ocp-range", ocp_range);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: serde_json::Value =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/jobs/{}/tasks/{}/files/{}",
+                            this.client.endpoint(),
+                            &this.job_id,
+                            &this.task_id,
+                            &this.file_path
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(ocp_range) = &this.ocp_range {
+                            req_builder = req_builder.header("ocp-range", ocp_range);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: serde_json::Value =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5535,6 +5915,7 @@ pub mod file {
     }
     pub mod delete_from_task {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5590,55 +5971,58 @@ pub mod file {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/jobs/{}/tasks/{}/files/{}",
-                        self.client.endpoint(),
-                        &self.job_id,
-                        &self.task_id,
-                        &self.file_path
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/jobs/{}/tasks/{}/files/{}",
+                            this.client.endpoint(),
+                            &this.job_id,
+                            &this.task_id,
+                            &this.file_path
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(recursive) = &this.recursive {
+                            url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5647,6 +6031,7 @@ pub mod file {
     }
     pub mod get_properties_from_task {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5707,58 +6092,61 @@ pub mod file {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/jobs/{}/tasks/{}/files/{}",
-                        self.client.endpoint(),
-                        &self.job_id,
-                        &self.task_id,
-                        &self.file_path
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::HEAD);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/jobs/{}/tasks/{}/files/{}",
+                            this.client.endpoint(),
+                            &this.job_id,
+                            &this.task_id,
+                            &this.file_path
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::HEAD);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5767,6 +6155,7 @@ pub mod file {
     }
     pub mod get_from_compute_node {
         use super::models;
+        type Response = serde_json::Value;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5832,66 +6221,69 @@ pub mod file {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/files/{}",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id,
-                        &self.file_path
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(ocp_range) = &self.ocp_range {
-                        req_builder = req_builder.header("ocp-range", ocp_range);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: serde_json::Value =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/files/{}",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id,
+                            &this.file_path
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(ocp_range) = &this.ocp_range {
+                            req_builder = req_builder.header("ocp-range", ocp_range);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: serde_json::Value =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -5900,6 +6292,7 @@ pub mod file {
     }
     pub mod delete_from_compute_node {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5955,55 +6348,58 @@ pub mod file {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/files/{}",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id,
-                        &self.file_path
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/files/{}",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id,
+                            &this.file_path
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(recursive) = &this.recursive {
+                            url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -6012,6 +6408,7 @@ pub mod file {
     }
     pub mod get_properties_from_compute_node {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6072,58 +6469,61 @@ pub mod file {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/files/{}",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id,
-                        &self.file_path
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::HEAD);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/files/{}",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id,
+                            &this.file_path
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::HEAD);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -6132,6 +6532,7 @@ pub mod file {
     }
     pub mod list_from_task {
         use super::models;
+        type Response = models::NodeFileListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6196,68 +6597,98 @@ pub mod file {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks/{}/files", self.client.endpoint(), &self.job_id, &self.task_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::NodeFileListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks/{}/files", this.client.endpoint(), &this.job_id, &this.task_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(recursive) = &this.recursive {
+                                    url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::NodeFileListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod list_from_compute_node {
         use super::models;
+        type Response = models::NodeFileListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6322,63 +6753,92 @@ pub mod file {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes/{}/files", self.client.endpoint(), &self.pool_id, &self.node_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::NodeFileListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes/{}/files", this.client.endpoint(), &this.pool_id, &this.node_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(recursive) = &this.recursive {
+                                    url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::NodeFileListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -6546,6 +7006,7 @@ pub mod job_schedule {
     }
     pub mod get {
         use super::models;
+        type Response = models::CloudJobSchedule;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6624,69 +7085,72 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobSchedule, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudJobSchedule =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(expand) = &this.expand {
+                            url.query_pairs_mut().append_pair("$expand", expand);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudJobSchedule =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -6695,6 +7159,7 @@ pub mod job_schedule {
     }
     pub mod update {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6764,59 +7229,62 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.job_schedule_update_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.job_schedule_update_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -6825,6 +7293,7 @@ pub mod job_schedule {
     }
     pub mod patch {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6894,59 +7363,62 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.job_schedule_patch_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PATCH);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.job_schedule_patch_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -6955,6 +7427,7 @@ pub mod job_schedule {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7023,58 +7496,61 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -7083,6 +7559,7 @@ pub mod job_schedule {
     }
     pub mod exists {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -7153,59 +7630,62 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::HEAD);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::HEAD);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -7214,6 +7694,7 @@ pub mod job_schedule {
     }
     pub mod disable {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7282,59 +7763,62 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}/disable", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}/disable", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -7343,6 +7827,7 @@ pub mod job_schedule {
     }
     pub mod enable {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7411,59 +7896,62 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}/enable", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}/enable", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -7472,6 +7960,7 @@ pub mod job_schedule {
     }
     pub mod terminate {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7540,59 +8029,62 @@ pub mod job_schedule {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules/{}/terminate", self.client.endpoint(), &self.job_schedule_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules/{}/terminate", this.client.endpoint(), &this.job_schedule_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -7601,6 +8093,7 @@ pub mod job_schedule {
     }
     pub mod list {
         use super::models;
+        type Response = models::CloudJobScheduleListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7668,73 +8161,101 @@ pub mod job_schedule {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobScheduleListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudJobScheduleListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(expand) = &this.expand {
+                                    url.query_pairs_mut().append_pair("$expand", expand);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudJobScheduleListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod add {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7783,47 +8304,50 @@ pub mod job_schedule {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobschedules", self.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.cloud_job_schedule).map_err(Error::Serialize)?;
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobschedules", this.client.endpoint(),);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.cloud_job_schedule).map_err(Error::Serialize)?;
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -7981,6 +8505,7 @@ pub mod task {
     }
     pub mod list {
         use super::models;
+        type Response = models::CloudTaskListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8049,71 +8574,101 @@ pub mod task {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudTaskListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(expand) = &this.expand {
+                                    url.query_pairs_mut().append_pair("$expand", expand);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudTaskListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
     pub mod add {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8163,47 +8718,50 @@ pub mod task {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.task).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.task).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8212,6 +8770,7 @@ pub mod task {
     }
     pub mod add_collection {
         use super::models;
+        type Response = models::TaskAddCollectionResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8261,52 +8820,55 @@ pub mod task {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskAddCollectionResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/addtaskcollection", self.client.endpoint(), &self.job_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.task_collection).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::TaskAddCollectionResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/addtaskcollection", this.client.endpoint(), &this.job_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.task_collection).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::TaskAddCollectionResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8315,6 +8877,7 @@ pub mod task {
     }
     pub mod get {
         use super::models;
+        type Response = models::CloudTask;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8394,69 +8957,72 @@ pub mod task {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTask, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", expand);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudTask =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks/{}", this.client.endpoint(), &this.job_id, &this.task_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(expand) = &this.expand {
+                            url.query_pairs_mut().append_pair("$expand", expand);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudTask =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8465,6 +9031,7 @@ pub mod task {
     }
     pub mod update {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8535,59 +9102,62 @@ pub mod task {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.task_update_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks/{}", this.client.endpoint(), &this.job_id, &this.task_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.task_update_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8596,6 +9166,7 @@ pub mod task {
     }
     pub mod delete {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8665,58 +9236,61 @@ pub mod task {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks/{}", this.client.endpoint(), &this.job_id, &this.task_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8725,6 +9299,7 @@ pub mod task {
     }
     pub mod list_subtasks {
         use super::models;
+        type Response = models::CloudTaskListSubtasksResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8779,61 +9354,62 @@ pub mod task {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListSubtasksResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/jobs/{}/tasks/{}/subtasksinfo",
-                        self.client.endpoint(),
-                        &self.job_id,
-                        &self.task_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::CloudTaskListSubtasksResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/jobs/{}/tasks/{}/subtasksinfo",
+                            this.client.endpoint(),
+                            &this.job_id,
+                            &this.task_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::CloudTaskListSubtasksResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8842,6 +9418,7 @@ pub mod task {
     }
     pub mod terminate {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8911,59 +9488,62 @@ pub mod task {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/jobs/{}/tasks/{}/terminate", self.client.endpoint(), &self.job_id, &self.task_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/jobs/{}/tasks/{}/terminate", this.client.endpoint(), &this.job_id, &this.task_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -8972,6 +9552,7 @@ pub mod task {
     }
     pub mod reactivate {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9041,64 +9622,67 @@ pub mod task {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/jobs/{}/tasks/{}/reactivate",
-                        self.client.endpoint(),
-                        &self.job_id,
-                        &self.task_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    if let Some(if_match) = &self.if_match {
-                        req_builder = req_builder.header("If-Match", if_match);
-                    }
-                    if let Some(if_none_match) = &self.if_none_match {
-                        req_builder = req_builder.header("If-None-Match", if_none_match);
-                    }
-                    if let Some(if_modified_since) = &self.if_modified_since {
-                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-                    }
-                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
-                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::NO_CONTENT => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/jobs/{}/tasks/{}/reactivate",
+                            this.client.endpoint(),
+                            &this.job_id,
+                            &this.task_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        if let Some(if_match) = &this.if_match {
+                            req_builder = req_builder.header("If-Match", if_match);
+                        }
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req_builder = req_builder.header("If-None-Match", if_none_match);
+                        }
+                        if let Some(if_modified_since) = &this.if_modified_since {
+                            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                        }
+                        if let Some(if_unmodified_since) = &this.if_unmodified_since {
+                            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::NO_CONTENT => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9293,6 +9877,7 @@ pub mod compute_node {
     }
     pub mod add_user {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9343,47 +9928,50 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes/{}/users", self.client.endpoint(), &self.pool_id, &self.node_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.user).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::CREATED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes/{}/users", this.client.endpoint(), &this.pool_id, &this.node_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.user).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9392,6 +9980,7 @@ pub mod compute_node {
     }
     pub mod update_user {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9443,53 +10032,56 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/users/{}",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id,
-                        &self.user_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.node_update_user_parameter).map_err(Error::Serialize)?;
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/users/{}",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id,
+                            &this.user_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.node_update_user_parameter).map_err(Error::Serialize)?;
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9498,6 +10090,7 @@ pub mod compute_node {
     }
     pub mod delete_user {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9548,52 +10141,55 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/users/{}",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id,
-                        &self.user_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/users/{}",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id,
+                            &this.user_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9602,6 +10198,7 @@ pub mod compute_node {
     }
     pub mod get {
         use super::models;
+        type Response = models::ComputeNode;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9656,54 +10253,57 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNode, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes/{}", self.client.endpoint(), &self.pool_id, &self.node_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ComputeNode =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes/{}", this.client.endpoint(), &this.pool_id, &this.node_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ComputeNode =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9712,6 +10312,7 @@ pub mod compute_node {
     }
     pub mod reboot {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9766,51 +10367,54 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes/{}/reboot", self.client.endpoint(), &self.pool_id, &self.node_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    let req_body = if let Some(node_reboot_parameter) = &self.node_reboot_parameter {
-                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                        azure_core::to_json(node_reboot_parameter).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes/{}/reboot", this.client.endpoint(), &this.pool_id, &this.node_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        let req_body = if let Some(node_reboot_parameter) = &this.node_reboot_parameter {
+                            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                            azure_core::to_json(node_reboot_parameter).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9819,6 +10423,7 @@ pub mod compute_node {
     }
     pub mod reimage {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9873,51 +10478,54 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes/{}/reimage", self.client.endpoint(), &self.pool_id, &self.node_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    let req_body = if let Some(node_reimage_parameter) = &self.node_reimage_parameter {
-                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                        azure_core::to_json(node_reimage_parameter).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes/{}/reimage", this.client.endpoint(), &this.pool_id, &this.node_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        let req_body = if let Some(node_reimage_parameter) = &this.node_reimage_parameter {
+                            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                            azure_core::to_json(node_reimage_parameter).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -9926,6 +10534,7 @@ pub mod compute_node {
     }
     pub mod disable_scheduling {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9983,56 +10592,59 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/disablescheduling",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    let req_body = if let Some(node_disable_scheduling_parameter) = &self.node_disable_scheduling_parameter {
-                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                        azure_core::to_json(node_disable_scheduling_parameter).map_err(Error::Serialize)?
-                    } else {
-                        azure_core::EMPTY_BODY
-                    };
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/disablescheduling",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        let req_body = if let Some(node_disable_scheduling_parameter) = &this.node_disable_scheduling_parameter {
+                            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                            azure_core::to_json(node_disable_scheduling_parameter).map_err(Error::Serialize)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -10041,6 +10653,7 @@ pub mod compute_node {
     }
     pub mod enable_scheduling {
         use super::models;
+        type Response = ();
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10090,52 +10703,55 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/enablescheduling",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => Ok(()),
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/enablescheduling",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(()),
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -10144,6 +10760,7 @@ pub mod compute_node {
     }
     pub mod get_remote_login_settings {
         use super::models;
+        type Response = models::ComputeNodeGetRemoteLoginSettingsResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10193,59 +10810,59 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeGetRemoteLoginSettingsResult, Error>>
-            {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/remoteloginsettings",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ComputeNodeGetRemoteLoginSettingsResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/remoteloginsettings",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ComputeNodeGetRemoteLoginSettingsResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -10254,6 +10871,7 @@ pub mod compute_node {
     }
     pub mod get_remote_desktop {
         use super::models;
+        type Response = serde_json::Value;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10303,51 +10921,54 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes/{}/rdp", self.client.endpoint(), &self.pool_id, &self.node_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: serde_json::Value =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes/{}/rdp", this.client.endpoint(), &this.pool_id, &this.node_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: serde_json::Value =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -10356,6 +10977,7 @@ pub mod compute_node {
     }
     pub mod upload_batch_service_logs {
         use super::models;
+        type Response = models::UploadBatchServiceLogsResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10406,59 +11028,60 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::UploadBatchServiceLogsResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-                    let req_body = azure_core::to_json(&self.upload_batch_service_logs_configuration).map_err(Error::Serialize)?;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::UploadBatchServiceLogsResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        let req_body = azure_core::to_json(&this.upload_batch_service_logs_configuration).map_err(Error::Serialize)?;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::UploadBatchServiceLogsResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -10467,6 +11090,7 @@ pub mod compute_node {
     }
     pub mod list {
         use super::models;
+        type Response = models::ComputeNodeListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10530,63 +11154,92 @@ pub mod compute_node {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeListResult, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!("{}/pools/{}/nodes", self.client.endpoint(), &self.pool_id);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", filter);
-                    }
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ComputeNodeListResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!("{}/pools/{}/nodes", this.client.endpoint(), &this.pool_id);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(filter) = &this.filter {
+                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ComputeNodeListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -10626,6 +11279,7 @@ pub mod compute_node_extension {
     }
     pub mod get {
         use super::models;
+        type Response = models::NodeVmExtension;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10681,60 +11335,63 @@ pub mod compute_node_extension {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeVmExtension, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/extensions/{}",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id,
-                        &self.extension_name
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::NodeVmExtension =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/extensions/{}",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id,
+                            &this.extension_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                        if let Some(select) = &this.select {
+                            url.query_pairs_mut().append_pair("$select", select);
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
+                        if let Some(timeout) = &this.timeout {
+                            url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(client_request_id) = &this.client_request_id {
+                            req_builder = req_builder.header("client-request-id", client_request_id);
+                        }
+                        if let Some(return_client_request_id) = &this.return_client_request_id {
+                            req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                        }
+                        if let Some(ocp_date) = &this.ocp_date {
+                            req_builder = req_builder.header("ocp-date", ocp_date);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::NodeVmExtension =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
                     }
                 })
@@ -10743,6 +11400,7 @@ pub mod compute_node_extension {
     }
     pub mod list {
         use super::models;
+        type Response = models::NodeVmExtensionList;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10802,65 +11460,94 @@ pub mod compute_node_extension {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeVmExtensionList, Error>> {
-                Box::pin(async move {
-                    let url_str = &format!(
-                        "{}/pools/{}/nodes/{}/extensions",
-                        self.client.endpoint(),
-                        &self.pool_id,
-                        &self.node_id
-                    );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                    let mut req_builder = http::request::Builder::new();
-                    req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.token_credential();
-                    let token_response = credential
-                        .get_token(&self.client.scopes().join(" "))
-                        .await
-                        .map_err(Error::GetToken)?;
-                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
-                    if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", select);
-                    }
-                    if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
-                    }
-                    if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                    }
-                    if let Some(client_request_id) = &self.client_request_id {
-                        req_builder = req_builder.header("client-request-id", client_request_id);
-                    }
-                    if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
-                    }
-                    if let Some(ocp_date) = &self.ocp_date {
-                        req_builder = req_builder.header("ocp-date", ocp_date);
-                    }
-                    let req_body = azure_core::EMPTY_BODY;
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::NodeVmExtensionList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/pools/{}/nodes/{}/extensions",
+                            this.client.endpoint(),
+                            &this.pool_id,
+                            &this.node_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01.14.0");
+                                if let Some(select) = &this.select {
+                                    url.query_pairs_mut().append_pair("$select", select);
+                                }
+                                if let Some(maxresults) = &this.maxresults {
+                                    url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                                }
+                                if let Some(timeout) = &this.timeout {
+                                    url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                                }
+                                if let Some(client_request_id) = &this.client_request_id {
+                                    req_builder = req_builder.header("client-request-id", client_request_id);
+                                }
+                                if let Some(return_client_request_id) = &this.return_client_request_id {
+                                    req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                                }
+                                if let Some(ocp_date) = &this.ocp_date {
+                                    req_builder = req_builder.header("ocp-date", ocp_date);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::NodeVmExtensionList =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::BatchError =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BatchError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }

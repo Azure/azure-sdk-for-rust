@@ -38,6 +38,11 @@ pub struct AgentPoolListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AgentPoolListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AgentPoolListResult {
     pub fn new() -> Self {
         Self::default()
@@ -55,6 +60,11 @@ pub struct CloudError {
     #[doc = "An error response from the Container service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -838,6 +848,11 @@ pub struct ManagedClusterListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ManagedClusterListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ManagedClusterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -1022,6 +1037,11 @@ pub struct OperationListResult {
     #[doc = "The list of compute operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {

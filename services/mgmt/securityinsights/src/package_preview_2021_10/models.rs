@@ -273,6 +273,11 @@ pub struct ActionsList {
     #[doc = "Array of actions."]
     pub value: Vec<ActionResponse>,
 }
+impl azure_core::Continuable for ActionsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ActionsList {
     pub fn new(value: Vec<ActionResponse>) -> Self {
         Self { next_link: None, value }
@@ -628,6 +633,11 @@ pub struct AlertRuleTemplatesList {
     #[doc = "Array of alert rule templates."]
     pub value: Vec<AlertRuleTemplate>,
 }
+impl azure_core::Continuable for AlertRuleTemplatesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AlertRuleTemplatesList {
     pub fn new(value: Vec<AlertRuleTemplate>) -> Self {
         Self { next_link: None, value }
@@ -649,6 +659,11 @@ pub struct AlertRulesList {
     pub next_link: Option<String>,
     #[doc = "Array of alert rules."]
     pub value: Vec<AlertRule>,
+}
+impl azure_core::Continuable for AlertRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AlertRulesList {
     pub fn new(value: Vec<AlertRule>) -> Self {
@@ -985,6 +1000,11 @@ pub struct AutomationRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AutomationRulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AutomationRulesList {
     pub fn new() -> Self {
         Self::default()
@@ -1226,6 +1246,11 @@ pub struct BookmarkList {
     #[doc = "Array of bookmarks."]
     pub value: Vec<Bookmark>,
 }
+impl azure_core::Continuable for BookmarkList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BookmarkList {
     pub fn new(value: Vec<Bookmark>) -> Self {
         Self { next_link: None, value }
@@ -1376,6 +1401,11 @@ pub struct CloudError {
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -1998,6 +2028,11 @@ pub struct DataConnectorList {
     #[doc = "Array of data connectors."]
     pub value: Vec<DataConnector>,
 }
+impl azure_core::Continuable for DataConnectorList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataConnectorList {
     pub fn new(value: Vec<DataConnector>) -> Self {
         Self { next_link: None, value }
@@ -2619,6 +2654,11 @@ pub struct EntityList {
     #[doc = "Array of entities."]
     pub value: Vec<Entity>,
 }
+impl azure_core::Continuable for EntityList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EntityList {
     pub fn new(value: Vec<Entity>) -> Self {
         Self { next_link: None, value }
@@ -2744,6 +2784,11 @@ pub struct EntityQueryList {
     #[doc = "Array of entity queries."]
     pub value: Vec<EntityQuery>,
 }
+impl azure_core::Continuable for EntityQueryList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EntityQueryList {
     pub fn new(value: Vec<EntityQuery>) -> Self {
         Self { next_link: None, value }
@@ -2778,6 +2823,11 @@ pub struct EntityQueryTemplateList {
     pub next_link: Option<String>,
     #[doc = "Array of entity query templates."]
     pub value: Vec<EntityQueryTemplate>,
+}
+impl azure_core::Continuable for EntityQueryTemplateList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl EntityQueryTemplateList {
     pub fn new(value: Vec<EntityQueryTemplate>) -> Self {
@@ -3540,6 +3590,11 @@ pub struct IncidentCommentList {
     #[doc = "Array of comments."]
     pub value: Vec<IncidentComment>,
 }
+impl azure_core::Continuable for IncidentCommentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl IncidentCommentList {
     pub fn new(value: Vec<IncidentComment>) -> Self {
         Self { next_link: None, value }
@@ -3670,6 +3725,11 @@ pub struct IncidentList {
     pub next_link: Option<String>,
     #[doc = "Array of incidents."]
     pub value: Vec<Incident>,
+}
+impl azure_core::Continuable for IncidentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl IncidentList {
     pub fn new(value: Vec<Incident>) -> Self {
@@ -4433,6 +4493,11 @@ pub struct MetadataList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MetadataList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MetadataList {
     pub fn new(value: Vec<MetadataModel>) -> Self {
         Self { value, next_link: None }
@@ -4810,6 +4875,11 @@ pub struct OfficeConsentList {
     #[doc = "Array of the consents."]
     pub value: Vec<OfficeConsent>,
 }
+impl azure_core::Continuable for OfficeConsentList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OfficeConsentList {
     pub fn new(value: Vec<OfficeConsent>) -> Self {
         Self { next_link: None, value }
@@ -5072,6 +5142,11 @@ pub struct OperationsList {
     #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {
         Self { next_link: None, value }
@@ -5245,6 +5320,11 @@ pub struct RelationList {
     #[doc = "Array of relations."]
     pub value: Vec<Relation>,
 }
+impl azure_core::Continuable for RelationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RelationList {
     pub fn new(value: Vec<Relation>) -> Self {
         Self { next_link: None, value }
@@ -5302,6 +5382,11 @@ pub struct RepoList {
     pub next_link: Option<String>,
     #[doc = "Array of repositories."]
     pub value: Vec<Repo>,
+}
+impl azure_core::Continuable for RepoList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RepoList {
     pub fn new(value: Vec<Repo>) -> Self {
@@ -5858,6 +5943,11 @@ pub struct SourceControlList {
     #[doc = "Array of source controls."]
     pub value: Vec<SourceControl>,
 }
+impl azure_core::Continuable for SourceControlList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl SourceControlList {
     pub fn new(value: Vec<SourceControl>) -> Self {
         Self { next_link: None, value }
@@ -6377,6 +6467,11 @@ pub struct ThreatIntelligenceInformationList {
     #[doc = "Array of threat intelligence information objects."]
     pub value: Vec<ThreatIntelligenceInformation>,
 }
+impl azure_core::Continuable for ThreatIntelligenceInformationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ThreatIntelligenceInformationList {
     pub fn new(value: Vec<ThreatIntelligenceInformation>) -> Self {
         Self { next_link: None, value }
@@ -6795,6 +6890,11 @@ pub struct WatchlistItemList {
     #[doc = "Array of watchlist items."]
     pub value: Vec<WatchlistItem>,
 }
+impl azure_core::Continuable for WatchlistItemList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl WatchlistItemList {
     pub fn new(value: Vec<WatchlistItem>) -> Self {
         Self { next_link: None, value }
@@ -6858,6 +6958,11 @@ pub struct WatchlistList {
     pub next_link: Option<String>,
     #[doc = "Array of watchlist."]
     pub value: Vec<Watchlist>,
+}
+impl azure_core::Continuable for WatchlistList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl WatchlistList {
     pub fn new(value: Vec<Watchlist>) -> Self {

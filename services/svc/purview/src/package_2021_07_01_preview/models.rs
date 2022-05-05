@@ -136,6 +136,11 @@ pub struct ErrorResponseModel {
     #[doc = "The error model for metadata policy"]
     pub error: ErrorModel,
 }
+impl azure_core::Continuable for ErrorResponseModel {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponseModel {
     pub fn new(error: ErrorModel) -> Self {
         Self { error }
@@ -166,6 +171,11 @@ pub struct MetadataPolicyList {
     pub values: Vec<MetadataPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MetadataPolicyList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MetadataPolicyList {
     pub fn new(values: Vec<MetadataPolicy>) -> Self {
@@ -220,6 +230,11 @@ pub struct MetadataRoleList {
     pub values: Vec<MetadataRole>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MetadataRoleList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl MetadataRoleList {
     pub fn new(values: Vec<MetadataRole>) -> Self {

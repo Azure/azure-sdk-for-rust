@@ -33,6 +33,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -331,6 +336,11 @@ pub struct PolicyEventsQueryResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyEvent>,
 }
+impl azure_core::Continuable for PolicyEventsQueryResults {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl PolicyEventsQueryResults {
     pub fn new() -> Self {
         Self::default()
@@ -448,6 +458,11 @@ pub struct PolicyStatesQueryResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyState>,
 }
+impl azure_core::Continuable for PolicyStatesQueryResults {
+    fn continuation(&self) -> Option<String> {
+        self.odata_next_link.clone()
+    }
+}
 impl PolicyStatesQueryResults {
     pub fn new() -> Self {
         Self::default()
@@ -487,6 +502,11 @@ pub struct PolicyTrackedResourcesQueryResults {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for PolicyTrackedResourcesQueryResults {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PolicyTrackedResourcesQueryResults {
     pub fn new() -> Self {
         Self::default()
@@ -498,6 +518,11 @@ pub struct QueryFailure {
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<query_failure::Error>,
+}
+impl azure_core::Continuable for QueryFailure {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl QueryFailure {
     pub fn new() -> Self {
@@ -601,6 +626,11 @@ pub struct RemediationDeploymentsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RemediationDeploymentsListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RemediationDeploymentsListResult {
     pub fn new() -> Self {
         Self::default()
@@ -627,6 +657,11 @@ pub struct RemediationListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RemediationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RemediationListResult {
     pub fn new() -> Self {

@@ -69,6 +69,11 @@ pub struct DataLakeStoreAccountListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl azure_core::Continuable for DataLakeStoreAccountListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DataLakeStoreAccountListResult {
     pub fn new() -> Self {
         Self::default()
@@ -157,6 +162,11 @@ pub struct DataLakeStoreFirewallRuleListResult {
     #[doc = "the total count of results that are available, but might not be returned in the current page."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl azure_core::Continuable for DataLakeStoreFirewallRuleListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataLakeStoreFirewallRuleListResult {
     pub fn new() -> Self {

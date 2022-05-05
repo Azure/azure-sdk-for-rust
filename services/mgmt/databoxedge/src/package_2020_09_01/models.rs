@@ -59,6 +59,11 @@ pub struct AddonList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for AddonList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AddonList {
     pub fn new() -> Self {
         Self::default()
@@ -145,6 +150,11 @@ pub struct AlertList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AlertList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl AlertList {
     pub fn new() -> Self {
@@ -418,6 +428,11 @@ pub struct BandwidthSchedulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BandwidthSchedulesList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BandwidthSchedulesList {
     pub fn new() -> Self {
         Self::default()
@@ -519,6 +534,11 @@ pub struct CloudError {
     #[doc = "An error response from the service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl CloudError {
     pub fn new() -> Self {
@@ -636,6 +656,11 @@ pub struct ContainerList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ContainerList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ContainerList {
     pub fn new() -> Self {
@@ -841,6 +866,11 @@ pub struct DataBoxEdgeDeviceList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataBoxEdgeDeviceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataBoxEdgeDeviceList {
     pub fn new() -> Self {
@@ -1100,6 +1130,11 @@ pub struct DataBoxEdgeSkuList {
     #[doc = "Links to the next set of results"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataBoxEdgeSkuList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DataBoxEdgeSkuList {
     pub fn new() -> Self {
@@ -2223,6 +2258,11 @@ pub struct MonitoringMetricConfigurationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for MonitoringMetricConfigurationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl MonitoringMetricConfigurationList {
     pub fn new() -> Self {
         Self::default()
@@ -2473,6 +2513,11 @@ pub struct NodeList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NodeList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NodeList {
     pub fn new() -> Self {
         Self::default()
@@ -2586,6 +2631,11 @@ pub struct OperationsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationsList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsList {
     pub fn new(value: Vec<Operation>) -> Self {
         Self { value, next_link: None }
@@ -2614,6 +2664,11 @@ pub struct OrderList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OrderList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OrderList {
     pub fn new() -> Self {
@@ -2958,6 +3013,11 @@ pub struct RoleList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for RoleList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl RoleList {
     pub fn new() -> Self {
         Self::default()
@@ -3069,6 +3129,11 @@ pub struct ShareList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ShareList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ShareList {
     pub fn new() -> Self {
@@ -3366,6 +3431,11 @@ pub struct StorageAccountCredentialList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for StorageAccountCredentialList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl StorageAccountCredentialList {
     pub fn new() -> Self {
         Self::default()
@@ -3440,6 +3510,11 @@ pub struct StorageAccountList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StorageAccountList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl StorageAccountList {
     pub fn new() -> Self {
@@ -3646,6 +3721,11 @@ pub struct TriggerList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TriggerList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TriggerList {
     pub fn new() -> Self {
@@ -3907,6 +3987,11 @@ pub struct UserList {
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UserList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UserList {
     pub fn new() -> Self {

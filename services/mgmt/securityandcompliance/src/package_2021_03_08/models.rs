@@ -9,6 +9,11 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetailsInternal>,
 }
+impl azure_core::Continuable for ErrorDetails {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorDetails {
     pub fn new() -> Self {
         Self::default()
@@ -83,6 +88,11 @@ pub struct OperationListResult {
     #[doc = "A list of service operations supported by the Microsoft.SecurityAndCompliance resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationListResult {
     pub fn new() -> Self {
@@ -163,6 +173,11 @@ pub struct PrivateEndpointConnectionListResult {
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateEndpointConnectionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
@@ -301,6 +316,11 @@ pub struct PrivateLinkServicesForEdmUploadDescriptionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkServicesForEdmUploadDescription>,
 }
+impl azure_core::Continuable for PrivateLinkServicesForEdmUploadDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateLinkServicesForEdmUploadDescriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -332,6 +352,11 @@ pub struct PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
     #[doc = "A list of service description objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkServicesForM365ComplianceCenterDescription>,
+}
+impl azure_core::Continuable for PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
     pub fn new() -> Self {
@@ -365,6 +390,11 @@ pub struct PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkServicesForM365SecurityCenterDescription>,
 }
+impl azure_core::Continuable for PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -396,6 +426,11 @@ pub struct PrivateLinkServicesForMipPolicySyncDescriptionListResult {
     #[doc = "A list of service description objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkServicesForMipPolicySyncDescription>,
+}
+impl azure_core::Continuable for PrivateLinkServicesForMipPolicySyncDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkServicesForMipPolicySyncDescriptionListResult {
     pub fn new() -> Self {
@@ -429,6 +464,11 @@ pub struct PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkServicesForO365ManagementActivityApiDescription>,
 }
+impl azure_core::Continuable for PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
     pub fn new() -> Self {
         Self::default()
@@ -460,6 +500,11 @@ pub struct PrivateLinkServicesForSccPowershellDescriptionListResult {
     #[doc = "A list of service description objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkServicesForSccPowershellDescription>,
+}
+impl azure_core::Continuable for PrivateLinkServicesForSccPowershellDescriptionListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkServicesForSccPowershellDescriptionListResult {
     pub fn new() -> Self {

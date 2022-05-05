@@ -4,14 +4,14 @@ use crate::{
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
-use autorust_openapi::{DataType, Reference, ReferenceOr, Schema};
+use autorust_openapi::{DataType, MsPageable, Reference, ReferenceOr, Schema};
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 struct PropertyGen {
@@ -300,6 +300,35 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         });
     }
 
+    let mut pageable_response_names: HashMap<String, MsPageable> = HashMap::new();
+    for operation in cg.spec.operations()? {
+        if let Some(pageable) = operation.pageable.as_ref() {
+            for response in operation.responses.values() {
+                if let Some(schema) = &response.schema {
+                    let pageable_name = format!("{}", type_name_gen(&get_type_name_for_schema_ref(schema)?, false, false)?);
+                    // in some cases, the same struct is used multiple times for
+                    // responses (such as a get and list for a given object
+                    // type).  In these cases, what we see is a next_link_name
+                    // of null in one response, and a valid next_link_name in
+                    // another.  so, only keep the one that has a next_link_name.
+                    //
+                    // operations that are not pageable won't call the
+                    // Continuable trait, which should mean this is workaround
+                    // is functional.
+                    if let Some(entry) = pageable_response_names.get(&pageable_name) {
+                        if entry.next_link_name.is_some() && pageable.next_link_name.is_none() {
+                            continue;
+                        }
+                    }
+
+                    pageable_response_names.insert(pageable_name.clone(), pageable.clone());
+                }
+            }
+        }
+    }
+
+    // println!("response_names: {:?}", pageable_response_names);
+
     let mut schema_names = IndexMap::new();
     let schemas = all_schemas(&cg.spec)?;
     let schemas = resolve_all_schema_properties(&schemas, &cg.spec)?;
@@ -310,6 +339,11 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     for (ref_key, schema) in &schemas {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
+
+        // println!("schema_name: {}", schema_name);
+
+        // create_response_type()
+
         if let Some(_first_doc_file) = schema_names.insert(schema_name, doc_file) {
             // eprintln!(
             //     "WARN schema {} already created from {:?}, duplicate from {:?}",
@@ -325,7 +359,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
             file.extend(quote! { pub type #id = #value;});
         } else {
-            file.extend(create_struct(cg, schema, schema_name)?);
+            let pageable_name = format!("{}", schema_name.to_camel_case_ident().map_err(Error::StructName)?);
+            file.extend(create_struct(cg, schema, schema_name, pageable_response_names.get(&pageable_name))?);
         }
     }
     Ok(file)
@@ -437,7 +472,7 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<TokenStream, Error> {
+fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: Option<&MsPageable>) -> Result<TokenStream, Error> {
     let mut code = TokenStream::new();
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
@@ -446,6 +481,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
     let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
     let struct_name_code = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
     let required = schema.required();
+
+    // println!("struct: {} {:?}", struct_name_code, pageable);
 
     for schema in schema.all_of() {
         let schema_name = schema.name()?;
@@ -462,6 +499,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
             new_fn_body.extend(quote! { #field_name, });
         }
     }
+
+    let mut field_names = HashMap::new();
 
     for property in schema.properties() {
         let property_name = property.name.as_str();
@@ -488,6 +527,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
+
+        field_names.insert(format!("{}", field_name), is_required);
 
         let is_vec = is_vec(&type_name);
         if !is_vec {
@@ -561,6 +602,64 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         None => quote! {},
     };
 
+    let mut continuable = quote! {};
+    if let Some(pageable) = pageable {
+        if let Some(name) = &pageable.next_link_name {
+            let field_name = name.to_snake_case_ident().map_err(Error::StructName)?;
+            // when there are multiple responses, we only add the Continuable
+            // for the cases that have the field we care about.
+            // println!("checking {} {} {}", struct_name_code, field_name, field_names.contains(&format!("{}", field_name)));
+            if let Some(is_required) = field_names.get(&format!("{}", field_name)) {
+                if *is_required {
+                    continuable = quote! {
+                        impl azure_core::Continuable for #struct_name_code {
+                            fn continuation(&self) -> Option<String> {
+                                if self.#field_name.is_empty() {
+                                    None
+                                } else {
+                                    Some(self.#field_name.clone())
+                                }
+                            }
+                        }
+                    };
+                } else {
+                    continuable = quote! {
+                        impl azure_core::Continuable for #struct_name_code {
+                            fn continuation(&self) -> Option<String> {
+                                self.#field_name.clone()
+                            }
+                        }
+                    };
+                }
+            } else {
+                // In a number of cases, such as USqlAssemblyList used in
+                // datalake-analytics, the next link name is provided, but the
+                // field doesn't exist in the response schema.  Handle that by
+                // adding a Continuable that always returns None.
+                continuable = quote! {
+                    impl azure_core::Continuable for #struct_name_code {
+                        fn continuation(&self) -> Option<String> {
+                            None
+                        }
+                    }
+                };
+            }
+        } else {
+            // In a number of cases, such as DimensionsListResult used in
+            // costmanagement, the next link name is null, and it's not provided
+            // via a header or sometimes used in other responses.
+            //
+            // Handle that by // adding a Continuable that always returns None.
+            continuable = quote! {
+                impl azure_core::Continuable for #struct_name_code {
+                    fn continuation(&self) -> Option<String> {
+                        None
+                    }
+                }
+            };
+        }
+    }
+
     let struct_code = quote! {
         #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -568,6 +667,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         pub struct #struct_name_code {
             #props
         }
+        #continuable
     };
     code.extend(struct_code);
 
@@ -631,7 +731,7 @@ fn create_struct_field_code(
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
                 let type_name = quote! {#namespace::#id};
-                let code = create_struct(cg, property, property_name)?;
+                let code = create_struct(cg, property, property_name, None)?;
                 Ok(TypeCode { type_name, code })
             } else {
                 Ok(TypeCode {

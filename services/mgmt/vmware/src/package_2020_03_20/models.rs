@@ -51,6 +51,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl azure_core::Continuable for CloudError {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl CloudError {
     pub fn new() -> Self {
         Self::default()
@@ -84,6 +89,11 @@ pub struct ClusterList {
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ClusterList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ClusterList {
     pub fn new() -> Self {
@@ -221,6 +231,11 @@ pub struct ExpressRouteAuthorizationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ExpressRouteAuthorizationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ExpressRouteAuthorizationList {
     pub fn new() -> Self {
         Self::default()
@@ -277,6 +292,11 @@ pub struct HcxEnterpriseSiteList {
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HcxEnterpriseSiteList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl HcxEnterpriseSiteList {
     pub fn new() -> Self {
@@ -527,6 +547,11 @@ pub struct OperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationList {
     pub fn new() -> Self {
         Self::default()
@@ -572,6 +597,11 @@ pub struct PrivateCloudList {
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for PrivateCloudList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateCloudList {
     pub fn new() -> Self {

@@ -56,6 +56,11 @@ pub struct BlockchainMemberCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for BlockchainMemberCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl BlockchainMemberCollection {
     pub fn new() -> Self {
         Self::default()
@@ -252,6 +257,11 @@ pub struct ConsortiumMemberCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ConsortiumMemberCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ConsortiumMemberCollection {
     pub fn new() -> Self {
         Self::default()
@@ -385,6 +395,11 @@ pub struct ResourceProviderOperationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceProviderOperationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceProviderOperationCollection {
     pub fn new() -> Self {
         Self::default()
@@ -517,6 +532,11 @@ pub struct TransactionNodeCollection {
     #[doc = "Gets or sets the URL, that the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TransactionNodeCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl TransactionNodeCollection {
     pub fn new() -> Self {

@@ -64,6 +64,11 @@ pub struct AccountList {
     #[doc = "Collection of items of type results."]
     pub value: Vec<Account>,
 }
+impl azure_core::Continuable for AccountList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl AccountList {
     pub fn new(value: Vec<Account>) -> Self {
         Self {
@@ -332,6 +337,11 @@ pub struct ErrorResponseModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
+impl azure_core::Continuable for ErrorResponseModel {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl ErrorResponseModel {
     pub fn new() -> Self {
         Self::default()
@@ -442,6 +452,11 @@ pub struct OperationList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type results."]
     pub value: Vec<Operation>,
+}
+impl azure_core::Continuable for OperationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationList {
     pub fn new(value: Vec<Operation>) -> Self {
@@ -580,6 +595,11 @@ pub struct PrivateEndpointConnectionList {
     #[doc = "Collection of items of type results."]
     pub value: Vec<PrivateEndpointConnection>,
 }
+impl azure_core::Continuable for PrivateEndpointConnectionList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl PrivateEndpointConnectionList {
     pub fn new(value: Vec<PrivateEndpointConnection>) -> Self {
         Self {
@@ -639,6 +659,11 @@ pub struct PrivateLinkResourceList {
     pub next_link: Option<String>,
     #[doc = "Collection of items of type results."]
     pub value: Vec<PrivateLinkResource>,
+}
+impl azure_core::Continuable for PrivateLinkResourceList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl PrivateLinkResourceList {
     pub fn new(value: Vec<PrivateLinkResource>) -> Self {

@@ -55,6 +55,11 @@ pub struct EnterpriseKnowledgeGraphResponseList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnterpriseKnowledgeGraph>,
 }
+impl azure_core::Continuable for EnterpriseKnowledgeGraphResponseList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl EnterpriseKnowledgeGraphResponseList {
     pub fn new() -> Self {
         Self::default()
@@ -66,6 +71,11 @@ pub struct Error {
     #[doc = "EnterpriseKnowledgeGraph Service error body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl Error {
     pub fn new() -> Self {
@@ -136,6 +146,11 @@ pub struct OperationEntityListResult {
     #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
+}
+impl azure_core::Continuable for OperationEntityListResult {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl OperationEntityListResult {
     pub fn new() -> Self {

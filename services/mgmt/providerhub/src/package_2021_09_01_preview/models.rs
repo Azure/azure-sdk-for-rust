@@ -103,6 +103,11 @@ pub struct CustomRolloutArrayResponseWithContinuation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for CustomRolloutArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl CustomRolloutArrayResponseWithContinuation {
     pub fn new() -> Self {
         Self::default()
@@ -178,6 +183,11 @@ pub struct DefaultRolloutArrayResponseWithContinuation {
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DefaultRolloutArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DefaultRolloutArrayResponseWithContinuation {
     pub fn new() -> Self {
@@ -291,6 +301,11 @@ pub struct ErrorResponse {
     #[doc = "Standard error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -695,6 +710,11 @@ pub struct NotificationRegistrationArrayResponseWithContinuation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for NotificationRegistrationArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl NotificationRegistrationArrayResponseWithContinuation {
     pub fn new() -> Self {
         Self::default()
@@ -828,6 +848,11 @@ pub struct OperationsDefinitionArrayResponseWithContinuation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationsDefinitionArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl OperationsDefinitionArrayResponseWithContinuation {
     pub fn new() -> Self {
         Self::default()
@@ -898,6 +923,11 @@ pub struct ProviderRegistrationArrayResponseWithContinuation {
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProviderRegistrationArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl ProviderRegistrationArrayResponseWithContinuation {
     pub fn new() -> Self {
@@ -1468,6 +1498,11 @@ pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ResourceTypeRegistrationArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ResourceTypeRegistrationArrayResponseWithContinuation {
     pub fn new() -> Self {
         Self::default()
@@ -1754,6 +1789,11 @@ pub struct SkuResourceArrayResponseWithContinuation {
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SkuResourceArrayResponseWithContinuation {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl SkuResourceArrayResponseWithContinuation {
     pub fn new() -> Self {

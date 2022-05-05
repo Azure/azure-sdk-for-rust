@@ -116,6 +116,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl Error {
     pub fn new() -> Self {
         Self::default()
@@ -271,6 +276,11 @@ pub struct WorkspaceCollectionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkspaceCollection>,
 }
+impl azure_core::Continuable for WorkspaceCollectionList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
 impl WorkspaceCollectionList {
     pub fn new() -> Self {
         Self::default()
@@ -280,6 +290,11 @@ impl WorkspaceCollectionList {
 pub struct WorkspaceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
+}
+impl azure_core::Continuable for WorkspaceList {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
 }
 impl WorkspaceList {
     pub fn new() -> Self {

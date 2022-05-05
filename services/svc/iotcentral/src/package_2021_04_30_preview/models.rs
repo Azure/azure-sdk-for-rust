@@ -54,6 +54,11 @@ pub struct ApiTokenCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ApiTokenCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ApiTokenCollection {
     pub fn new(value: Vec<ApiToken>) -> Self {
         Self { value, next_link: None }
@@ -144,6 +149,11 @@ pub struct ContinuousDataExportCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for ContinuousDataExportCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl ContinuousDataExportCollection {
     pub fn new(value: Vec<ContinuousDataExport>) -> Self {
         Self { value, next_link: None }
@@ -194,6 +204,11 @@ pub struct DeviceCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DeviceCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl DeviceCollection {
     pub fn new(value: Vec<Device>) -> Self {
         Self { value, next_link: None }
@@ -232,6 +247,11 @@ pub struct DeviceCommandCollection {
     #[doc = "URL to get the next page of device command executions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceCommandCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeviceCommandCollection {
     pub fn new(value: Vec<DeviceCommand>) -> Self {
@@ -281,6 +301,11 @@ pub struct DeviceGroupCollection {
     #[doc = "URL to get the next page of device groups."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceGroupCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeviceGroupCollection {
     pub fn new(value: Vec<DeviceGroup>) -> Self {
@@ -352,6 +377,11 @@ pub struct DeviceTemplateCollection {
     #[doc = "URL to get the next page of device templates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceTemplateCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl DeviceTemplateCollection {
     pub fn new(value: Vec<DeviceTemplate>) -> Self {
@@ -496,6 +526,11 @@ pub struct JobCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for JobCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
 impl JobCollection {
     pub fn new(value: Vec<Job>) -> Self {
         Self { value, next_link: None }
@@ -602,6 +637,11 @@ pub struct RoleCollection {
     #[doc = "URL to get the next page of roles."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for RoleCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl RoleCollection {
     pub fn new(value: Vec<Role>) -> Self {
@@ -739,6 +779,11 @@ pub struct UserCollection {
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for UserCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
 }
 impl UserCollection {
     pub fn new(value: Vec<User>) -> Self {
