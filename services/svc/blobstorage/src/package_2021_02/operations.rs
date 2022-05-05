@@ -848,6 +848,20 @@ pub mod service {
     }
     pub mod get_account_info {
         use super::models;
+
+        pub type Ok200Headers {
+            pub client_request_id: Option<String>;
+            pub request_id: Option<String>;
+            pub version: Option<String>;
+            pub date: Option<String>; // TODO "format": "date-time-rfc1123"
+            pub sku_name: Option<String>; // TODO type SkuName
+            pub account_kind: Option<String; // TODO type AccountKind
+            pub is_hierarchical_namespace_enabled Option<bool>;
+        }
+        impl Ok200Headers {
+            // fn from_headers TODO
+        }
+
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -893,7 +907,7 @@ pub mod service {
                     let restype = &self.restype;
                     url.query_pairs_mut().append_pair("restype", restype);
                     let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
+                    // url.query_pairs_mut().append_pair("comp", comp);
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
@@ -901,7 +915,10 @@ pub mod service {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(()),
+                        http::StatusCode::OK => {
+                            let headers = Ok200Headers::from_headers(rsp_headers).map_err(Error::ResponseHeaders)?;
+                            Ok(headers)
+                        },
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::StorageError =
@@ -1465,14 +1482,14 @@ pub mod container {
             &self,
             container_name: impl Into<String>,
             restype: impl Into<String>,
-            comp: impl Into<String>,
+            // comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> get_account_info::Builder {
             get_account_info::Builder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
-                comp: comp.into(),
+                // comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
             }
         }
@@ -3303,8 +3320,8 @@ pub mod container {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
+            // pub(crate) restype: String,
+            // pub(crate) comp: String,
             pub(crate) x_ms_version: String,
         }
         impl Builder {
@@ -3324,10 +3341,10 @@ pub mod container {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    let restype = &self.restype;
-                    url.query_pairs_mut().append_pair("restype", restype);
-                    let comp = &self.comp;
-                    url.query_pairs_mut().append_pair("comp", comp);
+                    // let restype = &self.restype;
+                    // url.query_pairs_mut().append_pair("restype", restype);
+                    // let comp = &self.comp;
+                    // url.query_pairs_mut().append_pair("comp", comp);
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());

@@ -9,7 +9,7 @@ use std::{collections::HashMap, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &[];
+const ONLY_SERVICES: &[&str] = &["blobstorage"];
 
 const SKIP_SERVICES: &[&str] = &[
     "datalake-store",          // query param "sources" not used
