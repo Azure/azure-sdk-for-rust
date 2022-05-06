@@ -1,7 +1,7 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
 use autorust_codegen::{
-    self, cargo_toml, get_svc_readmes, io, lib_rs,
+    self, autorust_toml, cargo_toml, get_svc_readmes, io, lib_rs,
     readme_md::{self, ReadmeMd},
     CrateConfig, Error, Result, RunConfig, SpecReadme,
 };
@@ -199,14 +199,16 @@ fn main() -> Result<()> {
 
 fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
     let spec_config = spec.config()?;
-    let tags = &spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
+    let service_name = &spec.service_name();
+    let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
+    let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
+    let package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    let tags = spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
+    let tags = &package_config.tags(tags);
     if tags.is_empty() {
         println!("not generating {} - no tags", spec.spec());
         return Ok(());
     }
-    let service_name = &spec.service_name();
-    let crate_name = &format!("azure_svc_{}", service_name);
-    let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
 
     let src_folder = io::join(output_folder, "src")?;
     if src_folder.exists() {
