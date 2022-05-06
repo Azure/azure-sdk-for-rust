@@ -1,7 +1,7 @@
+use crate::config_parser::Tag;
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 use std::{collections::HashSet, fs};
-use crate::config_parser::Tag;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct PackageConfig {
