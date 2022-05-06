@@ -26,7 +26,6 @@ mod request;
 mod request_options;
 mod response;
 mod seekable_stream;
-mod sleep;
 
 pub mod auth;
 pub mod headers;
@@ -34,6 +33,7 @@ pub mod headers;
 pub mod mock;
 pub mod parsing;
 pub mod prelude;
+pub mod sleep;
 pub mod util;
 
 use uuid::Uuid;
@@ -53,6 +53,7 @@ pub use policies::*;
 pub use request::*;
 pub use response::*;
 pub use seekable_stream::*;
+pub use sleep::sleep;
 
 /// A unique identifier for a request.
 // NOTE: only used for Storage?

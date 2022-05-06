@@ -4,14 +4,15 @@ use std::task::{Context, Poll};
 use std::thread;
 use std::time::Duration;
 
-pub(crate) fn sleep(duration: Duration) -> Sleep {
+pub fn sleep(duration: Duration) -> Sleep {
     Sleep {
         thread: None,
         duration,
     }
 }
 
-pub(crate) struct Sleep {
+#[derive(Debug)]
+pub struct Sleep {
     thread: Option<thread::JoinHandle<()>>,
     duration: Duration,
 }
