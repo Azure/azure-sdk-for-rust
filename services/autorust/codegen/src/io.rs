@@ -10,6 +10,8 @@ pub enum Error {
     CreateOutputDirectory { source: std::io::Error, directory: Utf8PathBuf },
     #[error("Could not create file {file}")]
     CreateFile { source: std::io::Error, file: Utf8PathBuf },
+    #[error("Could not read file {file}")]
+    ReadFile { source: std::io::Error, file: Utf8PathBuf },
     #[error("Could not write file {file}")]
     WriteFile { source: std::io::Error, file: Utf8PathBuf },
     #[error("file name was not utf-8")]

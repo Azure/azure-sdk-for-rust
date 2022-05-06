@@ -1,3 +1,4 @@
+pub mod autorust_toml;
 pub mod cargo_toml;
 mod codegen;
 mod codegen_models;
@@ -42,6 +43,8 @@ pub enum Error {
     LibRs(#[from] lib_rs::Error),
     #[error(transparent)]
     Spec(#[from] spec::Error),
+    #[error(transparent)]
+    AutorustToml(#[from] autorust_toml::Error),
 }
 impl<T: Into<io::Error>> From<T> for Error {
     fn from(error: T) -> Self {
