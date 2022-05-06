@@ -9,7 +9,7 @@ pub struct PackageConfig {
 }
 impl<'a> PackageConfig {
     pub fn tags(&self, tags: Vec<&'a Tag>) -> Vec<&'a Tag> {
-        if self.tags_allow.len() > 0 {
+        if !self.tags_allow.is_empty() {
             let tags_allow: HashSet<&str> = self.tags_allow.iter().map(String::as_str).collect();
             tags.into_iter().filter(|tag| tags_allow.contains(tag.name())).collect()
         } else {
