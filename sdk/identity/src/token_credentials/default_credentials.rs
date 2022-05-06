@@ -142,7 +142,9 @@ impl Default for DefaultAzureCredential {
         DefaultAzureCredential {
             sources: vec![
                 DefaultAzureCredentialEnum::Environment(EnvironmentCredential::default()),
-                DefaultAzureCredentialEnum::ManagedIdentity(ImdsManagedIdentityCredential::default()),
+                DefaultAzureCredentialEnum::ManagedIdentity(
+                    ImdsManagedIdentityCredential::default(),
+                ),
                 DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}),
             ],
         }
