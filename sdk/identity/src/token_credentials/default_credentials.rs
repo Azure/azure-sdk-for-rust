@@ -58,7 +58,7 @@ impl DefaultAzureCredentialBuilder {
         }
         if self.include_managed_identity_credential {
             sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
-                ImdsManagedIdentityCredential {},
+                ImdsManagedIdentityCredential::default(),
             ))
         }
         if self.include_cli_credential {
@@ -142,7 +142,7 @@ impl Default for DefaultAzureCredential {
         DefaultAzureCredential {
             sources: vec![
                 DefaultAzureCredentialEnum::Environment(EnvironmentCredential::default()),
-                DefaultAzureCredentialEnum::ManagedIdentity(ImdsManagedIdentityCredential {}),
+                DefaultAzureCredentialEnum::ManagedIdentity(ImdsManagedIdentityCredential::default()),
                 DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}),
             ],
         }

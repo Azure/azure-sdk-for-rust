@@ -18,7 +18,17 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
-pub struct ImdsManagedIdentityCredential;
+#[derive(Clone, Debug, Default)]
+pub struct ImdsManagedIdentityCredential {
+    client_id: String,
+}
+
+impl ImdsManagedIdentityCredential {
+    /// Create a new ImdsManagedIdentityCredential with the given client_id
+    pub fn new(client_id: String) -> Self {
+        Self { client_id }
+    }
+}
 
 #[allow(missing_docs)]
 #[non_exhaustive]
@@ -49,7 +59,11 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
-        let query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
+        let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
+
+        if !self.client_id.is_empty() {
+            query_items.push(("client_id", &self.client_id))
+        }
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
             .map_err(ManagedIdentityCredentialError::MsiEndpointParseUrlError)?;
