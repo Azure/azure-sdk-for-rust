@@ -26,7 +26,7 @@ pub struct ImdsManagedIdentityCredential {
 }
 
 impl ImdsManagedIdentityCredential {
-    /// Create a new ImdsManagedIdentityCredential with the given client_id
+    /// Create a new ImdsManagedIdentityCredential with the given optional parameters. Only one of client_id, principal_id and mi_res_id may be set.
     pub fn new(
         client_id: Option<String>,
         principal_id: Option<String>,
