@@ -18,15 +18,25 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
-#[derive(Clone, Debug, Default)]
+#[derive(Default)]
 pub struct ImdsManagedIdentityCredential {
-    client_id: String,
+    client_id: Option<String>,
+    principal_id: Option<String>,
+    mi_res_id: Option<String>,
 }
 
 impl ImdsManagedIdentityCredential {
     /// Create a new ImdsManagedIdentityCredential with the given client_id
-    pub fn new(client_id: String) -> Self {
-        Self { client_id }
+    pub fn new(
+        client_id: Option<String>,
+        principal_id: Option<String>,
+        mi_res_id: Option<String>,
+    ) -> Self {
+        Self {
+            client_id,
+            principal_id,
+            mi_res_id,
+        }
     }
 }
 
@@ -49,6 +59,8 @@ pub enum ManagedIdentityCredentialError {
     IdentityUnavailableError,
     #[error("The request failed due to a gateway error.")]
     GatewayError,
+    #[error("Only one of client_id, principal_id, and mi_res_id may be specified on a request to get a token.")]
+    MoreThanOneIdParameterSpecifiedError,
 }
 
 #[async_trait::async_trait]
@@ -61,8 +73,46 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
-        if !self.client_id.is_empty() {
-            query_items.push(("client_id", &self.client_id))
+        match self.client_id {
+            Some(ref client_id) => {
+                if self.principal_id.is_some() || self.mi_res_id.is_some() {
+                    return Err(
+                        ManagedIdentityCredentialError::MoreThanOneIdParameterSpecifiedError,
+                    );
+                }
+                if !client_id.trim().is_empty() {
+                    query_items.push(("client_id", client_id))
+                }
+            }
+            None => (),
+        }
+
+        match self.principal_id {
+            Some(ref principal_id) => {
+                if self.client_id.is_some() || self.mi_res_id.is_some() {
+                    return Err(
+                        ManagedIdentityCredentialError::MoreThanOneIdParameterSpecifiedError,
+                    );
+                }
+                if !principal_id.trim().is_empty() {
+                    query_items.push(("principal_id", principal_id))
+                }
+            }
+            None => (),
+        }
+
+        match self.mi_res_id {
+            Some(ref mi_res_id) => {
+                if self.client_id.is_some() || self.principal_id.is_some() {
+                    return Err(
+                        ManagedIdentityCredentialError::MoreThanOneIdParameterSpecifiedError,
+                    );
+                }
+                if !mi_res_id.trim().is_empty() {
+                    query_items.push(("mi_res_id", mi_res_id))
+                }
+            }
+            None => (),
         }
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
