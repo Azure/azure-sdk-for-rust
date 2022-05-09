@@ -78,6 +78,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             self.client_id.as_ref(),
             self.msi_res_id.as_ref(),
         ) {
+            (None, None, None) => (),
             (Some(object_id), None, None) => query_items.push(("object_id", object_id)),
             (None, Some(client_id), None) => query_items.push(("client_id", client_id)),
             (None, None, Some(msi_res_id)) => query_items.push(("msi_res_id", msi_res_id)),
