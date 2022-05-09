@@ -22,20 +22,20 @@ const MSI_API_VERSION: &str = "2019-08-01";
 pub struct ImdsManagedIdentityCredential {
     object_id: Option<String>,
     client_id: Option<String>,
-    mi_res_id: Option<String>,
+    msi_res_id: Option<String>,
 }
 
 impl ImdsManagedIdentityCredential {
-    /// Create a new ImdsManagedIdentityCredential with the given optional parameters. Only one of object_id, client_id and mi_res_id may be set.
+    /// Create a new ImdsManagedIdentityCredential with the given optional parameters. Only one of object_id, client_id and msi_res_id may be set.
     pub fn new(
         object_id: Option<String>,
         client_id: Option<String>,
-        mi_res_id: Option<String>,
+        msi_res_id: Option<String>,
     ) -> Self {
         Self {
             object_id,
             client_id,
-            mi_res_id,
+            msi_res_id,
         }
     }
 }
@@ -59,7 +59,7 @@ pub enum ManagedIdentityCredentialError {
     IdentityUnavailableError,
     #[error("The request failed due to a gateway error.")]
     GatewayError,
-    #[error("Only one of object_id, client_id, and mi_res_id may be specified on a request to get a token.")]
+    #[error("Only one of object_id, client_id, and msi_res_id may be specified on a request to get a token.")]
     MoreThanOneIdParameterSpecified,
 }
 
@@ -76,11 +76,11 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         match (
             self.object_id.as_ref(),
             self.client_id.as_ref(),
-            self.mi_res_id.as_ref(),
+            self.msi_res_id.as_ref(),
         ) {
             (Some(object_id), None, None) => query_items.push(("object_id", object_id)),
             (None, Some(client_id), None) => query_items.push(("client_id", client_id)),
-            (None, None, Some(mi_res_id)) => query_items.push(("mi_res_id", mi_res_id)),
+            (None, None, Some(msi_res_id)) => query_items.push(("msi_res_id", msi_res_id)),
             _ => {
                 return Err(ManagedIdentityCredentialError::MoreThanOneIdParameterSpecified);
             }
