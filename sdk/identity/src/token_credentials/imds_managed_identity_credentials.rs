@@ -26,17 +26,34 @@ pub struct ImdsManagedIdentityCredential {
 }
 
 impl ImdsManagedIdentityCredential {
-    /// Create a new ImdsManagedIdentityCredential with the given optional parameters. Only one of object_id, client_id and msi_res_id may be set.
-    pub fn new(
-        object_id: Option<String>,
-        client_id: Option<String>,
-        msi_res_id: Option<String>,
-    ) -> Self {
-        Self {
-            object_id,
-            client_id,
-            msi_res_id,
-        }
+    /// Specifies the object id associated with a user assigned managed service identity resource that should be used to retrieve the access token.
+    ///
+    /// The values of client_id and msi_res_id are discarded, as only one id parameter may be set when getting a token.
+    pub fn with_object_id(mut self, object_id: String) -> Self {
+        self.object_id = Some(object_id);
+        self.client_id = None;
+        self.msi_res_id = None;
+        self
+    }
+
+    /// Specifies the application id (client id) associated with a user assigned managed service identity resource that should be used to retrieve the access token.
+    ///
+    /// The values of object_id and msi_res_id are discarded, as only one id parameter may be set when getting a token.
+    pub fn with_client_id(mut self, client_id: String) -> Self {
+        self.client_id = Some(client_id);
+        self.object_id = None;
+        self.msi_res_id = None;
+        self
+    }
+
+    /// Specifies the ARM resource id of the user assigned managed service identity resource that should be used to retrieve the access token.
+    ///
+    /// The values of object_id and client_id are discarded, as only one id parameter may be set when getting a token.
+    pub fn with_identity(mut self, msi_res_id: String) -> Self {
+        self.msi_res_id = Some(msi_res_id);
+        self.object_id = None;
+        self.client_id = None;
+        self
     }
 }
 
@@ -59,8 +76,6 @@ pub enum ManagedIdentityCredentialError {
     IdentityUnavailableError,
     #[error("The request failed due to a gateway error.")]
     GatewayError,
-    #[error("Only one of object_id, client_id, and msi_res_id may be specified on a request to get a token.")]
-    MoreThanOneIdParameterSpecified,
 }
 
 #[async_trait::async_trait]
@@ -78,13 +93,10 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             self.client_id.as_ref(),
             self.msi_res_id.as_ref(),
         ) {
-            (None, None, None) => (),
             (Some(object_id), None, None) => query_items.push(("object_id", object_id)),
             (None, Some(client_id), None) => query_items.push(("client_id", client_id)),
             (None, None, Some(msi_res_id)) => query_items.push(("msi_res_id", msi_res_id)),
-            _ => {
-                return Err(ManagedIdentityCredentialError::MoreThanOneIdParameterSpecified);
-            }
+            _ => (),
         }
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
