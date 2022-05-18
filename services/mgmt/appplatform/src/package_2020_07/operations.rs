@@ -5082,7 +5082,7 @@ pub mod deployments {
                                 url.query_pairs_mut().append_pair("api-version", "2020-07-01");
                                 let version = &this.version;
                                 for value in &this.version {
-                                    url.query_pairs_mut().append_pair("version", &value.to_string());
+                                    url.query_pairs_mut().append_pair("version", value);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
@@ -5198,7 +5198,7 @@ pub mod deployments {
                                 url.query_pairs_mut().append_pair("api-version", "2020-07-01");
                                 let version = &this.version;
                                 for value in &this.version {
-                                    url.query_pairs_mut().append_pair("version", &value.to_string());
+                                    url.query_pairs_mut().append_pair("version", value);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());

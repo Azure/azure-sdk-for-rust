@@ -88,23 +88,23 @@ pub enum Error {
     PublishCustomEventEvents(#[from] publish_custom_event_events::Error),
 }
 impl Client {
-    pub fn publish_event_grid_events(&self, events: impl Into<Vec<models::EventGridEvent>>) -> publish_event_grid_events::Builder {
+    pub fn publish_event_grid_events(&self, events: Vec<models::EventGridEvent>) -> publish_event_grid_events::Builder {
         publish_event_grid_events::Builder {
             client: self.clone(),
-            events: events.into(),
+            events,
         }
     }
-    pub fn publish_cloud_event_events(&self, events: impl Into<Vec<models::CloudEventEvent>>) -> publish_cloud_event_events::Builder {
+    pub fn publish_cloud_event_events(&self, events: Vec<models::CloudEventEvent>) -> publish_cloud_event_events::Builder {
         publish_cloud_event_events::Builder {
             client: self.clone(),
-            events: events.into(),
+            events,
             aeg_channel_name: None,
         }
     }
-    pub fn publish_custom_event_events(&self, events: impl Into<Vec<models::CustomEventEvent>>) -> publish_custom_event_events::Builder {
+    pub fn publish_custom_event_events(&self, events: Vec<models::CustomEventEvent>) -> publish_custom_event_events::Builder {
         publish_custom_event_events::Builder {
             client: self.clone(),
-            events: events.into(),
+            events,
         }
     }
 }
