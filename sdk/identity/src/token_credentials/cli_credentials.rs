@@ -8,7 +8,7 @@ use std::str;
 use std::{io::ErrorKind, str::Utf8Error};
 
 mod az_cli_date_format {
-    use chrono::{DateTime, TimeZone, Utc};
+    use chrono::{DateTime, Local, TimeZone, Utc};
     use serde::{self, Deserialize, Deserializer};
 
     const FORMAT: &str = "%Y-%m-%d %H:%M:%S.%6f";
@@ -18,8 +18,11 @@ mod az_cli_date_format {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Utc.datetime_from_str(&s, FORMAT)
-            .map_err(serde::de::Error::custom)
+        // expiresOn from azure cli uses the local timezone and needs to be converted to UTC
+        let local_datetime = Local
+            .datetime_from_str(&s, FORMAT)
+            .map_err(serde::de::Error::custom)?;
+        Ok(local_datetime.with_timezone(&Utc))
     }
 }
 
