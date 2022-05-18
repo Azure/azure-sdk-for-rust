@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // cargo run --example list_crates
 // This list all crates that are generated.
 
@@ -54,7 +55,7 @@ fn list_crate_names() -> Result<Vec<String>> {
 }
 
 fn main() -> Result<()> {
-    let version = std::env::args().nth(1);
+    // let version = std::env::args().nth(1);
 
     let names = list_crate_names()?;
     // match &version {
