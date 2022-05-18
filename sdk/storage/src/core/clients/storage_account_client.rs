@@ -33,12 +33,11 @@ const HEADER_VERSION: &str = "x-ms-version";
 
 const AZURE_VERSION: &str = "2019-12-12";
 
-#[derive(Clone)]
 pub enum StorageCredentials {
     Key(String, String),
     SASToken(Vec<(String, String)>),
     BearerToken(String),
-    TokenCredential(Arc<dyn TokenCredential>),
+    TokenCredential(Box<dyn TokenCredential>),
 }
 
 impl std::fmt::Debug for StorageCredentials {
@@ -53,20 +52,6 @@ impl std::fmt::Debug for StorageCredentials {
     }
 }
 
-impl PartialEq for StorageCredentials {
-    fn eq(&self, other: &Self) -> bool {
-        match &self {
-            StorageCredentials::TokenCredential(_) => {
-                // can't compare tokens because calling get_token is probably not a good idea
-                false
-            }
-            _ => self.eq(other),
-        }
-    }
-}
-
-impl Eq for StorageCredentials {}
-
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
     Blob,
@@ -75,7 +60,7 @@ pub enum ServiceType {
     Table,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct StorageAccountClient {
     storage_credentials: StorageCredentials,
     http_client: Arc<dyn HttpClient>,
@@ -269,7 +254,7 @@ impl StorageAccountClient {
     pub fn new_token_credential<A>(
         http_client: Arc<dyn HttpClient>,
         account: A,
-        token_credential: Arc<dyn TokenCredential>,
+        token_credential: Box<dyn TokenCredential>,
     ) -> Arc<Self>
     where
         A: Into<String>,

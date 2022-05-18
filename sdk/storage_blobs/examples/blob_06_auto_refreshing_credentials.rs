@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify the blob name as third command line parameter");
 
     let creds = std::sync::Arc::new(DefaultAzureCredential::default());
-    let auto_creds = std::sync::Arc::new(AutoRefreshingTokenCredential::new(creds));
+    let auto_creds = Box::new(AutoRefreshingTokenCredential::new(creds));
 
     let http_client = azure_core::new_http_client();
     let blob_client =
