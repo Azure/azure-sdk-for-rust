@@ -6,6 +6,7 @@ use crate::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
     },
 };
+use azure_core::auth::TokenCredential;
 use azure_core::headers::*;
 use azure_core::HttpClient;
 use bytes::Bytes;
@@ -26,16 +27,45 @@ pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
+pub const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
+
 const HEADER_VERSION: &str = "x-ms-version";
 
 const AZURE_VERSION: &str = "2019-12-12";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub enum StorageCredentials {
     Key(String, String),
     SASToken(Vec<(String, String)>),
     BearerToken(String),
+    TokenCredential(Arc<dyn TokenCredential>),
 }
+
+impl std::fmt::Debug for StorageCredentials {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            StorageCredentials::TokenCredential(_) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"TokenCredential")
+                .finish(),
+            _ => self.fmt(f),
+        }
+    }
+}
+
+impl PartialEq for StorageCredentials {
+    fn eq(&self, other: &Self) -> bool {
+        match &self {
+            StorageCredentials::TokenCredential(_) => {
+                // can't compare tokens because calling get_token is probably not a good idea
+                false
+            }
+            _ => self.eq(other),
+        }
+    }
+}
+
+impl Eq for StorageCredentials {}
 
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
@@ -236,6 +266,36 @@ impl StorageAccountClient {
         })
     }
 
+    pub fn new_token_credential<A>(
+        http_client: Arc<dyn HttpClient>,
+        account: A,
+        token_credential: Arc<dyn TokenCredential>,
+    ) -> Arc<Self>
+    where
+        A: Into<String>,
+    {
+        let account = account.into();
+
+        Arc::new(Self {
+            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
+                .unwrap(),
+            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_secondary_url: Url::parse(&format!(
+                "https://{}-secondary.queue.core.windows.net",
+                &account
+            ))
+            .unwrap(),
+            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
+                .unwrap(),
+            storage_credentials: StorageCredentials::TokenCredential(token_credential),
+            http_client,
+            account,
+        })
+    }
+
     pub fn new_connection_string(
         http_client: Arc<dyn HttpClient>,
         connection_string: &str,
@@ -406,6 +466,15 @@ impl StorageAccountClient {
             }
             StorageCredentials::BearerToken(token) => {
                 request.header(AUTHORIZATION, format!("Bearer {}", token))
+            }
+            StorageCredentials::TokenCredential(token_credential) => {
+                let bearer_token_future = token_credential.get_token(STORAGE_TOKEN_SCOPE);
+                let bearer_token = futures::executor::block_on(bearer_token_future)?;
+
+                request.header(
+                    AUTHORIZATION,
+                    format!("Bearer {}", bearer_token.token.secret()),
+                )
             }
         };
 
