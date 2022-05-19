@@ -395,7 +395,7 @@ fn create_enum(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<FieldCode, Error> {
+) -> Result<StructFieldCode, Error> {
     let enum_values = property.enum_values();
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
@@ -467,7 +467,7 @@ fn create_enum(
     };
     let type_name = TypeNameCode::from(vec![namespace, Some(id)]);
 
-    Ok(FieldCode {
+    Ok(StructFieldCode {
         type_name,
         code: Some(TypeCode::Enum(code)),
     })
@@ -521,7 +521,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
         let lowercase_workaround = cg.should_workaround_case();
 
-        let FieldCode {
+        let StructFieldCode {
             mut type_name,
             code: field_code,
         } = create_struct_field_code(cg, &ns.clone(), &property.schema, property_name, lowercase_workaround)?;
@@ -708,12 +708,12 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     Ok(code)
 }
 
-struct FieldCode {
+struct StructFieldCode {
     type_name: TypeNameCode,
     code: Option<TypeCode>,
 }
 
-impl ToTokens for FieldCode {
+impl ToTokens for StructFieldCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         if let Some(code) = &self.code {
             code.to_tokens(tokens)
@@ -743,11 +743,11 @@ fn create_struct_field_code(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<FieldCode, Error> {
+) -> Result<StructFieldCode, Error> {
     match &property.ref_key {
         Some(ref_key) => {
             let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
-            Ok(FieldCode {
+            Ok(StructFieldCode {
                 type_name: tp.into(),
                 code: None,
             })
@@ -759,12 +759,12 @@ fn create_struct_field_code(
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
                 let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
                 let code = create_struct(cg, property, property_name, None)?;
-                Ok(FieldCode {
+                Ok(StructFieldCode {
                     type_name,
                     code: Some(TypeCode::Struct(code)),
                 })
             } else {
-                Ok(FieldCode {
+                Ok(StructFieldCode {
                     type_name: type_name_gen(&property.type_name()?)?,
                     code: None,
                 })
