@@ -3,7 +3,7 @@ use azure_core::{
     auth::{TokenCredential, TokenResponse},
     Error as CoreError, HttpError,
 };
-use azure_identity::token_credentials::AutoRefreshingTokenCredential;
+use azure_identity::AutoRefreshingTokenCredential;
 use const_format::formatcp;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;

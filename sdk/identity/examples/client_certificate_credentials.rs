@@ -4,7 +4,7 @@
 /// please make sure to set the send_certificate_chain option to true otherwise
 /// the authentication will fail.
 use azure_core::auth::TokenCredential;
-use azure_identity::token_credentials::{
+use azure_identity::{
     CertificateCredentialOptions, ClientCertificateCredential, DefaultAzureCredential,
 };
 use azure_security_keyvault::KeyClient;

@@ -8,7 +8,7 @@ use azure_core::auth::TokenResponse;
 pub struct DefaultAzureCredentialBuilder {
     include_environment_credential: bool,
     include_managed_identity_credential: bool,
-    include_cli_credential: bool,
+    include_azure_cli_credential: bool,
 }
 
 impl Default for DefaultAzureCredentialBuilder {
@@ -16,7 +16,7 @@ impl Default for DefaultAzureCredentialBuilder {
         Self {
             include_environment_credential: true,
             include_managed_identity_credential: true,
-            include_cli_credential: true,
+            include_azure_cli_credential: true,
         }
     }
 }
@@ -33,22 +33,22 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
-    /// Exclude using credentials from the cli
-    pub fn exclude_cli_credential(&mut self) -> &mut Self {
-        self.include_cli_credential = false;
-        self
-    }
-
     /// Exclude using managed identity credentials
     pub fn exclude_managed_identity_credential(&mut self) -> &mut Self {
         self.include_managed_identity_credential = false;
         self
     }
 
+    /// Exclude using credentials from the cli
+    pub fn exclude_azure_cli_credential(&mut self) -> &mut Self {
+        self.include_azure_cli_credential = false;
+        self
+    }
+
     /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
-        let source_count = self.include_cli_credential as usize
-            + self.include_cli_credential as usize
+        let source_count = self.include_azure_cli_credential as usize
+            + self.include_azure_cli_credential as usize
             + self.include_managed_identity_credential as usize;
         let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(source_count);
         if self.include_environment_credential {
@@ -61,7 +61,7 @@ impl DefaultAzureCredentialBuilder {
                 ImdsManagedIdentityCredential::default(),
             ))
         }
-        if self.include_cli_credential {
+        if self.include_azure_cli_credential {
             sources.push(DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}));
         }
         DefaultAzureCredential::with_sources(sources)
@@ -197,25 +197,25 @@ mod tests {
     #[test]
     fn test_builder_included_credential_flags() {
         let builder = DefaultAzureCredentialBuilder::new();
-        assert!(builder.include_cli_credential);
+        assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.exclude_cli_credential();
-        assert!(!builder.include_cli_credential);
+        builder.exclude_azure_cli_credential();
+        assert!(!builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_environment_credential();
-        assert!(builder.include_cli_credential);
+        assert!(builder.include_azure_cli_credential);
         assert!(!builder.include_environment_credential);
         assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_managed_identity_credential();
-        assert!(builder.include_cli_credential);
+        assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(!builder.include_managed_identity_credential);
     }
@@ -270,7 +270,7 @@ mod tests {
 
         // remove cli source
 
-        builder.exclude_cli_credential();
+        builder.exclude_azure_cli_credential();
         let credential = builder.build();
 
         assert_eq!(credential.sources.len(), 1);
