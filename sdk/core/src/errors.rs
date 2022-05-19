@@ -1,4 +1,3 @@
-use http::StatusCode;
 use std::cmp::PartialEq;
 use std::fmt::Debug;
 
@@ -24,8 +23,6 @@ pub enum Error {
     Parse(#[from] ParseError),
     #[error("error getting token")]
     GetToken(#[source] Box<dyn std::error::Error + Send + Sync>),
-    #[error("http error")]
-    Http(#[from] HttpError),
     #[error("header error")]
     Header(#[from] HttpHeaderError),
     #[error("header not found: {0}")]
@@ -50,9 +47,6 @@ impl From<super::error::Error> for Error {
         }
     }
 }
-
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-type HttpClientError = reqwest::Error;
 
 /// An error caused by a failure to parse data.
 #[non_exhaustive]
@@ -101,35 +95,15 @@ impl UnexpectedValue {
     }
 }
 
-/// An error originating from a streaming response.
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum StreamError {
-    #[error("error polling stream: {0}")]
-    Poll(std::io::Error),
-    #[error("error reading stream: {0}")]
-    Read(HttpClientError),
-}
-
-/// An error originating from an HTTP client.
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum HttpError {
-    #[error("HTTP error status (status: {:?}, body: {:?})", status, body)]
-    StatusCode { status: StatusCode, body: String },
-    #[error("UTF8 conversion error: {0}")]
-    Utf8(#[from] std::str::Utf8Error),
-    #[error("failed to build request")]
-    BuildClientRequest(#[source] HttpClientError),
-    #[error("failed to execute request")]
-    ExecuteRequest(#[source] HttpClientError),
-    #[error("failed to read response as bytes")]
-    ReadBytes(#[source] HttpClientError),
-    #[error("failed to build response")]
-    BuildResponse(#[source] http::Error),
-    #[error("failed to parse URL")]
-    Url(#[from] url::ParseError),
-}
+// /// An error originating from a streaming response.
+// #[non_exhaustive]
+// #[derive(Debug, thiserror::Error)]
+// pub enum StreamError {
+//     #[error("error polling stream: {0}")]
+//     Poll(std::io::Error),
+//     #[error("error reading stream: {0}")]
+//     Read(HttpClientError),
+// }
 
 /// An error caused by invalid permissions.
 #[derive(Debug, thiserror::Error)]

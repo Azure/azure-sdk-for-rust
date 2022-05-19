@@ -1,14 +1,13 @@
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
-
 mod azure_core_errors;
 mod http_error;
 mod hyperium_http;
 mod macros;
-
+use bytes::Bytes;
 pub use http_error::HttpError;
 
-/// A convience alias for `Result` where the error type is hard coded to `Error`
+/// A convenience alias for `Result` where the error type is hard coded to `Error`
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// The kind of error
@@ -39,7 +38,7 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body(status: u16, body: &str) -> Self {
+    pub fn http_response_from_body(status: u16, body: &Bytes) -> Self {
         let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
     }
@@ -208,6 +207,28 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl From<std::str::Utf8Error> for Error {
+    fn from(error: std::str::Utf8Error) -> Self {
+        Self {
+            context: Context::Custom(Custom {
+                kind: ErrorKind::DataConversion,
+                error: Box::new(error),
+            }),
+        }
+    }
+}
+
+impl From<url::ParseError> for Error {
+    fn from(error: url::ParseError) -> Self {
+        Self {
+            context: Context::Custom(Custom {
+                kind: ErrorKind::DataConversion,
+                error: Box::new(error),
+            }),
+        }
+    }
+}
+
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
         Self {
@@ -232,7 +253,7 @@ impl Display for Error {
     }
 }
 
-/// An extention to the `Result` type that easy allows creating `Error` values from exsiting errors
+/// An extension to the `Result` type that easy allows creating `Error` values from existing errors
 ///
 /// This trait cannot be implemented on custom types and is meant for usage with `Result`
 pub trait ResultExt<T>: private::Sealed {
@@ -376,7 +397,7 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(418, "{}");
+        let kind = ErrorKind::http_response_from_body(418, &Bytes::from_static(b"{}"));
 
         assert!(matches!(
             kind,
@@ -386,7 +407,10 @@ mod tests {
             }
         ));
 
-        let kind = ErrorKind::http_response_from_body(418, r#"{"error": {"code":"teepot"}}"#);
+        let kind = ErrorKind::http_response_from_body(
+            418,
+            &Bytes::from_static(br#"{"error": {"code":"teepot"}}"#),
+        );
 
         assert!(matches!(
             kind,

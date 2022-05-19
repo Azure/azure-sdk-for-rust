@@ -63,14 +63,16 @@ impl Response {
     }
 
     /// Consume the HTTP response and read the HTTP body into a string.
-    pub async fn into_body_string(self) -> String {
-        let body = collect_pinned_stream(self.body)
+    pub async fn into_body(self) -> Bytes {
+        collect_pinned_stream(self.body)
             .await
-            .unwrap_or_else(|_| Bytes::from_static("<INVALID BODY>".as_bytes()));
-        let body = std::str::from_utf8(&body)
+            .unwrap_or_else(|_| Bytes::from_static(b"<INVALID BODY>"))
+    }
+
+    pub async fn into_body_string(self) -> String {
+        std::str::from_utf8(&self.into_body().await)
             .unwrap_or("<NON-UTF8 BODY>")
-            .to_owned();
-        body
+            .to_owned()
     }
 }
 

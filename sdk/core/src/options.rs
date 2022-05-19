@@ -1,5 +1,5 @@
 use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
-use crate::{new_http_client, HttpClient};
+use crate::HttpClient;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -193,9 +193,10 @@ impl TransportOptions {
     }
 }
 
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(new_http_client())
+        Self::new(crate::http_client::new_http_client())
     }
 }

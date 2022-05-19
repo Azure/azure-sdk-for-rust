@@ -1,19 +1,27 @@
+use crate::error::{Error, ErrorKind, Result};
 #[allow(unused_imports)]
 use crate::Body;
-use crate::HttpError;
 use async_trait::async_trait;
 use bytes::Bytes;
 #[allow(unused_imports)]
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
 use serde::Serialize;
-use std::sync::Arc;
 
 /// Construct a new HTTP client with the `reqwest` backend.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-pub fn new_http_client() -> Arc<dyn HttpClient> {
-    Arc::new(reqwest::Client::new())
+pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
+    std::sync::Arc::new(reqwest::Client::new())
 }
+
+#[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
+pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
+    std::sync::Arc::new(NoopHttpClient())
+}
+
+// struct NoopHttpClient {}
+// impl HttpClient for NoopHttpClient {
+// }
 
 /// An HTTP client which can send requests.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
@@ -22,7 +30,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// Send out a request using `hyperium/http`'s types.
     ///
     /// This method is considered deprecated and should not be used in new code.
-    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError>;
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>>;
 
     /// Send out a request using `azure_core`'s types.
     ///
@@ -32,10 +40,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// responsibility of another policy (not the transport one). It does not consume the request.
     /// Implementors are expected to clone the necessary parts of the request and pass them to the
     /// underlying transport.
-    async fn execute_request2(
-        &self,
-        request: &crate::Request,
-    ) -> Result<crate::Response, HttpError>;
+    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response>;
 
     /// Send out a request and validate it was in the `2xx` range, using
     /// `hyperium/http`'s types.
@@ -47,14 +52,17 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
         _expected_status: StatusCode,
-    ) -> Result<Response<Bytes>, HttpError> {
+    ) -> Result<Response<Bytes>> {
         let response = self.execute_request(request).await?;
         let status = response.status();
         if (200..400).contains(&status.as_u16()) {
             Ok(response)
         } else {
-            let body = std::str::from_utf8(response.body())?.to_owned();
-            Err(crate::HttpError::StatusCode { status, body })
+            let body = response.into_body();
+            Err(Error::from(ErrorKind::http_response_from_body(
+                status.as_u16(),
+                &body,
+            )))
         }
     }
 }
@@ -63,7 +71,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
-    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method().clone(), url);
         for (header, value) in request.headers() {
@@ -73,12 +81,12 @@ impl HttpClient for reqwest::Client {
         let reqwest_request = reqwest_request
             .body(request.into_body())
             .build()
-            .map_err(HttpError::BuildClientRequest)?;
+            .map_err(|e| Error::new(ErrorKind::Other, e))?;
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(HttpError::ExecuteRequest)?;
+            .map_err(|e| Error::new(ErrorKind::Io, e))?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -91,18 +99,17 @@ impl HttpClient for reqwest::Client {
                 reqwest_response
                     .bytes()
                     .await
-                    .map_err(HttpError::ReadBytes)?,
+                    .map_err(|e| Error::new(ErrorKind::Io, e))?,
             )
-            .map_err(HttpError::BuildResponse)?;
+            .map_err(|e| Error::new(ErrorKind::DataConversion, e))?;
 
         Ok(response)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    async fn execute_request2(
-        &self,
-        request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
+    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response> {
+        use crate::error::{Error, ErrorKind};
+
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method(), url);
         for (name, value) in request.headers().iter() {
@@ -116,21 +123,21 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_err(HttpError::BuildClientRequest)?,
+                .map_err(|e| Error::new(ErrorKind::DataConversion, e))?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_err(HttpError::BuildClientRequest)?
+                    .map_err(|e| Error::new(ErrorKind::Other, e))?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(HttpError::ExecuteRequest)?;
+            .map_err(|e| Error::new(ErrorKind::Io, e))?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
@@ -165,7 +172,7 @@ impl HttpClient for reqwest::Client {
 }
 
 /// Serialize a type to json.
-pub fn to_json<T>(value: &T) -> Result<Bytes, serde_json::Error>
+pub fn to_json<T>(value: &T) -> Result<Bytes>
 where
     T: ?Sized + Serialize,
 {
