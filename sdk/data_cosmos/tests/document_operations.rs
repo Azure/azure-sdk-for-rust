@@ -149,15 +149,16 @@ async fn document_operations() {
     // delete document
     document.delete_document().into_future().await.unwrap();
 
-    let documents = collection
-        .list_documents()
-        .into_stream::<MyDocument>()
-        .next()
-        .await
-        .unwrap()
-        .unwrap()
-        .documents;
-    assert!(documents.len() == 0);
+    let mut documents = collection.list_documents().into_stream::<MyDocument>();
+
+    // Ensure that the documents stream can be sent to a task
+    let result = tokio::spawn(async move {
+        let documents = documents.next().await.unwrap().unwrap().documents;
+        documents.len() == 0
+    })
+    .await
+    .unwrap();
+    assert!(result, "Documents length was not 0");
 
     database.delete_database().into_future().await.unwrap();
 }
