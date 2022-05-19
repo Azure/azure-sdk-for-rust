@@ -149,16 +149,16 @@ pub fn type_name_gen(type_name: &TypeName) -> Result<TypeNameCode, Error> {
     Ok(match type_name {
         TypeName::Reference(name) => {
             let idt = parse_ident(&name.to_pascal_case()).map_err(Error::TypeNameForSchemaRef)?;
-            TypeNameCode::from(idt).with_allow_qualify_models(true)
+            TypeNameCode::from(idt).allow_qualify_models(true)
         }
         TypeName::Array(vec_items_typ) => type_name_gen(vec_items_typ)?.incr_vec_count(),
         TypeName::Value => TypeNameCode::from(tp_json_value()),
         TypeName::Bytes => TypeNameCode::from(tp_bytes()),
-        TypeName::Int32 => TypeNameCode::from(tp_i32()).with_allow_add_into(false),
-        TypeName::Int64 => TypeNameCode::from(tp_i64()).with_allow_add_into(false),
-        TypeName::Float32 => TypeNameCode::from(tp_f32()).with_allow_add_into(false),
-        TypeName::Float64 => TypeNameCode::from(tp_f64()).with_allow_add_into(false),
-        TypeName::Boolean => TypeNameCode::from(tp_bool()).with_allow_add_into(false),
+        TypeName::Int32 => TypeNameCode::from(tp_i32()).allow_impl_into(false),
+        TypeName::Int64 => TypeNameCode::from(tp_i64()).allow_impl_into(false),
+        TypeName::Float32 => TypeNameCode::from(tp_f32()).allow_impl_into(false),
+        TypeName::Float64 => TypeNameCode::from(tp_f64()).allow_impl_into(false),
+        TypeName::Boolean => TypeNameCode::from(tp_bool()).allow_impl_into(false),
         TypeName::String => TypeNameCode::from(tp_string()),
     })
 }
@@ -181,12 +181,12 @@ pub fn parse_params(path: &str) -> Vec<String> {
 #[derive(Clone)]
 pub struct TypeNameCode {
     type_path: TypePath,
-    should_force_obj: bool,
-    is_option: bool,
+    force_value: bool,
+    pub optional: bool,
     vec_count: i32,
-    add_into: bool,
-    allow_add_into: bool,
-    add_box: bool,
+    impl_into: bool,
+    allow_impl_into: bool,
+    boxed: bool,
     qualify_models: bool,
     allow_qualify_models: bool,
 }
@@ -196,46 +196,44 @@ impl TypeNameCode {
         self.type_path.to_token_stream().to_string() == TP_STRING
     }
     pub fn is_vec(&self) -> bool {
-        self.vec_count > 0 && !self.should_force_obj
+        self.vec_count > 0 && !self.force_value
     }
-    pub fn is_option(&self) -> bool {
-        self.is_option
-    }
-    pub fn with_should_force_obj(mut self, should_force_obj: bool) -> Self {
-        self.should_force_obj = should_force_obj;
+    pub fn force_value(mut self, force_value: bool) -> Self {
+        self.force_value = force_value;
         self
     }
-    pub fn with_is_option(mut self, is_option: bool) -> Self {
-        self.is_option = is_option;
+    pub fn optional(mut self, optional: bool) -> Self {
+        self.optional = optional;
         self
     }
     pub fn incr_vec_count(mut self) -> Self {
         self.vec_count += 1;
         self
     }
-    pub fn with_add_into(mut self, add_into: bool) -> Self {
-        self.add_into = add_into;
+    pub fn impl_into(mut self, impl_into: bool) -> Self {
+        self.impl_into = impl_into;
         self
     }
-    fn with_allow_add_into(mut self, allow_add_into: bool) -> Self {
-        self.allow_add_into = allow_add_into;
+    pub fn has_impl_into(&self) -> bool {
+        self.allow_impl_into && self.impl_into
+    }
+    fn allow_impl_into(mut self, allow_impl_into: bool) -> Self {
+        self.allow_impl_into = allow_impl_into;
         self
     }
-    pub fn with_add_box(mut self, add_box: bool) -> Self {
-        self.add_box = add_box;
+    pub fn boxed(mut self, boxed: bool) -> Self {
+        self.boxed = boxed;
         self
     }
-    pub fn with_qualify_models(mut self, qualify_models: bool) -> Self {
+    pub fn qualify_models(mut self, qualify_models: bool) -> Self {
         self.qualify_models = qualify_models;
         self
     }
-    fn with_allow_qualify_models(mut self, allow_qualify_models: bool) -> Self {
+    fn allow_qualify_models(mut self, allow_qualify_models: bool) -> Self {
         self.allow_qualify_models = allow_qualify_models;
         self
     }
-    pub fn add_into(&self) -> bool {
-        self.allow_add_into && self.add_into
-    }
+
     fn to_type(&self) -> Type {
         let mut tp = self.type_path.clone();
         if self.allow_qualify_models && self.qualify_models {
@@ -245,13 +243,13 @@ impl TypeNameCode {
         for _ in 0..self.vec_count {
             tp = generic_type(tp_vec(), tp);
         }
-        if self.should_force_obj {
+        if self.force_value {
             tp = Type::from(tp_json_value())
         }
-        if self.is_option {
+        if self.optional {
             tp = generic_type(tp_option(), tp);
         }
-        if self.add_into() {
+        if self.has_impl_into() {
             if let Type::Path(path) = generic_type(tp_into(), tp.clone()) {
                 // prefix with "impl "
                 let bound = TraitBound {
@@ -269,7 +267,7 @@ impl TypeNameCode {
                 });
             }
         }
-        if self.add_box {
+        if self.boxed {
             tp = generic_type(tp_box(), tp);
         }
         tp
@@ -310,12 +308,12 @@ impl From<TypePath> for TypeNameCode {
     fn from(type_path: TypePath) -> Self {
         Self {
             type_path,
-            should_force_obj: false,
-            is_option: false,
+            force_value: false,
+            optional: false,
             vec_count: 0,
-            add_into: false,
-            allow_add_into: true,
-            add_box: false,
+            impl_into: false,
+            allow_impl_into: true,
+            boxed: false,
             qualify_models: false,
             allow_qualify_models: false,
         }
@@ -461,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_type_path_code_option() -> Result<(), Error> {
-        let tp = TypeNameCode::try_from("farm::Goat")?.with_is_option(true);
+        let tp = TypeNameCode::try_from("farm::Goat")?.optional(true);
         assert_eq!("Option < farm :: Goat >", tp.to_string());
         Ok(())
     }
@@ -482,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_with_add_into() -> Result<(), Error> {
-        let tp = TypeNameCode::try_from("farm::Goat")?.with_add_into(true);
+        let tp = TypeNameCode::try_from("farm::Goat")?.impl_into(true);
         assert_eq!("impl Into < farm :: Goat >", tp.to_string());
         Ok(())
     }
@@ -491,6 +489,15 @@ mod tests {
     fn test_tp_string() -> Result<(), Error> {
         let tp = TypeNameCode::from(tp_string());
         assert!(tp.is_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_disallow_impl_into() -> Result<(), Error> {
+        let mut tp = type_name_gen(&TypeName::Int32)?;
+        tp = tp.impl_into(true);
+        assert!(!tp.has_impl_into());
+        assert_eq!("i32", tp.to_string());
         Ok(())
     }
 }

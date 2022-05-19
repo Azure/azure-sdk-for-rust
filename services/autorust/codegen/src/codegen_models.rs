@@ -531,7 +531,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         if cg.should_force_obj(prop_nm) {
-            type_name = type_name.with_should_force_obj(true);
+            type_name = type_name.force_value(true);
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
@@ -539,7 +539,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         field_names.insert(format!("{}", field_name), is_required);
 
         if !type_name.is_vec() && !is_required {
-            type_name = type_name.with_is_option(true);
+            type_name = type_name.optional(true);
         }
 
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
@@ -563,8 +563,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         };
 
         // see if a field should be wrapped in a Box
-        let should_box = cg.should_box_property(prop_nm);
-        type_name = type_name.with_add_box(should_box);
+        let boxed = cg.should_box_property(prop_nm);
+        type_name = type_name.boxed(boxed);
 
         let doc_comment = match &property.schema.schema.common.description {
             Some(description) => quote! { #[doc = #description] },
@@ -581,14 +581,14 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             new_fn_params.push(quote! { #field_name: #type_name });
             new_fn_body.extend(quote! { #field_name, });
         } else if type_name.is_vec() {
-            if should_box {
+            if boxed {
                 new_fn_body.extend(quote! { #field_name: Box::new(Vec::new()), });
             } else {
                 new_fn_body.extend(quote! { #field_name: Vec::new(), });
             }
         } else {
             #[allow(clippy::collapsible_else_if)]
-            if should_box {
+            if boxed {
                 new_fn_body.extend(quote! { #field_name: Box::new(None), });
             } else {
                 new_fn_body.extend(quote! { #field_name: None, });

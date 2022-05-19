@@ -419,7 +419,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                     })
                 };
                 if let Some(query_body) = query_body {
-                    if !param.is_option() || is_vec {
+                    if !param.optional() || is_vec {
                         ts_request_builder.extend(quote! {
                             let #param_name_var = &this.#param_name_var;
                             #query_body
@@ -434,7 +434,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 }
             }
             ParamKind::Header => {
-                if !param.is_option() || is_vec {
+                if !param.optional() || is_vec {
                     if param.is_string() {
                         ts_request_builder.extend(quote! {
                             req_builder = req_builder.header(#param_name, &this.#param_name_var);
@@ -468,7 +468,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                     quote! {}
                 };
 
-                if !param.is_option() || is_vec {
+                if !param.optional() || is_vec {
                     ts_request_builder.extend(quote! {
                         #set_content_type
                         let req_body = azure_core::to_json(&this.#param_name_var).map_err(Error::Serialize)?;
@@ -938,8 +938,8 @@ impl FunctionParam {
     fn is_vec(&self) -> bool {
         self.type_name.is_vec()
     }
-    fn is_option(&self) -> bool {
-        self.type_name.is_option()
+    fn optional(&self) -> bool {
+        self.type_name.optional
     }
     fn is_string(&self) -> bool {
         self.type_name.is_string()
@@ -954,10 +954,10 @@ impl FunctionParamsCode {
         self.params.iter().collect()
     }
     fn required_params(&self) -> Vec<&FunctionParam> {
-        self.params.iter().filter(|p| !p.type_name.is_option()).collect()
+        self.params.iter().filter(|p| !p.type_name.optional).collect()
     }
     fn optional_params(&self) -> Vec<&FunctionParam> {
-        self.params.iter().filter(|p| p.type_name.is_option()).collect()
+        self.params.iter().filter(|p| p.type_name.optional).collect()
     }
     #[allow(dead_code)]
     fn params_of_kind(&self, kind: &ParamKind) -> Vec<&FunctionParam> {
@@ -974,7 +974,7 @@ impl ToTokens for FunctionParamsCode {
         {
             let mut type_name = type_name.clone();
             let is_vec = type_name.is_vec();
-            type_name = type_name.with_add_into(!is_vec);
+            type_name = type_name.impl_into(!is_vec);
             params.push(quote! { #variable_name: #type_name });
         }
         let slf = quote! { &self };
@@ -988,9 +988,7 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionP
     for param in parameters.iter() {
         let name = param.name().to_owned();
         let variable_name = name.to_snake_case_ident().map_err(Error::ParamName)?;
-        let type_name = type_name_gen(&param.type_name()?)?
-            .with_qualify_models(true)
-            .with_is_option(!param.required());
+        let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
         let kind = ParamKind::from(param.type_());
         let collection_format = param.collection_format().clone();
         params.push(FunctionParam {
@@ -1021,8 +1019,8 @@ fn create_builder_instance_code(
         } = param;
         let mut type_name = type_name.clone();
         let is_vec = type_name.is_vec();
-        type_name = type_name.with_add_into(!is_vec);
-        if type_name.add_into() {
+        type_name = type_name.impl_into(!is_vec);
+        if type_name.has_impl_into() {
             params.push(quote! { #variable_name: #variable_name.into() });
         } else {
             params.push(quote! { #variable_name });
@@ -1075,7 +1073,7 @@ fn create_builder_struct_code(parameters: &FunctionParamsCode, in_group: bool) -
         } = param;
         let mut type_name = type_name.clone();
         if type_name.is_vec() {
-            type_name = type_name.with_is_option(false);
+            type_name = type_name.optional(false);
         }
         params.push(quote! { pub(crate) #variable_name: #type_name });
     }
@@ -1095,9 +1093,9 @@ fn create_builder_setters_code(parameters: &FunctionParamsCode) -> Result<TokenS
         } = param;
         let is_vec = type_name.is_vec();
         let mut type_name = type_name.clone();
-        type_name = type_name.with_is_option(false);
-        type_name = type_name.with_add_into(!is_vec);
-        let mut value = if type_name.add_into() {
+        type_name = type_name.optional(false);
+        type_name = type_name.impl_into(!is_vec);
+        let mut value = if type_name.has_impl_into() {
             quote! { #variable_name.into() }
         } else {
             quote! { #variable_name }
@@ -1117,9 +1115,7 @@ fn create_builder_setters_code(parameters: &FunctionParamsCode) -> Result<TokenS
 
 pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>, Error> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(
-            type_name_gen(&get_type_name_for_schema_ref(schema)?)?.with_qualify_models(true),
-        ))
+        Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true)))
     } else {
         Ok(None)
     }
