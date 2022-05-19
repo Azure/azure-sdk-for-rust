@@ -15,3 +15,4 @@ pub(crate) use get_twin::get_twin;
 pub use invoke_method_builder::InvokeMethodBuilder;
 pub use query_builder::QueryBuilder;
 pub use update_or_replace_twin_builder::UpdateOrReplaceTwinBuilder;
+pub use apply_on_edge_device_builder::ApplyOnEdgeDeviceBuilder;
