@@ -170,10 +170,7 @@ impl HttpClient for reqwest::Client {
     #[cfg(target_arch = "wasm32")]
     /// Stub implementation. Will remove as soon as reqwest starts
     /// supporting wasm.
-    async fn execute_request2(
-        &self,
-        _request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
+    async fn execute_request2(&self, _request: &crate::Request) -> Result<crate::Response> {
         let response = crate::ResponseBuilder::new(http::StatusCode::OK);
 
         let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));
