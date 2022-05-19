@@ -16,12 +16,23 @@ pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
 
 #[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
-    std::sync::Arc::new(NoopHttpClient())
+    std::sync::Arc::new(NoopHttpClient {})
 }
 
-// struct NoopHttpClient {}
-// impl HttpClient for NoopHttpClient {
-// }
+#[derive(Debug)]
+struct NoopHttpClient {}
+
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+impl HttpClient for NoopHttpClient {
+    async fn execute_request(&self, _request: Request<Bytes>) -> Result<Response<Bytes>> {
+        Err(Error::from(ErrorKind::Other))
+    }
+
+    async fn execute_request2(&self, _request: &crate::Request) -> Result<crate::Response> {
+        Err(Error::from(ErrorKind::Other))
+    }
+}
 
 /// An HTTP client which can send requests.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]

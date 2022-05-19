@@ -193,7 +193,6 @@ impl TransportOptions {
     }
 }
 
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
