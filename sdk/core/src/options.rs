@@ -187,7 +187,7 @@ impl TransportOptions {
     #[cfg(feature = "mock_transport_framework")]
     pub fn new_with_transaction_name(transaction_name: String) -> Self {
         Self {
-            http_client: new_http_client(),
+            http_client: crate::http_client::new_http_client(),
             transaction_name,
         }
     }
