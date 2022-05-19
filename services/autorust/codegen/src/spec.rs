@@ -547,6 +547,7 @@ impl WebOperation {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub enum WebVerb {
     Get,
     Post,

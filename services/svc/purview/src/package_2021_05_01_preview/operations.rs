@@ -376,23 +376,23 @@ pub mod entity {
         pub fn add_classifications(
             &self,
             guid: impl Into<String>,
-            classifications: impl Into<Vec<models::AtlasClassification>>,
+            classifications: Vec<models::AtlasClassification>,
         ) -> add_classifications::Builder {
             add_classifications::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
-                classifications: classifications.into(),
+                classifications,
             }
         }
         pub fn update_classifications(
             &self,
             guid: impl Into<String>,
-            classifications: impl Into<Vec<models::AtlasClassification>>,
+            classifications: Vec<models::AtlasClassification>,
         ) -> update_classifications::Builder {
             update_classifications::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
-                classifications: classifications.into(),
+                classifications,
             }
         }
         pub fn get_by_unique_attributes(&self, type_name: impl Into<String>) -> get_by_unique_attributes::Builder {
@@ -438,24 +438,24 @@ pub mod entity {
         pub fn add_classifications_by_unique_attribute(
             &self,
             type_name: impl Into<String>,
-            atlas_classification_array: impl Into<Vec<models::AtlasClassification>>,
+            atlas_classification_array: Vec<models::AtlasClassification>,
         ) -> add_classifications_by_unique_attribute::Builder {
             add_classifications_by_unique_attribute::Builder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
-                atlas_classification_array: atlas_classification_array.into(),
+                atlas_classification_array,
                 attr_qualified_name: None,
             }
         }
         pub fn update_classifications_by_unique_attribute(
             &self,
             type_name: impl Into<String>,
-            atlas_classification_array: impl Into<Vec<models::AtlasClassification>>,
+            atlas_classification_array: Vec<models::AtlasClassification>,
         ) -> update_classifications_by_unique_attribute::Builder {
             update_classifications_by_unique_attribute::Builder {
                 client: self.0.clone(),
                 type_name: type_name.into(),
-                atlas_classification_array: atlas_classification_array.into(),
+                atlas_classification_array,
                 attr_qualified_name: None,
             }
         }
@@ -616,7 +616,7 @@ pub mod entity {
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let guid = &this.guid;
                         for value in &this.guid {
-                            url.query_pairs_mut().append_pair("guid", &value.to_string());
+                            url.query_pairs_mut().append_pair("guid", value);
                         }
                         if let Some(min_ext_info) = &this.min_ext_info {
                             url.query_pairs_mut().append_pair("minExtInfo", &min_ext_info.to_string());
@@ -627,7 +627,7 @@ pub mod entity {
                         }
                         let exclude_relationship_types = &this.exclude_relationship_types;
                         for value in &this.exclude_relationship_types {
-                            url.query_pairs_mut().append_pair("excludeRelationshipTypes", &value.to_string());
+                            url.query_pairs_mut().append_pair("excludeRelationshipTypes", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
@@ -776,7 +776,7 @@ pub mod entity {
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let guid = &this.guid;
                         for value in &this.guid {
-                            url.query_pairs_mut().append_pair("guid", &value.to_string());
+                            url.query_pairs_mut().append_pair("guid", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
@@ -2254,11 +2254,11 @@ pub mod glossary {
         }
         pub fn create_glossary_categories(
             &self,
-            glossary_category: impl Into<Vec<models::AtlasGlossaryCategory>>,
+            glossary_category: Vec<models::AtlasGlossaryCategory>,
         ) -> create_glossary_categories::Builder {
             create_glossary_categories::Builder {
                 client: self.0.clone(),
-                glossary_category: glossary_category.into(),
+                glossary_category,
             }
         }
         pub fn create_glossary_category(
@@ -2365,10 +2365,10 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
-        pub fn create_glossary_terms(&self, glossary_term: impl Into<Vec<models::AtlasGlossaryTerm>>) -> create_glossary_terms::Builder {
+        pub fn create_glossary_terms(&self, glossary_term: Vec<models::AtlasGlossaryTerm>) -> create_glossary_terms::Builder {
             create_glossary_terms::Builder {
                 client: self.0.clone(),
-                glossary_term: glossary_term.into(),
+                glossary_term,
                 include_term_hierarchy: None,
             }
         }
@@ -2384,34 +2384,34 @@ pub mod glossary {
         pub fn assign_term_to_entities(
             &self,
             term_guid: impl Into<String>,
-            related_object_ids: impl Into<Vec<models::AtlasRelatedObjectId>>,
+            related_object_ids: Vec<models::AtlasRelatedObjectId>,
         ) -> assign_term_to_entities::Builder {
             assign_term_to_entities::Builder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
-                related_object_ids: related_object_ids.into(),
+                related_object_ids,
             }
         }
         pub fn remove_term_assignment_from_entities(
             &self,
             term_guid: impl Into<String>,
-            related_object_ids: impl Into<Vec<models::AtlasRelatedObjectId>>,
+            related_object_ids: Vec<models::AtlasRelatedObjectId>,
         ) -> remove_term_assignment_from_entities::Builder {
             remove_term_assignment_from_entities::Builder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
-                related_object_ids: related_object_ids.into(),
+                related_object_ids,
             }
         }
         pub fn delete_term_assignment_from_entities(
             &self,
             term_guid: impl Into<String>,
-            related_object_ids: impl Into<Vec<models::AtlasRelatedObjectId>>,
+            related_object_ids: Vec<models::AtlasRelatedObjectId>,
         ) -> delete_term_assignment_from_entities::Builder {
             delete_term_assignment_from_entities::Builder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
-                related_object_ids: related_object_ids.into(),
+                related_object_ids,
             }
         }
         pub fn list_related_terms(&self, term_guid: impl Into<String>) -> list_related_terms::Builder {
@@ -2535,12 +2535,12 @@ pub mod glossary {
         pub fn export_glossary_terms_as_csv(
             &self,
             glossary_guid: impl Into<String>,
-            term_guids: impl Into<Vec<models::TermGuid>>,
+            term_guids: Vec<models::TermGuid>,
         ) -> export_glossary_terms_as_csv::Builder {
             export_glossary_terms_as_csv::Builder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
-                term_guids: term_guids.into(),
+                term_guids,
                 include_term_hierarchy: None,
             }
         }

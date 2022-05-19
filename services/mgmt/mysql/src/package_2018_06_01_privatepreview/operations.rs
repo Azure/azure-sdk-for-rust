@@ -3519,7 +3519,7 @@ pub mod query_texts {
                                 url.query_pairs_mut().append_pair("api-version", "2017-12-01");
                                 let query_ids = &this.query_ids;
                                 for value in &this.query_ids {
-                                    url.query_pairs_mut().append_pair("queryIds", &value.to_string());
+                                    url.query_pairs_mut().append_pair("queryIds", value);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());

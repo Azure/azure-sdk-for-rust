@@ -11113,7 +11113,7 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("api-version", "2020-09-01");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            url.query_pairs_mut().append_pair("metrics", &value.to_string());
+                            url.query_pairs_mut().append_pair("metrics", value);
                         }
                         let date_time_begin = &this.date_time_begin;
                         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
@@ -11123,23 +11123,23 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("granularity", granularity);
                         let group_by = &this.group_by;
                         for value in &this.group_by {
-                            url.query_pairs_mut().append_pair("groupBy", &value.to_string());
+                            url.query_pairs_mut().append_pair("groupBy", value);
                         }
                         let continents = &this.continents;
                         for value in &this.continents {
-                            url.query_pairs_mut().append_pair("continents", &value.to_string());
+                            url.query_pairs_mut().append_pair("continents", value);
                         }
                         let country_or_regions = &this.country_or_regions;
                         for value in &this.country_or_regions {
-                            url.query_pairs_mut().append_pair("countryOrRegions", &value.to_string());
+                            url.query_pairs_mut().append_pair("countryOrRegions", value);
                         }
                         let custom_domains = &this.custom_domains;
                         for value in &this.custom_domains {
-                            url.query_pairs_mut().append_pair("customDomains", &value.to_string());
+                            url.query_pairs_mut().append_pair("customDomains", value);
                         }
                         let protocols = &this.protocols;
                         for value in &this.protocols {
-                            url.query_pairs_mut().append_pair("protocols", &value.to_string());
+                            url.query_pairs_mut().append_pair("protocols", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
@@ -11234,11 +11234,11 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("api-version", "2020-09-01");
                         let rankings = &this.rankings;
                         for value in &this.rankings {
-                            url.query_pairs_mut().append_pair("rankings", &value.to_string());
+                            url.query_pairs_mut().append_pair("rankings", value);
                         }
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            url.query_pairs_mut().append_pair("metrics", &value.to_string());
+                            url.query_pairs_mut().append_pair("metrics", value);
                         }
                         let max_ranking = &this.max_ranking;
                         url.query_pairs_mut().append_pair("maxRanking", &max_ranking.to_string());
@@ -11248,7 +11248,7 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
                         let custom_domains = &this.custom_domains;
                         for value in &this.custom_domains {
-                            url.query_pairs_mut().append_pair("customDomains", &value.to_string());
+                            url.query_pairs_mut().append_pair("customDomains", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
@@ -11514,7 +11514,7 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("api-version", "2020-09-01");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            url.query_pairs_mut().append_pair("metrics", &value.to_string());
+                            url.query_pairs_mut().append_pair("metrics", value);
                         }
                         let date_time_begin = &this.date_time_begin;
                         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
@@ -11524,15 +11524,15 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("granularity", granularity);
                         let actions = &this.actions;
                         for value in &this.actions {
-                            url.query_pairs_mut().append_pair("actions", &value.to_string());
+                            url.query_pairs_mut().append_pair("actions", value);
                         }
                         let group_by = &this.group_by;
                         for value in &this.group_by {
-                            url.query_pairs_mut().append_pair("groupBy", &value.to_string());
+                            url.query_pairs_mut().append_pair("groupBy", value);
                         }
                         let rule_types = &this.rule_types;
                         for value in &this.rule_types {
-                            url.query_pairs_mut().append_pair("ruleTypes", &value.to_string());
+                            url.query_pairs_mut().append_pair("ruleTypes", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
@@ -11632,7 +11632,7 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("api-version", "2020-09-01");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            url.query_pairs_mut().append_pair("metrics", &value.to_string());
+                            url.query_pairs_mut().append_pair("metrics", value);
                         }
                         let date_time_begin = &this.date_time_begin;
                         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
@@ -11642,15 +11642,15 @@ pub mod log_analytics {
                         url.query_pairs_mut().append_pair("maxRanking", &max_ranking.to_string());
                         let rankings = &this.rankings;
                         for value in &this.rankings {
-                            url.query_pairs_mut().append_pair("rankings", &value.to_string());
+                            url.query_pairs_mut().append_pair("rankings", value);
                         }
                         let actions = &this.actions;
                         for value in &this.actions {
-                            url.query_pairs_mut().append_pair("actions", &value.to_string());
+                            url.query_pairs_mut().append_pair("actions", value);
                         }
                         let rule_types = &this.rule_types;
                         for value in &this.rule_types {
-                            url.query_pairs_mut().append_pair("ruleTypes", &value.to_string());
+                            url.query_pairs_mut().append_pair("ruleTypes", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());

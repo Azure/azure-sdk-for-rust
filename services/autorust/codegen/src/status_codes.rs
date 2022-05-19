@@ -1,11 +1,11 @@
 #![allow(unused_doc_comments)]
 
-use crate::identifier::ident;
+use crate::identifier::parse_ident;
 use autorust_openapi::{Response, StatusCode};
 use heck::{ToPascalCase, ToSnakeCase};
 use http::StatusCode as HttpStatusCode;
 use indexmap::IndexMap;
-use proc_macro2::TokenStream;
+use proc_macro2::Ident;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -37,15 +37,15 @@ pub fn get_status_code_name(status_code: &StatusCode) -> Result<&'static str, Er
 
 /// The canonical name.
 /// examples: OK, CREATED, LOOP_DETECTED
-pub fn get_status_code_ident(status_code: &StatusCode) -> Result<TokenStream, Error> {
-    ident(&get_status_code_name(status_code)?.to_snake_case().to_uppercase()).map_err(Error::StatusCodeName)
+pub fn get_status_code_ident(status_code: &StatusCode) -> Result<Ident, Error> {
+    parse_ident(&get_status_code_name(status_code)?.to_snake_case().to_uppercase()).map_err(Error::StatusCodeName)
 }
 
 #[allow(dead_code)]
 /// The canonical name in camel case.
 /// examples: Ok, Created, LoopDetected
-pub fn get_status_code_ident_camel_case(status_code: &StatusCode) -> Result<TokenStream, Error> {
-    ident(&get_status_code_name(status_code)?.to_pascal_case()).map_err(Error::StatusCodeName)
+pub fn get_status_code_ident_camel_case(status_code: &StatusCode) -> Result<Ident, Error> {
+    parse_ident(&get_status_code_name(status_code)?.to_pascal_case()).map_err(Error::StatusCodeName)
 }
 
 fn response_name(status_code: &HttpStatusCode) -> Result<String, Error> {
@@ -67,8 +67,8 @@ pub fn get_response_type_name(status_code: &StatusCode) -> Result<String, Error>
     }
 }
 
-pub fn get_response_type_ident(status_code: &StatusCode) -> Result<TokenStream, Error> {
-    ident(&get_response_type_name(status_code)?).map_err(Error::ResponseTypeName)
+pub fn get_response_type_ident(status_code: &StatusCode) -> Result<Ident, Error> {
+    parse_ident(&get_response_type_name(status_code)?).map_err(Error::ResponseTypeName)
 }
 
 fn is_success(status_code: &StatusCode) -> bool {

@@ -5,6 +5,7 @@ use std::{collections::HashSet, fs};
 
 #[derive(Deserialize, Debug, Default)]
 pub struct PackageConfig {
+    #[serde(default)]
     pub tags_allow: Vec<String>,
 }
 impl<'a> PackageConfig {

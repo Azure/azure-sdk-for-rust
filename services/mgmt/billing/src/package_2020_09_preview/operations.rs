@@ -4455,12 +4455,12 @@ pub mod invoices {
         pub fn download_multiple_billing_profile_invoices(
             &self,
             billing_account_name: impl Into<String>,
-            download_urls: impl Into<Vec<String>>,
+            download_urls: Vec<String>,
         ) -> download_multiple_billing_profile_invoices::Builder {
             download_multiple_billing_profile_invoices::Builder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
-                download_urls: download_urls.into(),
+                download_urls,
             }
         }
         pub fn list_by_billing_subscription(
@@ -4503,12 +4503,12 @@ pub mod invoices {
         pub fn download_multiple_billing_subscription_invoices(
             &self,
             subscription_id: impl Into<String>,
-            download_urls: impl Into<Vec<String>>,
+            download_urls: Vec<String>,
         ) -> download_multiple_billing_subscription_invoices::Builder {
             download_multiple_billing_subscription_invoices::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
-                download_urls: download_urls.into(),
+                download_urls,
             }
         }
     }
