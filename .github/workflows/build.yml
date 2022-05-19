@@ -59,6 +59,9 @@ jobs:
           cargo fmt --manifest-path services/Cargo.toml --all -- --check
         if: matrix.rust == 'stable'
 
+      - name: check core with --no-default-features
+        run: cargo check -p azure_core --no-default-features
+
       - name: check core for wasm
         run: cargo check -p azure_core --target=wasm32-unknown-unknown
 
