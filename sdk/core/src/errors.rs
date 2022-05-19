@@ -95,16 +95,6 @@ impl UnexpectedValue {
     }
 }
 
-// /// An error originating from a streaming response.
-// #[non_exhaustive]
-// #[derive(Debug, thiserror::Error)]
-// pub enum StreamError {
-//     #[error("error polling stream: {0}")]
-//     Poll(std::io::Error),
-//     #[error("error reading stream: {0}")]
-//     Read(HttpClientError),
-// }
-
 /// An error caused by invalid permissions.
 #[derive(Debug, thiserror::Error)]
 pub enum PermissionError {
