@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::error::{Error, ErrorKind, Result, ResultExt};
 #[allow(unused_imports)]
 use crate::Body;
