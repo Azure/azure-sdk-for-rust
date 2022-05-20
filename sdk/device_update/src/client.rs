@@ -18,7 +18,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 ///
 /// ```no_run
 /// use azure_device_update::DeviceUpdateClient;
-/// use azure_identity::token_credentials::DefaultAzureCredential;
+/// use azure_identity::DefaultAzureCredential;
 /// let creds = std::sync::Arc::new(DefaultAzureCredential::default());
 /// let client = DeviceUpdateClient::new("contoso.api.adu.microsoft.com", creds).unwrap();
 /// ```
@@ -37,7 +37,7 @@ impl DeviceUpdateClient {
     ///
     /// ```no_run
     /// use azure_device_update::DeviceUpdateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// let creds = std::sync::Arc::new(DefaultAzureCredential::default());
     /// let client = DeviceUpdateClient::new("contoso.api.adu.microsoft.com", creds).unwrap();
     /// ```

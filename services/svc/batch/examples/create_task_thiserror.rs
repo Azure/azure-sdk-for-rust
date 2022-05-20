@@ -7,7 +7,7 @@ to match any error from azure_svc_batch crate.
 cargo run --package azure_svc_batch --example create_task_thiserror
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use azure_svc_batch::models::{JobAddParameter, PoolInformation, TaskAddParameter};
 use std::sync::Arc;
 

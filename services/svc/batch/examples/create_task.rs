@@ -4,7 +4,7 @@ Creates a batch job and task using the data plane APIs
 cargo run --package azure_svc_batch --example create_task
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use azure_svc_batch::models::{JobAddParameter, PoolInformation, TaskAddParameter};
 use std::sync::Arc;
 

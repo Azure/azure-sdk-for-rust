@@ -7,7 +7,7 @@ export RESOURCE_GROUP_LOCATION=southcentralus
 cargo run --package azure_mgmt_resources --example group_create
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use azure_mgmt_resources::models::ResourceGroup;
 use std::env;
 use std::sync::Arc;

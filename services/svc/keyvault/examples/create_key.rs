@@ -9,7 +9,7 @@ you want to create.
 cargo run --package azure_svc_keyvault --example create_key <YourKeyVaultName> <KeyName>
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use azure_svc_keyvault::models::{key_create_parameters::Kty, Attributes, KeyAttributes, KeyCreateParameters};
 use std::sync::Arc;
 

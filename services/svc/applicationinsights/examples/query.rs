@@ -10,7 +10,7 @@ $
 
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use azure_svc_applicationinsights::models::QueryBody;
 use std::sync::Arc;
 
