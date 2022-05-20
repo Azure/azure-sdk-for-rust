@@ -3,8 +3,8 @@
 //!
 //! For example, to authenticate using the recommended DefaultAzureCredential, you can do the following:
 //!
-//! ```
-//! use azure_identity::{DefaultAzureCredentialBuilder, TokenCredential};
+//! ```no_run
+//! use azure_identity::{DefaultAzureCredential, TokenCredential};
 //! use url::Url;
 //!
 //! use std::env;
@@ -12,8 +12,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn Error>> {
-//!     let credential = DefaultAzureCredentialBuilder::new()
-//!         .build();
+//!     let credential = DefaultAzureCredential::default();
 //!     let response = credential
 //!         .get_token("https://management.azure.com")
 //!         .await?;
