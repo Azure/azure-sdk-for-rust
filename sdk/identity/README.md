@@ -54,3 +54,5 @@ The supported authentication flows are:
 * [Device code flow](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 
 This crate also includes utilities for handling refresh tokens and accessing token credentials from many different sources.
+
+A list of changes can be found in [CHANGELOG.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/CHANGELOG.md);
