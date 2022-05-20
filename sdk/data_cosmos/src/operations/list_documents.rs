@@ -198,6 +198,11 @@ impl<T> Continuable for ListDocumentsResponse<T> {
 mod tests {
     use super::*;
 
+    #[allow(dead_code, unconditional_recursion)]
+    fn ensure_send<T: Send>() {
+        ensure_send::<ListDocuments<()>>();
+    }
+
     const BODY: &str = "
 {
     \"_rid\": \"3iNTAJKxVCk=\",

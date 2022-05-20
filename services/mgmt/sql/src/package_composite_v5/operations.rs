@@ -8046,19 +8046,19 @@ pub mod database_columns {
                                 url.query_pairs_mut().append_pair("api-version", "2020-11-01-preview");
                                 let schema = &this.schema;
                                 for value in &this.schema {
-                                    url.query_pairs_mut().append_pair("schema", &value.to_string());
+                                    url.query_pairs_mut().append_pair("schema", value);
                                 }
                                 let table = &this.table;
                                 for value in &this.table {
-                                    url.query_pairs_mut().append_pair("table", &value.to_string());
+                                    url.query_pairs_mut().append_pair("table", value);
                                 }
                                 let column = &this.column;
                                 for value in &this.column {
-                                    url.query_pairs_mut().append_pair("column", &value.to_string());
+                                    url.query_pairs_mut().append_pair("column", value);
                                 }
                                 let order_by = &this.order_by;
                                 for value in &this.order_by {
-                                    url.query_pairs_mut().append_pair("orderBy", &value.to_string());
+                                    url.query_pairs_mut().append_pair("orderBy", value);
                                 }
                                 if let Some(skiptoken) = &this.skiptoken {
                                     url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
@@ -18977,19 +18977,19 @@ pub mod managed_database_columns {
                                 url.query_pairs_mut().append_pair("api-version", "2020-11-01-preview");
                                 let schema = &this.schema;
                                 for value in &this.schema {
-                                    url.query_pairs_mut().append_pair("schema", &value.to_string());
+                                    url.query_pairs_mut().append_pair("schema", value);
                                 }
                                 let table = &this.table;
                                 for value in &this.table {
-                                    url.query_pairs_mut().append_pair("table", &value.to_string());
+                                    url.query_pairs_mut().append_pair("table", value);
                                 }
                                 let column = &this.column;
                                 for value in &this.column {
-                                    url.query_pairs_mut().append_pair("column", &value.to_string());
+                                    url.query_pairs_mut().append_pair("column", value);
                                 }
                                 let order_by = &this.order_by;
                                 for value in &this.order_by {
-                                    url.query_pairs_mut().append_pair("orderBy", &value.to_string());
+                                    url.query_pairs_mut().append_pair("orderBy", value);
                                 }
                                 if let Some(skiptoken) = &this.skiptoken {
                                     url.query_pairs_mut().append_pair("$skiptoken", skiptoken);

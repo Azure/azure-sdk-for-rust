@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{add_option, create_generated_by_header, is_vec, type_name_gen, Error},
+    codegen::{create_generated_by_header, type_name_gen, Error, TypeNameCode},
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
@@ -7,8 +7,8 @@ use crate::{
 use autorust_openapi::{DataType, MsPageable, Reference, ReferenceOr, Schema};
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Ident, TokenStream};
+use quote::{quote, ToTokens};
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
 use std::collections::{HashMap, HashSet};
@@ -305,7 +305,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         if let Some(pageable) = operation.pageable.as_ref() {
             for response in operation.responses.values() {
                 if let Some(schema) = &response.schema {
-                    let pageable_name = format!("{}", type_name_gen(&get_type_name_for_schema_ref(schema)?, false, false)?);
+                    let pageable_name = type_name_gen(&get_type_name_for_schema_ref(schema)?)?.to_string();
                     // in some cases, the same struct is used multiple times for
                     // responses (such as a get and list for a given object
                     // type).  In these cases, what we see is a next_link_name
@@ -352,9 +352,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         } else if schema.is_array() {
             file.extend(create_vec_alias(schema)?);
         } else if schema.is_local_enum() {
-            let no_namespace = TokenStream::new();
-            let TypeCode { code: enum_code, .. } = create_enum(&no_namespace, schema, schema_name, false)?;
-            file.extend(enum_code);
+            let enum_code = create_enum(None, schema, schema_name, false)?;
+            file.extend(enum_code.into_token_stream());
         } else if schema.is_basic_type() {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
             file.extend(quote! { pub type #id = #value;});
@@ -366,9 +365,9 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     Ok(file)
 }
 
-fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(TokenStream, TokenStream), Error> {
+fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode), Error> {
     let id = property_name.to_camel_case_ident().map_err(Error::StructName)?;
-    let value = type_name_gen(&property.type_name()?, false, false)?;
+    let value = type_name_gen(&property.type_name()?)?;
     Ok((id, value))
 }
 
@@ -391,7 +390,12 @@ fn add_schema_refs(
     Ok(())
 }
 
-fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
+fn create_enum(
+    namespace: Option<&Ident>,
+    property: &SchemaGen,
+    property_name: &str,
+    lowercase_workaround: bool,
+) -> Result<StructFieldCode, Error> {
     let enum_values = property.enum_values();
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
@@ -461,14 +465,18 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
         }
         #default_code
     };
-    let type_name = quote! {#namespace::#id};
-    Ok(TypeCode { type_name, code })
+    let type_name = TypeNameCode::from(vec![namespace, Some(id)]);
+
+    Ok(StructFieldCode {
+        type_name,
+        code: Some(TypeCode::Enum(code)),
+    })
 }
 
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
     let items = schema.array_items()?;
     let typ = schema.name()?.to_camel_case_ident().map_err(Error::VecAliasName)?;
-    let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?, false, false)?;
+    let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -513,34 +521,33 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
         let lowercase_workaround = cg.should_workaround_case();
 
-        let TypeCode {
+        let StructFieldCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(cg, &ns, &property.schema, property_name, lowercase_workaround)?;
-        mod_code.extend(field_code);
+        } = create_struct_field_code(cg, &ns.clone(), &property.schema, property_name, lowercase_workaround)?;
+        mod_code.extend(field_code.into_token_stream());
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         if cg.should_force_obj(prop_nm) {
-            type_name = quote! { serde_json::Value };
+            type_name = type_name.force_value(true);
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
 
         field_names.insert(format!("{}", field_name), is_required);
 
-        let is_vec = is_vec(&type_name);
-        if !is_vec {
-            type_name = add_option(!is_required, type_name);
+        if !type_name.is_vec() && !is_required {
+            type_name = type_name.optional(true);
         }
 
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
-        if field_name.to_string() != property_name {
+        if field_name != property_name {
             serde_attrs.push(quote! { rename = #property_name });
         }
         if !is_required {
-            if is_vec {
+            if type_name.is_vec() {
                 serde_attrs.push(quote! { default, skip_serializing_if = "Vec::is_empty"});
             } else {
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
@@ -556,10 +563,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         };
 
         // see if a field should be wrapped in a Box
-        let should_box = cg.should_box_property(prop_nm);
-        if should_box {
-            type_name = quote! { Box<#type_name> };
-        }
+        let boxed = cg.should_box_property(prop_nm);
+        type_name = type_name.boxed(boxed);
 
         let doc_comment = match &property.schema.schema.common.description {
             Some(description) => quote! { #[doc = #description] },
@@ -575,15 +580,15 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         if is_required {
             new_fn_params.push(quote! { #field_name: #type_name });
             new_fn_body.extend(quote! { #field_name, });
-        } else if is_vec {
-            if should_box {
+        } else if type_name.is_vec() {
+            if boxed {
                 new_fn_body.extend(quote! { #field_name: Box::new(Vec::new()), });
             } else {
                 new_fn_body.extend(quote! { #field_name: Vec::new(), });
             }
         } else {
             #[allow(clippy::collapsible_else_if)]
-            if should_box {
+            if boxed {
                 new_fn_body.extend(quote! { #field_name: Box::new(None), });
             } else {
                 new_fn_body.extend(quote! { #field_name: None, });
@@ -703,40 +708,65 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     Ok(code)
 }
 
-struct TypeCode {
-    type_name: TokenStream,
-    code: TokenStream,
+struct StructFieldCode {
+    type_name: TypeNameCode,
+    code: Option<TypeCode>,
+}
+
+impl ToTokens for StructFieldCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(code) = &self.code {
+            code.to_tokens(tokens)
+        }
+    }
+}
+
+enum TypeCode {
+    Struct(TokenStream),
+    Enum(TokenStream),
+}
+
+impl ToTokens for TypeCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            TypeCode::Struct(code) => tokens.extend(code.clone()),
+            TypeCode::Enum(code) => tokens.extend(code.clone()),
+        }
+    }
 }
 
 /// Creates the type reference for a struct field from a struct property.
 /// Optionally, creates a type for a local schema.
 fn create_struct_field_code(
     cg: &CodeGen,
-    namespace: &TokenStream,
+    namespace: &Ident,
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<TypeCode, Error> {
+) -> Result<StructFieldCode, Error> {
     match &property.ref_key {
         Some(ref_key) => {
             let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
-            Ok(TypeCode {
-                type_name: tp,
-                code: TokenStream::new(),
+            Ok(StructFieldCode {
+                type_name: tp.into(),
+                code: None,
             })
         }
         None => {
             if property.is_local_enum() {
-                create_enum(namespace, property, property_name, lowercase_workaround)
+                create_enum(Some(namespace), property, property_name, lowercase_workaround)
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
-                let type_name = quote! {#namespace::#id};
+                let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
                 let code = create_struct(cg, property, property_name, None)?;
-                Ok(TypeCode { type_name, code })
+                Ok(StructFieldCode {
+                    type_name,
+                    code: Some(TypeCode::Struct(code)),
+                })
             } else {
-                Ok(TypeCode {
-                    type_name: type_name_gen(&property.type_name()?, false, false)?,
-                    code: TokenStream::new(),
+                Ok(StructFieldCode {
+                    type_name: type_name_gen(&property.type_name()?)?,
+                    code: None,
                 })
             }
         }
