@@ -5,7 +5,7 @@ use http::{Method, Response, StatusCode};
 
 use crate::service::{ServiceClient, API_VERSION};
 
-/// Execute the request to create or update the module or device identity.
+/// Execute the request to get the identity of a device or module.
 pub(crate) async fn get_identity<T>(
     service_client: &ServiceClient,
     device_id: String,
