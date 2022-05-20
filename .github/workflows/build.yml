@@ -48,7 +48,7 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt
-          target: wasm32-unknown-unknown wasm32-wasi
+          target: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v1
 
@@ -65,9 +65,6 @@ jobs:
       - name: check core for wasm
         run: cargo check -p azure_core --target=wasm32-unknown-unknown
 
-      - name: check core for wasi
-        run: cargo check -p azure_core --target=wasm32-wasi
-
       - name: sdk tests
         run: cargo test --all --features mock_transport_framework
 
@@ -78,6 +75,24 @@ jobs:
           if git status sdk | grep -q *.md; then
             echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
           fi
+
+  test-wasi:
+    name: WASI Tests
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt
+          target: wasm32-wasi
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: check core for wasi
+        run: cargo check -p azure_core --target=wasm32-wasi
 
   # test-services:
   #   name: Services Tests
@@ -108,56 +123,56 @@ jobs:
   #       run: df -h /
   #       if: ${{ always() }}
 
-  test-integration:
-    name: Integration Tests
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          components: rustfmt
+  # test-integration:
+  #   name: Integration Tests
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         profile: minimal
+  #         override: true
+  #         components: rustfmt
 
-      - uses: Swatinem/rust-cache@v1
+  #     - uses: Swatinem/rust-cache@v1
 
-      - name: emulator integration tests
-        run: |
-          npm install azurite@3.13.1
-          npx azurite &
-          cargo test --features test_integration
+  #     - name: emulator integration tests
+  #       run: |
+  #         npm install azurite@3.13.1
+  #         npx azurite &
+  #         cargo test --features test_integration
 
-      - name: display free disk space
-        run: df -h /
-        if: ${{ always() }}
+  #     - name: display free disk space
+  #       run: df -h /
+  #       if: ${{ always() }}
 
-  test-e2e:
-    name: E2E Tests
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          components: rustfmt
+  # test-e2e:
+  #   name: E2E Tests
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         profile: minimal
+  #         override: true
+  #         components: rustfmt
 
-      - uses: Swatinem/rust-cache@v1
+  #     - uses: Swatinem/rust-cache@v1
 
-      - name: e2e tests build
-        run: |
-          PROJECTS=(core  data_cosmos  identity  messaging_servicebus  storage  storage_blobs  storage_queues  storage_datalake  data_tables)
-          for PROJ in ${PROJECTS[@]}
-          do
-            echo "Checking e2e tests for $PROJ"
-            cargo check --tests --features test_e2e --manifest-path sdk/$PROJ/Cargo.toml || exit 1
-          done
+  #     - name: e2e tests build
+  #       run: |
+  #         PROJECTS=(core  data_cosmos  identity  messaging_servicebus  storage  storage_blobs  storage_queues  storage_datalake  data_tables)
+  #         for PROJ in ${PROJECTS[@]}
+  #         do
+  #           echo "Checking e2e tests for $PROJ"
+  #           cargo check --tests --features test_e2e --manifest-path sdk/$PROJ/Cargo.toml || exit 1
+  #         done
 
-      - name: display free disk space
-        run: df -h /
-        if: ${{ always() }}
+  #     - name: display free disk space
+  #       run: df -h /
+  #       if: ${{ always() }}
 
   test-autorust:
     name: test AutoRust
