@@ -9,7 +9,9 @@ use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
 use serde::Serialize;
 
-/// Construct a new HTTP client with the `reqwest` backend.
+/// Construct a new `HttpClient` with the `reqwest` backend.
+/// If `reqwest` is disabled, an `HttpClient` implementation is required.
+/// If not set, requests will error at runtime.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
     std::sync::Arc::new(reqwest::Client::new())
@@ -17,21 +19,29 @@ pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
 
 #[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
-    std::sync::Arc::new(NoopHttpClient {})
+    std::sync::Arc::new(ErrorHttpClient {})
 }
 
+/// The `HttpClient` returned by `new_http_client` if `reqwest` is disabled.
+/// Please supply your own `HttpClient` instead.
 #[derive(Debug)]
-struct NoopHttpClient {}
+struct ErrorHttpClient {}
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-impl HttpClient for NoopHttpClient {
+impl HttpClient for ErrorHttpClient {
     async fn execute_request(&self, _request: Request<Bytes>) -> Result<Response<Bytes>> {
-        Err(Error::from(ErrorKind::Other))
+        Err(Error::with_message(
+            ErrorKind::Other,
+            "an HttpClient implementation is required",
+        ))
     }
 
     async fn execute_request2(&self, _request: &crate::Request) -> Result<crate::Response> {
-        Err(Error::from(ErrorKind::Other))
+        Err(Error::with_message(
+            ErrorKind::Other,
+            "an HttpClient implementation is required",
+        ))
     }
 }
 
