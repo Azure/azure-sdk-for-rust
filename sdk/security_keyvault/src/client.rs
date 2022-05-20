@@ -12,7 +12,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 ///
 /// ```no_run
 /// use azure_security_keyvault::KeyClient;
-/// use azure_identity::token_credentials::DefaultAzureCredential;
+/// use azure_identity::DefaultAzureCredential;
 /// let creds = DefaultAzureCredential::default();
 /// let client = KeyClient::new(&"https://test-key-vault.vault.azure.net", &creds).unwrap();
 /// ```
@@ -31,7 +31,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// let creds = DefaultAzureCredential::default();
     /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
@@ -170,7 +170,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 ///
 /// ```no_run
 /// use azure_security_keyvault::CertificateClient;
-/// use azure_identity::token_credentials::DefaultAzureCredential;
+/// use azure_identity::DefaultAzureCredential;
 /// let creds = DefaultAzureCredential::default();
 /// let client = CertificateClient::new(&"https://test-key-vault.vault.azure.net", &creds).unwrap();
 /// ```
@@ -189,7 +189,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// let creds = DefaultAzureCredential::default();
     /// let client = CertificateClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```

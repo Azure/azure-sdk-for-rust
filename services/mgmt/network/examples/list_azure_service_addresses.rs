@@ -7,7 +7,7 @@ $
 
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use std::sync::Arc;
 
 #[tokio::main]

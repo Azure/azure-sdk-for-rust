@@ -8,19 +8,19 @@ use std::fmt;
 pub enum Error {
     /// An error getting credentials from the Azure CLI
     #[error("Error getting token credentials from Azure CLI")]
-    AzureCliCredential(#[from] crate::token_credentials::AzureCliCredentialError),
+    AzureCliCredential(#[from] crate::AzureCliCredentialError),
     /// An error getting credentials through the client secrect token credential flow
     #[error("Client secret credentials error")]
-    ClientSecretCredential(#[from] crate::token_credentials::ClientSecretCredentialError),
+    ClientSecretCredential(#[from] crate::ClientSecretCredentialError),
     /// An error getting credentials from the environment
     #[error("Error getting environment credential")]
-    EnvironmentCredential(#[from] crate::token_credentials::EnvironmentCredentialError),
+    EnvironmentCredential(#[from] crate::EnvironmentCredentialError),
     /// An error getting managed identity credentials
     #[error("Error getting managed identity credential")]
-    ManagedIdentityCredential(#[from] crate::token_credentials::ManagedIdentityCredentialError),
+    ManagedIdentityCredential(#[from] crate::ManagedIdentityCredentialError),
     /// An error using the default token credential flow
     #[error("Error getting default credential")]
-    DefaultAzureCredentialError(#[from] crate::token_credentials::DefaultAzureCredentialError),
+    DefaultAzureCredentialError(#[from] crate::DefaultAzureCredentialError),
     /// An error getting a refresh token
     #[error("Error refreshing token")]
     RefreshToken(#[from] crate::refresh_token::Error),

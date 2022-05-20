@@ -5,7 +5,7 @@ az batch account list --queyr [].id
 cargo run --example list_accounts
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use futures::stream::StreamExt;
 use std::sync::Arc;
 

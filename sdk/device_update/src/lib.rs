@@ -37,7 +37,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[cfg(test)]
 mod tests {
     use azure_core::auth::{TokenCredential, TokenResponse};
-    use azure_identity::token_credentials::AutoRefreshingTokenCredential;
+    use azure_identity::AutoRefreshingTokenCredential;
     use chrono::{Duration, Utc};
     use oauth2::AccessToken;
     use std::sync::Arc;

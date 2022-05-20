@@ -10,7 +10,7 @@ https://docs.microsoft.com/rest/api/vmware/privateclouds/list
 cargo run --package azure_mgmt_vmware --example private_cloud_list
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use futures::stream::StreamExt;
 use std::sync::Arc;
 

@@ -5,7 +5,7 @@ az storage account list --query [].id
 cargo run --package azure_mgmt_storage --example storage_account_list
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use futures::stream::StreamExt;
 use std::sync::Arc;
 
