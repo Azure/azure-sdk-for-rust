@@ -1,4 +1,4 @@
-use crate::error::{Error, ErrorKind, Result};
+use crate::error::{Error, ErrorKind, Result, ResultExt};
 #[allow(unused_imports)]
 use crate::Body;
 use async_trait::async_trait;
@@ -92,12 +92,12 @@ impl HttpClient for reqwest::Client {
         let reqwest_request = reqwest_request
             .body(request.into_body())
             .build()
-            .map_err(|e| Error::new(ErrorKind::Other, e))?;
+            .context(ErrorKind::Other, "build request")?;
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(|e| Error::new(ErrorKind::Io, e))?;
+            .context(ErrorKind::Io, "execute request")?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -110,16 +110,16 @@ impl HttpClient for reqwest::Client {
                 reqwest_response
                     .bytes()
                     .await
-                    .map_err(|e| Error::new(ErrorKind::Io, e))?,
+                    .context(ErrorKind::Io, "read response bytes")?,
             )
-            .map_err(|e| Error::new(ErrorKind::DataConversion, e))?;
+            .context(ErrorKind::DataConversion, "set response body")?;
 
         Ok(response)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response> {
-        use crate::error::{Error, ErrorKind};
+        use crate::error::{ErrorKind, ResultExt};
 
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method(), url);
@@ -134,21 +134,21 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_err(|e| Error::new(ErrorKind::DataConversion, e))?,
+                .context(ErrorKind::Other, "building request")?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_err(|e| Error::new(ErrorKind::Other, e))?
+                    .context(ErrorKind::Other, "building request")?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(|e| Error::new(ErrorKind::Io, e))?;
+            .context(ErrorKind::Io, "execute request")?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
