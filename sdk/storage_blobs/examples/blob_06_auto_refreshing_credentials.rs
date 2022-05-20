@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate log;
 
-use azure_identity::token_credentials::AutoRefreshingTokenCredential;
-use azure_identity::token_credentials::DefaultAzureCredential;
+use azure_identity::AutoRefreshingTokenCredential;
+use azure_identity::DefaultAzureCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use std::error::Error;
