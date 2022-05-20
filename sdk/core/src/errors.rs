@@ -1,6 +1,4 @@
 use http::StatusCode;
-#[cfg(feature = "enable_hyper")]
-use hyper::{self, body, Body};
 use std::cmp::PartialEq;
 use std::fmt::Debug;
 
@@ -167,88 +165,6 @@ pub enum TraversingError {
     ParseInt(#[from] std::num::ParseIntError),
     #[error("parse error")]
     Parse(#[from] ParseError),
-}
-
-/// Extract the headers and body from a `hyper` HTTP response.
-#[cfg(feature = "enable_hyper")]
-#[inline]
-pub async fn extract_status_headers_and_body(
-    resp: hyper::client::ResponseFuture,
-) -> Result<(hyper::StatusCode, hyper::HeaderMap, body::Bytes), Error> {
-    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
-    let (head, body) = res.into_parts();
-    let status = head.status;
-    let headers = head.headers;
-    let body = body::to_bytes(body).await.map_err(HttpError::ReadBytes)?;
-    Ok((status, headers, body))
-}
-
-/// Extract the status and body from a `hyper` HTTP response.
-#[cfg(feature = "enable_hyper")]
-#[inline]
-pub async fn extract_status_and_body(
-    resp: hyper::client::ResponseFuture,
-) -> Result<(StatusCode, String), HttpError> {
-    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
-    let status = res.status();
-    let body = body::to_bytes(res.into_body())
-        .await
-        .map_err(HttpError::ReadBytes)?;
-    Ok((status, std::str::from_utf8(&body)?.to_owned()))
-}
-
-/// Extract the `Location` header, status and body from a `hyper` HTTP response.
-#[cfg(feature = "enable_hyper")]
-#[inline]
-pub async fn extract_location_status_and_body(
-    resp: hyper::client::ResponseFuture,
-) -> Result<(http::StatusCode, String, String), HttpError> {
-    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
-    let status = res.status();
-    let location: String = match res.headers().get("Location") {
-        Some(header_value) => header_value.to_str()?.to_owned(),
-        _ => "".to_owned(),
-    };
-    let body = body::to_bytes(res.into_body())
-        .await
-        .map_err(HttpError::ReadBytes)?;
-    Ok((status, location, std::str::from_utf8(&body)?.to_owned()))
-}
-
-/// Extract the HTTP body from a `hyper` HTTP response, and check the response
-/// status is 200.
-#[cfg(feature = "enable_hyper")]
-#[inline]
-pub async fn check_status_extract_body(
-    resp: hyper::client::ResponseFuture,
-    expected_status_code: hyper::StatusCode,
-) -> Result<String, Error> {
-    let (status, body) = extract_status_and_body(resp).await?;
-    if status == expected_status_code {
-        Ok(body)
-    } else {
-        Err(HttpError::new_unexpected_status_code(expected_status_code, status, &body).into())
-    }
-}
-
-/// Extract the HTTP body from a `hyper` HTTP response, and check the response
-/// status is expected.
-#[cfg(feature = "enable_hyper")]
-pub async fn check_status_extract_body_2(
-    resp: hyper::Response<Body>,
-    expected_status: StatusCode,
-) -> Result<String, Error> {
-    let received_status = resp.status();
-    let body = body::to_bytes(resp.into_body())
-        .await
-        .map_err(HttpError::ReadBytes)?;
-    let s = String::from_utf8(body.to_vec())?;
-    debug!("body: {}", s);
-    if received_status != expected_status {
-        Err(HttpError::new_unexpected_status_code(expected_status, received_status, &s).into())
-    } else {
-        Ok(s)
-    }
 }
 
 #[cfg(test)]

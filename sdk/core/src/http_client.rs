@@ -68,41 +68,6 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-// TODO: To reimplement once the Request and Response are validated.
-//#[cfg(feature = "enable_hyper")]
-//#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-//#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-//impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
-//    async fn execute_request(
-//        &self,
-//        request: Request<Bytes>,
-//    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
-//        let mut hyper_request = hyper::Request::builder()
-//            .uri(request.uri())
-//            .method(request.method());
-//
-//        for header in request.headers() {
-//            hyper_request = hyper_request.header(header.0, header.1);
-//        }
-//
-//        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
-//
-//        let hyper_response = self.request(hyper_request).await?;
-//
-//        let mut response = Response::builder()
-//            .status(hyper_response.status())
-//            .version(hyper_response.version());
-//
-//        for (key, value) in hyper_response.headers() {
-//            response = response.header(key, value);
-//        }
-//
-//        let response = response.body(hyper::body::to_bytes(hyper_response.into_body()).await?)?;
-//
-//        Ok(response)
-//    }
-//}
-
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
