@@ -160,7 +160,7 @@ pub mod digital_twin_models {
                 client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
-                models: None,
+                models: Vec::new(),
             }
         }
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
@@ -172,11 +172,11 @@ pub mod digital_twin_models {
                 include_model_definition: None,
             }
         }
-        pub fn update(&self, id: impl Into<String>, update_model: impl Into<Vec<serde_json::Value>>) -> update::Builder {
+        pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 id: id.into(),
-                update_model: update_model.into(),
+                update_model,
                 traceparent: None,
                 tracestate: None,
             }
@@ -291,7 +291,7 @@ pub mod digital_twin_models {
                                 }
                                 let dependencies_for = &this.dependencies_for;
                                 for value in &this.dependencies_for {
-                                    url.query_pairs_mut().append_pair("dependenciesFor", &value.to_string());
+                                    url.query_pairs_mut().append_pair("dependenciesFor", value);
                                 }
                                 if let Some(include_model_definition) = &this.include_model_definition {
                                     url.query_pairs_mut()
@@ -360,7 +360,7 @@ pub mod digital_twin_models {
             pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
-            pub(crate) models: Option<Vec<serde_json::Value>>,
+            pub(crate) models: Vec<serde_json::Value>,
         }
         impl Builder {
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
@@ -371,8 +371,8 @@ pub mod digital_twin_models {
                 self.tracestate = Some(tracestate.into());
                 self
             }
-            pub fn models(mut self, models: impl Into<Vec<serde_json::Value>>) -> Self {
-                self.models = Some(models.into());
+            pub fn models(mut self, models: Vec<serde_json::Value>) -> Self {
+                self.models = models;
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -396,12 +396,8 @@ pub mod digital_twin_models {
                         if let Some(tracestate) = &this.tracestate {
                             req_builder = req_builder.header("tracestate", tracestate);
                         }
-                        let req_body = if let Some(models) = &this.models {
-                            req_builder = req_builder.header("content-type", "application/json");
-                            azure_core::to_json(models).map_err(Error::Serialize)?
-                        } else {
-                            azure_core::EMPTY_BODY
-                        };
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.models).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
@@ -832,11 +828,11 @@ pub mod digital_twins {
                 if_none_match: None,
             }
         }
-        pub fn update(&self, id: impl Into<String>, patch_document: impl Into<Vec<serde_json::Value>>) -> update::Builder {
+        pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 id: id.into(),
-                patch_document: patch_document.into(),
+                patch_document,
                 traceparent: None,
                 tracestate: None,
                 if_match: None,
@@ -880,13 +876,13 @@ pub mod digital_twins {
             &self,
             id: impl Into<String>,
             relationship_id: impl Into<String>,
-            patch_document: impl Into<Vec<serde_json::Value>>,
+            patch_document: Vec<serde_json::Value>,
         ) -> update_relationship::Builder {
             update_relationship::Builder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
-                patch_document: patch_document.into(),
+                patch_document,
                 traceparent: None,
                 tracestate: None,
                 if_match: None,
@@ -966,13 +962,13 @@ pub mod digital_twins {
             &self,
             id: impl Into<String>,
             component_path: impl Into<String>,
-            patch_document: impl Into<Vec<serde_json::Value>>,
+            patch_document: Vec<serde_json::Value>,
         ) -> update_component::Builder {
             update_component::Builder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
-                patch_document: patch_document.into(),
+                patch_document,
                 traceparent: None,
                 tracestate: None,
                 if_match: None,

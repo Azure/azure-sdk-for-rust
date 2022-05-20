@@ -3,7 +3,17 @@
  Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 This crate provides mechanisms for several ways to authenticate against Azure
 
-For example, to authenticate using the client credential flow, you can do the following:
+Several implementations of `azure_core::auth::TokenCredential` trait are available:
+
+- DefaultAzureCredential
+- EnvironmentCredential
+- ImdsManagedIdentityCredential
+- AzureCliCredential
+- AutoRefreshingTokenCredential
+
+There are several [examples](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/examples) available. The [service examples](https://github.com/Azure/azure-sdk-for-rust/tree/main/services#examples) mostly use `AzureCliCredential`.
+
+To authenticate using the client credential flow, you can do the following:
 
 ```rust
 use azure_identity::client_credentials_flow;
@@ -45,11 +55,4 @@ The supported authentication flows are:
 
 This crate also includes utilities for handling refresh tokens and accessing token credentials from many different sources.
 
-## Usage
-
-To set this crate as a dependency, add this to your Cargo.toml
-
-```toml
-[dependencies]
-azure_identity = "0.1"
-```
+A list of changes can be found in [CHANGELOG.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/CHANGELOG.md);

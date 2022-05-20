@@ -639,11 +639,11 @@ pub mod extensions {
                                 url.query_pairs_mut().append_pair("api-version", "2020-05-12-preview");
                                 let extension_ids = &this.extension_ids;
                                 for value in &this.extension_ids {
-                                    url.query_pairs_mut().append_pair("extensionIds", &value.to_string());
+                                    url.query_pairs_mut().append_pair("extensionIds", value);
                                 }
                                 let extension_categories = &this.extension_categories;
                                 for value in &this.extension_categories {
-                                    url.query_pairs_mut().append_pair("extensionCategories", &value.to_string());
+                                    url.query_pairs_mut().append_pair("extensionCategories", value);
                                 }
                                 if let Some(max_page_size) = &this.max_page_size {
                                     url.query_pairs_mut().append_pair("$maxPageSize", &max_page_size.to_string());
@@ -801,19 +801,19 @@ pub mod farm_beats_extensions {
                                 url.query_pairs_mut().append_pair("api-version", "2020-05-12-preview");
                                 let farm_beats_extension_ids = &this.farm_beats_extension_ids;
                                 for value in &this.farm_beats_extension_ids {
-                                    url.query_pairs_mut().append_pair("farmBeatsExtensionIds", &value.to_string());
+                                    url.query_pairs_mut().append_pair("farmBeatsExtensionIds", value);
                                 }
                                 let farm_beats_extension_names = &this.farm_beats_extension_names;
                                 for value in &this.farm_beats_extension_names {
-                                    url.query_pairs_mut().append_pair("farmBeatsExtensionNames", &value.to_string());
+                                    url.query_pairs_mut().append_pair("farmBeatsExtensionNames", value);
                                 }
                                 let extension_categories = &this.extension_categories;
                                 for value in &this.extension_categories {
-                                    url.query_pairs_mut().append_pair("extensionCategories", &value.to_string());
+                                    url.query_pairs_mut().append_pair("extensionCategories", value);
                                 }
                                 let publisher_ids = &this.publisher_ids;
                                 for value in &this.publisher_ids {
-                                    url.query_pairs_mut().append_pair("publisherIds", &value.to_string());
+                                    url.query_pairs_mut().append_pair("publisherIds", value);
                                 }
                                 if let Some(max_page_size) = &this.max_page_size {
                                     url.query_pairs_mut().append_pair("$maxPageSize", &max_page_size.to_string());

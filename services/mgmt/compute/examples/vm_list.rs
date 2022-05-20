@@ -5,7 +5,7 @@ az vm list --query [].id
 cargo run --package azure_mgmt_compute --example vm_list
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use futures::stream::StreamExt;
 use std::sync::Arc;
 

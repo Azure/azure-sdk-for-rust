@@ -1,5 +1,5 @@
 use azure_device_update::DeviceUpdateClient;
-use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
+use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
 use std::{env, sync::Arc};
 
 #[tokio::main]

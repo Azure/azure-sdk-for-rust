@@ -153,7 +153,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -179,7 +179,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -233,7 +233,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -294,7 +294,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -407,7 +407,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -445,7 +445,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
@@ -492,7 +492,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {

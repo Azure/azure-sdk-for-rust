@@ -10058,7 +10058,7 @@ pub mod script_executions {
                 resource_group_name: resource_group_name.into(),
                 private_cloud_name: private_cloud_name.into(),
                 script_execution_name: script_execution_name.into(),
-                script_output_stream_type: None,
+                script_output_stream_type: Vec::new(),
             }
         }
     }
@@ -10466,11 +10466,11 @@ pub mod script_executions {
             pub(crate) resource_group_name: String,
             pub(crate) private_cloud_name: String,
             pub(crate) script_execution_name: String,
-            pub(crate) script_output_stream_type: Option<Vec<String>>,
+            pub(crate) script_output_stream_type: Vec<String>,
         }
         impl Builder {
-            pub fn script_output_stream_type(mut self, script_output_stream_type: impl Into<Vec<String>>) -> Self {
-                self.script_output_stream_type = Some(script_output_stream_type.into());
+            pub fn script_output_stream_type(mut self, script_output_stream_type: Vec<String>) -> Self {
+                self.script_output_stream_type = script_output_stream_type;
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -10488,12 +10488,8 @@ pub mod script_executions {
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-12-01");
-                        let req_body = if let Some(script_output_stream_type) = &this.script_output_stream_type {
-                            req_builder = req_builder.header("content-type", "application/json");
-                            azure_core::to_json(script_output_stream_type).map_err(Error::Serialize)?
-                        } else {
-                            azure_core::EMPTY_BODY
-                        };
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.script_output_stream_type).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;

@@ -8,7 +8,7 @@ vm_size: STANDARD_D2_V2
 image reference: ImageReference { publisher: Some("canonical"), offer: Some("ubuntuserver"), sku: Some("18.04-lts"), version: Some("latest"), id: None }
 */
 
-use azure_identity::token_credentials::AzureCliCredential;
+use azure_identity::AzureCliCredential;
 use futures::stream::StreamExt;
 use std::sync::Arc;
 

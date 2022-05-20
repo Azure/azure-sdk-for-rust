@@ -327,6 +327,11 @@ mod tests {
     use super::*;
     use std::io;
 
+    #[allow(dead_code, unconditional_recursion)]
+    fn ensure_send<T: Send>() {
+        ensure_send::<Error>();
+    }
+
     #[derive(thiserror::Error, Debug)]
     enum IntermediateError {
         #[error("second error")]

@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate log;
 
-use azure_identity::{DefaultAzureCredential, TokenCredential};
+use azure_identity::AutoRefreshingTokenCredential;
+use azure_identity::DefaultAzureCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use std::error::Error;
@@ -21,18 +22,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token("https://storage.azure.com/")
-        .await?;
+    let creds = std::sync::Arc::new(DefaultAzureCredential::default());
+    let auto_creds = Box::new(AutoRefreshingTokenCredential::new(creds));
 
     let http_client = azure_core::new_http_client();
-    let blob_client = StorageAccountClient::new_bearer_token(
-        http_client.clone(),
-        &account,
-        bearer_token.token.secret(),
-    )
-    .as_container_client(&container)
-    .as_blob_client(&blob);
+    let blob_client =
+        StorageAccountClient::new_token_credential(http_client.clone(), &account, auto_creds)
+            .as_container_client(&container)
+            .as_blob_client(&blob);
 
     trace!("Requesting blob");
 
