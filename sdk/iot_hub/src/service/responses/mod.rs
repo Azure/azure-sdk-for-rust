@@ -6,7 +6,7 @@ mod module_identity_response;
 mod module_twin_response;
 mod query_response;
 
-pub use configuration_response::ConfigurationResponse;
+pub use configuration_response::{ConfigurationResponse, MultipleConfigurationResponse};
 pub use device_identity_response::DeviceIdentityResponse;
 pub use device_twin_response::DeviceTwinResponse;
 pub use invoke_method_response::InvokeMethodResponse;

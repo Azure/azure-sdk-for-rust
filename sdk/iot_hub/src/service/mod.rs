@@ -22,7 +22,7 @@ use crate::service::requests::{
 use crate::service::resources::identity::IdentityOperation;
 use crate::service::responses::{
     ConfigurationResponse, DeviceIdentityResponse, DeviceTwinResponse, ModuleIdentityResponse,
-    ModuleTwinResponse,
+    ModuleTwinResponse, MultipleConfigurationResponse,
 };
 
 /// The API version to use for any requests
@@ -677,7 +677,7 @@ impl ServiceClient {
         ApplyOnEdgeDeviceBuilder::new(self, device_id.into())
     }
 
-    /// Get the identity of a given module
+    /// Get a configuration
     ///
     /// ```
     /// use azure_core::HttpClient;
@@ -695,7 +695,22 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        get_configuration(self, configuration_id.into()).await
+        get_configuration(self, Some(configuration_id.into())).await
+    }
+
+    /// Get all configurations
+    ///
+    /// ```
+    /// use azure_core::HttpClient;
+    /// use azure_iot_hub::service::ServiceClient;
+    ///
+    /// # let http_client = azure_core::new_http_client();
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.get_configurations();
+    /// ```
+    pub async fn get_configurations(&self) -> crate::Result<MultipleConfigurationResponse> {
+        get_configuration(self, None).await
     }
 
     /// Prepares a request that can be used by any request builders.

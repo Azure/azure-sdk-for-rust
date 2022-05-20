@@ -22,5 +22,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         configuration
     );
 
+    let multiple_configurations = service_client.get_configurations().await?;
+    println!(
+        "Successfully retrieved all configurations '{:?}'",
+        multiple_configurations
+    );
+
     Ok(())
 }
