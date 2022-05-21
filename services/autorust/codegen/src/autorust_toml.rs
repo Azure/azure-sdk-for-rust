@@ -22,12 +22,17 @@ pub struct Tags {
     pub deny_contains_preview: Option<bool>,
     pub deny_contains_only: Option<bool>,
     pub limit: Option<i32>,
+    pub sort: Option<bool>,
 }
 
 impl<'a> PackageConfig {
     /// Filter the tags based on the configuration
     pub fn filter_tags(&self, tags: Vec<&'a Tag>) -> Vec<&'a Tag> {
         let mut tags = tags.clone();
+        if self.tags.sort.unwrap_or_default() {
+            tags.sort_by_key(|tag| tag.name());
+            tags.reverse();
+        }
         if !self.tags.allow.is_empty() {
             let allow: HashSet<&str> = self.tags.allow.iter().map(String::as_str).collect();
             tags = tags.into_iter().filter(|tag| allow.contains(tag.name())).collect();
@@ -88,6 +93,7 @@ mod tests {
     fn readme_tags() -> Vec<Tag> {
         let tags = vec![
             "package-2022-02-preview",
+            "package-2022-03",
             "package-2021-09",
             "package-2021-08",
             "package-2021-05",
@@ -212,7 +218,6 @@ mod tests {
         )?;
         let tags = config.filter_tags(tags);
         assert_eq!(3, tags.len());
-
         Ok(())
     }
 
@@ -230,7 +235,24 @@ mod tests {
         )?;
         let tags = config.filter_tags(tags);
         assert_eq!(len, tags.len());
+        Ok(())
+    }
 
+    #[test]
+    fn sort() -> Result<(), Error> {
+        let tags = readme_tags();
+        let len = tags.len();
+        let tags = tags.iter().collect();
+
+        let config: PackageConfig = toml::from_str(
+            r#"
+            [tags]
+            sort = true
+            "#,
+        )?;
+        let tags = config.filter_tags(tags);
+        assert_eq!(len, tags.len());
+        assert_eq!("package-2022-03", tags[0].name());
         Ok(())
     }
 }

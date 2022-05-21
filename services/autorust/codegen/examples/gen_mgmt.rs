@@ -336,6 +336,9 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
     let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
     let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
     let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    if package_config.tags.sort.is_none() {
+        package_config.tags.sort = Some(true);
+    }
     if package_config.tags.deny_contains_only.is_none() {
         package_config.tags.deny_contains_only = Some(true);
     }
