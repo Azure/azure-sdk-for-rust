@@ -23,9 +23,6 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
     ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
     ("maps", "package-1.0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    ("servicefabric", "6.2"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6.3"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6.4"),                   // invalid model TimeBasedBackupScheduleDescription
     ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
