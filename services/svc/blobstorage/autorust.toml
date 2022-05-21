@@ -1,1 +1,2 @@
-# tags_allow = ["package-2021-02"]
+# [tags]
+# allow = ["package-2021-02"]
