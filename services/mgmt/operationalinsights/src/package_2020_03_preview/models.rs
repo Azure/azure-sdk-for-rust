@@ -2,27 +2,6 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[doc = "The list of Log Analytics workspaces associated with the cluster."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssociatedWorkspace {
-    #[doc = "The id of the assigned workspace."]
-    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_id: Option<String>,
-    #[doc = "The name id the assigned workspace."]
-    #[serde(rename = "workspaceName", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_name: Option<String>,
-    #[doc = "The ResourceId id the assigned workspace."]
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[doc = "The time of workspace association."]
-    #[serde(rename = "associateDate", default, skip_serializing_if = "Option::is_none")]
-    pub associate_date: Option<String>,
-}
-impl AssociatedWorkspace {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Service Tier details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableServiceTier {
@@ -82,42 +61,6 @@ impl AzureEntityResource {
         Self::default()
     }
 }
-#[doc = "An Azure resource QueryPack-Query object"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AzureResourceProperties {
-    #[doc = "Azure resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Azure resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Azure resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Read only system data"]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-impl AzureResourceProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The Capacity Reservation properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CapacityReservationProperties {
-    #[doc = "The last time Sku was updated."]
-    #[serde(rename = "lastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
-    pub last_sku_update: Option<String>,
-    #[doc = "Minimum CapacityReservation value in GB."]
-    #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub min_capacity: Option<i64>,
-}
-impl CapacityReservationProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "The top level Log Analytics cluster resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Cluster {
@@ -141,6 +84,23 @@ impl Cluster {
             sku: None,
             properties: None,
         }
+    }
+}
+#[doc = "Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ClusterErrorResponse {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for ClusterErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
+impl ClusterErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The list clusters operation response."]
@@ -169,9 +129,6 @@ pub struct ClusterPatch {
     #[doc = "Log Analytics cluster patch properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterPatchProperties>,
-    #[doc = "Identity for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
     #[doc = "The cluster sku definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ClusterSku>,
@@ -190,9 +147,6 @@ pub struct ClusterPatchProperties {
     #[doc = "The key vault properties."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
-    #[doc = "Configures whether billing will be only on the cluster or each workspace will be billed by its proportional use. This does not change the overall billing, only how it will be distributed. Default value is 'Cluster'"]
-    #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
-    pub billing_type: Option<BillingType>,
 }
 impl ClusterPatchProperties {
     pub fn new() -> Self {
@@ -202,36 +156,18 @@ impl ClusterPatchProperties {
 #[doc = "Cluster properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
+    #[doc = "The link used to get the next page of recommendations."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
     #[doc = "The ID associated with the cluster."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The provisioning state of the cluster."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
-    #[doc = "Configures whether cluster will use double encryption. This Property can not be modified after cluster creation. Default value is 'true'"]
-    #[serde(rename = "isDoubleEncryptionEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_double_encryption_enabled: Option<bool>,
-    #[doc = "Sets whether the cluster will support availability zones. This can be set as true only in regions where Azure Data Explorer support Availability Zones. This Property can not be modified after cluster creation. Default value is 'true' if region supports Availability Zones."]
-    #[serde(rename = "isAvailabilityZonesEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_availability_zones_enabled: Option<bool>,
-    #[doc = "Configures whether billing will be only on the cluster or each workspace will be billed by its proportional use. This does not change the overall billing, only how it will be distributed. Default value is 'Cluster'"]
-    #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
-    pub billing_type: Option<BillingType>,
     #[doc = "The key vault properties."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
-    #[doc = "The last time the cluster was updated."]
-    #[serde(rename = "lastModifiedDate", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_date: Option<String>,
-    #[doc = "The cluster creation time"]
-    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
-    pub created_date: Option<String>,
-    #[doc = "The list of Log Analytics workspaces associated with the cluster"]
-    #[serde(rename = "associatedWorkspaces", default, skip_serializing_if = "Vec::is_empty")]
-    pub associated_workspaces: Vec<AssociatedWorkspace>,
-    #[doc = "The Capacity Reservation properties."]
-    #[serde(rename = "capacityReservationProperties", default, skip_serializing_if = "Option::is_none")]
-    pub capacity_reservation_properties: Option<CapacityReservationProperties>,
 }
 impl ClusterProperties {
     pub fn new() -> Self {
@@ -257,7 +193,7 @@ pub mod cluster_properties {
 pub struct ClusterSku {
     #[doc = "The capacity value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<cluster_sku::Capacity>,
+    pub capacity: Option<i64>,
     #[doc = "The name of the SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<cluster_sku::Name>,
@@ -269,78 +205,10 @@ impl ClusterSku {
 }
 pub mod cluster_sku {
     use super::*;
-    #[doc = "The capacity value"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Capacity {}
     #[doc = "The name of the SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         CapacityReservation,
-    }
-}
-#[doc = "Table column."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Column {
-    #[doc = "Column name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Column data type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<column::Type>,
-    #[doc = "Column data type logical hint."]
-    #[serde(rename = "dataTypeHint", default, skip_serializing_if = "Option::is_none")]
-    pub data_type_hint: Option<column::DataTypeHint>,
-    #[doc = "Column display name."]
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[doc = "Column description."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "Is displayed by default."]
-    #[serde(rename = "isDefaultDisplay", default, skip_serializing_if = "Option::is_none")]
-    pub is_default_display: Option<bool>,
-    #[doc = "Is column hidden."]
-    #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
-    pub is_hidden: Option<bool>,
-}
-impl Column {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod column {
-    use super::*;
-    #[doc = "Column data type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "string")]
-        String,
-        #[serde(rename = "int")]
-        Int,
-        #[serde(rename = "long")]
-        Long,
-        #[serde(rename = "real")]
-        Real,
-        #[serde(rename = "boolean")]
-        Boolean,
-        #[serde(rename = "dateTime")]
-        DateTime,
-        #[serde(rename = "guid")]
-        Guid,
-        #[serde(rename = "dynamic")]
-        Dynamic,
-    }
-    #[doc = "Column data type logical hint."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DataTypeHint {
-        #[serde(rename = "uri")]
-        Uri,
-        #[serde(rename = "guid")]
-        Guid,
-        #[serde(rename = "armPath")]
-        ArmPath,
-        #[serde(rename = "ip")]
-        Ip,
     }
 }
 #[doc = "The core summary of a search."]
@@ -361,6 +229,49 @@ impl CoreSummary {
         }
     }
 }
+#[doc = "Data collector log top level resource container."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataCollectorLog {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Data collector log properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataCollectorLogProperties>,
+}
+impl DataCollectorLog {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Data collector log properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataCollectorLogProperties {
+    #[doc = "Table's name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl DataCollectorLogProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Data collector log tables collection, all tables are scoped to the specified workspace."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataCollectorLogsListResult {
+    #[doc = "data collector log collection."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataCollectorLog>,
+}
+impl azure_core::Continuable for DataCollectorLogsListResult {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
+impl DataCollectorLogsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The top level data export resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataExport {
@@ -371,6 +282,23 @@ pub struct DataExport {
     pub properties: Option<DataExportProperties>,
 }
 impl DataExport {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataExportErrorResponse {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for DataExportErrorResponse {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
+impl DataExportErrorResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -581,9 +509,26 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
-#[doc = "The error detail."]
+#[doc = "Contains details when the response code indicates an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorDetail {
+pub struct ErrorContract {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for ErrorContract {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
+impl ErrorContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorResponse {
     #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -595,27 +540,10 @@ pub struct ErrorDetail {
     pub target: Option<String>,
     #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
+    pub details: Vec<ErrorResponse>,
     #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-impl ErrorDetail {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorResponse {
-    #[doc = "The error detail."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
-        None
-    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -631,12 +559,9 @@ pub struct Identity {
     #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[doc = "Type of managed service identity."]
+    #[doc = "The identity type."]
     #[serde(rename = "type")]
     pub type_: identity::Type,
-    #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
 }
 impl Identity {
     pub fn new(type_: identity::Type) -> Self {
@@ -644,31 +569,17 @@ impl Identity {
             principal_id: None,
             tenant_id: None,
             type_,
-            user_assigned_identities: None,
         }
     }
 }
 pub mod identity {
     use super::*;
-    #[doc = "Type of managed service identity."]
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
-        UserAssigned,
         None,
     }
-}
-#[doc = "The type of identity that creates/modifies resources"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IdentityType {
-    #[serde(rename = "user")]
-    User,
-    #[serde(rename = "application")]
-    Application,
-    #[serde(rename = "managedIdentity")]
-    ManagedIdentity,
-    #[serde(rename = "key")]
-    Key,
 }
 #[doc = "Intelligence Pack containing a string name and boolean indicating if it's enabled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -794,6 +705,7 @@ pub mod linked_storage_accounts_properties {
         CustomLogs,
         AzureWatson,
         Query,
+        Ingestion,
         Alerts,
     }
 }
@@ -810,201 +722,6 @@ impl LinkedStorageAccountsResource {
         Self {
             proxy_resource: ProxyResource::default(),
             properties,
-        }
-    }
-}
-#[doc = "An Log Analytics QueryPack definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPack {
-    #[serde(flatten)]
-    pub query_packs_resource: QueryPacksResource,
-    #[doc = "Properties that define a Log Analytics QueryPack resource."]
-    pub properties: LogAnalyticsQueryPackProperties,
-}
-impl LogAnalyticsQueryPack {
-    pub fn new(query_packs_resource: QueryPacksResource, properties: LogAnalyticsQueryPackProperties) -> Self {
-        Self {
-            query_packs_resource,
-            properties,
-        }
-    }
-}
-#[doc = "Describes the list of Log Analytics QueryPack resources."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPackListResult {
-    #[doc = "List of Log Analytics QueryPack definitions."]
-    pub value: Vec<LogAnalyticsQueryPack>,
-    #[doc = "The URI to get the next set of Log Analytics QueryPack definitions if too many QueryPacks where returned in the result set."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for LogAnalyticsQueryPackListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
-    }
-}
-impl LogAnalyticsQueryPackListResult {
-    pub fn new(value: Vec<LogAnalyticsQueryPack>) -> Self {
-        Self { value, next_link: None }
-    }
-}
-#[doc = "Properties that define a Log Analytics QueryPack resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogAnalyticsQueryPackProperties {
-    #[doc = "The unique ID of your application. This field cannot be changed."]
-    #[serde(rename = "queryPackId", default, skip_serializing_if = "Option::is_none")]
-    pub query_pack_id: Option<String>,
-    #[doc = "Creation Date for the Log Analytics QueryPack, in ISO 8601 format."]
-    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
-    pub time_created: Option<String>,
-    #[doc = "Last modified date of the Log Analytics QueryPack, in ISO 8601 format."]
-    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
-    pub time_modified: Option<String>,
-    #[doc = "Current state of this QueryPack: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Succeeded, Deploying, Canceled, and Failed."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-}
-impl LogAnalyticsQueryPackProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A Log Analytics QueryPack-Query definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogAnalyticsQueryPackQuery {
-    #[serde(flatten)]
-    pub azure_resource_properties: AzureResourceProperties,
-    #[doc = "Properties that define an Log Analytics QueryPack-Query resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LogAnalyticsQueryPackQueryProperties>,
-}
-impl LogAnalyticsQueryPackQuery {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Describes the list of Log Analytics QueryPack-Query resources."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPackQueryListResult {
-    #[doc = "List of Log Analytics QueryPack Query definitions."]
-    pub value: Vec<LogAnalyticsQueryPackQuery>,
-    #[doc = "The URI to get the next set of Log Analytics QueryPack definitions if too many QueryPack-Queries where returned in the result set."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for LogAnalyticsQueryPackQueryListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
-    }
-}
-impl LogAnalyticsQueryPackQueryListResult {
-    pub fn new(value: Vec<LogAnalyticsQueryPackQuery>) -> Self {
-        Self { value, next_link: None }
-    }
-}
-#[doc = "Properties that define an Log Analytics QueryPack-Query resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPackQueryProperties {
-    #[doc = "The unique ID of your application. This field cannot be changed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Unique display name for your query within the Query Pack."]
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[doc = "Creation Date for the Log Analytics Query, in ISO 8601 format."]
-    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
-    pub time_created: Option<String>,
-    #[doc = "Last modified date of the Log Analytics Query, in ISO 8601 format."]
-    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
-    pub time_modified: Option<String>,
-    #[doc = "Object Id of user creating the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub author: Option<String>,
-    #[doc = "Description of the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "Body of the query."]
-    pub body: String,
-    #[doc = "The related metadata items for the function."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub related: Option<log_analytics_query_pack_query_properties::Related>,
-    #[doc = "Tags associated with the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "Additional properties that can be set for the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-impl LogAnalyticsQueryPackQueryProperties {
-    pub fn new(display_name: String, body: String) -> Self {
-        Self {
-            id: None,
-            display_name,
-            time_created: None,
-            time_modified: None,
-            author: None,
-            description: None,
-            body,
-            related: None,
-            tags: None,
-            properties: None,
-        }
-    }
-}
-pub mod log_analytics_query_pack_query_properties {
-    use super::*;
-    #[doc = "The related metadata items for the function."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Related {
-        #[doc = "The related categories for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub categories: Vec<String>,
-        #[doc = "The related resource types for the function."]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
-        pub resource_types: Vec<String>,
-        #[doc = "The related Log Analytics solutions for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub solutions: Vec<String>,
-    }
-    impl Related {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-}
-#[doc = "Properties that define an Log Analytics QueryPack-Query search properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogAnalyticsQueryPackQuerySearchProperties {
-    #[doc = "The related metadata items for the function."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub related: Option<log_analytics_query_pack_query_search_properties::Related>,
-    #[doc = "Tags associated with the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-impl LogAnalyticsQueryPackQuerySearchProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod log_analytics_query_pack_query_search_properties {
-    use super::*;
-    #[doc = "The related metadata items for the function."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Related {
-        #[doc = "The related categories for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub categories: Vec<String>,
-        #[doc = "The related resource types for the function."]
-        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
-        pub resource_types: Vec<String>,
-        #[doc = "The related Log Analytics solutions for the function."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub solutions: Vec<String>,
-    }
-    impl Related {
-        pub fn new() -> Self {
-            Self::default()
         }
     }
 }
@@ -1153,7 +870,7 @@ pub struct OperationStatus {
     #[doc = "The status of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -1199,35 +916,6 @@ impl Default for PublicNetworkAccessType {
         Self::Enabled
     }
 }
-#[doc = "An azure resource object"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryPacksResource {
-    #[doc = "Azure resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Azure resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Azure resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-impl QueryPacksResource {
-    pub fn new(location: String) -> Self {
-        Self {
-            id: None,
-            name: None,
-            type_: None,
-            location,
-            tags: None,
-        }
-    }
-}
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -1246,45 +934,12 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Restore parameters."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RestoredLogs {
-    #[doc = "The timestamp to start the restore from (UTC)."]
-    #[serde(rename = "startRestoreTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_restore_time: Option<String>,
-    #[doc = "The timestamp to end the restore by (UTC)."]
-    #[serde(rename = "endRestoreTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_restore_time: Option<String>,
-    #[doc = "The table to restore data from."]
-    #[serde(rename = "sourceTable", default, skip_serializing_if = "Option::is_none")]
-    pub source_table: Option<String>,
-}
-impl RestoredLogs {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Search job execution statistics."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResultStatistics {
-    #[doc = "Search job completion percentage."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub progress: Option<f64>,
-    #[doc = "The number of rows that were returned by the search job."]
-    #[serde(rename = "ingestedRecords", default, skip_serializing_if = "Option::is_none")]
-    pub ingested_records: Option<i32>,
-}
-impl ResultStatistics {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Value object for saved search results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearch {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "The ETag of the saved search. To override an existing saved search, use \"*\" or specify the current Etag"]
+    #[doc = "The ETag of the saved search."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "Value object for saved search results."]
@@ -1345,80 +1000,6 @@ pub struct SavedSearchesListResult {
 impl SavedSearchesListResult {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Table's schema."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Schema {
-    #[doc = "Table name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Table display name."]
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[doc = "Table description."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "A list of table custom columns."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub columns: Vec<Column>,
-    #[doc = "A list of table standard columns."]
-    #[serde(rename = "standardColumns", default, skip_serializing_if = "Vec::is_empty")]
-    pub standard_columns: Vec<Column>,
-    #[doc = "Table category."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub categories: Vec<String>,
-    #[doc = "Table labels."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<String>,
-    #[doc = "Table's creator."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<schema::Source>,
-    #[doc = "Table's creator."]
-    #[serde(rename = "tableType", default, skip_serializing_if = "Option::is_none")]
-    pub table_type: Option<schema::TableType>,
-    #[doc = "The subtype describes what APIs can be used to interact with the table, and what features are available against it."]
-    #[serde(rename = "tableSubType", default, skip_serializing_if = "Option::is_none")]
-    pub table_sub_type: Option<schema::TableSubType>,
-    #[doc = "List of solutions the table is affiliated with"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub solutions: Vec<String>,
-    #[doc = "Parameters of the search job that initiated this table."]
-    #[serde(rename = "searchResults", default, skip_serializing_if = "Option::is_none")]
-    pub search_results: Option<SearchResults>,
-    #[doc = "Restore parameters."]
-    #[serde(rename = "restoredLogs", default, skip_serializing_if = "Option::is_none")]
-    pub restored_logs: Option<RestoredLogs>,
-}
-impl Schema {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod schema {
-    use super::*;
-    #[doc = "Table's creator."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Source {
-        #[serde(rename = "microsoft")]
-        Microsoft,
-        #[serde(rename = "customer")]
-        Customer,
-    }
-    #[doc = "Table's creator."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TableType {
-        Microsoft,
-        CustomLog,
-        RestoredLogs,
-        SearchResults,
-    }
-    #[doc = "The subtype describes what APIs can be used to interact with the table, and what features are available against it."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TableSubType {
-        Any,
-        Classic,
-        DataCollectionRuleBased,
     }
 }
 #[doc = "The get schema operation response."]
@@ -1507,33 +1088,6 @@ pub struct SearchMetadataSchema {
     pub version: Option<i32>,
 }
 impl SearchMetadataSchema {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Parameters of the search job that initiated this table."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SearchResults {
-    #[doc = "Search job query."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-    #[doc = "Search job Description."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "Limit the search job to return up to specified number of rows."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
-    #[doc = "The timestamp to start the search from (UTC)"]
-    #[serde(rename = "startSearchTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_search_time: Option<String>,
-    #[doc = "The timestamp to end the search by (UTC)"]
-    #[serde(rename = "endSearchTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_search_time: Option<String>,
-    #[doc = "The table used in the search job."]
-    #[serde(rename = "sourceTable", default, skip_serializing_if = "Option::is_none")]
-    pub source_table: Option<String>,
-}
-impl SearchResults {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1718,33 +1272,6 @@ pub mod storage_insight_status {
         Error,
     }
 }
-#[doc = "Read only system data"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SystemData {
-    #[doc = "An identifier for the identity that created the resource"]
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<IdentityType>,
-    #[doc = "The timestamp of resource creation (UTC)"]
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[doc = "An identifier for the identity that last modified the resource"]
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<IdentityType>,
-    #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-impl SystemData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Workspace data table definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Table {
@@ -1753,9 +1280,6 @@ pub struct Table {
     #[doc = "Table properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TableProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl Table {
     pub fn new() -> Self {
@@ -1765,56 +1289,13 @@ impl Table {
 #[doc = "Table properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableProperties {
-    #[doc = "The table retention in days, between 4 and 730. Setting this property to -1 will default to the workspace retention."]
+    #[doc = "The data table data retention in days, between 30 and 730. Setting this property to null will default to the workspace retention."]
     #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i32>,
-    #[doc = "The table total retention in days, between 4 and 2555. Setting this property to -1 will default to table retention."]
-    #[serde(rename = "totalRetentionInDays", default, skip_serializing_if = "Option::is_none")]
-    pub total_retention_in_days: Option<i32>,
-    #[doc = "The table data archive retention in days. Calculated as (totalRetentionInDays-retentionInDays)"]
-    #[serde(rename = "archiveRetentionInDays", default, skip_serializing_if = "Option::is_none")]
-    pub archive_retention_in_days: Option<i32>,
-    #[doc = "Parameters of the search job that initiated this table."]
-    #[serde(rename = "searchResults", default, skip_serializing_if = "Option::is_none")]
-    pub search_results: Option<SearchResults>,
-    #[doc = "Restore parameters."]
-    #[serde(rename = "restoredLogs", default, skip_serializing_if = "Option::is_none")]
-    pub restored_logs: Option<RestoredLogs>,
-    #[doc = "Search job execution statistics."]
-    #[serde(rename = "resultStatistics", default, skip_serializing_if = "Option::is_none")]
-    pub result_statistics: Option<ResultStatistics>,
-    #[doc = "Instruct the system how to handle and charge the logs ingested to this table."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<table_properties::Plan>,
-    #[doc = "The timestamp that table plan was last modified (UTC)."]
-    #[serde(rename = "lastPlanModifiedDate", default, skip_serializing_if = "Option::is_none")]
-    pub last_plan_modified_date: Option<String>,
-    #[doc = "Table's schema."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schema: Option<Schema>,
-    #[doc = "Table's current provisioning state. If set to 'updating', indicates a resource lock due to ongoing operation, forbidding any update to the table until the ongoing operation is concluded."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<table_properties::ProvisioningState>,
 }
 impl TableProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod table_properties {
-    use super::*;
-    #[doc = "Instruct the system how to handle and charge the logs ingested to this table."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Plan {
-        Basic,
-        Analytics,
-    }
-    #[doc = "Table's current provisioning state. If set to 'updating', indicates a resource lock due to ongoing operation, forbidding any update to the table until the ongoing operation is concluded."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Updating,
-        InProgress,
-        Succeeded,
     }
 }
 #[doc = "The list tables operation response."]
@@ -1845,18 +1326,6 @@ pub struct Tag {
 impl Tag {
     pub fn new(name: String, value: String) -> Self {
         Self { name, value }
-    }
-}
-#[doc = "A container holding only the Tags for a resource, allowing the user to update the tags on a QueryPack instance."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct TagsResource {
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-impl TagsResource {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
@@ -1906,21 +1375,6 @@ impl UsageMetric {
         Self::default()
     }
 }
-#[doc = "User assigned identity properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UserIdentityProperties {
-    #[doc = "The principal id of user assigned identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The client id of user assigned identity."]
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-}
-impl UserIdentityProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "The top level Workspace resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Workspace {
@@ -1929,9 +1383,6 @@ pub struct Workspace {
     #[doc = "Workspace properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
     #[doc = "The ETag of the workspace."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -1941,7 +1392,6 @@ impl Workspace {
         Self {
             tracked_resource,
             properties: None,
-            system_data: None,
             e_tag: None,
         }
     }
@@ -1949,7 +1399,7 @@ impl Workspace {
 #[doc = "The daily volume cap for ingestion."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceCapping {
-    #[doc = "The workspace daily quota for ingestion."]
+    #[doc = "The workspace daily quota for ingestion. -1 means unlimited."]
     #[serde(rename = "dailyQuotaGb", default, skip_serializing_if = "Option::is_none")]
     pub daily_quota_gb: Option<f64>,
     #[doc = "The time when the quota will be rest."]
@@ -1975,34 +1425,6 @@ pub mod workspace_capping {
         OverQuota,
         SubscriptionSuspended,
         ApproachingQuota,
-    }
-}
-#[doc = "Workspace features."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct WorkspaceFeatures {
-    #[doc = "Flag that indicate if data should be exported."]
-    #[serde(rename = "enableDataExport", default, skip_serializing_if = "Option::is_none")]
-    pub enable_data_export: Option<bool>,
-    #[doc = "Flag that describes if we want to remove the data after 30 days."]
-    #[serde(rename = "immediatePurgeDataOn30Days", default, skip_serializing_if = "Option::is_none")]
-    pub immediate_purge_data_on30_days: Option<bool>,
-    #[doc = "Flag that indicate which permission to use - resource or workspace or both."]
-    #[serde(
-        rename = "enableLogAccessUsingOnlyResourcePermissions",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub enable_log_access_using_only_resource_permissions: Option<bool>,
-    #[doc = "Dedicated LA cluster resourceId that is linked to the workspaces."]
-    #[serde(rename = "clusterResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_resource_id: Option<String>,
-    #[doc = "Disable Non-AAD based Auth."]
-    #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
-    pub disable_local_auth: Option<bool>,
-}
-impl WorkspaceFeatures {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The list workspace management groups operation response."]
@@ -2085,36 +1507,21 @@ pub struct WorkspaceProperties {
     #[doc = "The SKU (tier) of a workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<WorkspaceSku>,
-    #[doc = "The workspace data retention in days. Allowed values are per pricing plan. See pricing tiers documentation for details."]
+    #[doc = "The workspace data retention in days. -1 means Unlimited retention for the Unlimited Sku. 730 days is the maximum allowed for all other Skus. "]
     #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i32>,
     #[doc = "The daily volume cap for ingestion."]
     #[serde(rename = "workspaceCapping", default, skip_serializing_if = "Option::is_none")]
     pub workspace_capping: Option<WorkspaceCapping>,
-    #[doc = "Workspace creation date."]
-    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
-    pub created_date: Option<String>,
-    #[doc = "Workspace modification date."]
-    #[serde(rename = "modifiedDate", default, skip_serializing_if = "Option::is_none")]
-    pub modified_date: Option<String>,
     #[doc = "The network access type for operating on the Log Analytics Workspace. By default it is Enabled"]
     #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
     #[doc = "The network access type for operating on the Log Analytics Workspace. By default it is Enabled"]
     #[serde(rename = "publicNetworkAccessForQuery", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
-    #[doc = "Indicates whether customer managed storage is mandatory for query management."]
-    #[serde(rename = "forceCmkForQuery", default, skip_serializing_if = "Option::is_none")]
-    pub force_cmk_for_query: Option<bool>,
     #[doc = "List of linked private link scope resources."]
     #[serde(rename = "privateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
-    #[doc = "Workspace features."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub features: Option<WorkspaceFeatures>,
-    #[doc = "The resource ID of the default Data Collection Rule to use for this workspace. Expected format is - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Insights/dataCollectionRules/{dcrName}."]
-    #[serde(rename = "defaultDataCollectionRuleResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub default_data_collection_rule_resource_id: Option<String>,
 }
 impl WorkspaceProperties {
     pub fn new() -> Self {
@@ -2208,9 +1615,12 @@ pub mod workspace_purge_status_response {
 pub struct WorkspaceSku {
     #[doc = "The name of the SKU."]
     pub name: workspace_sku::Name,
-    #[doc = "The capacity reservation level in GB for this workspace, when CapacityReservation sku is selected."]
+    #[doc = "The capacity reservation level for this workspace, when CapacityReservation sku is selected."]
     #[serde(rename = "capacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
-    pub capacity_reservation_level: Option<workspace_sku::CapacityReservationLevel>,
+    pub capacity_reservation_level: Option<i32>,
+    #[doc = "The maximum capacity reservation level available for this workspace, when CapacityReservation sku is selected."]
+    #[serde(rename = "maxCapacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
+    pub max_capacity_reservation_level: Option<i32>,
     #[doc = "The last time when the sku was updated."]
     #[serde(rename = "lastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
     pub last_sku_update: Option<String>,
@@ -2220,6 +1630,7 @@ impl WorkspaceSku {
         Self {
             name,
             capacity_reservation_level: None,
+            max_capacity_reservation_level: None,
             last_sku_update: None,
         }
     }
@@ -2237,18 +1648,7 @@ pub mod workspace_sku {
         PerGb2018,
         Standalone,
         CapacityReservation,
-        #[serde(rename = "LACluster")]
-        LaCluster,
     }
-    #[doc = "The capacity reservation level in GB for this workspace, when CapacityReservation sku is selected."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CapacityReservationLevel {}
-}
-#[doc = "Configures whether billing will be only on the cluster or each workspace will be billed by its proportional use. This does not change the overall billing, only how it will be distributed. Default value is 'Cluster'"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum BillingType {
-    Cluster,
-    Workspaces,
 }
 #[doc = "The key vault properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2262,58 +1662,9 @@ pub struct KeyVaultProperties {
     #[doc = "The version of the key associated with the Log Analytics cluster."]
     #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
-    #[doc = "Selected key minimum required size."]
-    #[serde(rename = "keyRsaSize", default, skip_serializing_if = "Option::is_none")]
-    pub key_rsa_size: Option<i32>,
 }
 impl KeyVaultProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Metadata pertaining to creation and last modification of the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SystemData {
-    #[doc = "The identity that created the resource."]
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[doc = "The identity that last modified the resource."]
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-impl SystemData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod system_data {
-    use super::*;
-    #[doc = "The type of identity that created the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[doc = "The type of identity that last modified the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
     }
 }

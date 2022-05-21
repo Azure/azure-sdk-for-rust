@@ -9,7 +9,7 @@ use std::{collections::HashMap, fs};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
-const ONLY_SERVICES: &[&str] = &[];
+const ONLY_SERVICES: &[&str] = &["operationalinsights"];
 
 const SKIP_SERVICES: &[&str] = &[
     "datamigration",
