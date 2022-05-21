@@ -340,7 +340,7 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
         package_config.tags.deny_contains_only = Some(true);
     }
     if package_config.tags.limit.is_none() {
-        package_config.tags.limit = Some(3);
+        package_config.tags.limit = Some(5);
     }
     // TODO remove skip_service_tags and use the autorust.toml files
     let tags = spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
