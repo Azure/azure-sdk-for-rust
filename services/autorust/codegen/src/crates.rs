@@ -12,19 +12,11 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 fn list_dirs_in(dir: impl AsRef<Utf8Path>) -> Result<Vec<Utf8PathBuf>> {
     let mut dirs = Vec::new();
     let paths = fs::read_dir(dir.as_ref())?;
-    for path in paths {
-        match path {
-            Ok(path) => match Utf8Path::from_path(&path.path()) {
-                Some(path) => {
-                    if path.is_dir() {
-                        if path.join("Cargo.toml").exists() {
-                            dirs.push(path.to_path_buf());
-                        }
-                    }
-                }
-                None => (),
-            },
-            Err(_) => (),
+    for path in paths.flatten() {
+        if let Some(path) = Utf8Path::from_path(&path.path()) {
+            if path.is_dir() && path.join("Cargo.toml").exists() {
+                dirs.push(path.to_path_buf());
+            }
         }
     }
     Ok(dirs)
