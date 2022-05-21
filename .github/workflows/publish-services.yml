@@ -1,0 +1,2311 @@
+name: Publish All Services
+
+on:
+  workflow_dispatch:
+
+# Do NOT add your CARGO_REGISTRY_TOKEN to Azure/azure-sdk-for-rust repository. Only add it to your repository.
+# The publish actions are intended for running in your own fork where only you have access to run the actions.
+env:
+  CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+jobs:
+
+  azure_mgmt_activedirectory:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_activedirectory
+
+  azure_mgmt_addons:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_addons
+
+  azure_mgmt_adhybridhealthservice:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_adhybridhealthservice
+
+  azure_mgmt_adp:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_adp
+
+  azure_mgmt_advisor:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_advisor
+
+  azure_mgmt_agrifood:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_agrifood
+
+  azure_mgmt_alertsmanagement:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_alertsmanagement
+
+  azure_mgmt_analysisservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_analysisservices
+
+  azure_mgmt_apimanagement:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_apimanagement
+
+  azure_mgmt_app:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_app
+
+  azure_mgmt_appconfiguration:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_appconfiguration
+
+  azure_mgmt_applicationinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_applicationinsights
+
+  azure_mgmt_appplatform:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_appplatform
+
+  azure_mgmt_arcdata:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_arcdata
+
+  azure_mgmt_attestation:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_attestation
+
+  azure_mgmt_authorization:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_authorization
+
+  azure_mgmt_automanage:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_automanage
+
+  azure_mgmt_automation:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_automation
+
+  azure_mgmt_baremetalinfrastructure:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_baremetalinfrastructure
+
+  azure_mgmt_batch:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_batch
+
+  azure_mgmt_billing:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_billing
+
+  azure_mgmt_blockchain:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_blockchain
+
+  azure_mgmt_blueprint:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_blueprint
+
+  azure_mgmt_botservice:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_botservice
+
+  azure_mgmt_cdn:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_cdn
+
+  azure_mgmt_changeanalysis:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_changeanalysis
+
+  azure_mgmt_chaos:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_chaos
+
+  azure_mgmt_cloudshell:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_cloudshell
+
+  azure_mgmt_cognitiveservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_cognitiveservices
+
+  azure_mgmt_commerce:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_commerce
+
+  azure_mgmt_communication:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_communication
+
+  azure_mgmt_compute:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_compute
+
+  azure_mgmt_confidentialledger:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_confidentialledger
+
+  azure_mgmt_confluent:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_confluent
+
+  azure_mgmt_connectedvmware:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_connectedvmware
+
+  azure_mgmt_consumption:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_consumption
+
+  azure_mgmt_containerinstance:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_containerinstance
+
+  azure_mgmt_containerregistry:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_containerregistry
+
+  azure_mgmt_containerservice:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_containerservice
+
+  azure_mgmt_cosmosdb:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_cosmosdb
+
+  azure_mgmt_costmanagement:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_costmanagement
+
+  azure_mgmt_cpim:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_cpim
+
+  azure_mgmt_customerinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_customerinsights
+
+  azure_mgmt_customerlockbox:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_customerlockbox
+
+  azure_mgmt_customproviders:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_customproviders
+
+  azure_mgmt_dashboard:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_dashboard
+
+  azure_mgmt_data:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_data
+
+  azure_mgmt_databox:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_databox
+
+  azure_mgmt_databoxedge:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_databoxedge
+
+  azure_mgmt_databricks:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_databricks
+
+  azure_mgmt_datacatalog:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_datacatalog
+
+  azure_mgmt_datadog:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_datadog
+
+  azure_mgmt_datafactory:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_datafactory
+
+  azure_mgmt_datalakeanalytics:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_datalakeanalytics
+
+  azure_mgmt_datalakestore:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_datalakestore
+
+  azure_mgmt_dataprotection:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_dataprotection
+
+  azure_mgmt_datashare:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_datashare
+
+  azure_mgmt_deploymentmanager:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_deploymentmanager
+
+  azure_mgmt_desktopvirtualization:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_desktopvirtualization
+
+  azure_mgmt_deviceupdate:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_deviceupdate
+
+  azure_mgmt_devops:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_devops
+
+  azure_mgmt_devspaces:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_devspaces
+
+  azure_mgmt_devtestlabs:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_devtestlabs
+
+  azure_mgmt_dfp:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_dfp
+
+  azure_mgmt_digitaltwins:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_digitaltwins
+
+  azure_mgmt_dns:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_dns
+
+  azure_mgmt_dnsresolver:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_dnsresolver
+
+  azure_mgmt_domainservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_domainservices
+
+  azure_mgmt_edgeorder:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_edgeorder
+
+  azure_mgmt_edgeorderpartner:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_edgeorderpartner
+
+  azure_mgmt_education:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_education
+
+  azure_mgmt_elastic:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_elastic
+
+  azure_mgmt_elasticsan:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_elasticsan
+
+  azure_mgmt_engagementfabric:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_engagementfabric
+
+  azure_mgmt_enterpriseknowledgegraph:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_enterpriseknowledgegraph
+
+  azure_mgmt_eventgrid:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_eventgrid
+
+  azure_mgmt_eventhub:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_eventhub
+
+  azure_mgmt_extendedlocation:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_extendedlocation
+
+  azure_mgmt_fluidrelay:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_fluidrelay
+
+  azure_mgmt_frontdoor:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_frontdoor
+
+  azure_mgmt_guestconfiguration:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_guestconfiguration
+
+  azure_mgmt_hanaon:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hanaon
+
+  azure_mgmt_hardwaresecuritymodules:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hardwaresecuritymodules
+
+  azure_mgmt_hdinsight:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hdinsight
+
+  azure_mgmt_healthbot:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_healthbot
+
+  azure_mgmt_healthcareapis:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_healthcareapis
+
+  azure_mgmt_hybridcompute:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hybridcompute
+
+  azure_mgmt_hybridconnectivity:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hybridconnectivity
+
+  azure_mgmt_hybriddatamanager:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hybriddatamanager
+
+  azure_mgmt_hybridkubernetes:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hybridkubernetes
+
+  azure_mgmt_hybridnetwork:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_hybridnetwork
+
+  azure_mgmt_imagebuilder:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_imagebuilder
+
+  azure_mgmt_intune:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_intune
+
+  azure_mgmt_iotcentral:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_iotcentral
+
+  azure_mgmt_iothub:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_iothub
+
+  azure_mgmt_keyvault:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_keyvault
+
+  azure_mgmt_kubernetesconfiguration:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_kubernetesconfiguration
+
+  azure_mgmt_kusto:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_kusto
+
+  azure_mgmt_labservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_labservices
+
+  azure_mgmt_loadtestservice:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_loadtestservice
+
+  azure_mgmt_logic:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_logic
+
+  azure_mgmt_logz:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_logz
+
+  azure_mgmt_machinelearning:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_machinelearning
+
+  azure_mgmt_machinelearningcompute:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_machinelearningcompute
+
+  azure_mgmt_machinelearningexperimentation:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_machinelearningexperimentation
+
+  azure_mgmt_machinelearningservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_machinelearningservices
+
+  azure_mgmt_maintenance:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_maintenance
+
+  azure_mgmt_managednetwork:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_managednetwork
+
+  azure_mgmt_managedservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_managedservices
+
+  azure_mgmt_managementgroups:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_managementgroups
+
+  azure_mgmt_managementpartner:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_managementpartner
+
+  azure_mgmt_maps:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_maps
+
+  azure_mgmt_mariadb:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_mariadb
+
+  azure_mgmt_marketplacenotifications:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_marketplacenotifications
+
+  azure_mgmt_marketplaceordering:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_marketplaceordering
+
+  azure_mgmt_mediaservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_mediaservices
+
+  azure_mgmt_migrate:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_migrate
+
+  azure_mgmt_migrateprojects:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_migrateprojects
+
+  azure_mgmt_mobilenetwork:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_mobilenetwork
+
+  azure_mgmt_monitor:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_monitor
+
+  azure_mgmt_msi:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_msi
+
+  azure_mgmt_mysql:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_mysql
+
+  azure_mgmt_netapp:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_netapp
+
+  azure_mgmt_network:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_network
+
+  azure_mgmt_notificationhubs:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_notificationhubs
+
+  azure_mgmt_oep:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_oep
+
+  azure_mgmt_operationalinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_operationalinsights
+
+  azure_mgmt_operationsmanagement:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_operationsmanagement
+
+  azure_mgmt_orbital:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_orbital
+
+  azure_mgmt_peering:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_peering
+
+  azure_mgmt_policyinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_policyinsights
+
+  azure_mgmt_portal:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_portal
+
+  azure_mgmt_postgresql:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_postgresql
+
+  azure_mgmt_postgresqlhsc:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_postgresqlhsc
+
+  azure_mgmt_powerbidedicated:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_powerbidedicated
+
+  azure_mgmt_powerbiembedded:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_powerbiembedded
+
+  azure_mgmt_powerbiprivatelinks:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_powerbiprivatelinks
+
+  azure_mgmt_powerplatform:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_powerplatform
+
+  azure_mgmt_privatedns:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_privatedns
+
+  azure_mgmt_providerhub:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_providerhub
+
+  azure_mgmt_purview:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_purview
+
+  azure_mgmt_quantum:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_quantum
+
+  azure_mgmt_quota:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_quota
+
+  azure_mgmt_recommendationsservice:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_recommendationsservice
+
+  azure_mgmt_recoveryservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_recoveryservices
+
+  azure_mgmt_recoveryservicesbackup:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_recoveryservicesbackup
+
+  azure_mgmt_recoveryservicessiterecovery:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_recoveryservicessiterecovery
+
+  azure_mgmt_redhatopenshift:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_redhatopenshift
+
+  azure_mgmt_redis:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_redis
+
+  azure_mgmt_redisenterprise:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_redisenterprise
+
+  azure_mgmt_relay:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_relay
+
+  azure_mgmt_reservations:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_reservations
+
+  azure_mgmt_resourceconnector:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_resourceconnector
+
+  azure_mgmt_resourcegraph:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_resourcegraph
+
+  azure_mgmt_resourcehealth:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_resourcehealth
+
+  azure_mgmt_resourcemover:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_resourcemover
+
+  azure_mgmt_resources:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_resources
+
+  azure_mgmt_saas:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_saas
+
+  azure_mgmt_scheduler:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_scheduler
+
+  azure_mgmt_scvmm:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_scvmm
+
+  azure_mgmt_search:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_search
+
+  azure_mgmt_security:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_security
+
+  azure_mgmt_securityandcompliance:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_securityandcompliance
+
+  azure_mgmt_securityinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_securityinsights
+
+  azure_mgmt_serialconsole:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_serialconsole
+
+  azure_mgmt_servicebus:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_servicebus
+
+  azure_mgmt_servicefabricmesh:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_servicefabricmesh
+
+  azure_mgmt_servicelinker:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_servicelinker
+
+  azure_mgmt_signalr:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_signalr
+
+  azure_mgmt_softwareplan:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_softwareplan
+
+  azure_mgmt_solutions:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_solutions
+
+  azure_mgmt_sql:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_sql
+
+  azure_mgmt_sqlvirtualmachine:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_sqlvirtualmachine
+
+  azure_mgmt_stack:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_stack
+
+  azure_mgmt_storage:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storage
+
+  azure_mgmt_storagecache:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storagecache
+
+  azure_mgmt_storageimportexport:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storageimportexport
+
+  azure_mgmt_storagepool:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storagepool
+
+  azure_mgmt_storagesync:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storagesync
+
+  azure_mgmt_storsimple1200series:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storsimple1200series
+
+  azure_mgmt_storsimple8000series:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_storsimple8000series
+
+  azure_mgmt_streamanalytics:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_streamanalytics
+
+  azure_mgmt_subscription:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_subscription
+
+  azure_mgmt_support:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_support
+
+  azure_mgmt_synapse:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_synapse
+
+  azure_mgmt_testbase:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_testbase
+
+  azure_mgmt_timeseriesinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_timeseriesinsights
+
+  azure_mgmt_trafficmanager:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_trafficmanager
+
+  azure_mgmt_vi:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_vi
+
+  azure_mgmt_videoanalyzer:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_videoanalyzer
+
+  azure_mgmt_visualstudio:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_visualstudio
+
+  azure_mgmt_vmware:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_vmware
+
+  azure_mgmt_vmwarecloudsimple:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_vmwarecloudsimple
+
+  azure_mgmt_web:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_web
+
+  azure_mgmt_webpubsub:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_webpubsub
+
+  azure_mgmt_windowsesu:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_windowsesu
+
+  azure_mgmt_windowsiot:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_windowsiot
+
+  azure_mgmt_workloadmonitor:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_mgmt_workloadmonitor
+
+  azure_svc_appconfiguration:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_appconfiguration
+
+  azure_svc_applicationinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_applicationinsights
+
+  azure_svc_attestation:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_attestation
+
+  azure_svc_batch:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_batch
+
+  azure_svc_blobstorage:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_blobstorage
+
+  azure_svc_confidentialledger:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_confidentialledger
+
+  azure_svc_containerregistry:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_containerregistry
+
+  azure_svc_cosmosdb:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_cosmosdb
+
+  azure_svc_datalakeanalytics:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_datalakeanalytics
+
+  azure_svc_deviceprovisioningservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_deviceprovisioningservices
+
+  azure_svc_deviceupdate:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_deviceupdate
+
+  azure_svc_digitaltwins:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_digitaltwins
+
+  azure_svc_eventgrid:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_eventgrid
+
+  azure_svc_filestorage:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_filestorage
+
+  azure_svc_graphrbac:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_graphrbac
+
+  azure_svc_imds:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_imds
+
+  azure_svc_iotcentral:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_iotcentral
+
+  azure_svc_keyvault:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_keyvault
+
+  azure_svc_loadtestservice:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_loadtestservice
+
+  azure_svc_marketplacecatalog:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_marketplacecatalog
+
+  azure_svc_mixedreality:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_mixedreality
+
+  azure_svc_monitor:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_monitor
+
+  azure_svc_operationalinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_operationalinsights
+
+  azure_svc_purview:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_purview
+
+  azure_svc_quantum:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_quantum
+
+  azure_svc_queuestorage:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_queuestorage
+
+  azure_svc_schemaregistry:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_schemaregistry
+
+  azure_svc_servicefabric:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_servicefabric
+
+  azure_svc_storagedatalake:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_storagedatalake
+
+  azure_svc_synapse:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_synapse
+
+  azure_svc_timeseriesinsights:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_timeseriesinsights
+
+  azure_svc_webpubsub:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: publish
+        run: |
+          cd services
+          cargo publish -p azure_svc_webpubsub

@@ -45,3 +45,18 @@ impl<'a> CheckAllServicesYml<'a> {
         Ok(())
     }
 }
+
+#[derive(Template)]
+#[template(path = "Cargo.toml.jinja")]
+pub struct CargoToml {
+    pub dirs: Vec<String>,
+}
+
+impl CargoToml {
+    pub fn create(&self, path: impl AsRef<Utf8Path>) -> Result<()> {
+        let toml = self.render()?;
+        let mut file = File::create(path.as_ref())?;
+        write!(file, "{}", toml)?;
+        Ok(())
+    }
+}
