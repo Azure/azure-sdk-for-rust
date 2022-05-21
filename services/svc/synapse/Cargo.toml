@@ -25,15 +25,15 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-artifacts-composite-v3", "package-artifacts-composite-v2", "package-artifacts-composite-v1", "package-artifacts-2021-06-01-preview"]
+features = ["no-default-tag", "package-vnet-2021-06-01-preview", "package-vnet-2019-06-01-preview", "package-spark-2020-12-01", "package-spark-2019-11-01-preview"]
 
 [features]
-default = ["package-artifacts-composite-v4", "enable_reqwest"]
+default = ["package-vnet-2020-12-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-artifacts-composite-v4" = []
-"package-artifacts-composite-v3" = []
-"package-artifacts-composite-v2" = []
-"package-artifacts-composite-v1" = []
-"package-artifacts-2021-06-01-preview" = []
+"package-vnet-2021-06-01-preview" = []
+"package-vnet-2020-12-01" = []
+"package-vnet-2019-06-01-preview" = []
+"package-spark-2020-12-01" = []
+"package-spark-2019-11-01-preview" = []

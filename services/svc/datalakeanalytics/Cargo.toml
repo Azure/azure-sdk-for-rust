@@ -25,15 +25,15 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-catalog-2015-10-preview", "package-job-2017-09-preview", "package-job-2016-11", "package-job-2016-03-preview"]
+features = ["no-default-tag", "package-job-2017-09-preview", "package-job-2016-03-preview", "package-job-2015-11-preview", "package-catalog-2016-11"]
 
 [features]
-default = ["package-catalog-2016-11", "enable_reqwest"]
+default = ["package-job-2016-11", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-catalog-2016-11" = []
-"package-catalog-2015-10-preview" = []
 "package-job-2017-09-preview" = []
 "package-job-2016-11" = []
 "package-job-2016-03-preview" = []
+"package-job-2015-11-preview" = []
+"package-catalog-2016-11" = []
