@@ -28,11 +28,6 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times
     ("applicationinsights", "package-2021-11-01"), // duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
     ("analysisservices", "package-2017-08"),
-    ("authorization", "package-2020-10-01-preview"),
-    ("authorization", "package-2018-05-01-preview"),
-    ("authorization", "package-2021-03-01-preview-only"),
-    ("authorization", "package-2021-07-01-preview-only"),
-    ("authorization", "package-preview-2021-11"),
     ("azureactivedirectory", "package-preview-2020-07"),
     ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
     ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
