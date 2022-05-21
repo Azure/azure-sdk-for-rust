@@ -19,6 +19,8 @@ pub struct Tags {
     pub deny: Vec<String>,
     #[serde(default)]
     pub deny_contains: Vec<String>,
+    pub deny_contains_preview: Option<bool>,
+    pub deny_contains_only: Option<bool>,
     pub limit: Option<i32>,
 }
 
@@ -34,10 +36,17 @@ impl<'a> PackageConfig {
             let deny: HashSet<&str> = self.tags.deny.iter().map(String::as_str).collect();
             tags = tags.into_iter().filter(|tag| !deny.contains(tag.name())).collect();
         }
-        if !self.tags.deny_contains.is_empty() {
+        let mut deny_contains: Vec<&str> = self.tags.deny_contains.iter().map(String::as_str).collect();
+        if self.tags.deny_contains_preview.unwrap_or_default() {
+            deny_contains.push("preview");
+        }
+        if self.tags.deny_contains_only.unwrap_or_default() {
+            deny_contains.push("only");
+        }
+        if !deny_contains.is_empty() {
             tags = tags
                 .into_iter()
-                .filter(|tag| !self.tags.deny_contains.iter().any(|deny| tag.name().contains(deny)))
+                .filter(|tag| !deny_contains.iter().any(|deny| tag.name().contains(deny)))
                 .collect();
         }
         if let Some(limit) = self.tags.limit {
@@ -149,6 +158,40 @@ mod tests {
             r#"
             [tags]
             deny_contains = ["only"]
+            "#,
+        )?;
+        let tags = config.filter_tags(tags);
+        assert!(len > tags.len());
+        Ok(())
+    }
+
+    #[test]
+    fn deny_contains_only() -> Result<(), Error> {
+        let tags = readme_tags();
+        let len = tags.len();
+        let tags = tags.iter().collect();
+
+        let config: PackageConfig = toml::from_str(
+            r#"
+            [tags]
+            deny_contains_only = true
+            "#,
+        )?;
+        let tags = config.filter_tags(tags);
+        assert!(len > tags.len());
+        Ok(())
+    }
+
+    #[test]
+    fn deny_contains_preview() -> Result<(), Error> {
+        let tags = readme_tags();
+        let len = tags.len();
+        let tags = tags.iter().collect();
+
+        let config: PackageConfig = toml::from_str(
+            r#"
+            [tags]
+            deny_contains_preview = true
             "#,
         )?;
         let tags = config.filter_tags(tags);
