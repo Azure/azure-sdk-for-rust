@@ -335,9 +335,13 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
     let service_name = &spec.service_name();
     let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
     let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
-    let package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    if package_config.tags.limit.is_none(){
+        package_config.tags.limit = Some(3);
+    }
+    // TODO remove skip_service_tags and use the autorust.toml files
     let tags = spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
-    let tags = &package_config.tags(tags);
+    let tags = &package_config.filter_tags(tags);
     if tags.is_empty() {
         println!("not generating {} - no tags", spec.spec());
         return Ok(());

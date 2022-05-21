@@ -6,14 +6,10 @@ use std::{collections::HashSet, fs};
 #[derive(Deserialize, Debug, Default)]
 pub struct PackageConfig {
     #[serde(default)]
-    pub tags: Option<Tags>,
+    pub tags: Tags,
 }
 
 const NO_LIMIT: i32 = -1;
-
-fn no_limit() -> i32 {
-    NO_LIMIT
-}
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Tags {
@@ -23,31 +19,30 @@ pub struct Tags {
     pub deny: Vec<String>,
     #[serde(default)]
     pub deny_contains: Vec<String>,
-    #[serde(default = "no_limit")]
-    pub limit: i32,
+    pub limit: Option<i32>,
 }
 
 impl<'a> PackageConfig {
     /// Filter the tags based on the configuration
     pub fn filter_tags(&self, tags: Vec<&'a Tag>) -> Vec<&'a Tag> {
         let mut tags = tags.clone();
-        if let Some(config) = &self.tags {
-            if !config.allow.is_empty() {
-                let allow: HashSet<&str> = config.allow.iter().map(String::as_str).collect();
-                tags = tags.into_iter().filter(|tag| allow.contains(tag.name())).collect();
-            }
-            if !config.deny.is_empty() {
-                let deny: HashSet<&str> = config.deny.iter().map(String::as_str).collect();
-                tags = tags.into_iter().filter(|tag| !deny.contains(tag.name())).collect();
-            }
-            if !config.deny_contains.is_empty() {
-                tags = tags
-                    .into_iter()
-                    .filter(|tag| !config.deny_contains.iter().any(|deny| tag.name().contains(deny)))
-                    .collect();
-            }
-            if config.limit > NO_LIMIT {
-                tags.truncate(config.limit as usize);
+        if !self.tags.allow.is_empty() {
+            let allow: HashSet<&str> = self.tags.allow.iter().map(String::as_str).collect();
+            tags = tags.into_iter().filter(|tag| allow.contains(tag.name())).collect();
+        }
+        if !self.tags.deny.is_empty() {
+            let deny: HashSet<&str> = self.tags.deny.iter().map(String::as_str).collect();
+            tags = tags.into_iter().filter(|tag| !deny.contains(tag.name())).collect();
+        }
+        if !self.tags.deny_contains.is_empty() {
+            tags = tags
+                .into_iter()
+                .filter(|tag| !self.tags.deny_contains.iter().any(|deny| tag.name().contains(deny)))
+                .collect();
+        }
+        if let Some(limit) = self.tags.limit {
+            if limit > NO_LIMIT {
+                tags.truncate(limit as usize);
             }
         }
         tags
