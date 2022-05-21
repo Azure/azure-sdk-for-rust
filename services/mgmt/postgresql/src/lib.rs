@@ -23,39 +23,3 @@ pub use package_2021_04_10_privatepreview::{models, operations, operations::Clie
 pub mod package_2021_03_31_privatepreview;
 #[cfg(all(feature = "package-2021-03-31-privatepreview", not(feature = "no-default-tag")))]
 pub use package_2021_03_31_privatepreview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-11-05-preview")]
-pub mod package_2020_11_05_preview;
-#[cfg(all(feature = "package-2020-11-05-preview", not(feature = "no-default-tag")))]
-pub use package_2020_11_05_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-02-14-preview")]
-pub mod package_2020_02_14_preview;
-#[cfg(all(feature = "package-2020-02-14-preview", not(feature = "no-default-tag")))]
-pub use package_2020_02_14_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-02-14-privatepreview")]
-pub mod package_2020_02_14_privatepreview;
-#[cfg(all(feature = "package-2020-02-14-privatepreview", not(feature = "no-default-tag")))]
-pub use package_2020_02_14_privatepreview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-01-01-privatepreview")]
-pub mod package_2020_01_01_privatepreview;
-#[cfg(all(feature = "package-2020-01-01-privatepreview", not(feature = "no-default-tag")))]
-pub use package_2020_01_01_privatepreview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-01-01")]
-pub mod package_2020_01_01;
-#[cfg(all(feature = "package-2020-01-01", not(feature = "no-default-tag")))]
-pub use package_2020_01_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-06-01-privatepreview")]
-pub mod package_2018_06_01_privatepreview;
-#[cfg(all(feature = "package-2018-06-01-privatepreview", not(feature = "no-default-tag")))]
-pub use package_2018_06_01_privatepreview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-06-01")]
-pub mod package_2018_06_01;
-#[cfg(all(feature = "package-2018-06-01", not(feature = "no-default-tag")))]
-pub use package_2018_06_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2017-12-01-preview")]
-pub mod package_2017_12_01_preview;
-#[cfg(all(feature = "package-2017-12-01-preview", not(feature = "no-default-tag")))]
-pub use package_2017_12_01_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2017-12-01")]
-pub mod package_2017_12_01;
-#[cfg(all(feature = "package-2017-12-01", not(feature = "no-default-tag")))]
-pub use package_2017_12_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

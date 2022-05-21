@@ -23,27 +23,3 @@ pub use package_2020_03_11_0::{models, operations, operations::Client, operation
 pub mod package_2019_08_10_0;
 #[cfg(all(feature = "package-2019-08_10_0", not(feature = "no-default-tag")))]
 pub use package_2019_08_10_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2019-06_9_0")]
-pub mod package_2019_06_9_0;
-#[cfg(all(feature = "package-2019-06_9_0", not(feature = "no-default-tag")))]
-pub use package_2019_06_9_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-12_8_0")]
-pub mod package_2018_12_8_0;
-#[cfg(all(feature = "package-2018-12_8_0", not(feature = "no-default-tag")))]
-pub use package_2018_12_8_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-08_7_0")]
-pub mod package_2018_08_7_0;
-#[cfg(all(feature = "package-2018-08_7_0", not(feature = "no-default-tag")))]
-pub use package_2018_08_7_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-03_6_1")]
-pub mod package_2018_03_6_1;
-#[cfg(all(feature = "package-2018-03_6_1", not(feature = "no-default-tag")))]
-pub use package_2018_03_6_1::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2017-09_6_0")]
-pub mod package_2017_09_6_0;
-#[cfg(all(feature = "package-2017-09_6_0", not(feature = "no-default-tag")))]
-pub use package_2017_09_6_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2017-06_5_1")]
-pub mod package_2017_06_5_1;
-#[cfg(all(feature = "package-2017-06_5_1", not(feature = "no-default-tag")))]
-pub use package_2017_06_5_1::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

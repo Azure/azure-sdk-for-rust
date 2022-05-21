@@ -23,27 +23,3 @@ pub use package_preview_2021_06::{models, operations, operations::Client, operat
 pub mod package_2021_05;
 #[cfg(all(feature = "package-2021-05", not(feature = "no-default-tag")))]
 pub use package_2021_05::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2021-04-preview")]
-pub mod package_2021_04_preview;
-#[cfg(all(feature = "package-2021-04-preview", not(feature = "no-default-tag")))]
-pub use package_2021_04_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-kusto-pool-2021-04-preview")]
-pub mod package_kusto_pool_2021_04_preview;
-#[cfg(all(feature = "package-kusto-pool-2021-04-preview", not(feature = "no-default-tag")))]
-pub use package_kusto_pool_2021_04_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2021-03")]
-pub mod package_2021_03;
-#[cfg(all(feature = "package-2021-03", not(feature = "no-default-tag")))]
-pub use package_2021_03::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2019-06-01-preview")]
-pub mod package_2019_06_01_preview;
-#[cfg(all(feature = "package-2019-06-01-preview", not(feature = "no-default-tag")))]
-pub use package_2019_06_01_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-sqlGen3-2020-04-01-preview")]
-pub mod package_sqlgen3_2020_04_01_preview;
-#[cfg(all(feature = "package-sqlGen3-2020-04-01-preview", not(feature = "no-default-tag")))]
-pub use package_sqlgen3_2020_04_01_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-12-01")]
-pub mod package_2020_12_01;
-#[cfg(all(feature = "package-2020-12-01", not(feature = "no-default-tag")))]
-pub use package_2020_12_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

@@ -23,11 +23,3 @@ pub use v7_2::{models, operations, operations::Client, operations::ClientBuilder
 pub mod v8_0;
 #[cfg(all(feature = "8_0", not(feature = "no-default-tag")))]
 pub use v8_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "8_1")]
-pub mod v8_1;
-#[cfg(all(feature = "8_1", not(feature = "no-default-tag")))]
-pub use v8_1::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "8_2")]
-pub mod v8_2;
-#[cfg(all(feature = "8_2", not(feature = "no-default-tag")))]
-pub use v8_2::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

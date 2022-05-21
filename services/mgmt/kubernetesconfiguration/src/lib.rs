@@ -23,7 +23,3 @@ pub use package_preview_2022_01::{models, operations, operations::Client, operat
 pub mod package_preview_2021_11;
 #[cfg(all(feature = "package-preview-2021-11", not(feature = "no-default-tag")))]
 pub use package_preview_2021_11::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2021-09")]
-pub mod package_2021_09;
-#[cfg(all(feature = "package-2021-09", not(feature = "no-default-tag")))]
-pub use package_2021_09::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

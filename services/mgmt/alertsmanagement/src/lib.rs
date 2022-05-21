@@ -11,10 +11,6 @@ pub use package_2021_08::{models, operations, operations::Client, operations::Cl
 pub mod package_preview_2021_08;
 #[cfg(all(feature = "package-preview-2021-08", not(feature = "no-default-tag")))]
 pub use package_preview_2021_08::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2021-04-only")]
-pub mod package_2021_04_only;
-#[cfg(all(feature = "package-2021-04-only", not(feature = "no-default-tag")))]
-pub use package_2021_04_only::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-preview-2021-01")]
 pub mod package_preview_2021_01;
 #[cfg(all(feature = "package-preview-2021-01", not(feature = "no-default-tag")))]
@@ -27,19 +23,3 @@ pub use package_2019_06_preview::{models, operations, operations::Client, operat
 pub mod package_2019_06;
 #[cfg(all(feature = "package-2019-06", not(feature = "no-default-tag")))]
 pub use package_2019_06::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2019-03")]
-pub mod package_2019_03;
-#[cfg(all(feature = "package-2019-03", not(feature = "no-default-tag")))]
-pub use package_2019_03::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-preview-2019-05")]
-pub mod package_preview_2019_05;
-#[cfg(all(feature = "package-preview-2019-05", not(feature = "no-default-tag")))]
-pub use package_preview_2019_05::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-05")]
-pub mod package_2018_05;
-#[cfg(all(feature = "package-2018-05", not(feature = "no-default-tag")))]
-pub use package_2018_05::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-05-preview")]
-pub mod package_2018_05_preview;
-#[cfg(all(feature = "package-2018-05-preview", not(feature = "no-default-tag")))]
-pub use package_2018_05_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

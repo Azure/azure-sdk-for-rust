@@ -23,7 +23,3 @@ pub use package_job_2016_11::{models, operations, operations::Client, operations
 pub mod package_job_2016_03_preview;
 #[cfg(all(feature = "package-job-2016-03-preview", not(feature = "no-default-tag")))]
 pub use package_job_2016_03_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-job-2015-11-preview")]
-pub mod package_job_2015_11_preview;
-#[cfg(all(feature = "package-job-2015-11-preview", not(feature = "no-default-tag")))]
-pub use package_job_2015_11_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
