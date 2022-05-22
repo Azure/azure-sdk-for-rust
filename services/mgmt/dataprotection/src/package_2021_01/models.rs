@@ -67,18 +67,6 @@ impl AdhocBasedTriggerContext {
         }
     }
 }
-#[doc = "Base class for different types of authentication credentials."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-impl AuthCredentials {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
-    }
-}
 #[doc = "Azure backup discrete RecoveryPoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupDiscreteRecoveryPoint {
@@ -215,8 +203,8 @@ pub struct AzureBackupJob {
     #[serde(rename = "dataSourceName")]
     pub data_source_name: String,
     #[doc = "Data Source Set Name of the DataSource"]
-    #[serde(rename = "dataSourceSetName", default, skip_serializing_if = "Option::is_none")]
-    pub data_source_set_name: Option<String>,
+    #[serde(rename = "dataSourceSetName")]
+    pub data_source_set_name: String,
     #[doc = "Type of DataSource"]
     #[serde(rename = "dataSourceType")]
     pub data_source_type: String,
@@ -289,6 +277,7 @@ impl AzureBackupJob {
         data_source_id: String,
         data_source_location: String,
         data_source_name: String,
+        data_source_set_name: String,
         data_source_type: String,
         is_user_triggered: bool,
         operation: String,
@@ -309,7 +298,7 @@ impl AzureBackupJob {
             data_source_id,
             data_source_location,
             data_source_name,
-            data_source_set_name: None,
+            data_source_set_name,
             data_source_type,
             duration: None,
             end_time: None,
@@ -496,9 +485,6 @@ pub struct AzureBackupRestoreRequest {
     #[doc = "Gets or sets the type of the source data store."]
     #[serde(rename = "sourceDataStoreType")]
     pub source_data_store_type: azure_backup_restore_request::SourceDataStoreType,
-    #[doc = "Fully qualified Azure Resource Manager ID of the datasource which is being recovered."]
-    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_id: Option<String>,
 }
 impl AzureBackupRestoreRequest {
     pub fn new(
@@ -510,7 +496,6 @@ impl AzureBackupRestoreRequest {
             object_type,
             restore_target_info,
             source_data_store_type,
-            source_resource_id: None,
         }
     }
 }
@@ -571,25 +556,6 @@ impl AzureBackupRule {
             data_store,
             trigger,
         }
-    }
-}
-#[doc = "Settings for Azure Monitor based alerts"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AzureMonitorAlertSettings {
-    #[serde(rename = "alertsForAllJobFailures", default, skip_serializing_if = "Option::is_none")]
-    pub alerts_for_all_job_failures: Option<azure_monitor_alert_settings::AlertsForAllJobFailures>,
-}
-impl AzureMonitorAlertSettings {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod azure_monitor_alert_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AlertsForAllJobFailures {
-        Enabled,
-        Disabled,
     }
 }
 #[doc = "Parameters for Operational-Tier DataStore"]
@@ -666,12 +632,6 @@ pub struct BackupInstance {
     #[doc = "Specifies the provisioning state of the resource i.e. provisioning/updating/Succeeded/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[doc = "Base class for different types of authentication credentials."]
-    #[serde(rename = "datasourceAuthCredentials", default, skip_serializing_if = "Option::is_none")]
-    pub datasource_auth_credentials: Option<AuthCredentials>,
-    #[doc = "Specifies the type of validation. In case of DeepValidation, all validations from /validateForBackup API will run again."]
-    #[serde(rename = "validationType", default, skip_serializing_if = "Option::is_none")]
-    pub validation_type: Option<backup_instance::ValidationType>,
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -686,8 +646,6 @@ impl BackupInstance {
             current_protection_state: None,
             protection_error_details: None,
             provisioning_state: None,
-            datasource_auth_credentials: None,
-            validation_type: None,
             object_type,
         }
     }
@@ -709,12 +667,6 @@ pub mod backup_instance {
         SoftDeleting,
         SoftDeleted,
         UpdatingProtection,
-    }
-    #[doc = "Specifies the type of validation. In case of DeepValidation, all validations from /validateForBackup API will run again."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ValidationType {
-        ShallowValidation,
-        DeepValidation,
     }
 }
 #[doc = "BackupInstance Resource"]
@@ -785,16 +737,10 @@ pub struct BackupSchedule {
     #[doc = "ISO 8601 repeating time interval format"]
     #[serde(rename = "repeatingTimeIntervals")]
     pub repeating_time_intervals: Vec<String>,
-    #[doc = "Time zone for a schedule. Example: Pacific Standard Time"]
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
 }
 impl BackupSchedule {
     pub fn new(repeating_time_intervals: Vec<String>) -> Self {
-        Self {
-            repeating_time_intervals,
-            time_zone: None,
-        }
+        Self { repeating_time_intervals }
     }
 }
 #[doc = "Backup Vault"]
@@ -803,27 +749,15 @@ pub struct BackupVault {
     #[doc = "Provisioning state of the BackupVault resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<backup_vault::ProvisioningState>,
-    #[doc = "Resource move state for backup vault"]
-    #[serde(rename = "resourceMoveState", default, skip_serializing_if = "Option::is_none")]
-    pub resource_move_state: Option<backup_vault::ResourceMoveState>,
-    #[doc = "ResourceMoveDetails will be returned in response to GetResource call from ARM"]
-    #[serde(rename = "resourceMoveDetails", default, skip_serializing_if = "Option::is_none")]
-    pub resource_move_details: Option<ResourceMoveDetails>,
     #[doc = "Storage Settings"]
     #[serde(rename = "storageSettings")]
     pub storage_settings: Vec<StorageSetting>,
-    #[doc = "Monitoring Settings"]
-    #[serde(rename = "monitoringSettings", default, skip_serializing_if = "Option::is_none")]
-    pub monitoring_settings: Option<MonitoringSettings>,
 }
 impl BackupVault {
     pub fn new(storage_settings: Vec<StorageSetting>) -> Self {
         Self {
             provisioning_state: None,
-            resource_move_state: None,
-            resource_move_details: None,
             storage_settings,
-            monitoring_settings: None,
         }
     }
 }
@@ -837,20 +771,6 @@ pub mod backup_vault {
         Succeeded,
         Unknown,
         Updating,
-    }
-    #[doc = "Resource move state for backup vault"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResourceMoveState {
-        Unknown,
-        InProgress,
-        PrepareFailed,
-        CommitFailed,
-        Failed,
-        PrepareTimedout,
-        CommitTimedout,
-        CriticalFailure,
-        PartialSuccess,
-        MoveSucceeded,
     }
 }
 #[doc = "Backup Vault Resource"]
@@ -1308,44 +1228,6 @@ impl DeleteOption {
         Self { duration, object_type }
     }
 }
-#[doc = "Base resource under Microsoft.DataProtection provider namespace"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DppBaseResource {
-    #[doc = "Resource Id represents the complete path to the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Resource name associated with the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Resource type represents the complete path of the form Namespace/ResourceType/ResourceType/..."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-impl DppBaseResource {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Base for all lists of V2 resources."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DppBaseResourceList {
-    #[doc = "List of Dpp resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DppBaseResource>,
-    #[doc = "The uri to fetch the next page of resources. Call ListNext() fetches next page of resources."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for DppBaseResourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
-    }
-}
-impl DppBaseResourceList {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Identity details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DppIdentityDetails {
@@ -1661,9 +1543,6 @@ pub struct ItemLevelRestoreTargetInfo {
     #[doc = "DatasourceSet details of datasource to be backed up"]
     #[serde(rename = "datasourceSetInfo", default, skip_serializing_if = "Option::is_none")]
     pub datasource_set_info: Option<DatasourceSet>,
-    #[doc = "Base class for different types of authentication credentials."]
-    #[serde(rename = "datasourceAuthCredentials", default, skip_serializing_if = "Option::is_none")]
-    pub datasource_auth_credentials: Option<AuthCredentials>,
 }
 impl ItemLevelRestoreTargetInfo {
     pub fn new(
@@ -1676,7 +1555,6 @@ impl ItemLevelRestoreTargetInfo {
             restore_criteria,
             datasource_info,
             datasource_set_info: None,
-            datasource_auth_credentials: None,
         }
     }
 }
@@ -1738,32 +1616,20 @@ impl JobSubTask {
         }
     }
 }
-#[doc = "Monitoring Settings"]
+#[doc = "Operation Extended Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct MonitoringSettings {
-    #[doc = "Settings for Azure Monitor based alerts"]
-    #[serde(rename = "azureMonitorAlertSettings", default, skip_serializing_if = "Option::is_none")]
-    pub azure_monitor_alert_settings: Option<AzureMonitorAlertSettings>,
+pub struct OperationExtendedInfo {
+    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
+    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    pub object_type: Option<String>,
 }
-impl MonitoringSettings {
+impl OperationExtendedInfo {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "Operation Extended Info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationExtendedInfo {
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-impl OperationExtendedInfo {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
-    }
-}
 #[doc = "Operation Job Extended Info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationJobExtendedInfo {
     #[serde(flatten)]
     pub operation_extended_info: OperationExtendedInfo,
@@ -1772,11 +1638,8 @@ pub struct OperationJobExtendedInfo {
     pub job_id: Option<String>,
 }
 impl OperationJobExtendedInfo {
-    pub fn new(operation_extended_info: OperationExtendedInfo) -> Self {
-        Self {
-            operation_extended_info,
-            job_id: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Operation Resource"]
@@ -1808,27 +1671,12 @@ impl OperationResource {
         Self::default()
     }
 }
-#[doc = "Backup Vault Contract for Patch Backup Vault API."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PatchBackupVaultInput {
-    #[doc = "Monitoring Settings"]
-    #[serde(rename = "monitoringSettings", default, skip_serializing_if = "Option::is_none")]
-    pub monitoring_settings: Option<MonitoringSettings>,
-}
-impl PatchBackupVaultInput {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Patch Request content for Microsoft.DataProtection resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchResourceRequestInput {
     #[doc = "Identity details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DppIdentityDetails>,
-    #[doc = "Backup Vault Contract for Patch Backup Vault API."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PatchBackupVaultInput>,
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -1989,111 +1837,6 @@ pub enum RehydrationPriority {
     High,
     Standard,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceGuard {
-    #[doc = "Provisioning state of the BackupVault resource"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<resource_guard::ProvisioningState>,
-    #[doc = "This flag indicates whether auto approval is allowed or not."]
-    #[serde(rename = "allowAutoApprovals", default, skip_serializing_if = "Option::is_none")]
-    pub allow_auto_approvals: Option<bool>,
-    #[doc = "{readonly} List of operation details those are protected by the ResourceGuard resource"]
-    #[serde(rename = "resourceGuardOperations", default, skip_serializing_if = "Vec::is_empty")]
-    pub resource_guard_operations: Vec<ResourceGuardOperation>,
-    #[doc = "List of critical operations which are not protected by this resourceGuard"]
-    #[serde(rename = "vaultCriticalOperationExclusionList", default, skip_serializing_if = "Vec::is_empty")]
-    pub vault_critical_operation_exclusion_list: Vec<String>,
-    #[doc = "Description about the pre-req steps to perform all the critical operations."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-impl ResourceGuard {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod resource_guard {
-    use super::*;
-    #[doc = "Provisioning state of the BackupVault resource"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Failed,
-        Provisioning,
-        Succeeded,
-        Unknown,
-        Updating,
-    }
-}
-#[doc = "This class contains all the details about a critical operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceGuardOperation {
-    #[doc = "Name of the critical operation."]
-    #[serde(rename = "vaultCriticalOperation", default, skip_serializing_if = "Option::is_none")]
-    pub vault_critical_operation: Option<String>,
-    #[doc = "Type of resource request."]
-    #[serde(rename = "requestResourceType", default, skip_serializing_if = "Option::is_none")]
-    pub request_resource_type: Option<String>,
-}
-impl ResourceGuardOperation {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceGuardResource {
-    #[serde(flatten)]
-    pub dpp_tracked_resource: DppTrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ResourceGuard>,
-}
-impl ResourceGuardResource {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "List of ResourceGuard resources"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceGuardResourceList {
-    #[serde(flatten)]
-    pub dpp_tracked_resource_list: DppTrackedResourceList,
-    #[doc = "List of resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ResourceGuardResource>,
-}
-impl azure_core::Continuable for ResourceGuardResourceList {
-    fn continuation(&self) -> Option<String> {
-        None
-    }
-}
-impl ResourceGuardResourceList {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "ResourceMoveDetails will be returned in response to GetResource call from ARM"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceMoveDetails {
-    #[doc = "CorrelationId of latest ResourceMove operation attempted"]
-    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
-    pub operation_id: Option<String>,
-    #[doc = "Start time in UTC of latest ResourceMove operation attempted. ISO 8601 format."]
-    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub start_time_utc: Option<String>,
-    #[doc = "Completion time in UTC of latest ResourceMove operation attempted. ISO 8601 format."]
-    #[serde(rename = "completionTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub completion_time_utc: Option<String>,
-    #[doc = "ARM resource path of source resource"]
-    #[serde(rename = "sourceResourcePath", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_path: Option<String>,
-    #[doc = "ARM resource path of target resource used in latest ResourceMove operation"]
-    #[serde(rename = "targetResourcePath", default, skip_serializing_if = "Option::is_none")]
-    pub target_resource_path: Option<String>,
-}
-impl ResourceMoveDetails {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableTimeRange {
     #[doc = "Start time for the available restore range"]
@@ -2154,9 +1897,6 @@ pub struct RestoreTargetInfo {
     #[doc = "DatasourceSet details of datasource to be backed up"]
     #[serde(rename = "datasourceSetInfo", default, skip_serializing_if = "Option::is_none")]
     pub datasource_set_info: Option<DatasourceSet>,
-    #[doc = "Base class for different types of authentication credentials."]
-    #[serde(rename = "datasourceAuthCredentials", default, skip_serializing_if = "Option::is_none")]
-    pub datasource_auth_credentials: Option<AuthCredentials>,
 }
 impl RestoreTargetInfo {
     pub fn new(restore_target_info_base: RestoreTargetInfoBase, datasource_info: Datasource) -> Self {
@@ -2164,7 +1904,6 @@ impl RestoreTargetInfo {
             restore_target_info_base,
             datasource_info,
             datasource_set_info: None,
-            datasource_auth_credentials: None,
         }
     }
 }
@@ -2277,54 +2016,6 @@ impl ScheduleBasedTriggerContext {
         }
     }
 }
-#[doc = "Secret store based authentication credentials."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretStoreBasedAuthCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
-    #[doc = "Class representing a secret store resource."]
-    #[serde(rename = "secretStoreResource", default, skip_serializing_if = "Option::is_none")]
-    pub secret_store_resource: Option<SecretStoreResource>,
-}
-impl SecretStoreBasedAuthCredentials {
-    pub fn new(auth_credentials: AuthCredentials) -> Self {
-        Self {
-            auth_credentials,
-            secret_store_resource: None,
-        }
-    }
-}
-#[doc = "Class representing a secret store resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretStoreResource {
-    #[doc = "Uri to get to the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[doc = "Gets or sets the type of secret store"]
-    #[serde(rename = "secretStoreType")]
-    pub secret_store_type: secret_store_resource::SecretStoreType,
-    #[doc = "Gets or sets value stored in secret store resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-impl SecretStoreResource {
-    pub fn new(secret_store_type: secret_store_resource::SecretStoreType) -> Self {
-        Self {
-            uri: None,
-            secret_store_type,
-            value: None,
-        }
-    }
-}
-pub mod secret_store_resource {
-    use super::*;
-    #[doc = "Gets or sets the type of secret store"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SecretStoreType {
-        Invalid,
-        AzureKeyVault,
-    }
-}
 #[doc = "Source LifeCycle"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceLifeCycle {
@@ -2406,27 +2097,6 @@ pub mod supported_feature {
         PrivatePreview,
         PublicPreview,
         GenerallyAvailable,
-    }
-}
-#[doc = "Sync BackupInstance Request"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SyncBackupInstanceRequest {
-    #[doc = "Field indicating sync type e.g. to sync only in case of failure or in all cases"]
-    #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
-    pub sync_type: Option<sync_backup_instance_request::SyncType>,
-}
-impl SyncBackupInstanceRequest {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod sync_backup_instance_request {
-    use super::*;
-    #[doc = "Field indicating sync type e.g. to sync only in case of failure or in all cases"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SyncType {
-        Default,
-        ForceResync,
     }
 }
 #[doc = "Tagging criteria"]

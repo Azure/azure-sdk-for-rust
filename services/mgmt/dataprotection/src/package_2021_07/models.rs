@@ -1701,48 +1701,6 @@ impl JobSubTask {
         }
     }
 }
-#[doc = "Item Level kubernetes persistent volume target info for restore operation"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KubernetesPvRestoreCriteria {
-    #[serde(flatten)]
-    pub item_level_restore_criteria: ItemLevelRestoreCriteria,
-    #[doc = "Selected persistent volume claim name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Selected storage class name for restore operation"]
-    #[serde(rename = "storageClassName", default, skip_serializing_if = "Option::is_none")]
-    pub storage_class_name: Option<String>,
-}
-impl KubernetesPvRestoreCriteria {
-    pub fn new(item_level_restore_criteria: ItemLevelRestoreCriteria) -> Self {
-        Self {
-            item_level_restore_criteria,
-            name: None,
-            storage_class_name: None,
-        }
-    }
-}
-#[doc = "Item Level kubernetes storage class target info for restore operation"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KubernetesStorageClassRestoreCriteria {
-    #[serde(flatten)]
-    pub item_level_restore_criteria: ItemLevelRestoreCriteria,
-    #[doc = "Selected storage class name"]
-    #[serde(rename = "selectedStorageClassName", default, skip_serializing_if = "Option::is_none")]
-    pub selected_storage_class_name: Option<String>,
-    #[doc = "Provisioner of the storage class"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provisioner: Option<String>,
-}
-impl KubernetesStorageClassRestoreCriteria {
-    pub fn new(item_level_restore_criteria: ItemLevelRestoreCriteria) -> Self {
-        Self {
-            item_level_restore_criteria,
-            selected_storage_class_name: None,
-            provisioner: None,
-        }
-    }
-}
 #[doc = "Operation Extended Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationExtendedInfo {
