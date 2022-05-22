@@ -11,13 +11,6 @@ const OUTPUT_FOLDER: &str = "../svc";
 
 const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICES: &[&str] = &[
-    "datalake-store",          // query param "sources" not used
-    "machinelearningservices", // need to box inner errors
-    "hdinsight",               // job_id appears multiple times https://github.com/Azure/azure-sdk-for-rust/issues/503
-    "mediaservices",           // no operations
-];
-
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
     ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
@@ -175,7 +168,7 @@ fn main() -> Result<()> {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec, run_config)?;
             }
-        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+        } else {
             println!("{} {}", i + 1, spec.spec());
             gen_crate(spec, run_config)?;
         }

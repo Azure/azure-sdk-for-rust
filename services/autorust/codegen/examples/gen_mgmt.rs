@@ -11,8 +11,6 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 
 const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICES: &[&str] = &[];
-
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times
     ("applicationinsights", "package-2021-11-01"), // duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
@@ -291,7 +289,7 @@ fn main() -> Result<()> {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec, run_config)?;
             }
-        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+        } else {
             println!("{} {}", i + 1, spec.spec());
             gen_crate(spec, run_config)?;
         }
