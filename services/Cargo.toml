@@ -235,5 +235,6 @@ members = [
   "svc/storagedatalake",
   "svc/synapse",
   "svc/timeseriesinsights",
+  "svc/videoanalyzer",
   "svc/webpubsub",
 ]

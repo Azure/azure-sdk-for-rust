@@ -15,7 +15,6 @@ const SKIP_SERVICES: &[&str] = &[
     "datalake-store",          // query param "sources" not used
     "machinelearningservices", // need to box inner errors
     "hdinsight",               // job_id appears multiple times https://github.com/Azure/azure-sdk-for-rust/issues/503
-    "videoanalyzer",           // no operations
     "mediaservices",           // no operations
 ];
 
