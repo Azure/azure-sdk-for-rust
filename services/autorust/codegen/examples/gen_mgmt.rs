@@ -12,10 +12,10 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
-    "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
-    "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
-    "mixedreality",               // TODO #83 AccountKeyRegenerateRequest not generated
-    "servicefabric",              // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
+    "dnc",                       // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
+    "m365securityandcompliance", // can't find privateLinkServicesForO365ManagementActivityAPI.json
+    "mixedreality",              // TODO #83 AccountKeyRegenerateRequest not generated
+    "servicefabric",             // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
 ];
 
@@ -29,7 +29,6 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("consumption", "package-2021-05"),
     ("databoxedge", "package-2022-03-01"), // duplicate SystemData https://github.com/Azure/azure-rest-api-specs/pull/18526
     ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
-    // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
     ("deploymentmanager", "package-2018-09-01-preview"), //  identifiers are bound more than once in param list.   https://github.com/Azure/azure-sdk-for-rust/issues/415
     ("iothub", "package-preview-2021-07"),               // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
