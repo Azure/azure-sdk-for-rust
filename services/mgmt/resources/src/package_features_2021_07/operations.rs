@@ -75,11 +75,11 @@ impl Client {
             pipeline,
         }
     }
-    pub fn template_spec_versions(&self) -> template_spec_versions::Client {
-        template_spec_versions::Client(self.clone())
+    pub fn features(&self) -> features::Client {
+        features::Client(self.clone())
     }
-    pub fn template_specs(&self) -> template_specs::Client {
-        template_specs::Client(self.clone())
+    pub fn subscription_feature_registrations(&self) -> subscription_feature_registrations::Client {
+        subscription_feature_registrations::Client(self.clone())
     }
 }
 #[non_exhaustive]
@@ -87,117 +87,197 @@ impl Client {
 #[allow(non_camel_case_types)]
 pub enum Error {
     #[error(transparent)]
-    TemplateSpecs_Get(#[from] template_specs::get::Error),
+    ListOperations(#[from] list_operations::Error),
     #[error(transparent)]
-    TemplateSpecs_CreateOrUpdate(#[from] template_specs::create_or_update::Error),
+    Features_ListAll(#[from] features::list_all::Error),
     #[error(transparent)]
-    TemplateSpecs_Update(#[from] template_specs::update::Error),
+    Features_List(#[from] features::list::Error),
     #[error(transparent)]
-    TemplateSpecs_Delete(#[from] template_specs::delete::Error),
+    Features_Get(#[from] features::get::Error),
     #[error(transparent)]
-    TemplateSpecs_ListBySubscription(#[from] template_specs::list_by_subscription::Error),
+    Features_Register(#[from] features::register::Error),
     #[error(transparent)]
-    TemplateSpecs_ListByResourceGroup(#[from] template_specs::list_by_resource_group::Error),
+    Features_Unregister(#[from] features::unregister::Error),
     #[error(transparent)]
-    TemplateSpecVersions_Get(#[from] template_spec_versions::get::Error),
+    SubscriptionFeatureRegistrations_Get(#[from] subscription_feature_registrations::get::Error),
     #[error(transparent)]
-    TemplateSpecVersions_CreateOrUpdate(#[from] template_spec_versions::create_or_update::Error),
+    SubscriptionFeatureRegistrations_CreateOrUpdate(#[from] subscription_feature_registrations::create_or_update::Error),
     #[error(transparent)]
-    TemplateSpecVersions_Update(#[from] template_spec_versions::update::Error),
+    SubscriptionFeatureRegistrations_Delete(#[from] subscription_feature_registrations::delete::Error),
     #[error(transparent)]
-    TemplateSpecVersions_Delete(#[from] template_spec_versions::delete::Error),
+    SubscriptionFeatureRegistrations_ListBySubscription(#[from] subscription_feature_registrations::list_by_subscription::Error),
     #[error(transparent)]
-    TemplateSpecVersions_List(#[from] template_spec_versions::list::Error),
+    SubscriptionFeatureRegistrations_ListAllBySubscription(#[from] subscription_feature_registrations::list_all_by_subscription::Error),
 }
-pub mod template_specs {
+impl Client {
+    pub fn list_operations(&self) -> list_operations::Builder {
+        list_operations::Builder { client: self.clone() }
+    }
+}
+pub mod list_operations {
+    use super::models;
+    type Response = models::OperationListResult;
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL")]
+        ParseUrl(#[source] url::ParseError),
+        #[error("Failed to build request")]
+        BuildRequest(#[source] http::Error),
+        #[error("Failed to serialize request body")]
+        Serialize(#[source] serde_json::Error),
+        #[error("Failed to get access token")]
+        GetToken(#[source] azure_core::Error),
+        #[error("Failed to execute request")]
+        SendRequest(#[source] azure_core::error::Error),
+        #[error("Failed to get response bytes")]
+        ResponseBytes(#[source] azure_core::error::Error),
+        #[error("Failed to deserialize response, body: {1:?}")]
+        Deserialize(#[source] serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+    }
+    impl Builder {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let this = self.clone();
+                async move {
+                    let url_str = &format!("{}/providers/Microsoft.Features/operations", this.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    let rsp = match continuation {
+                        Some(token) => {
+                            url.set_path("");
+                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                            if !has_api_version_already {
+                                url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                            }
+                            req_builder = req_builder.uri(url.as_str());
+                            req_builder = req_builder.method(http::Method::GET);
+                            let credential = this.client.token_credential();
+                            let token_response = credential
+                                .get_token(&this.client.scopes().join(" "))
+                                .await
+                                .map_err(Error::GetToken)?;
+                            req_builder =
+                                req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                            let req_body = azure_core::EMPTY_BODY;
+                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                            this.client.send(req).await.map_err(Error::SendRequest)?
+                        }
+                        None => {
+                            req_builder = req_builder.method(http::Method::GET);
+                            let credential = this.client.token_credential();
+                            let token_response = credential
+                                .get_token(&this.client.scopes().join(" "))
+                                .await
+                                .map_err(Error::GetToken)?;
+                            req_builder =
+                                req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                            url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                            let req_body = azure_core::EMPTY_BODY;
+                            req_builder = req_builder.uri(url.as_str());
+                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                            this.client.send(req).await.map_err(Error::SendRequest)?
+                        }
+                    };
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                }
+            };
+            azure_core::Pageable::new(make_request)
+        }
+    }
+}
+pub mod features {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
+            list_all::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                resource_provider_namespace: resource_provider_namespace.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
         pub fn get(
             &self,
+            resource_provider_namespace: impl Into<String>,
+            feature_name: impl Into<String>,
             subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
+                resource_provider_namespace: resource_provider_namespace.into(),
+                feature_name: feature_name.into(),
                 subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                expand: None,
             }
         }
-        pub fn create_or_update(
+        pub fn register(
             &self,
+            resource_provider_namespace: impl Into<String>,
+            feature_name: impl Into<String>,
             subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-            template_spec: impl Into<models::TemplateSpec>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> register::Builder {
+            register::Builder {
                 client: self.0.clone(),
+                resource_provider_namespace: resource_provider_namespace.into(),
+                feature_name: feature_name.into(),
                 subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                template_spec: template_spec.into(),
             }
         }
-        pub fn update(
+        pub fn unregister(
             &self,
+            resource_provider_namespace: impl Into<String>,
+            feature_name: impl Into<String>,
             subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> unregister::Builder {
+            unregister::Builder {
                 client: self.0.clone(),
+                resource_provider_namespace: resource_provider_namespace.into(),
+                feature_name: feature_name.into(),
                 subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                template_spec: None,
-            }
-        }
-        pub fn delete(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-            }
-        }
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                expand: None,
-            }
-        }
-        pub fn list_by_resource_group(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                expand: None,
             }
         }
     }
-    pub mod get {
+    pub mod list_all {
         use super::models;
-        type Response = models::TemplateSpec;
+        type Response = models::FeatureOperationsListResult;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -218,25 +298,228 @@ pub mod template_specs {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) expand: Option<String>,
         }
         impl Builder {
-            pub fn expand(mut self, expand: impl Into<String>) -> Self {
-                self.expand = Some(expand.into());
-                self
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Features/features",
+                            this.client.endpoint(),
+                            &this.subscription_id
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::FeatureOperationsListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
             }
+        }
+    }
+    pub mod list {
+        use super::models;
+        type Response = models::FeatureOperationsListResult;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_provider_namespace: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_provider_namespace
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::FeatureOperationsListResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::FeatureResult;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_provider_namespace: String,
+            pub(crate) feature_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}",
+                            "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name
+                            &this.resource_provider_namespace,
+                            &this.feature_name
                         );
                         let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                         let mut req_builder = http::request::Builder::new();
@@ -247,10 +530,7 @@ pub mod template_specs {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        if let Some(expand) = &this.expand {
-                            url.query_pairs_mut().append_pair("$expand", expand);
-                        }
+                        url.query_pairs_mut().append_pair("api-version", "2021-07-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -259,13 +539,321 @@ pub mod template_specs {
                         match rsp_status {
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpec =
+                                let rsp_value: models::FeatureResult =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(rsp_value)
                             }
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod register {
+        use super::models;
+        type Response = models::FeatureResult;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_provider_namespace: String,
+            pub(crate) feature_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_provider_namespace,
+                            &this.feature_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::FeatureResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod unregister {
+        use super::models;
+        type Response = models::FeatureResult;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_provider_namespace: String,
+            pub(crate) feature_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_provider_namespace,
+                            &this.feature_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::POST);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::FeatureResult =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod subscription_feature_registrations {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            provider_namespace: impl Into<String>,
+            feature_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                provider_namespace: provider_namespace.into(),
+                feature_name: feature_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            provider_namespace: impl Into<String>,
+            feature_name: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                provider_namespace: provider_namespace.into(),
+                feature_name: feature_name.into(),
+                subscription_feature_registration_type: None,
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            provider_namespace: impl Into<String>,
+            feature_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                provider_namespace: provider_namespace.into(),
+                feature_name: feature_name.into(),
+            }
+        }
+        pub fn list_by_subscription(
+            &self,
+            subscription_id: impl Into<String>,
+            provider_namespace: impl Into<String>,
+        ) -> list_by_subscription::Builder {
+            list_by_subscription::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                provider_namespace: provider_namespace.into(),
+            }
+        }
+        pub fn list_all_by_subscription(&self, subscription_id: impl Into<String>) -> list_all_by_subscription::Builder {
+            list_all_by_subscription::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::SubscriptionFeatureRegistration;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) provider_namespace: String,
+            pub(crate) feature_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.provider_namespace,
+                            &this.feature_name
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .map_err(Error::GetToken)?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SubscriptionFeatureRegistration =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Err(Error::DefaultResponse {
                                     status_code,
@@ -280,17 +868,13 @@ pub mod template_specs {
     }
     pub mod create_or_update {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::TemplateSpec),
-            Created201(models::TemplateSpec),
-        }
+        type Response = models::SubscriptionFeatureRegistration;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -311,21 +895,28 @@ pub mod template_specs {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) template_spec: models::TemplateSpec,
+            pub(crate) provider_namespace: String,
+            pub(crate) feature_name: String,
+            pub(crate) subscription_feature_registration_type: Option<models::SubscriptionFeatureRegistration>,
         }
         impl Builder {
+            pub fn subscription_feature_registration_type(
+                mut self,
+                subscription_feature_registration_type: impl Into<models::SubscriptionFeatureRegistration>,
+            ) -> Self {
+                self.subscription_feature_registration_type = Some(subscription_feature_registration_type.into());
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}",
+                            "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name
+                            &this.provider_namespace,
+                            &this.feature_name
                         );
                         let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                         let mut req_builder = http::request::Builder::new();
@@ -336,103 +927,10 @@ pub mod template_specs {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.template_spec).map_err(Error::Serialize)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpec =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            http::StatusCode::CREATED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpec =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        type Response = models::TemplateSpec;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) template_spec: Option<models::TemplateSpecUpdateModel>,
-        }
-        impl Builder {
-            pub fn template_spec(mut self, template_spec: impl Into<models::TemplateSpecUpdateModel>) -> Self {
-                self.template_spec = Some(template_spec.into());
-                self
-            }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        let req_body = if let Some(template_spec) = &this.template_spec {
+                        url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                        let req_body = if let Some(subscription_feature_registration_type) = &this.subscription_feature_registration_type {
                             req_builder = req_builder.header("content-type", "application/json");
-                            azure_core::to_json(template_spec).map_err(Error::Serialize)?
+                            azure_core::to_json(subscription_feature_registration_type).map_err(Error::Serialize)?
                         } else {
                             azure_core::EMPTY_BODY
                         };
@@ -443,13 +941,13 @@ pub mod template_specs {
                         match rsp_status {
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpec =
+                                let rsp_value: models::SubscriptionFeatureRegistration =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(rsp_value)
                             }
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
+                                let rsp_value: models::ErrorResponse =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Err(Error::DefaultResponse {
                                     status_code,
@@ -474,7 +972,7 @@ pub mod template_specs {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -495,8 +993,8 @@ pub mod template_specs {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
+            pub(crate) provider_namespace: String,
+            pub(crate) feature_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -504,11 +1002,11 @@ pub mod template_specs {
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}",
+                            "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name
+                            &this.provider_namespace,
+                            &this.feature_name
                         );
                         let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                         let mut req_builder = http::request::Builder::new();
@@ -519,7 +1017,7 @@ pub mod template_specs {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2021-07-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -530,7 +1028,7 @@ pub mod template_specs {
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
+                                let rsp_value: models::ErrorResponse =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Err(Error::DefaultResponse {
                                     status_code,
@@ -545,13 +1043,13 @@ pub mod template_specs {
     }
     pub mod list_by_subscription {
         use super::models;
-        type Response = models::TemplateSpecsListResult;
+        type Response = models::SubscriptionFeatureRegistrationList;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -572,19 +1070,119 @@ pub mod template_specs {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) expand: Option<String>,
+            pub(crate) provider_namespace: String,
         }
         impl Builder {
-            pub fn expand(mut self, expand: impl Into<String>) -> Self {
-                self.expand = Some(expand.into());
-                self
-            }
             pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Resources/templateSpecs/",
+                            "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.provider_namespace
+                        );
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .map_err(Error::GetToken)?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2021-07-01");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                                this.client.send(req).await.map_err(Error::SendRequest)?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::SubscriptionFeatureRegistrationList =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Ok(rsp_value)
+                            }
+                            status_code => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_value: models::ErrorResponse =
+                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                Err(Error::DefaultResponse {
+                                    status_code,
+                                    value: rsp_value,
+                                })
+                            }
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod list_all_by_subscription {
+        use super::models;
+        type Response = models::SubscriptionFeatureRegistrationList;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::error::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::error::Error),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/providers/Microsoft.Features/subscriptionFeatureRegistrations",
                             this.client.endpoint(),
                             &this.subscription_id
                         );
@@ -596,7 +1194,7 @@ pub mod template_specs {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-07-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -620,10 +1218,7 @@ pub mod template_specs {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                                if let Some(expand) = &this.expand {
-                                    url.query_pairs_mut().append_pair("$expand", expand);
-                                }
+                                url.query_pairs_mut().append_pair("api-version", "2021-07-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -634,672 +1229,13 @@ pub mod template_specs {
                         match rsp_status {
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsListResult =
+                                let rsp_value: models::SubscriptionFeatureRegistrationList =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(rsp_value)
                             }
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-    pub mod list_by_resource_group {
-        use super::models;
-        type Response = models::TemplateSpecsListResult;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) expand: Option<String>,
-        }
-        impl Builder {
-            pub fn expand(mut self, expand: impl Into<String>) -> Self {
-                self.expand = Some(expand.into());
-                self
-            }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        let rsp = match continuation {
-                            Some(token) => {
-                                url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
-                                let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .map_err(Error::GetToken)?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
-                            }
-                            None => {
-                                req_builder = req_builder.method(http::Method::GET);
-                                let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .map_err(Error::GetToken)?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                                if let Some(expand) = &this.expand {
-                                    url.query_pairs_mut().append_pair("$expand", expand);
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
-                            }
-                        };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsListResult =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-}
-pub mod template_spec_versions {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-            template_spec_version: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                template_spec_version: template_spec_version.into(),
-            }
-        }
-        pub fn create_or_update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-            template_spec_version: impl Into<String>,
-            template_spec_version_model: impl Into<models::TemplateSpecVersion>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                template_spec_version: template_spec_version.into(),
-                template_spec_version_model: template_spec_version_model.into(),
-            }
-        }
-        pub fn update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-            template_spec_version: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                template_spec_version: template_spec_version.into(),
-                template_spec_version_update_model: None,
-            }
-        }
-        pub fn delete(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-            template_spec_version: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-                template_spec_version: template_spec_version.into(),
-            }
-        }
-        pub fn list(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            template_spec_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                template_spec_name: template_spec_name.into(),
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        type Response = models::TemplateSpecVersion;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) template_spec_version: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name,
-                            &this.template_spec_version
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecVersion =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::TemplateSpecVersion),
-            Created201(models::TemplateSpecVersion),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) template_spec_version: String,
-            pub(crate) template_spec_version_model: models::TemplateSpecVersion,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name,
-                            &this.template_spec_version
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.template_spec_version_model).map_err(Error::Serialize)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecVersion =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            http::StatusCode::CREATED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecVersion =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        type Response = models::TemplateSpecVersion;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) template_spec_version: String,
-            pub(crate) template_spec_version_update_model: Option<models::TemplateSpecVersionUpdateModel>,
-        }
-        impl Builder {
-            pub fn template_spec_version_update_model(
-                mut self,
-                template_spec_version_update_model: impl Into<models::TemplateSpecVersionUpdateModel>,
-            ) -> Self {
-                self.template_spec_version_update_model = Some(template_spec_version_update_model.into());
-                self
-            }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name,
-                            &this.template_spec_version
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        let req_body = if let Some(template_spec_version_update_model) = &this.template_spec_version_update_model {
-                            req_builder = req_builder.header("content-type", "application/json");
-                            azure_core::to_json(template_spec_version_update_model).map_err(Error::Serialize)?
-                        } else {
-                            azure_core::EMPTY_BODY
-                        };
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecVersion =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-            pub(crate) template_spec_version: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name,
-                            &this.template_spec_version
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
-                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        type Response = models::TemplateSpecVersionsListResult;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TemplateSpecsError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) template_spec_name: String,
-        }
-        impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.template_spec_name
-                        );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        let rsp = match continuation {
-                            Some(token) => {
-                                url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
-                                let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .map_err(Error::GetToken)?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
-                            }
-                            None => {
-                                req_builder = req_builder.method(http::Method::GET);
-                                let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .map_err(Error::GetToken)?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2021-03-01-preview");
-                                let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
-                            }
-                        };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecVersionsListResult =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TemplateSpecsError =
+                                let rsp_value: models::ErrorResponse =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Err(Error::DefaultResponse {
                                     status_code,
