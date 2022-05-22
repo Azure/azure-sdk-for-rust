@@ -1,6 +1,8 @@
 mod apply_on_edge_device_builder;
+mod create_or_update_configuration_builder;
 mod create_or_update_device_identity_builder;
 mod create_or_update_module_identity_builder;
+mod delete_configuration_builder;
 mod delete_identity_builder;
 mod get_configuration;
 mod get_identity;
@@ -10,8 +12,10 @@ mod query_builder;
 mod update_or_replace_twin_builder;
 
 pub use apply_on_edge_device_builder::ApplyOnEdgeDeviceBuilder;
+pub use create_or_update_configuration_builder::CreateOrUpdateConfigurationBuilder;
 pub use create_or_update_device_identity_builder::CreateOrUpdateDeviceIdentityBuilder;
 pub use create_or_update_module_identity_builder::CreateOrUpdateModuleIdentityBuilder;
+pub use delete_configuration_builder::DeleteConfigurationBuilder;
 pub use delete_identity_builder::DeleteIdentityBuilder;
 pub(crate) use get_configuration::get_configuration;
 pub(crate) use get_identity::get_identity;

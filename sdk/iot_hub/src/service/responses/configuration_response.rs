@@ -1,37 +1,12 @@
 use http::Response;
 use serde::{Deserialize, Serialize};
 
-use crate::service::resources::{ConfigurationContent, ConfigurationMetrics};
+use crate::service::resources::Configuration;
 
-/// The representation of a configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct ConfigurationResponse {
-    /// The content of the configuration.
-    content: ConfigurationContent,
-    /// The creation date and time of the configuration.
-    created_time_utc: String,
-    /// The ETag of the configuration.
-    etag: String,
-    /// The unique identifier of the configuration.
-    id: String,
-    /// The key-value pairs used to describe the configuration
-    labels: serde_json::Value,
-    /// The update date and time of the configuration
-    last_updated_time_utc: String,
-    /// The custom metrics specified by the developer as queries against twin reported properties
-    metrics: ConfigurationMetrics,
-    /// The priority number assigned to the configuration
-    priority: u64,
-    /// The schema version of the configuration
-    schema_version: Option<String>,
-    /// The system metrics computed by the IoT Hub that cannot be customized
-    system_metrics: ConfigurationMetrics,
-    /// The query used to define the targeted devices or modules.
-    target_condition: String,
-}
+/// The configuration response
+pub type ConfigurationResponse = Configuration;
 
-/// Representation of multiple configurations
+/// Representation of a multiple configurations response
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct MultipleConfigurationResponse(Vec<ConfigurationResponse>);
 

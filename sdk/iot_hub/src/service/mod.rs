@@ -16,8 +16,9 @@ pub mod responses;
 
 use crate::service::requests::{
     get_configuration, get_identity, get_twin, ApplyOnEdgeDeviceBuilder,
-    CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
-    DeleteIdentityBuilder, InvokeMethodBuilder, QueryBuilder, UpdateOrReplaceTwinBuilder,
+    CreateOrUpdateConfigurationBuilder, CreateOrUpdateDeviceIdentityBuilder,
+    CreateOrUpdateModuleIdentityBuilder, DeleteConfigurationBuilder, DeleteIdentityBuilder,
+    InvokeMethodBuilder, QueryBuilder, UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
 use crate::service::responses::{
@@ -525,7 +526,7 @@ impl ServiceClient {
         CreateOrUpdateDeviceIdentityBuilder::new(self, IdentityOperation::Update, Some(etag.into()))
     }
 
-    /// Create a new device identity
+    /// Delete a device identity
     ///
     /// The if-match value can either be Some(String) or None. When if-match is None,
     /// an unconditional delete will be performed.
@@ -711,6 +712,98 @@ impl ServiceClient {
     /// ```
     pub async fn get_configurations(&self) -> crate::Result<MultipleConfigurationResponse> {
         get_configuration(self, None).await
+    }
+
+    /// Create a new configuration.
+    ///
+    /// ```
+    /// use azure_core::HttpClient;
+    /// use azure_iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::resources::{Status, AuthenticationMechanism};
+    ///
+    /// # let http_client = azure_core::new_http_client();
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let configuration = iot_hub.create_configuration("some-configuration-id", 10, "tags.environment='test'")
+    ///     .execute();
+    /// ```
+    pub fn create_configuration<S, T>(
+        &self,
+        configuration_id: S,
+        priority: u64,
+        target_condition: T,
+    ) -> CreateOrUpdateConfigurationBuilder
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        CreateOrUpdateConfigurationBuilder::new(
+            self,
+            configuration_id.into(),
+            priority,
+            target_condition.into(),
+            None,
+        )
+    }
+
+    /// Update a configuration.
+    ///
+    /// ```
+    /// use azure_core::HttpClient;
+    /// use azure_iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::resources::{Status, AuthenticationMechanism};
+    ///
+    /// # let http_client = azure_core::new_http_client();
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let configuration = iot_hub.update_configuration("some-configuration-id", 10, "tags.environment='test'", "some-etag-value")
+    ///     .execute();
+    /// ```
+    pub fn update_configuration<S, T, U>(
+        &self,
+        configuration_id: S,
+        priority: u64,
+        target_condition: T,
+        etag: U,
+    ) -> CreateOrUpdateConfigurationBuilder
+    where
+        S: Into<String>,
+        T: Into<String>,
+        U: Into<String>,
+    {
+        CreateOrUpdateConfigurationBuilder::new(
+            self,
+            configuration_id.into(),
+            priority,
+            target_condition.into(),
+            Some(etag.into()),
+        )
+    }
+
+    /// Delete a configuration
+    ///
+    /// The if-match value can either be Some(String) or None. When if-match is None,
+    /// an unconditional delete will be performed.
+    ///
+    /// ```
+    /// use azure_core::HttpClient;
+    /// use azure_iot_hub::service::ServiceClient;
+    ///
+    /// # let http_client = azure_core::new_http_client();
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.delete_configuration("some-configuration-id", "some-etag");
+    /// ```
+    pub fn delete_configuration<S, T>(
+        &self,
+        configuration_id: S,
+        if_match: T,
+    ) -> DeleteConfigurationBuilder<'_>
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        DeleteConfigurationBuilder::new(self, if_match.into(), configuration_id.into())
     }
 
     /// Prepares a request that can be used by any request builders.
