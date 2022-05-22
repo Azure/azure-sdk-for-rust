@@ -55,6 +55,7 @@ members = [
   "mgmt/datafactory",
   "mgmt/datalakeanalytics",
   "mgmt/datalakestore",
+  "mgmt/datamigration",
   "mgmt/dataprotection",
   "mgmt/datashare",
   "mgmt/deploymentmanager",

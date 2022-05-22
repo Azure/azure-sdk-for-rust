@@ -33,12 +33,6 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
     // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
-    ("datamigration", "package-2018-07-15-preview"),
-    ("datamigration", "package-2018-04-19"),
-    ("datamigration", "package-2018-03-31-preview"),
-    ("datamigration", "package-2018-03-15-preview"),
-    ("datamigration", "package-2017-11-15-preview"),
-    ("datamigration", "package-2021-06"),
     ("deploymentmanager", "package-2018-09-01-preview"), //  identifiers are bound more than once in param list.   https://github.com/Azure/azure-sdk-for-rust/issues/415
     ("iothub", "package-preview-2021-07"),               // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
     ("iothub", "package-2021-07"),                       // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
