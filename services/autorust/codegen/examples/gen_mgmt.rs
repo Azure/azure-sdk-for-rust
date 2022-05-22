@@ -12,8 +12,6 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
-    "datamigration",
-    "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "mixedreality",               // TODO #83 AccountKeyRegenerateRequest not generated
