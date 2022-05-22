@@ -66,6 +66,7 @@ members = [
   "mgmt/devtestlabs",
   "mgmt/dfp",
   "mgmt/digitaltwins",
+  "mgmt/dnc",
   "mgmt/dns",
   "mgmt/dnsresolver",
   "mgmt/domainservices",
