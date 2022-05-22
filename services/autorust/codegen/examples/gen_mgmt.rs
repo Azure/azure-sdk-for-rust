@@ -11,10 +11,7 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 
 const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICES: &[&str] = &[
-    "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
-    "servicefabricmanagedclusters",
-];
+const SKIP_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times

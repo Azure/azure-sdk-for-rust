@@ -1,0 +1,4 @@
+[tags]
+# allOf mistakes and duplicate Operations_List
+# https://github.com/Azure/azure-rest-api-specs/pull/11581
+limit = 0
