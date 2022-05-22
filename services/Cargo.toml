@@ -105,6 +105,7 @@ members = [
   "mgmt/loadtestservice",
   "mgmt/logic",
   "mgmt/logz",
+  "mgmt/m365securityandcompliance",
   "mgmt/machinelearning",
   "mgmt/machinelearningcompute",
   "mgmt/machinelearningexperimentation",
