@@ -23,9 +23,9 @@ pub fn create(crate_name: &str, tags: &[&Tag], default_tag: &Tag, path: &Utf8Pat
     let default_feature = default_tag.rust_feature_name();
 
     // https://docs.rs/about/metadata
-    let docs_rs_features = docs_rs_features(tags, &default_feature);
-    let docs_rs_features: Vec<_> = docs_rs_features.iter().map(|s| format!("\"{}\"", s)).collect();
-    let docs_rs_features = docs_rs_features.join(", ");
+    // let docs_rs_features = docs_rs_features(tags, &default_feature);
+    // let docs_rs_features: Vec<_> = docs_rs_features.iter().map(|s| format!("\"{}\"", s)).collect();
+    // let docs_rs_features = docs_rs_features.join(", ");
 
     file.write_all(
         format!(
@@ -56,7 +56,7 @@ tokio = {{ version = "1.0", features = ["macros"] }}
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = [{}]
+all-features = true
 
 [features]
 default = ["{}", "enable_reqwest"]
@@ -64,7 +64,7 @@ enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
 "#,
-            crate_name, crate_name, docs_rs_features, default_feature
+            crate_name, crate_name, default_feature
         )
         .as_bytes(),
     )?;
@@ -88,23 +88,23 @@ pub fn get_default_tag<'a>(tags: &[&'a Tag], default_tag: Option<&str>) -> &'a T
     }
 }
 
-const MAX_DOCS_RS_FEATURES: usize = 4;
-const NO_DEFAULT_TAG: &str = "no-default-tag";
+// const MAX_DOCS_RS_FEATURES: usize = 4;
+// const NO_DEFAULT_TAG: &str = "no-default-tag";
 
-/// Get a list of features to document at docs.rs in addition the default
-fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
-    let mut features: Vec<_> = tags
-        .iter()
-        .filter_map(|tag| {
-            let feature = tag.rust_feature_name();
-            if feature == default_feature {
-                None
-            } else {
-                Some(feature)
-            }
-        })
-        .collect();
-    features.truncate(MAX_DOCS_RS_FEATURES);
-    features.insert(0, NO_DEFAULT_TAG.to_owned());
-    features
-}
+// /// Get a list of features to document at docs.rs in addition the default
+// fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
+//     let mut features: Vec<_> = tags
+//         .iter()
+//         .filter_map(|tag| {
+//             let feature = tag.rust_feature_name();
+//             if feature == default_feature {
+//                 None
+//             } else {
+//                 Some(feature)
+//             }
+//         })
+//         .collect();
+//     features.truncate(MAX_DOCS_RS_FEATURES);
+//     features.insert(0, NO_DEFAULT_TAG.to_owned());
+//     features
+// }

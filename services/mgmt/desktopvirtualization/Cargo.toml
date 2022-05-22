@@ -25,7 +25,7 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-preview-2021-09", "package-2021-07", "package-2021-04-01-preview", "package-2021-03-09-preview"]
+all-features = true
 
 [features]
 default = ["package-preview-2022-02", "enable_reqwest"]
