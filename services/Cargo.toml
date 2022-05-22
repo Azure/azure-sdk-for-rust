@@ -114,6 +114,7 @@ members = [
   "mgmt/managementpartner",
   "mgmt/maps",
   "mgmt/mariadb",
+  "mgmt/marketplace",
   "mgmt/marketplacenotifications",
   "mgmt/marketplaceordering",
   "mgmt/mediaservices",
