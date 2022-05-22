@@ -1,0 +1,4 @@
+[tags]
+allow = [
+    "package-2021-01-01",
+  ]

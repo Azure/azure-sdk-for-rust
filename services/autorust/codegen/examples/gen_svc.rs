@@ -9,7 +9,7 @@ use std::{collections::HashMap, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &[];
+const ONLY_SERVICES: &[&str] = &["mixedreality"];
 
 const SKIP_SERVICES: &[&str] = &[
     "datalake-store",          // query param "sources" not used
@@ -69,16 +69,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/stable/2021-01-01/mr-arr.json",
         "error",
         "innerError",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/2021-01-01-preview/mr-arr.json",
-        "error",
-        "innerError",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/0.3-preview.0/mr-aoa.json",
-        "InnerError",
-        "innererror",
     ),
     // confidentialledger
     (
