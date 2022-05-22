@@ -1,0 +1,6 @@
+[tags]
+# The readme file needs to be fixed. https://github.com/Azure/azure-rest-api-specs/pull/19174
+# several issues with these packages
+# no method named `into` found for type parameter `impl Into<String>` in the current scope
+# no method named `into` found for type parameter `impl Into<models::AccountKeyRegenerateRequest>` in the current scope
+limit = 0

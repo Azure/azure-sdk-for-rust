@@ -12,7 +12,6 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
-    "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
 ];
