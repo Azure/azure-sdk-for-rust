@@ -25,7 +25,7 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-vnet-2021-06-01-preview", "package-vnet-2019-06-01-preview", "package-spark-2020-12-01", "package-spark-2019-11-01-preview"]
+all-features = true
 
 [features]
 default = ["package-vnet-2020-12-01", "enable_reqwest"]
