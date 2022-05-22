@@ -1,0 +1,4 @@
+[tags]
+deny = [
+    "package-2021-05-01-preview"
+  ]

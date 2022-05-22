@@ -9,7 +9,7 @@ use std::{collections::HashMap, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &["mixedreality"];
+const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
     "datalake-store",          // query param "sources" not used
@@ -248,6 +248,7 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
         None
     };
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
+    cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
         crate_name,
