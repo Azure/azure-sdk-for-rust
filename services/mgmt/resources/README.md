@@ -6,7 +6,7 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/resources/
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-subscriptions-2021-01`.
+The default tag is `package-resources-2021-04`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 

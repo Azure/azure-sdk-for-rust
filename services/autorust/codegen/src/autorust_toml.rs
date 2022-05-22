@@ -23,9 +23,14 @@ pub struct Tags {
     pub deny_contains_only: Option<bool>,
     pub limit: Option<i32>,
     pub sort: Option<bool>,
+    pub default: Option<String>,
 }
 
 impl<'a> PackageConfig {
+    pub fn default_tag(&self) -> Option<&str> {
+        self.tags.default.as_deref()
+    }
+
     /// Filter the tags based on the configuration
     pub fn filter_tags(&self, tags: Vec<&'a Tag>) -> Vec<&'a Tag> {
         let mut tags = tags.clone();
@@ -253,6 +258,18 @@ mod tests {
         let tags = config.filter_tags(tags);
         assert_eq!(len, tags.len());
         assert_eq!("package-2022-03", tags[0].name());
+        Ok(())
+    }
+
+    #[test]
+    fn default() -> Result<(), Error> {
+        let config: PackageConfig = toml::from_str(
+            r#"
+            [tags]
+            default = "package-resources-2021-04"
+            "#,
+        )?;
+        assert_eq!(Some("package-resources-2021-04".to_string()), config.tags.default);
         Ok(())
     }
 }
