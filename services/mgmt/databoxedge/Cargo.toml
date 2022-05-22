@@ -28,12 +28,12 @@ env_logger = "0.9"
 all-features = true
 
 [features]
-default = ["profile-hybrid-2020-09-01", "enable_reqwest"]
+default = ["package-2021-06-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"profile-hybrid-2020-09-01" = []
-"package-2022-04-01-preview" = []
 "package-2021-06-01-preview" = []
 "package-2021-06-01" = []
 "package-2021-02-01-preview" = []
+"package-2021-02-01" = []
+"package-2020-12-01" = []

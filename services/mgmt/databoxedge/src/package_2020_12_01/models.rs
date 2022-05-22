@@ -20,12 +20,61 @@ impl ArmBaseModel {
         Self::default()
     }
 }
+#[doc = "Role Addon"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Addon {
+    #[serde(flatten)]
+    pub arm_base_model: ArmBaseModel,
+    #[doc = "Addon type."]
+    pub kind: addon::Kind,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl Addon {
+    pub fn new(kind: addon::Kind) -> Self {
+        Self {
+            arm_base_model: ArmBaseModel::default(),
+            kind,
+            system_data: None,
+        }
+    }
+}
+pub mod addon {
+    use super::*;
+    #[doc = "Addon type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        IotEdge,
+        ArcForKubernetes,
+    }
+}
+#[doc = "Collection of all the Role addon on the Azure Stack Edge device."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AddonList {
+    #[doc = "The Value."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Addon>,
+    #[doc = "Link to the next set of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AddonList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
+impl AddonList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The shipping address of the customer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Address {
     #[doc = "The address line1."]
-    #[serde(rename = "addressLine1")]
-    pub address_line1: String,
+    #[serde(rename = "addressLine1", default, skip_serializing_if = "Option::is_none")]
+    pub address_line1: Option<String>,
     #[doc = "The address line2."]
     #[serde(rename = "addressLine2", default, skip_serializing_if = "Option::is_none")]
     pub address_line2: Option<String>,
@@ -33,24 +82,26 @@ pub struct Address {
     #[serde(rename = "addressLine3", default, skip_serializing_if = "Option::is_none")]
     pub address_line3: Option<String>,
     #[doc = "The postal code."]
-    #[serde(rename = "postalCode")]
-    pub postal_code: String,
+    #[serde(rename = "postalCode", default, skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
     #[doc = "The city name."]
-    pub city: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
     #[doc = "The state name."]
-    pub state: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
     #[doc = "The country name."]
     pub country: String,
 }
 impl Address {
-    pub fn new(address_line1: String, postal_code: String, city: String, state: String, country: String) -> Self {
+    pub fn new(country: String) -> Self {
         Self {
-            address_line1,
+            address_line1: None,
             address_line2: None,
             address_line3: None,
-            postal_code,
-            city,
-            state,
+            postal_code: None,
+            city: None,
+            state: None,
             country,
         }
     }
@@ -60,6 +111,9 @@ impl Address {
 pub struct Alert {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "Properties of alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProperties>,
@@ -147,6 +201,103 @@ pub mod alert_properties {
         Critical,
     }
 }
+#[doc = "Arc Addon."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArcAddon {
+    #[serde(flatten)]
+    pub addon: Addon,
+    #[doc = "Arc addon properties."]
+    pub properties: ArcAddonProperties,
+    #[doc = "The path ID that uniquely identifies the object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The object name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The hierarchical type of the object."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl ArcAddon {
+    pub fn new(addon: Addon, properties: ArcAddonProperties) -> Self {
+        Self {
+            addon,
+            properties,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "Arc addon properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArcAddonProperties {
+    #[doc = "Arc resource subscription Id"]
+    #[serde(rename = "subscriptionId")]
+    pub subscription_id: String,
+    #[doc = "Arc resource group name"]
+    #[serde(rename = "resourceGroupName")]
+    pub resource_group_name: String,
+    #[doc = "Arc resource Name"]
+    #[serde(rename = "resourceName")]
+    pub resource_name: String,
+    #[doc = "Arc resource location"]
+    #[serde(rename = "resourceLocation")]
+    pub resource_location: String,
+    #[doc = "Arc resource version"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Host OS supported by the Arc addon."]
+    #[serde(rename = "hostPlatform", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform: Option<arc_addon_properties::HostPlatform>,
+    #[doc = "Platform where the runtime is hosted."]
+    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform_type: Option<arc_addon_properties::HostPlatformType>,
+    #[doc = "Addon Provisioning State"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<arc_addon_properties::ProvisioningState>,
+}
+impl ArcAddonProperties {
+    pub fn new(subscription_id: String, resource_group_name: String, resource_name: String, resource_location: String) -> Self {
+        Self {
+            subscription_id,
+            resource_group_name,
+            resource_name,
+            resource_location,
+            version: None,
+            host_platform: None,
+            host_platform_type: None,
+            provisioning_state: None,
+        }
+    }
+}
+pub mod arc_addon_properties {
+    use super::*;
+    #[doc = "Host OS supported by the Arc addon."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatform {
+        Windows,
+        Linux,
+    }
+    #[doc = "Platform where the runtime is hosted."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatformType {
+        KubernetesCluster,
+        #[serde(rename = "LinuxVM")]
+        LinuxVm,
+    }
+    #[doc = "Addon Provisioning State"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Invalid,
+        Creating,
+        Created,
+        Updating,
+        Reconfiguring,
+        Failed,
+        Deleting,
+    }
+}
 #[doc = "Represent the secrets intended for encryption with asymmetric key pair."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AsymmetricEncryptedSecret {
@@ -229,6 +380,9 @@ pub mod azure_container_info {
 pub struct BandwidthSchedule {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The properties of the bandwidth schedule."]
     pub properties: BandwidthScheduleProperties,
 }
@@ -236,6 +390,7 @@ impl BandwidthSchedule {
     pub fn new(properties: BandwidthScheduleProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             properties,
         }
     }
@@ -307,6 +462,72 @@ pub mod client_access_right {
         ReadWrite,
     }
 }
+#[doc = "CloudEdgeManagementRole role."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudEdgeManagementRole {
+    #[serde(flatten)]
+    pub role: Role,
+    #[doc = "CloudEdgeManagement Role properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CloudEdgeManagementRoleProperties>,
+    #[doc = "The path ID that uniquely identifies the object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The object name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The hierarchical type of the object."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl CloudEdgeManagementRole {
+    pub fn new(role: Role) -> Self {
+        Self {
+            role,
+            properties: None,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "CloudEdgeManagement Role properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudEdgeManagementRoleProperties {
+    #[doc = "Local Edge Management Status"]
+    #[serde(rename = "localManagementStatus", default, skip_serializing_if = "Option::is_none")]
+    pub local_management_status: Option<cloud_edge_management_role_properties::LocalManagementStatus>,
+    #[doc = "Details about Edge Profile for the resource"]
+    #[serde(rename = "edgeProfile", default, skip_serializing_if = "Option::is_none")]
+    pub edge_profile: Option<EdgeProfile>,
+    #[doc = "Role status."]
+    #[serde(rename = "roleStatus")]
+    pub role_status: cloud_edge_management_role_properties::RoleStatus,
+}
+impl CloudEdgeManagementRoleProperties {
+    pub fn new(role_status: cloud_edge_management_role_properties::RoleStatus) -> Self {
+        Self {
+            local_management_status: None,
+            edge_profile: None,
+            role_status,
+        }
+    }
+}
+pub mod cloud_edge_management_role_properties {
+    use super::*;
+    #[doc = "Local Edge Management Status"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LocalManagementStatus {
+        Enabled,
+        Disabled,
+    }
+    #[doc = "Role status."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RoleStatus {
+        Enabled,
+        Disabled,
+    }
+}
 #[doc = "An error response from the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
@@ -342,6 +563,45 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Cni configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CniConfig {
+    #[doc = "Cni type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Cni version"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Pod Subnet"]
+    #[serde(rename = "podSubnet", default, skip_serializing_if = "Option::is_none")]
+    pub pod_subnet: Option<String>,
+    #[doc = "Service subnet"]
+    #[serde(rename = "serviceSubnet", default, skip_serializing_if = "Option::is_none")]
+    pub service_subnet: Option<String>,
+}
+impl CniConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Compute infrastructure Resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComputeResource {
+    #[doc = "Processor count"]
+    #[serde(rename = "processorCount")]
+    pub processor_count: i32,
+    #[doc = "Memory in GB"]
+    #[serde(rename = "memoryInGB")]
+    pub memory_in_gb: i64,
+}
+impl ComputeResource {
+    pub fn new(processor_count: i32, memory_in_gb: i64) -> Self {
+        Self {
+            processor_count,
+            memory_in_gb,
+        }
+    }
+}
 #[doc = "Contains all the contact details of the customer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactDetails {
@@ -372,6 +632,9 @@ impl ContactDetails {
 pub struct Container {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The container properties."]
     pub properties: ContainerProperties,
 }
@@ -379,6 +642,7 @@ impl Container {
     pub fn new(properties: ContainerProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             properties,
         }
     }
@@ -449,6 +713,30 @@ pub mod container_properties {
         AzureFile,
     }
 }
+#[doc = "DC Access code in the case of Self Managed Shipping."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DcAccessCode {
+    #[doc = "DCAccessCode Properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DcAccessCodeProperties>,
+}
+impl DcAccessCode {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "DCAccessCode Properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DcAccessCodeProperties {
+    #[doc = "DCAccess Code for the Self Managed shipment."]
+    #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
+    pub auth_code: Option<String>,
+}
+impl DcAccessCodeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The Data Box Edge/Gateway device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxEdgeDevice {
@@ -465,6 +753,15 @@ pub struct DataBoxEdgeDevice {
     #[doc = "The etag for the devices."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Msi identity details of the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ResourceIdentity>,
+    #[doc = "The etag for the devices."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<data_box_edge_device::Kind>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The properties of the Data Box Edge/Gateway device."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataBoxEdgeDeviceProperties>,
@@ -477,8 +774,22 @@ impl DataBoxEdgeDevice {
             tags: None,
             sku: None,
             etag: None,
+            identity: None,
+            kind: None,
+            system_data: None,
             properties: None,
         }
+    }
+}
+pub mod data_box_edge_device {
+    use super::*;
+    #[doc = "The etag for the devices."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        AzureDataBoxGateway,
+        AzureStackEdge,
+        AzureStackHub,
+        AzureModularDataCentre,
     }
 }
 #[doc = "The extended Info of the Data Box Edge/Gateway device."]
@@ -495,6 +806,42 @@ impl DataBoxEdgeDeviceExtendedInfo {
         Self::default()
     }
 }
+#[doc = "The Data Box Edge/Gateway device extended info patch."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxEdgeDeviceExtendedInfoPatch {
+    #[doc = "The Key Vault ARM Id for client secrets"]
+    #[serde(rename = "clientSecretStoreId", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret_store_id: Option<String>,
+    #[doc = "The url to access the Client Key Vault"]
+    #[serde(rename = "clientSecretStoreUrl", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret_store_url: Option<String>,
+    #[doc = "The name for Channel Integrity Key stored in the Client Key Vault"]
+    #[serde(rename = "channelIntegrityKeyName", default, skip_serializing_if = "Option::is_none")]
+    pub channel_integrity_key_name: Option<String>,
+    #[doc = "The version of Channel Integrity Key stored in the Client Key Vault"]
+    #[serde(rename = "channelIntegrityKeyVersion", default, skip_serializing_if = "Option::is_none")]
+    pub channel_integrity_key_version: Option<String>,
+    #[doc = "For changing or to initiate the resync to key-vault set the status to KeyVaultSyncPending, rest of the status will not be applicable."]
+    #[serde(rename = "syncStatus", default, skip_serializing_if = "Option::is_none")]
+    pub sync_status: Option<data_box_edge_device_extended_info_patch::SyncStatus>,
+}
+impl DataBoxEdgeDeviceExtendedInfoPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_box_edge_device_extended_info_patch {
+    use super::*;
+    #[doc = "For changing or to initiate the resync to key-vault set the status to KeyVaultSyncPending, rest of the status will not be applicable."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SyncStatus {
+        KeyVaultSynced,
+        KeyVaultSyncFailed,
+        KeyVaultNotConfigured,
+        KeyVaultSyncPending,
+        KeyVaultSyncing,
+    }
+}
 #[doc = "The properties of the Data Box Edge/Gateway device extended info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataBoxEdgeDeviceExtendedInfoProperties {
@@ -507,10 +854,40 @@ pub struct DataBoxEdgeDeviceExtendedInfoProperties {
     #[doc = "The Resource ID of the Resource."]
     #[serde(rename = "resourceKey", default, skip_serializing_if = "Option::is_none")]
     pub resource_key: Option<String>,
+    #[doc = "The Key Vault ARM Id for client secrets"]
+    #[serde(rename = "clientSecretStoreId", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret_store_id: Option<String>,
+    #[doc = "The url to access the Client Key Vault"]
+    #[serde(rename = "clientSecretStoreUrl", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret_store_url: Option<String>,
+    #[doc = "The name of Channel Integrity Key stored in the Client Key Vault"]
+    #[serde(rename = "channelIntegrityKeyName", default, skip_serializing_if = "Option::is_none")]
+    pub channel_integrity_key_name: Option<String>,
+    #[doc = "The version of Channel Integrity Key stored in the Client Key Vault"]
+    #[serde(rename = "channelIntegrityKeyVersion", default, skip_serializing_if = "Option::is_none")]
+    pub channel_integrity_key_version: Option<String>,
+    #[doc = "Key vault sync status"]
+    #[serde(rename = "keyVaultSyncStatus", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_sync_status: Option<data_box_edge_device_extended_info_properties::KeyVaultSyncStatus>,
+    #[doc = "Device Secrets"]
+    #[serde(rename = "deviceSecrets", default, skip_serializing_if = "Option::is_none")]
+    pub device_secrets: Option<DeviceSecrets>,
 }
 impl DataBoxEdgeDeviceExtendedInfoProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod data_box_edge_device_extended_info_properties {
+    use super::*;
+    #[doc = "Key vault sync status"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum KeyVaultSyncStatus {
+        KeyVaultSynced,
+        KeyVaultSyncFailed,
+        KeyVaultNotConfigured,
+        KeyVaultSyncPending,
+        KeyVaultSyncing,
     }
 }
 #[doc = "The collection of Data Box Edge/Gateway devices."]
@@ -539,6 +916,12 @@ pub struct DataBoxEdgeDevicePatch {
     #[doc = "The tags attached to the Data Box Edge/Gateway resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Msi identity details of the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ResourceIdentity>,
+    #[doc = "The Data Box Edge/Gateway device properties patch."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataBoxEdgeDevicePropertiesPatch>,
 }
 impl DataBoxEdgeDevicePatch {
     pub fn new() -> Self {
@@ -590,6 +973,12 @@ pub struct DataBoxEdgeDeviceProperties {
     #[doc = "The number of nodes in the cluster."]
     #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
     pub node_count: Option<i32>,
+    #[doc = "Fields for tracking resource move"]
+    #[serde(rename = "resourceMoveDetails", default, skip_serializing_if = "Option::is_none")]
+    pub resource_move_details: Option<ResourceMoveDetails>,
+    #[doc = "Details about Edge Profile for the resource"]
+    #[serde(rename = "edgeProfile", default, skip_serializing_if = "Option::is_none")]
+    pub edge_profile: Option<EdgeProfile>,
 }
 impl DataBoxEdgeDeviceProperties {
     pub fn new() -> Self {
@@ -613,6 +1002,297 @@ pub mod data_box_edge_device_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeviceType {
         DataBoxEdgeDevice,
+    }
+}
+#[doc = "The Data Box Edge/Gateway device properties patch."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxEdgeDevicePropertiesPatch {
+    #[doc = "The Data Box Edge/Gateway Edge Profile patch."]
+    #[serde(rename = "edgeProfile", default, skip_serializing_if = "Option::is_none")]
+    pub edge_profile: Option<EdgeProfilePatch>,
+}
+impl DataBoxEdgeDevicePropertiesPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Resource Move details"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataBoxEdgeMoveRequest {
+    #[doc = "Target resource group ARMId"]
+    #[serde(rename = "targetResourceGroup")]
+    pub target_resource_group: String,
+    #[doc = "List of resources to be moved"]
+    pub resources: Vec<String>,
+}
+impl DataBoxEdgeMoveRequest {
+    pub fn new(target_resource_group: String, resources: Vec<String>) -> Self {
+        Self {
+            target_resource_group,
+            resources,
+        }
+    }
+}
+#[doc = "The Sku information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxEdgeSku {
+    #[doc = "The type of the resource."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "The Sku name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<data_box_edge_sku::Name>,
+    #[doc = "The Sku kind."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[doc = "The Sku tier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<data_box_edge_sku::Tier>,
+    #[doc = "The Sku kind."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[doc = "The Sku family."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[doc = "Availability of the Sku for the region."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[doc = "The API versions in which Sku is available."]
+    #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
+    pub api_versions: Vec<String>,
+    #[doc = "Availability of the Sku for the location/zone/site."]
+    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub location_info: Vec<SkuLocationInfo>,
+    #[doc = "The pricing info of the Sku."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub costs: Vec<SkuCost>,
+    #[doc = "Sku can be signed up by customer or not."]
+    #[serde(rename = "signupOption", default, skip_serializing_if = "Option::is_none")]
+    pub signup_option: Option<data_box_edge_sku::SignupOption>,
+    #[doc = "Availability of the Sku as preview/stable."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<data_box_edge_sku::Version>,
+    #[doc = "Links to the next set of results"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub availability: Option<data_box_edge_sku::Availability>,
+    #[doc = "List of Shipment Types supported by this SKU"]
+    #[serde(rename = "shipmentTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub shipment_types: Vec<String>,
+    #[doc = "The capability info of the SKU."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capabilities: Vec<SkuCapability>,
+}
+impl DataBoxEdgeSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_box_edge_sku {
+    use super::*;
+    #[doc = "The Sku name."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        Gateway,
+        Edge,
+        #[serde(rename = "TEA_1Node")]
+        Tea1node,
+        #[serde(rename = "TEA_1Node_UPS")]
+        Tea1nodeUps,
+        #[serde(rename = "TEA_1Node_Heater")]
+        Tea1nodeHeater,
+        #[serde(rename = "TEA_1Node_UPS_Heater")]
+        Tea1nodeUpsHeater,
+        #[serde(rename = "TEA_4Node_Heater")]
+        Tea4nodeHeater,
+        #[serde(rename = "TEA_4Node_UPS_Heater")]
+        Tea4nodeUpsHeater,
+        #[serde(rename = "TMA")]
+        Tma,
+        #[serde(rename = "TDC")]
+        Tdc,
+        #[serde(rename = "TCA_Small")]
+        TcaSmall,
+        #[serde(rename = "GPU")]
+        Gpu,
+        #[serde(rename = "TCA_Large")]
+        TcaLarge,
+        #[serde(rename = "EdgeP_Base")]
+        EdgePBase,
+        #[serde(rename = "EdgeP_High")]
+        EdgePHigh,
+        #[serde(rename = "EdgePR_Base")]
+        EdgePrBase,
+        #[serde(rename = "EdgePR_Base_UPS")]
+        EdgePrBaseUps,
+        #[serde(rename = "EdgeMR_Mini")]
+        EdgeMrMini,
+        #[serde(rename = "RCA_Small")]
+        RcaSmall,
+        #[serde(rename = "RCA_Large")]
+        RcaLarge,
+        #[serde(rename = "RDC")]
+        Rdc,
+    }
+    #[doc = "The Sku tier."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Standard,
+    }
+    #[doc = "Sku can be signed up by customer or not."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SignupOption {
+        None,
+        Available,
+    }
+    #[doc = "Availability of the Sku as preview/stable."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Version {
+        Stable,
+        Preview,
+    }
+    #[doc = "Links to the next set of results"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Availability {
+        Available,
+        Unavailable,
+    }
+}
+#[doc = "List of SKU Information objects."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxEdgeSkuList {
+    #[doc = "List of ResourceType Sku"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataBoxEdgeSku>,
+    #[doc = "Links to the next set of results"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataBoxEdgeSkuList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
+impl DataBoxEdgeSkuList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Device Secrets"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeviceSecrets {
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "hcsDataVolumeBitLockerExternalKey", default, skip_serializing_if = "Option::is_none")]
+    pub hcs_data_volume_bit_locker_external_key: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "hcsInternalVolumeBitLockerExternalKey", default, skip_serializing_if = "Option::is_none")]
+    pub hcs_internal_volume_bit_locker_external_key: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "systemVolumeBitLockerRecoveryKey", default, skip_serializing_if = "Option::is_none")]
+    pub system_volume_bit_locker_recovery_key: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "sedEncryptionExternalKeyId", default, skip_serializing_if = "Option::is_none")]
+    pub sed_encryption_external_key_id: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "sedEncryptionExternalKey", default, skip_serializing_if = "Option::is_none")]
+    pub sed_encryption_external_key: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "bmcDefaultUserPassword", default, skip_serializing_if = "Option::is_none")]
+    pub bmc_default_user_password: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "rotateKeyForDataVolumeBitlocker", default, skip_serializing_if = "Option::is_none")]
+    pub rotate_key_for_data_volume_bitlocker: Option<Secret>,
+    #[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+    #[serde(rename = "rotateKeysForSedDrivesSerialized", default, skip_serializing_if = "Option::is_none")]
+    pub rotate_keys_for_sed_drives_serialized: Option<Secret>,
+}
+impl DeviceSecrets {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Details about Edge Profile for the resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EdgeProfile {
+    #[doc = "Subscription details for the Edge Profile"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscription: Option<EdgeProfileSubscription>,
+}
+impl EdgeProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Data Box Edge/Gateway Edge Profile patch."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EdgeProfilePatch {
+    #[doc = "The Data Box Edge/Gateway Edge Profile Subscription patch."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscription: Option<EdgeProfileSubscriptionPatch>,
+}
+impl EdgeProfilePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Subscription details for the Edge Profile"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EdgeProfileSubscription {
+    #[doc = "Edge Subscription Registration ID"]
+    #[serde(rename = "registrationId", default, skip_serializing_if = "Option::is_none")]
+    pub registration_id: Option<String>,
+    #[doc = "ARM ID of the subscription"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<edge_profile_subscription::State>,
+    #[serde(rename = "registrationDate", default, skip_serializing_if = "Option::is_none")]
+    pub registration_date: Option<String>,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SubscriptionProperties>,
+}
+impl EdgeProfileSubscription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod edge_profile_subscription {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Registered,
+        Warned,
+        Suspended,
+        Deleted,
+        Unregistered,
+    }
+}
+#[doc = "The Data Box Edge/Gateway Edge Profile Subscription patch."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EdgeProfileSubscriptionPatch {
+    #[doc = "The path ID that uniquely identifies the subscription of the edge profile."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl EdgeProfileSubscriptionPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Etcd configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EtcdInfo {
+    #[doc = "Etcd type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Etcd version"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl EtcdInfo {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Trigger details."]
@@ -677,6 +1357,135 @@ impl FileTriggerProperties {
         }
     }
 }
+#[doc = "Used in activation key generation flow."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GenerateCertResponse {
+    #[doc = "Gets or sets base64 encoded certificate raw data,\r\nthis is the public part needed to be uploaded to cert vault"]
+    #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
+    pub public_key: Option<String>,
+    #[doc = "Gets or sets base64 encoded private part of the certificate,\r\nneeded to form the activation key"]
+    #[serde(rename = "privateKey", default, skip_serializing_if = "Option::is_none")]
+    pub private_key: Option<String>,
+    #[doc = "Gets or sets expiry time in UTC"]
+    #[serde(rename = "expiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
+    pub expiry_time_in_utc: Option<String>,
+}
+impl GenerateCertResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Image repository credential."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageRepositoryCredential {
+    #[doc = "Image repository url (e.g.: mcr.microsoft.com)."]
+    #[serde(rename = "imageRepositoryUrl")]
+    pub image_repository_url: String,
+    #[doc = "Repository user name."]
+    #[serde(rename = "userName")]
+    pub user_name: String,
+    #[doc = "Represent the secrets intended for encryption with asymmetric key pair."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<AsymmetricEncryptedSecret>,
+}
+impl ImageRepositoryCredential {
+    pub fn new(image_repository_url: String, user_name: String) -> Self {
+        Self {
+            image_repository_url,
+            user_name,
+            password: None,
+        }
+    }
+}
+#[doc = "IoT Addon."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTAddon {
+    #[serde(flatten)]
+    pub addon: Addon,
+    #[doc = "IoT addon properties."]
+    pub properties: IoTAddonProperties,
+    #[doc = "The path ID that uniquely identifies the object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The object name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The hierarchical type of the object."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl IoTAddon {
+    pub fn new(addon: Addon, properties: IoTAddonProperties) -> Self {
+        Self {
+            addon,
+            properties,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "IoT addon properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTAddonProperties {
+    #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
+    #[serde(rename = "ioTDeviceDetails")]
+    pub io_t_device_details: IoTDeviceInfo,
+    #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
+    #[serde(rename = "ioTEdgeDeviceDetails")]
+    pub io_t_edge_device_details: IoTDeviceInfo,
+    #[doc = "Version of IoT running on the appliance."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Host OS supported by the IoT addon."]
+    #[serde(rename = "hostPlatform", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform: Option<io_t_addon_properties::HostPlatform>,
+    #[doc = "Platform where the runtime is hosted."]
+    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform_type: Option<io_t_addon_properties::HostPlatformType>,
+    #[doc = "Addon Provisioning State"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<io_t_addon_properties::ProvisioningState>,
+}
+impl IoTAddonProperties {
+    pub fn new(io_t_device_details: IoTDeviceInfo, io_t_edge_device_details: IoTDeviceInfo) -> Self {
+        Self {
+            io_t_device_details,
+            io_t_edge_device_details,
+            version: None,
+            host_platform: None,
+            host_platform_type: None,
+            provisioning_state: None,
+        }
+    }
+}
+pub mod io_t_addon_properties {
+    use super::*;
+    #[doc = "Host OS supported by the IoT addon."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatform {
+        Windows,
+        Linux,
+    }
+    #[doc = "Platform where the runtime is hosted."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatformType {
+        KubernetesCluster,
+        #[serde(rename = "LinuxVM")]
+        LinuxVm,
+    }
+    #[doc = "Addon Provisioning State"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Invalid,
+        Creating,
+        Created,
+        Updating,
+        Reconfiguring,
+        Failed,
+        Deleting,
+    }
+}
 #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTDeviceInfo {
@@ -700,6 +1509,27 @@ impl IoTDeviceInfo {
             io_t_host_hub,
             io_t_host_hub_id: None,
             authentication: None,
+        }
+    }
+}
+#[doc = "IoT edge agent details is optional, this will be used for download system Agent module while bootstrapping IoT Role if specified."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTEdgeAgentInfo {
+    #[doc = "Name of the IoT edge agent image."]
+    #[serde(rename = "imageName")]
+    pub image_name: String,
+    #[doc = "Image Tag."]
+    pub tag: String,
+    #[doc = "Image repository credential."]
+    #[serde(rename = "imageRepository", default, skip_serializing_if = "Option::is_none")]
+    pub image_repository: Option<ImageRepositoryCredential>,
+}
+impl IoTEdgeAgentInfo {
+    pub fn new(image_name: String, tag: String) -> Self {
+        Self {
+            image_name,
+            tag,
+            image_repository: None,
         }
     }
 }
@@ -747,6 +1577,15 @@ pub struct IoTRoleProperties {
     #[doc = "Mount points of shares in role(s)."]
     #[serde(rename = "shareMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub share_mappings: Vec<MountPointMap>,
+    #[doc = "IoT edge agent details is optional, this will be used for download system Agent module while bootstrapping IoT Role if specified."]
+    #[serde(rename = "ioTEdgeAgentInfo", default, skip_serializing_if = "Option::is_none")]
+    pub io_t_edge_agent_info: Option<IoTEdgeAgentInfo>,
+    #[doc = "Platform where the Iot runtime is hosted."]
+    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform_type: Option<io_t_role_properties::HostPlatformType>,
+    #[doc = "Compute infrastructure Resource"]
+    #[serde(rename = "computeResource", default, skip_serializing_if = "Option::is_none")]
+    pub compute_resource: Option<ComputeResource>,
     #[doc = "Role status."]
     #[serde(rename = "roleStatus")]
     pub role_status: io_t_role_properties::RoleStatus,
@@ -763,6 +1602,9 @@ impl IoTRoleProperties {
             io_t_device_details,
             io_t_edge_device_details,
             share_mappings: Vec::new(),
+            io_t_edge_agent_info: None,
+            host_platform_type: None,
+            compute_resource: None,
             role_status,
         }
     }
@@ -774,6 +1616,13 @@ pub mod io_t_role_properties {
     pub enum HostPlatform {
         Windows,
         Linux,
+    }
+    #[doc = "Platform where the Iot runtime is hosted."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatformType {
+        KubernetesCluster,
+        #[serde(rename = "LinuxVM")]
+        LinuxVm,
     }
     #[doc = "Role status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -948,6 +1797,9 @@ pub mod job_properties {
         InstallUpdates,
         RefreshShare,
         RefreshContainer,
+        Backup,
+        Restore,
+        TriggerSupportPackage,
     }
     #[doc = "Current stage of the update operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -969,6 +1821,392 @@ pub mod job_properties {
         RescanStarted,
         RescanComplete,
         RescanFailed,
+    }
+}
+#[doc = "Kubernetes cluster configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubernetesClusterInfo {
+    #[doc = "Etcd configuration"]
+    #[serde(rename = "etcdInfo", default, skip_serializing_if = "Option::is_none")]
+    pub etcd_info: Option<EtcdInfo>,
+    #[doc = "Kubernetes cluster nodes"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub nodes: Vec<NodeInfo>,
+    #[doc = "Kubernetes cluster version"]
+    pub version: String,
+}
+impl KubernetesClusterInfo {
+    pub fn new(version: String) -> Self {
+        Self {
+            etcd_info: None,
+            nodes: Vec::new(),
+            version,
+        }
+    }
+}
+#[doc = "Kubernetes node IP configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KubernetesIpConfiguration {
+    #[doc = "Port of the Kubernetes node."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<String>,
+    #[doc = "IP address of the Kubernetes node."]
+    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
+    pub ip_address: Option<String>,
+}
+impl KubernetesIpConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Kubernetes role."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubernetesRole {
+    #[serde(flatten)]
+    pub role: Role,
+    #[doc = "Kubernetes role properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<KubernetesRoleProperties>,
+    #[doc = "The path ID that uniquely identifies the object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The object name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The hierarchical type of the object."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl KubernetesRole {
+    pub fn new(role: Role) -> Self {
+        Self {
+            role,
+            properties: None,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "Kubernetes role compute resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubernetesRoleCompute {
+    #[doc = "VM profile"]
+    #[serde(rename = "vmProfile")]
+    pub vm_profile: String,
+    #[doc = "Memory in bytes"]
+    #[serde(rename = "memoryInBytes", default, skip_serializing_if = "Option::is_none")]
+    pub memory_in_bytes: Option<i64>,
+    #[doc = "Processor count"]
+    #[serde(rename = "processorCount", default, skip_serializing_if = "Option::is_none")]
+    pub processor_count: Option<i32>,
+}
+impl KubernetesRoleCompute {
+    pub fn new(vm_profile: String) -> Self {
+        Self {
+            vm_profile,
+            memory_in_bytes: None,
+            processor_count: None,
+        }
+    }
+}
+#[doc = "Kubernetes role network resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KubernetesRoleNetwork {
+    #[doc = "Cni configuration"]
+    #[serde(rename = "cniConfig", default, skip_serializing_if = "Option::is_none")]
+    pub cni_config: Option<CniConfig>,
+    #[doc = "Load balancer configuration"]
+    #[serde(rename = "loadBalancerConfig", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_config: Option<LoadBalancerConfig>,
+}
+impl KubernetesRoleNetwork {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Kubernetes role properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubernetesRoleProperties {
+    #[doc = "Host OS supported by the Kubernetes role."]
+    #[serde(rename = "hostPlatform")]
+    pub host_platform: kubernetes_role_properties::HostPlatform,
+    #[doc = "State of Kubernetes deployment"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<kubernetes_role_properties::ProvisioningState>,
+    #[doc = "Platform where the runtime is hosted."]
+    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform_type: Option<kubernetes_role_properties::HostPlatformType>,
+    #[doc = "Kubernetes cluster configuration"]
+    #[serde(rename = "kubernetesClusterInfo")]
+    pub kubernetes_cluster_info: KubernetesClusterInfo,
+    #[doc = "Kubernetes role resources"]
+    #[serde(rename = "kubernetesRoleResources")]
+    pub kubernetes_role_resources: KubernetesRoleResources,
+    #[doc = "Role status."]
+    #[serde(rename = "roleStatus")]
+    pub role_status: kubernetes_role_properties::RoleStatus,
+}
+impl KubernetesRoleProperties {
+    pub fn new(
+        host_platform: kubernetes_role_properties::HostPlatform,
+        kubernetes_cluster_info: KubernetesClusterInfo,
+        kubernetes_role_resources: KubernetesRoleResources,
+        role_status: kubernetes_role_properties::RoleStatus,
+    ) -> Self {
+        Self {
+            host_platform,
+            provisioning_state: None,
+            host_platform_type: None,
+            kubernetes_cluster_info,
+            kubernetes_role_resources,
+            role_status,
+        }
+    }
+}
+pub mod kubernetes_role_properties {
+    use super::*;
+    #[doc = "Host OS supported by the Kubernetes role."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatform {
+        Windows,
+        Linux,
+    }
+    #[doc = "State of Kubernetes deployment"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Invalid,
+        Creating,
+        Created,
+        Updating,
+        Reconfiguring,
+        Failed,
+        Deleting,
+    }
+    #[doc = "Platform where the runtime is hosted."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatformType {
+        KubernetesCluster,
+        #[serde(rename = "LinuxVM")]
+        LinuxVm,
+    }
+    #[doc = "Role status."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RoleStatus {
+        Enabled,
+        Disabled,
+    }
+}
+#[doc = "Kubernetes role resources"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubernetesRoleResources {
+    #[doc = "Kubernetes role storage resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage: Option<KubernetesRoleStorage>,
+    #[doc = "Kubernetes role compute resource"]
+    pub compute: KubernetesRoleCompute,
+    #[doc = "Kubernetes role network resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<KubernetesRoleNetwork>,
+}
+impl KubernetesRoleResources {
+    pub fn new(compute: KubernetesRoleCompute) -> Self {
+        Self {
+            storage: None,
+            compute,
+            network: None,
+        }
+    }
+}
+#[doc = "Kubernetes role storage resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KubernetesRoleStorage {
+    #[doc = "Kubernetes storage class info."]
+    #[serde(rename = "storageClasses", default, skip_serializing_if = "Vec::is_empty")]
+    pub storage_classes: Vec<KubernetesRoleStorageClassInfo>,
+    #[doc = "Mount points of shares in role(s)."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub endpoints: Vec<MountPointMap>,
+}
+impl KubernetesRoleStorage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Kubernetes storage class info."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KubernetesRoleStorageClassInfo {
+    #[doc = "Storage class name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Storage class type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "If provisioned storage is posix compliant."]
+    #[serde(rename = "posixCompliant", default, skip_serializing_if = "Option::is_none")]
+    pub posix_compliant: Option<kubernetes_role_storage_class_info::PosixCompliant>,
+}
+impl KubernetesRoleStorageClassInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod kubernetes_role_storage_class_info {
+    use super::*;
+    #[doc = "If provisioned storage is posix compliant."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PosixCompliant {
+        Invalid,
+        Enabled,
+        Disabled,
+    }
+}
+#[doc = "Load balancer configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LoadBalancerConfig {
+    #[doc = "Load balancer type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Load balancer version"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl LoadBalancerConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "MEC role."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MecRole {
+    #[serde(flatten)]
+    pub role: Role,
+    #[doc = "MEC role properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MecRoleProperties>,
+    #[doc = "The path ID that uniquely identifies the object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The object name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The hierarchical type of the object."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl MecRole {
+    pub fn new(role: Role) -> Self {
+        Self {
+            role,
+            properties: None,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "MEC role properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MecRoleProperties {
+    #[doc = "Represent the secrets intended for encryption with asymmetric key pair."]
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<AsymmetricEncryptedSecret>,
+    #[doc = "Role status."]
+    #[serde(rename = "roleStatus")]
+    pub role_status: mec_role_properties::RoleStatus,
+}
+impl MecRoleProperties {
+    pub fn new(role_status: mec_role_properties::RoleStatus) -> Self {
+        Self {
+            connection_string: None,
+            role_status,
+        }
+    }
+}
+pub mod mec_role_properties {
+    use super::*;
+    #[doc = "Role status."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RoleStatus {
+        Enabled,
+        Disabled,
+    }
+}
+#[doc = "Metric configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricConfiguration {
+    #[doc = "The Resource ID on which the metrics should be pushed."]
+    #[serde(rename = "resourceId")]
+    pub resource_id: String,
+    #[doc = "The MDM account to which the counters should be pushed."]
+    #[serde(rename = "mdmAccount", default, skip_serializing_if = "Option::is_none")]
+    pub mdm_account: Option<String>,
+    #[doc = "The MDM namespace to which the counters should be pushed. This is required if MDMAccount is specified"]
+    #[serde(rename = "metricNameSpace", default, skip_serializing_if = "Option::is_none")]
+    pub metric_name_space: Option<String>,
+    #[doc = "Host name for the IoT hub associated to the device."]
+    #[serde(rename = "counterSets")]
+    pub counter_sets: Vec<MetricCounterSet>,
+}
+impl MetricConfiguration {
+    pub fn new(resource_id: String, counter_sets: Vec<MetricCounterSet>) -> Self {
+        Self {
+            resource_id,
+            mdm_account: None,
+            metric_name_space: None,
+            counter_sets,
+        }
+    }
+}
+#[doc = "The metric counter"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricCounter {
+    #[doc = "The counter name."]
+    pub name: String,
+    #[doc = "The instance from which counter should be collected."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instance: Option<String>,
+    #[doc = "The dimension filter."]
+    #[serde(rename = "dimensionFilter", default, skip_serializing_if = "Vec::is_empty")]
+    pub dimension_filter: Vec<MetricDimension>,
+    #[doc = "The additional dimensions to be added to metric."]
+    #[serde(rename = "additionalDimensions", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_dimensions: Vec<MetricDimension>,
+}
+impl MetricCounter {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            instance: None,
+            dimension_filter: Vec::new(),
+            additional_dimensions: Vec::new(),
+        }
+    }
+}
+#[doc = "The metric counter set"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricCounterSet {
+    #[doc = "The counters that should be collected in this set."]
+    pub counters: Vec<MetricCounter>,
+}
+impl MetricCounterSet {
+    pub fn new(counters: Vec<MetricCounter>) -> Self {
+        Self { counters }
+    }
+}
+#[doc = "The metric dimension"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricDimension {
+    #[doc = "The dimension type."]
+    #[serde(rename = "sourceType")]
+    pub source_type: String,
+    #[doc = "The dimension value."]
+    #[serde(rename = "sourceName")]
+    pub source_name: String,
+}
+impl MetricDimension {
+    pub fn new(source_type: String, source_name: String) -> Self {
+        Self { source_type, source_name }
     }
 }
 #[doc = "Metric Dimension v1."]
@@ -1063,6 +2301,54 @@ pub mod metric_specification_v1 {
         Transaction,
     }
 }
+#[doc = "The metric setting details for the role"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoringMetricConfiguration {
+    #[serde(flatten)]
+    pub arm_base_model: ArmBaseModel,
+    #[doc = "Metrics properties"]
+    pub properties: MonitoringMetricConfigurationProperties,
+}
+impl MonitoringMetricConfiguration {
+    pub fn new(properties: MonitoringMetricConfigurationProperties) -> Self {
+        Self {
+            arm_base_model: ArmBaseModel::default(),
+            properties,
+        }
+    }
+}
+#[doc = "Collection of metric configurations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MonitoringMetricConfigurationList {
+    #[doc = "The list of metric configurations."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MonitoringMetricConfiguration>,
+    #[doc = "Link to the next set of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MonitoringMetricConfigurationList {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
+impl MonitoringMetricConfigurationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Metrics properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoringMetricConfigurationProperties {
+    #[doc = "The metrics configuration details"]
+    #[serde(rename = "metricConfigurations")]
+    pub metric_configurations: Vec<MetricConfiguration>,
+}
+impl MonitoringMetricConfigurationProperties {
+    pub fn new(metric_configurations: Vec<MetricConfiguration>) -> Self {
+        Self { metric_configurations }
+    }
+}
 #[doc = "The share mount point."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MountPointMap {
@@ -1075,6 +2361,9 @@ pub struct MountPointMap {
     #[doc = "Mount point for the share."]
     #[serde(rename = "mountPoint", default, skip_serializing_if = "Option::is_none")]
     pub mount_point: Option<String>,
+    #[doc = "Mounting type."]
+    #[serde(rename = "mountType", default, skip_serializing_if = "Option::is_none")]
+    pub mount_type: Option<mount_point_map::MountType>,
     #[doc = "Role type."]
     #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
     pub role_type: Option<mount_point_map::RoleType>,
@@ -1085,12 +2374,19 @@ impl MountPointMap {
             share_id,
             role_id: None,
             mount_point: None,
+            mount_type: None,
             role_type: None,
         }
     }
 }
 pub mod mount_point_map {
     use super::*;
+    #[doc = "Mounting type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MountType {
+        Volume,
+        HostPath,
+    }
     #[doc = "Role type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RoleType {
@@ -1100,6 +2396,10 @@ pub mod mount_point_map {
         Asa,
         Functions,
         Cognitive,
+        #[serde(rename = "MEC")]
+        Mec,
+        CloudEdgeManagement,
+        Kubernetes,
     }
 }
 #[doc = "Represents the networkAdapter on a device."]
@@ -1244,16 +2544,47 @@ impl Node {
         Self::default()
     }
 }
+#[doc = "Kubernetes node info"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NodeInfo {
+    #[doc = "Node name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Node type - Master/Worker"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<node_info::Type>,
+    #[doc = "IP Configuration of the Kubernetes node."]
+    #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Vec::is_empty")]
+    pub ip_configuration: Vec<KubernetesIpConfiguration>,
+}
+impl NodeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod node_info {
+    use super::*;
+    #[doc = "Node type - Master/Worker"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Invalid,
+        Master,
+        Worker,
+    }
+}
 #[doc = "Collection of Nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeList {
     #[doc = "The list of Nodes."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Node>,
+    #[doc = "Link to the next set of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NodeList {
     fn continuation(&self) -> Option<String> {
-        None
+        self.next_link.clone()
     }
 }
 impl NodeList {
@@ -1309,6 +2640,9 @@ pub struct Operation {
     #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Is data action."]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
     #[doc = "Operation display properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
@@ -1417,8 +2751,8 @@ pub struct OrderProperties {
     #[serde(rename = "contactInformation")]
     pub contact_information: ContactDetails,
     #[doc = "The shipping address of the customer."]
-    #[serde(rename = "shippingAddress")]
-    pub shipping_address: Address,
+    #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
+    pub shipping_address: Option<Address>,
     #[doc = "Represents a single status change."]
     #[serde(rename = "currentStatus", default, skip_serializing_if = "Option::is_none")]
     pub current_status: Option<OrderStatus>,
@@ -1434,18 +2768,32 @@ pub struct OrderProperties {
     #[doc = "Tracking information for the package returned from the customer whether it has an original or a replacement device."]
     #[serde(rename = "returnTrackingInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub return_tracking_info: Vec<TrackingInfo>,
+    #[doc = "ShipmentType of the order"]
+    #[serde(rename = "shipmentType", default, skip_serializing_if = "Option::is_none")]
+    pub shipment_type: Option<order_properties::ShipmentType>,
 }
 impl OrderProperties {
-    pub fn new(contact_information: ContactDetails, shipping_address: Address) -> Self {
+    pub fn new(contact_information: ContactDetails) -> Self {
         Self {
             contact_information,
-            shipping_address,
+            shipping_address: None,
             current_status: None,
             order_history: Vec::new(),
             serial_number: None,
             delivery_tracking_info: Vec::new(),
             return_tracking_info: Vec::new(),
+            shipment_type: None,
         }
+    }
+}
+pub mod order_properties {
+    use super::*;
+    #[doc = "ShipmentType of the order"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ShipmentType {
+        NotApplicable,
+        ShippedToCustomer,
+        SelfPickup,
     }
 }
 #[doc = "Represents a single status change."]
@@ -1459,6 +2807,9 @@ pub struct OrderStatus {
     #[doc = "Comments related to this status change."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comments: Option<String>,
+    #[doc = "Tracking courier information."]
+    #[serde(rename = "trackingInformation", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_information: Option<TrackingInfo>,
     #[doc = "Dictionary to hold generic information which is not stored\r\nby the already existing properties"]
     #[serde(rename = "additionalOrderDetails", default, skip_serializing_if = "Option::is_none")]
     pub additional_order_details: Option<serde_json::Value>,
@@ -1469,6 +2820,7 @@ impl OrderStatus {
             status,
             update_date_time: None,
             comments: None,
+            tracking_information: None,
             additional_order_details: None,
         }
     }
@@ -1492,6 +2844,9 @@ pub mod order_status {
         AwaitingReturnShipment,
         ShippedBack,
         CollectedAtMicrosoft,
+        AwaitingPickup,
+        PickupCompleted,
+        AwaitingDrop,
     }
 }
 #[doc = "Trigger details."]
@@ -1612,71 +2967,72 @@ impl RefreshDetails {
         Self::default()
     }
 }
-#[doc = "SkuInformation object"]
+#[doc = "Msi identity details of the resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceTypeSku {
-    #[doc = "The type of the resource"]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<String>,
-    #[doc = "The Sku name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<resource_type_sku::Name>,
-    #[doc = "The Sku kind"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[doc = "The Sku tier"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<resource_type_sku::Tier>,
-    #[doc = "The Sku family"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[doc = "Availability of the SKU for the region"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub locations: Vec<String>,
-    #[doc = "The API versions in which SKU is available"]
-    #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
-    pub api_versions: Vec<String>,
-    #[doc = "Availability of the SKU for the location/zone"]
-    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub location_info: Vec<SkuLocationInfo>,
-    #[doc = "The pricing info of the Sku."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub costs: Vec<SkuCost>,
-    #[doc = "Restrictions of the SKU availability."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub restrictions: Vec<SkuRestriction>,
+pub struct ResourceIdentity {
+    #[doc = "Identity type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<resource_identity::Type>,
+    #[doc = "Service Principal Id backing the Msi"]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "Home Tenant Id"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 }
-impl ResourceTypeSku {
+impl ResourceIdentity {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod resource_type_sku {
+pub mod resource_identity {
     use super::*;
-    #[doc = "The Sku name"]
+    #[doc = "Identity type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        Gateway,
-        Edge,
-        #[serde(rename = "TEA_1Node")]
-        Tea1node,
-        #[serde(rename = "TEA_1Node_UPS")]
-        Tea1nodeUps,
-        #[serde(rename = "TEA_1Node_Heater")]
-        Tea1nodeHeater,
-        #[serde(rename = "TEA_1Node_UPS_Heater")]
-        Tea1nodeUpsHeater,
-        #[serde(rename = "TEA_4Node_Heater")]
-        Tea4nodeHeater,
-        #[serde(rename = "TEA_4Node_UPS_Heater")]
-        Tea4nodeUpsHeater,
-        #[serde(rename = "TMA")]
-        Tma,
+    pub enum Type {
+        None,
+        SystemAssigned,
+        UserAssigned,
     }
-    #[doc = "The Sku tier"]
+}
+#[doc = "Fields for tracking resource move"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceMoveDetails {
+    #[doc = "Denotes whether move operation is in progress"]
+    #[serde(rename = "operationInProgress", default, skip_serializing_if = "Option::is_none")]
+    pub operation_in_progress: Option<resource_move_details::OperationInProgress>,
+    #[doc = "Denotes the timeout of the operation to finish"]
+    #[serde(rename = "operationInProgressLockTimeoutInUTC", default, skip_serializing_if = "Option::is_none")]
+    pub operation_in_progress_lock_timeout_in_utc: Option<String>,
+}
+impl ResourceMoveDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod resource_move_details {
+    use super::*;
+    #[doc = "Denotes whether move operation is in progress"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Standard,
+    pub enum OperationInProgress {
+        None,
+        ResourceMoveInProgress,
+        ResourceMoveFailed,
+    }
+}
+#[doc = "Resource type Sku object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceTypeSku {
+    #[doc = "The resource type."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "The skus."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub skus: Vec<SkuInformation>,
+}
+impl ResourceTypeSku {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Compute role."]
@@ -1686,12 +3042,16 @@ pub struct Role {
     pub arm_base_model: ArmBaseModel,
     #[doc = "Role type."]
     pub kind: role::Kind,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl Role {
     pub fn new(kind: role::Kind) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
             kind,
+            system_data: None,
         }
     }
 }
@@ -1706,6 +3066,10 @@ pub mod role {
         Asa,
         Functions,
         Cognitive,
+        #[serde(rename = "MEC")]
+        Mec,
+        CloudEdgeManagement,
+        Kubernetes,
     }
 }
 #[doc = "Collection of all the roles on the Data Box Edge device."]
@@ -1738,6 +3102,21 @@ pub struct RoleSinkInfo {
 impl RoleSinkInfo {
     pub fn new(role_id: String) -> Self {
         Self { role_id }
+    }
+}
+#[doc = "Holds device secret either as a KeyVault reference or as an encrypted value."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Secret {
+    #[doc = "Represent the secrets intended for encryption with asymmetric key pair."]
+    #[serde(rename = "encryptedSecret", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_secret: Option<AsymmetricEncryptedSecret>,
+    #[doc = "Id of the Key-Vault where secret is stored (ex: secrets/AuthClientSecret/82ef4346187a4033a10d629cde07d740)."]
+    #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_id: Option<String>,
+}
+impl Secret {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The security settings of a device."]
@@ -1785,6 +3164,9 @@ impl ServiceSpecification {
 pub struct Share {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The share properties."]
     pub properties: ShareProperties,
 }
@@ -1792,6 +3174,7 @@ impl Share {
     pub fn new(properties: ShareProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             properties,
         }
     }
@@ -1964,11 +3347,50 @@ pub mod sku {
         Tea4nodeUpsHeater,
         #[serde(rename = "TMA")]
         Tma,
+        #[serde(rename = "TDC")]
+        Tdc,
+        #[serde(rename = "TCA_Small")]
+        TcaSmall,
+        #[serde(rename = "GPU")]
+        Gpu,
+        #[serde(rename = "TCA_Large")]
+        TcaLarge,
+        #[serde(rename = "EdgeP_Base")]
+        EdgePBase,
+        #[serde(rename = "EdgeP_High")]
+        EdgePHigh,
+        #[serde(rename = "EdgePR_Base")]
+        EdgePrBase,
+        #[serde(rename = "EdgePR_Base_UPS")]
+        EdgePrBaseUps,
+        #[serde(rename = "EdgeMR_Mini")]
+        EdgeMrMini,
+        #[serde(rename = "RCA_Small")]
+        RcaSmall,
+        #[serde(rename = "RCA_Large")]
+        RcaLarge,
+        #[serde(rename = "RDC")]
+        Rdc,
     }
     #[doc = "The SKU tier. This is based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Standard,
+    }
+}
+#[doc = "The metadata to describe the capability."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SkuCapability {
+    #[doc = "An invariant to describe the feature."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "An invariant if the feature is measured by quantity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+impl SkuCapability {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The metadata for retrieving price info."]
@@ -1980,7 +3402,7 @@ pub struct SkuCost {
     #[doc = "The cost quantity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<i64>,
-    #[doc = "Restriction of the SKU for the location/zone"]
+    #[doc = "The extended unit."]
     #[serde(rename = "extendedUnit", default, skip_serializing_if = "Option::is_none")]
     pub extended_unit: Option<String>,
 }
@@ -1989,20 +3411,51 @@ impl SkuCost {
         Self::default()
     }
 }
+#[doc = "Sku information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SkuInformation {
+    #[doc = "The sku name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The sku tier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[doc = "The sku kind."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[doc = "The Sku family."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[doc = "The pricing info of the Sku."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub costs: Vec<SkuCost>,
+    #[doc = "The locations where Sku is available."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[doc = "The locations where Sku is available with zones and sites info"]
+    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub location_info: Vec<SkuLocationInfo>,
+    #[doc = "The required quotaIds for the sku to be available."]
+    #[serde(rename = "requiredQuotaIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_quota_ids: Vec<String>,
+    #[doc = "The required features for the sku to be available."]
+    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_features: Vec<String>,
+}
+impl SkuInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "List of SKU Information objects"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuInformationList {
-    #[doc = "List of ResourceType Sku"]
+    #[doc = "List of ResourceTypeSku objects"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceTypeSku>,
     #[doc = "Links to the next set of results"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-impl azure_core::Continuable for SkuInformationList {
-    fn continuation(&self) -> Option<String> {
-        None
-    }
 }
 impl SkuInformationList {
     pub fn new() -> Self {
@@ -2027,56 +3480,14 @@ impl SkuLocationInfo {
         Self::default()
     }
 }
-#[doc = "The restrictions because of which SKU cannot be used."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SkuRestriction {
-    #[doc = "The type of the restriction."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "The locations where sku is restricted."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub values: Vec<String>,
-    #[doc = "The SKU restriction reason."]
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
-    pub reason_code: Option<sku_restriction::ReasonCode>,
-    #[doc = "The restriction info with locations and zones."]
-    #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
-    pub restriction_info: Option<SkuRestrictionInfo>,
-}
-impl SkuRestriction {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod sku_restriction {
-    use super::*;
-    #[doc = "The SKU restriction reason."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ReasonCode {
-        NotAvailableForSubscription,
-        QuotaId,
-    }
-}
-#[doc = "The restriction info with locations and zones."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SkuRestrictionInfo {
-    #[doc = "The locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub locations: Vec<String>,
-    #[doc = "The zones."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-impl SkuRestrictionInfo {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Represents a Storage Account on the  Data Box Edge/Gateway device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The storage account properties."]
     pub properties: StorageAccountProperties,
 }
@@ -2084,6 +3495,7 @@ impl StorageAccount {
     pub fn new(properties: StorageAccountProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             properties,
         }
     }
@@ -2093,6 +3505,9 @@ impl StorageAccount {
 pub struct StorageAccountCredential {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The storage account credential properties."]
     pub properties: StorageAccountCredentialProperties,
 }
@@ -2100,6 +3515,7 @@ impl StorageAccountCredential {
     pub fn new(properties: StorageAccountCredentialProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             properties,
         }
     }
@@ -2205,7 +3621,7 @@ impl StorageAccountList {
     }
 }
 #[doc = "The storage account properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountProperties {
     #[doc = "Description for the storage Account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2214,8 +3630,8 @@ pub struct StorageAccountProperties {
     #[serde(rename = "storageAccountStatus", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_status: Option<storage_account_properties::StorageAccountStatus>,
     #[doc = "Data policy of the storage Account."]
-    #[serde(rename = "dataPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub data_policy: Option<storage_account_properties::DataPolicy>,
+    #[serde(rename = "dataPolicy")]
+    pub data_policy: storage_account_properties::DataPolicy,
     #[doc = "Storage Account Credential Id"]
     #[serde(rename = "storageAccountCredentialId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_credential_id: Option<String>,
@@ -2227,8 +3643,15 @@ pub struct StorageAccountProperties {
     pub container_count: Option<i32>,
 }
 impl StorageAccountProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(data_policy: storage_account_properties::DataPolicy) -> Self {
+        Self {
+            description: None,
+            storage_account_status: None,
+            data_policy,
+            storage_account_credential_id: None,
+            blob_endpoint: None,
+            container_count: None,
+        }
     }
 }
 pub mod storage_account_properties {
@@ -2250,6 +3673,36 @@ pub mod storage_account_properties {
         Local,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionProperties {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
+    pub location_placement_id: Option<String>,
+    #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
+    pub quota_id: Option<String>,
+    #[serde(rename = "serializedDetails", default, skip_serializing_if = "Option::is_none")]
+    pub serialized_details: Option<String>,
+    #[serde(rename = "registeredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    pub registered_features: Vec<SubscriptionRegisteredFeatures>,
+}
+impl SubscriptionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionRegisteredFeatures {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+}
+impl SubscriptionRegisteredFeatures {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Symmetric key for authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SymmetricKey {
@@ -2260,6 +3713,52 @@ pub struct SymmetricKey {
 impl SymmetricKey {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SystemData {
+    #[doc = "The identity that created the resource."]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The type of identity that last modified the resource."]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod system_data {
+    use super::*;
+    #[doc = "The type of identity that created the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[doc = "The type of identity that last modified the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
     }
 }
 #[doc = "Tracking courier information."]
@@ -2288,6 +3787,9 @@ impl TrackingInfo {
 pub struct Trigger {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "Trigger Kind."]
     pub kind: trigger::Kind,
 }
@@ -2295,6 +3797,7 @@ impl Trigger {
     pub fn new(kind: trigger::Kind) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             kind,
         }
     }
@@ -2534,6 +4037,9 @@ pub mod upload_certificate_response {
 pub struct User {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[doc = "The user properties."]
     pub properties: UserProperties,
 }
@@ -2541,6 +4047,7 @@ impl User {
     pub fn new(properties: UserProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
+            system_data: None,
             properties,
         }
     }

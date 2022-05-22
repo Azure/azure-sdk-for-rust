@@ -90,17 +90,8 @@ impl Client {
     pub fn containers(&self) -> containers::Client {
         containers::Client(self.clone())
     }
-    pub fn device_capacity_check(&self) -> device_capacity_check::Client {
-        device_capacity_check::Client(self.clone())
-    }
-    pub fn device_capacity_info(&self) -> device_capacity_info::Client {
-        device_capacity_info::Client(self.clone())
-    }
     pub fn devices(&self) -> devices::Client {
         devices::Client(self.clone())
-    }
-    pub fn diagnostic_settings(&self) -> diagnostic_settings::Client {
-        diagnostic_settings::Client(self.clone())
     }
     pub fn jobs(&self) -> jobs::Client {
         jobs::Client(self.clone())
@@ -131,9 +122,6 @@ impl Client {
     }
     pub fn storage_accounts(&self) -> storage_accounts::Client {
         storage_accounts::Client(self.clone())
-    }
-    pub fn support_packages(&self) -> support_packages::Client {
-        support_packages::Client(self.clone())
     }
     pub fn triggers(&self) -> triggers::Client {
         triggers::Client(self.clone())
@@ -174,22 +162,6 @@ pub enum Error {
     BandwidthSchedules_CreateOrUpdate(#[from] bandwidth_schedules::create_or_update::Error),
     #[error(transparent)]
     BandwidthSchedules_Delete(#[from] bandwidth_schedules::delete::Error),
-    #[error(transparent)]
-    DeviceCapacityCheck_CheckResourceCreationFeasibility(#[from] device_capacity_check::check_resource_creation_feasibility::Error),
-    #[error(transparent)]
-    DeviceCapacityInfo_GetDeviceCapacityInfo(#[from] device_capacity_info::get_device_capacity_info::Error),
-    #[error(transparent)]
-    DiagnosticSettings_GetDiagnosticProactiveLogCollectionSettings(
-        #[from] diagnostic_settings::get_diagnostic_proactive_log_collection_settings::Error,
-    ),
-    #[error(transparent)]
-    DiagnosticSettings_UpdateDiagnosticProactiveLogCollectionSettings(
-        #[from] diagnostic_settings::update_diagnostic_proactive_log_collection_settings::Error,
-    ),
-    #[error(transparent)]
-    DiagnosticSettings_GetDiagnosticRemoteSupportSettings(#[from] diagnostic_settings::get_diagnostic_remote_support_settings::Error),
-    #[error(transparent)]
-    DiagnosticSettings_UpdateDiagnosticRemoteSupportSettings(#[from] diagnostic_settings::update_diagnostic_remote_support_settings::Error),
     #[error(transparent)]
     Devices_DownloadUpdates(#[from] devices::download_updates::Error),
     #[error(transparent)]
@@ -289,8 +261,6 @@ pub enum Error {
     #[error(transparent)]
     Triggers_Delete(#[from] triggers::delete::Error),
     #[error(transparent)]
-    SupportPackages_TriggerSupportPackage(#[from] support_packages::trigger_support_package::Error),
-    #[error(transparent)]
     Devices_UpdateExtendedInformation(#[from] devices::update_extended_information::Error),
     #[error(transparent)]
     Devices_GetUpdateSummary(#[from] devices::get_update_summary::Error),
@@ -357,7 +327,7 @@ pub mod operations {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -381,7 +351,7 @@ pub mod operations {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -473,7 +443,7 @@ pub mod available_skus {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -497,7 +467,7 @@ pub mod available_skus {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -802,7 +772,7 @@ pub mod devices {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -826,7 +796,7 @@ pub mod devices {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 if let Some(expand) = &this.expand {
                                     url.query_pairs_mut().append_pair("$expand", expand);
                                 }
@@ -915,7 +885,7 @@ pub mod devices {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -939,7 +909,7 @@ pub mod devices {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 if let Some(expand) = &this.expand {
                                     url.query_pairs_mut().append_pair("$expand", expand);
                                 }
@@ -1026,7 +996,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1088,6 +1058,7 @@ pub mod devices {
             pub(crate) resource_group_name: String,
         }
         impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin({
                     let this = self.clone();
@@ -1108,7 +1079,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.data_box_edge_device).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -1191,7 +1162,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -1224,8 +1195,9 @@ pub mod devices {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
+            Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1257,6 +1229,7 @@ pub mod devices {
             pub(crate) resource_group_name: String,
         }
         impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin({
                     let this = self.clone();
@@ -1277,15 +1250,16 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -1305,8 +1279,8 @@ pub mod devices {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1359,7 +1333,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -1367,8 +1341,8 @@ pub mod devices {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -1431,7 +1405,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -1507,7 +1481,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -1540,8 +1514,8 @@ pub mod devices {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1594,7 +1568,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -1602,8 +1576,8 @@ pub mod devices {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -1666,7 +1640,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1698,8 +1672,8 @@ pub mod devices {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1752,7 +1726,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -1760,8 +1734,8 @@ pub mod devices {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -1830,7 +1804,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.security_settings).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -1903,7 +1877,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -1979,7 +1953,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2061,7 +2035,7 @@ pub mod devices {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -2177,7 +2151,7 @@ pub mod alerts {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2201,7 +2175,7 @@ pub mod alerts {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2287,7 +2261,7 @@ pub mod alerts {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2427,7 +2401,7 @@ pub mod bandwidth_schedules {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2451,7 +2425,7 @@ pub mod bandwidth_schedules {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2530,7 +2504,7 @@ pub mod bandwidth_schedules {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2562,8 +2536,8 @@ pub mod bandwidth_schedules {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::BandwidthSchedule),
             Accepted202,
+            Ok200(models::BandwidthSchedule),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2612,7 +2586,7 @@ pub mod bandwidth_schedules {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -2620,13 +2594,13 @@ pub mod bandwidth_schedules {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::BandwidthSchedule =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -2646,9 +2620,9 @@ pub mod bandwidth_schedules {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2696,596 +2670,16 @@ pub mod bandwidth_schedules {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             http::StatusCode::OK => Ok(Response::Ok200),
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
-                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod device_capacity_check {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn check_resource_creation_feasibility(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            device_name: impl Into<String>,
-            device_capacity_request_info: impl Into<models::DeviceCapacityRequestInfo>,
-        ) -> check_resource_creation_feasibility::Builder {
-            check_resource_creation_feasibility::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                device_name: device_name.into(),
-                device_capacity_request_info: device_capacity_request_info.into(),
-                capacity_name: None,
-            }
-        }
-    }
-    pub mod check_resource_creation_feasibility {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Accepted202,
-            Ok200,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) device_name: String,
-            pub(crate) device_capacity_request_info: models::DeviceCapacityRequestInfo,
-            pub(crate) capacity_name: Option<String>,
-        }
-        impl Builder {
-            pub fn capacity_name(mut self, capacity_name: impl Into<String>) -> Self {
-                self.capacity_name = Some(capacity_name.into());
-                self
-            }
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/deviceCapacityCheck" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.device_capacity_request_info).map_err(Error::Serialize)?;
-                        if let Some(capacity_name) = &this.capacity_name {
-                            url.query_pairs_mut().append_pair("capacityName", capacity_name);
-                        }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
-                            http::StatusCode::OK => Ok(Response::Ok200),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod device_capacity_info {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn get_device_capacity_info(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            device_name: impl Into<String>,
-        ) -> get_device_capacity_info::Builder {
-            get_device_capacity_info::Builder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                device_name: device_name.into(),
-            }
-        }
-    }
-    pub mod get_device_capacity_info {
-        use super::models;
-        type Response = models::DeviceCapacityInfo;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) device_name: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/deviceCapacityInfo/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::DeviceCapacityInfo =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod diagnostic_settings {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn get_diagnostic_proactive_log_collection_settings(
-            &self,
-            device_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-        ) -> get_diagnostic_proactive_log_collection_settings::Builder {
-            get_diagnostic_proactive_log_collection_settings::Builder {
-                client: self.0.clone(),
-                device_name: device_name.into(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-            }
-        }
-        pub fn update_diagnostic_proactive_log_collection_settings(
-            &self,
-            device_name: impl Into<String>,
-            proactive_log_collection_settings: impl Into<models::DiagnosticProactiveLogCollectionSettings>,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-        ) -> update_diagnostic_proactive_log_collection_settings::Builder {
-            update_diagnostic_proactive_log_collection_settings::Builder {
-                client: self.0.clone(),
-                device_name: device_name.into(),
-                proactive_log_collection_settings: proactive_log_collection_settings.into(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-            }
-        }
-        pub fn get_diagnostic_remote_support_settings(
-            &self,
-            device_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-        ) -> get_diagnostic_remote_support_settings::Builder {
-            get_diagnostic_remote_support_settings::Builder {
-                client: self.0.clone(),
-                device_name: device_name.into(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-            }
-        }
-        pub fn update_diagnostic_remote_support_settings(
-            &self,
-            device_name: impl Into<String>,
-            diagnostic_remote_support_settings: impl Into<models::DiagnosticRemoteSupportSettings>,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-        ) -> update_diagnostic_remote_support_settings::Builder {
-            update_diagnostic_remote_support_settings::Builder {
-                client: self.0.clone(),
-                device_name: device_name.into(),
-                diagnostic_remote_support_settings: diagnostic_remote_support_settings.into(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-            }
-        }
-    }
-    pub mod get_diagnostic_proactive_log_collection_settings {
-        use super::models;
-        type Response = models::DiagnosticProactiveLogCollectionSettings;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_name: String,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/diagnosticProactiveLogCollectionSettings/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::DiagnosticProactiveLogCollectionSettings =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod update_diagnostic_proactive_log_collection_settings {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::DiagnosticProactiveLogCollectionSettings),
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_name: String,
-            pub(crate) proactive_log_collection_settings: models::DiagnosticProactiveLogCollectionSettings,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-        }
-        impl Builder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/diagnosticProactiveLogCollectionSettings/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.proactive_log_collection_settings).map_err(Error::Serialize)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::DiagnosticProactiveLogCollectionSettings =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod get_diagnostic_remote_support_settings {
-        use super::models;
-        type Response = models::DiagnosticRemoteSupportSettings;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_name: String,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/diagnosticRemoteSupportSettings/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::DiagnosticRemoteSupportSettings =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(rsp_value)
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod update_diagnostic_remote_support_settings {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Accepted202,
-            Ok200(models::DiagnosticRemoteSupportSettings),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_name: String,
-            pub(crate) diagnostic_remote_support_settings: models::DiagnosticRemoteSupportSettings,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-        }
-        impl Builder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/diagnosticRemoteSupportSettings/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.diagnostic_remote_support_settings).map_err(Error::Serialize)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::DiagnosticRemoteSupportSettings =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -3378,7 +2772,7 @@ pub mod jobs {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3477,7 +2871,7 @@ pub mod nodes {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3501,7 +2895,7 @@ pub mod nodes {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3602,7 +2996,7 @@ pub mod operations_status {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3760,7 +3154,7 @@ pub mod orders {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3784,7 +3178,7 @@ pub mod orders {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3868,7 +3262,7 @@ pub mod orders {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3900,8 +3294,8 @@ pub mod orders {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::Order),
             Accepted202,
+            Ok200(models::Order),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3955,7 +3349,7 @@ pub mod orders {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.order).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -3963,13 +3357,13 @@ pub mod orders {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::Order =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -3989,9 +3383,9 @@ pub mod orders {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4044,16 +3438,16 @@ pub mod orders {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -4116,7 +3510,7 @@ pub mod orders {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -4263,7 +3657,7 @@ pub mod roles {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -4287,7 +3681,7 @@ pub mod roles {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4373,7 +3767,7 @@ pub mod roles {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4405,8 +3799,8 @@ pub mod roles {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::Role),
             Accepted202,
+            Ok200(models::Role),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4462,7 +3856,7 @@ pub mod roles {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.role).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -4470,13 +3864,13 @@ pub mod roles {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::Role =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -4496,9 +3890,9 @@ pub mod roles {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4553,16 +3947,16 @@ pub mod roles {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -4706,7 +4100,7 @@ pub mod addons {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -4730,7 +4124,7 @@ pub mod addons {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4810,7 +4204,7 @@ pub mod addons {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4842,8 +4236,8 @@ pub mod addons {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::Addon),
             Accepted202,
+            Ok200(models::Addon),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4893,7 +4287,7 @@ pub mod addons {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.addon).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -4901,13 +4295,13 @@ pub mod addons {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::Addon =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -4927,9 +4321,9 @@ pub mod addons {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4978,16 +4372,16 @@ pub mod addons {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -5122,7 +4516,7 @@ pub mod monitoring_config {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -5146,7 +4540,7 @@ pub mod monitoring_config {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5225,7 +4619,7 @@ pub mod monitoring_config {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5257,8 +4651,8 @@ pub mod monitoring_config {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::MonitoringMetricConfiguration),
             Accepted202,
+            Ok200(models::MonitoringMetricConfiguration),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5307,7 +4701,7 @@ pub mod monitoring_config {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.monitoring_metric_configuration).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -5315,13 +4709,13 @@ pub mod monitoring_config {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::MonitoringMetricConfiguration =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -5391,7 +4785,7 @@ pub mod monitoring_config {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5553,7 +4947,7 @@ pub mod shares {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -5577,7 +4971,7 @@ pub mod shares {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5663,7 +5057,7 @@ pub mod shares {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5695,8 +5089,8 @@ pub mod shares {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::Share),
             Accepted202,
+            Ok200(models::Share),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5752,7 +5146,7 @@ pub mod shares {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.share).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -5760,13 +5154,13 @@ pub mod shares {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::Share =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -5786,9 +5180,9 @@ pub mod shares {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5843,16 +5237,16 @@ pub mod shares {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -5872,8 +5266,8 @@ pub mod shares {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5928,7 +5322,7 @@ pub mod shares {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -5936,8 +5330,8 @@ pub mod shares {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -6066,7 +5460,7 @@ pub mod storage_account_credentials {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -6090,7 +5484,7 @@ pub mod storage_account_credentials {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6169,7 +5563,7 @@ pub mod storage_account_credentials {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6201,8 +5595,8 @@ pub mod storage_account_credentials {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::StorageAccountCredential),
             Accepted202,
+            Ok200(models::StorageAccountCredential),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6251,7 +5645,7 @@ pub mod storage_account_credentials {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.storage_account_credential).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -6259,13 +5653,13 @@ pub mod storage_account_credentials {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::StorageAccountCredential =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -6285,9 +5679,9 @@ pub mod storage_account_credentials {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6335,16 +5729,16 @@ pub mod storage_account_credentials {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -6481,7 +5875,7 @@ pub mod storage_accounts {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -6505,7 +5899,7 @@ pub mod storage_accounts {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6584,7 +5978,7 @@ pub mod storage_accounts {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6616,8 +6010,8 @@ pub mod storage_accounts {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::StorageAccount),
             Accepted202,
+            Ok200(models::StorageAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6666,7 +6060,7 @@ pub mod storage_accounts {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.storage_account).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -6674,13 +6068,13 @@ pub mod storage_accounts {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::StorageAccount =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -6749,7 +6143,7 @@ pub mod storage_accounts {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6915,7 +6309,7 @@ pub mod containers {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -6939,7 +6333,7 @@ pub mod containers {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7019,7 +6413,7 @@ pub mod containers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7051,8 +6445,8 @@ pub mod containers {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::Container),
             Accepted202,
+            Ok200(models::Container),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -7102,7 +6496,7 @@ pub mod containers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.container).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -7110,13 +6504,13 @@ pub mod containers {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::Container =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -7186,7 +6580,7 @@ pub mod containers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7214,8 +6608,8 @@ pub mod containers {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -7264,7 +6658,7 @@ pub mod containers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -7272,8 +6666,8 @@ pub mod containers {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -7413,7 +6807,7 @@ pub mod triggers {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -7437,7 +6831,7 @@ pub mod triggers {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 if let Some(filter) = &this.filter {
                                     url.query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -7526,7 +6920,7 @@ pub mod triggers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7558,8 +6952,8 @@ pub mod triggers {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::Trigger),
             Accepted202,
+            Ok200(models::Trigger),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -7615,7 +7009,7 @@ pub mod triggers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.trigger).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -7623,13 +7017,13 @@ pub mod triggers {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::Trigger =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -7649,9 +7043,9 @@ pub mod triggers {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -7706,116 +7100,16 @@ pub mod triggers {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::CloudError =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
-                        }
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod support_packages {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Triggers support package on the device"]
-        pub fn trigger_support_package(
-            &self,
-            device_name: impl Into<String>,
-            trigger_support_package_request: impl Into<models::TriggerSupportPackageRequest>,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-        ) -> trigger_support_package::Builder {
-            trigger_support_package::Builder {
-                client: self.0.clone(),
-                device_name: device_name.into(),
-                trigger_support_package_request: trigger_support_package_request.into(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-            }
-        }
-    }
-    pub mod trigger_support_package {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_name: String,
-            pub(crate) trigger_support_package_request: models::TriggerSupportPackageRequest,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-        }
-        impl Builder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/triggerSupportPackage" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . device_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .map_err(Error::GetToken)?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.trigger_support_package_request).map_err(Error::Serialize)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -7955,7 +7249,7 @@ pub mod users {
                                 url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -7979,7 +7273,7 @@ pub mod users {
                                     .map_err(Error::GetToken)?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                                 if let Some(filter) = &this.filter {
                                     url.query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -8068,7 +7362,7 @@ pub mod users {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8100,8 +7394,8 @@ pub mod users {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::User),
             Accepted202,
+            Ok200(models::User),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -8157,7 +7451,7 @@ pub mod users {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.user).map_err(Error::Serialize)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -8165,13 +7459,13 @@ pub mod users {
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::User =
                                     serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =
@@ -8191,9 +7485,9 @@ pub mod users {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
             Accepted202,
             NoContent204,
+            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -8248,16 +7542,16 @@ pub mod users {
                             .await
                             .map_err(Error::GetToken)?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2022-04-01-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2020-12-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                         let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
                             status_code => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 let rsp_value: models::CloudError =

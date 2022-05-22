@@ -111,12 +111,12 @@ impl Address {
 pub struct Alert {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Properties of alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertProperties>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Properties of alert."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AlertProperties>,
 }
 impl Alert {
     pub fn new() -> Self {
@@ -380,18 +380,18 @@ pub mod azure_container_info {
 pub struct BandwidthSchedule {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The properties of the bandwidth schedule."]
-    pub properties: BandwidthScheduleProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The properties of the bandwidth schedule."]
+    pub properties: BandwidthScheduleProperties,
 }
 impl BandwidthSchedule {
     pub fn new(properties: BandwidthScheduleProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -563,105 +563,6 @@ impl CloudErrorBody {
         Self::default()
     }
 }
-#[doc = "Cluster Compute Data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ClusterCapacityViewData {
-    #[doc = "The FQDN of the cluster."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fqdn: Option<String>,
-    #[doc = "Cluster GPU Data."]
-    #[serde(rename = "gpuCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_capacity: Option<ClusterGpuCapacity>,
-    #[doc = "NodeCapacityInfo defines the required information to determine the placement of a VM."]
-    #[serde(rename = "memoryCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub memory_capacity: Option<ClusterMemoryCapacity>,
-    #[doc = "The last time at which the ClusterCapacityViewData was set."]
-    #[serde(rename = "lastRefreshedTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_refreshed_time: Option<String>,
-    #[doc = "The total # of vCPUs provisioned by non-HPN VM per appliance."]
-    #[serde(rename = "totalProvisionedNonHpnCores", default, skip_serializing_if = "Option::is_none")]
-    pub total_provisioned_non_hpn_cores: Option<i64>,
-}
-impl ClusterCapacityViewData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Cluster GPU Data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ClusterGpuCapacity {
-    #[doc = "The cluster GPU Type."]
-    #[serde(rename = "gpuType", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_type: Option<String>,
-    #[doc = "The used GPU units count in the cluster."]
-    #[serde(rename = "gpuUsedUnitsCount", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_used_units_count: Option<i32>,
-    #[doc = "The free GPU units count in the cluster."]
-    #[serde(rename = "gpuFreeUnitsCount", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_free_units_count: Option<i32>,
-    #[doc = "The GPU units count reserved for failover in the cluster."]
-    #[serde(rename = "gpuReservedForFailoverUnitsCount", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_reserved_for_failover_units_count: Option<i32>,
-    #[doc = "The total GPU units count in the cluster."]
-    #[serde(rename = "gpuTotalUnitsCount", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_total_units_count: Option<i32>,
-}
-impl ClusterGpuCapacity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "NodeCapacityInfo defines the required information to determine the placement of a VM."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ClusterMemoryCapacity {
-    #[doc = "The free memory in the cluster in MB."]
-    #[serde(rename = "clusterFreeMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_free_memory_mb: Option<f64>,
-    #[doc = "The used memory in the cluster in MB."]
-    #[serde(rename = "clusterUsedMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_used_memory_mb: Option<f64>,
-    #[doc = "The failover memory in the cluster in MB."]
-    #[serde(rename = "clusterFailoverMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_failover_memory_mb: Option<f64>,
-    #[doc = "The fragmentation memory in the cluster in MB."]
-    #[serde(rename = "clusterFragmentationMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_fragmentation_memory_mb: Option<f64>,
-    #[doc = "The memory reserved for Hyper-V in the cluster in MB."]
-    #[serde(rename = "clusterHypervReserveMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_hyperv_reserve_memory_mb: Option<f64>,
-    #[doc = "The memory of the Infra VM in the cluster in MB."]
-    #[serde(rename = "clusterInfraVmMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_infra_vm_memory_mb: Option<f64>,
-    #[doc = "The total memory in the cluster in MB."]
-    #[serde(rename = "clusterTotalMemoryMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_total_memory_mb: Option<f64>,
-    #[doc = "The non-failover memory in the cluster in MB."]
-    #[serde(rename = "clusterNonFailoverVmMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_non_failover_vm_mb: Option<f64>,
-    #[doc = "The memory used by VMs in the cluster in MB."]
-    #[serde(rename = "clusterMemoryUsedByVmsMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_memory_used_by_vms_mb: Option<f64>,
-}
-impl ClusterMemoryCapacity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Cluster Storage Data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ClusterStorageViewData {
-    #[doc = "Total storage on the cluster in MB."]
-    #[serde(rename = "clusterTotalStorageMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_total_storage_mb: Option<f64>,
-    #[doc = "The available or free storage on the cluster in MB."]
-    #[serde(rename = "clusterFreeStorageMb", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_free_storage_mb: Option<f64>,
-}
-impl ClusterStorageViewData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Cni configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CniConfig {
@@ -677,27 +578,10 @@ pub struct CniConfig {
     #[doc = "Service subnet"]
     #[serde(rename = "serviceSubnet", default, skip_serializing_if = "Option::is_none")]
     pub service_subnet: Option<String>,
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
-    pub component_type: Option<cni_config::ComponentType>,
 }
 impl CniConfig {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod cni_config {
-    use super::*;
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComponentType {
-        Invalid,
-        Cluster,
-        Node,
-        Etcd,
-        #[serde(rename = "CNI")]
-        Cni,
-        LoadBalancer,
     }
 }
 #[doc = "Compute infrastructure Resource"]
@@ -716,24 +600,6 @@ impl ComputeResource {
             processor_count,
             memory_in_gb,
         }
-    }
-}
-#[doc = "This contains the compute information"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ComputeVersionInformation {
-    #[doc = "Kubernetes Version"]
-    #[serde(rename = "kubernetesVersion", default, skip_serializing_if = "Option::is_none")]
-    pub kubernetes_version: Option<String>,
-    #[doc = "IOTEdge Version"]
-    #[serde(rename = "iotEdgeVersion", default, skip_serializing_if = "Option::is_none")]
-    pub iot_edge_version: Option<String>,
-    #[doc = "Azure Arc Version"]
-    #[serde(rename = "azureArcVersion", default, skip_serializing_if = "Option::is_none")]
-    pub azure_arc_version: Option<String>,
-}
-impl ComputeVersionInformation {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "Contains all the contact details of the customer."]
@@ -766,18 +632,18 @@ impl ContactDetails {
 pub struct Container {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The container properties."]
-    pub properties: ContainerProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The container properties."]
+    pub properties: ContainerProperties,
 }
 impl Container {
     pub fn new(properties: ContainerProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -934,9 +800,6 @@ pub struct DataBoxEdgeDeviceExtendedInfo {
     #[doc = "The properties of the Data Box Edge/Gateway device extended info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataBoxEdgeDeviceExtendedInfoProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl DataBoxEdgeDeviceExtendedInfo {
     pub fn new() -> Self {
@@ -1010,24 +873,6 @@ pub struct DataBoxEdgeDeviceExtendedInfoProperties {
     #[doc = "Device secrets, will be returned only with ODataFilter $expand=deviceSecrets"]
     #[serde(rename = "deviceSecrets", default, skip_serializing_if = "Option::is_none")]
     pub device_secrets: Option<serde_json::Value>,
-    #[doc = "Cluster Witness Type"]
-    #[serde(rename = "clusterWitnessType", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_witness_type: Option<data_box_edge_device_extended_info_properties::ClusterWitnessType>,
-    #[doc = "The witness location of file share."]
-    #[serde(rename = "fileShareWitnessLocation", default, skip_serializing_if = "Option::is_none")]
-    pub file_share_witness_location: Option<String>,
-    #[doc = "The username of file share."]
-    #[serde(rename = "fileShareWitnessUsername", default, skip_serializing_if = "Option::is_none")]
-    pub file_share_witness_username: Option<String>,
-    #[doc = "The Cloud Witness Storage account name."]
-    #[serde(rename = "cloudWitnessStorageAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_witness_storage_account_name: Option<String>,
-    #[doc = "The Container for cloud witness in the storage account."]
-    #[serde(rename = "cloudWitnessContainerName", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_witness_container_name: Option<String>,
-    #[doc = "The Azure service endpoint of the cloud witness storage account."]
-    #[serde(rename = "cloudWitnessStorageEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_witness_storage_endpoint: Option<String>,
 }
 impl DataBoxEdgeDeviceExtendedInfoProperties {
     pub fn new() -> Self {
@@ -1045,13 +890,6 @@ pub mod data_box_edge_device_extended_info_properties {
         KeyVaultSyncPending,
         KeyVaultSyncing,
         KeyVaultNotSynced,
-    }
-    #[doc = "Cluster Witness Type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ClusterWitnessType {
-        None,
-        Cloud,
-        FileShare,
     }
 }
 #[doc = "The collection of Data Box Edge/Gateway devices."]
@@ -1149,12 +987,6 @@ pub struct DataBoxEdgeDeviceProperties {
     #[doc = "Wraps data-residency related information for edge-resource and this should be used with ARM layer."]
     #[serde(rename = "dataResidency", default, skip_serializing_if = "Option::is_none")]
     pub data_residency: Option<DataResidency>,
-    #[doc = "This contains the compute information"]
-    #[serde(rename = "computeVersionInformation", default, skip_serializing_if = "Option::is_none")]
-    pub compute_version_information: Option<ComputeVersionInformation>,
-    #[doc = "Type of Kubernetes Platform"]
-    #[serde(rename = "kubernetesPlatform", default, skip_serializing_if = "Option::is_none")]
-    pub kubernetes_platform: Option<String>,
 }
 impl DataBoxEdgeDeviceProperties {
     pub fn new() -> Self {
@@ -1315,14 +1147,6 @@ pub mod data_box_edge_sku {
         #[serde(rename = "RDC")]
         Rdc,
         Management,
-        #[serde(rename = "EP2_64_Mx1_W")]
-        Ep264Mx1W,
-        #[serde(rename = "EP2_128_GPU1_Mx1_W")]
-        Ep2128Gpu1Mx1W,
-        #[serde(rename = "EP2_256_GPU2_Mx1")]
-        Ep2256Gpu2Mx1,
-        #[serde(rename = "EdgeMR_TCP")]
-        EdgeMrTcp,
     }
     #[doc = "The Sku tier."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1389,90 +1213,23 @@ pub mod data_residency {
         ZoneReplication,
     }
 }
-#[doc = "Object for Capturing DeviceCapacityInfo"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DeviceCapacityInfo {
-    #[serde(flatten)]
-    pub arm_base_model: ArmBaseModel,
-    #[doc = "The properties of Device Capacity Info"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DeviceCapacityInfoProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-impl DeviceCapacityInfo {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The properties of Device Capacity Info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DeviceCapacityInfoProperties {
-    #[doc = "Timestamp of request in UTC"]
-    #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
-    pub time_stamp: Option<String>,
-    #[doc = "Cluster Storage Data."]
-    #[serde(rename = "clusterStorageCapacityInfo", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_storage_capacity_info: Option<ClusterStorageViewData>,
-    #[doc = "Cluster Compute Data."]
-    #[serde(rename = "clusterComputeCapacityInfo", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_compute_capacity_info: Option<ClusterCapacityViewData>,
-    #[doc = "The dictionary of individual node names and node capacities in the cluster."]
-    #[serde(rename = "nodeCapacityInfos", default, skip_serializing_if = "Option::is_none")]
-    pub node_capacity_infos: Option<serde_json::Value>,
-}
-impl DeviceCapacityInfoProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Object for Capturing DeviceCapacityRequestInfo"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceCapacityRequestInfo {
-    #[doc = "Properties of Device Capacity Request Info containing VM's to be checked and their corresponding results."]
-    pub properties: DeviceCapacityRequestInfoProperties,
-}
-impl DeviceCapacityRequestInfo {
-    pub fn new(properties: DeviceCapacityRequestInfoProperties) -> Self {
-        Self { properties }
-    }
-}
-#[doc = "Properties of Device Capacity Request Info containing VM's to be checked and their corresponding results."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceCapacityRequestInfoProperties {
-    #[doc = "Array containing the sizes of the VMs for checking if its feasible to create them on the appliance."]
-    #[serde(rename = "vmPlacementQuery")]
-    pub vm_placement_query: Vec<Vec<String>>,
-    #[doc = "Array of the VMs of the sizes in VmSizes can be provisioned on the appliance."]
-    #[serde(rename = "vmPlacementResults", default, skip_serializing_if = "Vec::is_empty")]
-    pub vm_placement_results: Vec<VmPlacementRequestResult>,
-}
-impl DeviceCapacityRequestInfoProperties {
-    pub fn new(vm_placement_query: Vec<Vec<String>>) -> Self {
-        Self {
-            vm_placement_query,
-            vm_placement_results: Vec::new(),
-        }
-    }
-}
 #[doc = "The diagnostic proactive log collection settings of a device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticProactiveLogCollectionSettings {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The properties of proactive log collection settings."]
-    pub properties: ProactiveLogCollectionSettingsProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The properties of proactive log collection settings."]
+    pub properties: ProactiveLogCollectionSettingsProperties,
 }
 impl DiagnosticProactiveLogCollectionSettings {
     pub fn new(properties: ProactiveLogCollectionSettingsProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -1481,18 +1238,18 @@ impl DiagnosticProactiveLogCollectionSettings {
 pub struct DiagnosticRemoteSupportSettings {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The properties of remote support settings."]
-    pub properties: DiagnosticRemoteSupportSettingsProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The properties of remote support settings."]
+    pub properties: DiagnosticRemoteSupportSettingsProperties,
 }
 impl DiagnosticRemoteSupportSettings {
     pub fn new(properties: DiagnosticRemoteSupportSettingsProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -1587,27 +1344,10 @@ pub struct EtcdInfo {
     #[doc = "Etcd version"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
-    pub component_type: Option<etcd_info::ComponentType>,
 }
 impl EtcdInfo {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod etcd_info {
-    use super::*;
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComponentType {
-        Invalid,
-        Cluster,
-        Node,
-        Etcd,
-        #[serde(rename = "CNI")]
-        Cni,
-        LoadBalancer,
     }
 }
 #[doc = "Trigger details."]
@@ -1690,33 +1430,6 @@ impl GenerateCertResponse {
         Self::default()
     }
 }
-#[doc = "Host Capacity Data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HostCapacity {
-    #[doc = "The name of the host."]
-    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
-    pub host_name: Option<String>,
-    #[doc = "The available memory on the host accounting for VM placement size and any host VM reservations."]
-    #[serde(rename = "effectiveAvailableMemoryMbOnHost", default, skip_serializing_if = "Option::is_none")]
-    pub effective_available_memory_mb_on_host: Option<i64>,
-    #[doc = "The available amount of GPUs on the host to use after accounting for GPUS used by reservations on the host."]
-    #[serde(rename = "availableGpuCount", default, skip_serializing_if = "Option::is_none")]
-    pub available_gpu_count: Option<i32>,
-    #[doc = "The VM used memory per VmId."]
-    #[serde(rename = "vmUsedMemory", default, skip_serializing_if = "Option::is_none")]
-    pub vm_used_memory: Option<serde_json::Value>,
-    #[doc = "The GPU type of the VM."]
-    #[serde(rename = "gpuType", default, skip_serializing_if = "Option::is_none")]
-    pub gpu_type: Option<String>,
-    #[doc = "The numa nodes information for Hpn VMs."]
-    #[serde(rename = "numaNodesData", default, skip_serializing_if = "Vec::is_empty")]
-    pub numa_nodes_data: Vec<NumaNodeData>,
-}
-impl HostCapacity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Image repository credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageRepositoryCredential {
@@ -1737,6 +1450,95 @@ impl ImageRepositoryCredential {
             user_name,
             password: None,
         }
+    }
+}
+#[doc = "IoT Addon."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTAddon {
+    #[serde(flatten)]
+    pub addon: Addon,
+    #[doc = "IoT addon properties."]
+    pub properties: IoTAddonProperties,
+    #[doc = "The path ID that uniquely identifies the object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The object name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The hierarchical type of the object."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl IoTAddon {
+    pub fn new(addon: Addon, properties: IoTAddonProperties) -> Self {
+        Self {
+            addon,
+            properties,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
+#[doc = "IoT addon properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTAddonProperties {
+    #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
+    #[serde(rename = "ioTDeviceDetails")]
+    pub io_t_device_details: IoTDeviceInfo,
+    #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
+    #[serde(rename = "ioTEdgeDeviceDetails")]
+    pub io_t_edge_device_details: IoTDeviceInfo,
+    #[doc = "Version of IoT running on the appliance."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Host OS supported by the IoT addon."]
+    #[serde(rename = "hostPlatform", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform: Option<io_t_addon_properties::HostPlatform>,
+    #[doc = "Platform where the runtime is hosted."]
+    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    pub host_platform_type: Option<io_t_addon_properties::HostPlatformType>,
+    #[doc = "Addon Provisioning State"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<io_t_addon_properties::ProvisioningState>,
+}
+impl IoTAddonProperties {
+    pub fn new(io_t_device_details: IoTDeviceInfo, io_t_edge_device_details: IoTDeviceInfo) -> Self {
+        Self {
+            io_t_device_details,
+            io_t_edge_device_details,
+            version: None,
+            host_platform: None,
+            host_platform_type: None,
+            provisioning_state: None,
+        }
+    }
+}
+pub mod io_t_addon_properties {
+    use super::*;
+    #[doc = "Host OS supported by the IoT addon."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatform {
+        Windows,
+        Linux,
+    }
+    #[doc = "Platform where the runtime is hosted."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostPlatformType {
+        KubernetesCluster,
+        #[serde(rename = "LinuxVM")]
+        LinuxVm,
+    }
+    #[doc = "Addon Provisioning State"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Invalid,
+        Creating,
+        Created,
+        Updating,
+        Reconfiguring,
+        Failed,
+        Deleting,
     }
 }
 #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
@@ -2087,9 +1889,6 @@ pub struct KubernetesClusterInfo {
     pub nodes: Vec<NodeInfo>,
     #[doc = "Kubernetes cluster version"]
     pub version: String,
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
-    pub component_type: Option<kubernetes_cluster_info::ComponentType>,
 }
 impl KubernetesClusterInfo {
     pub fn new(version: String) -> Self {
@@ -2097,22 +1896,7 @@ impl KubernetesClusterInfo {
             etcd_info: None,
             nodes: Vec::new(),
             version,
-            component_type: None,
         }
-    }
-}
-pub mod kubernetes_cluster_info {
-    use super::*;
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComponentType {
-        Invalid,
-        Cluster,
-        Node,
-        Etcd,
-        #[serde(rename = "CNI")]
-        Cni,
-        LoadBalancer,
     }
 }
 #[doc = "Kubernetes node IP configuration"]
@@ -2171,12 +1955,6 @@ pub struct KubernetesRoleCompute {
     #[doc = "Processor count"]
     #[serde(rename = "processorCount", default, skip_serializing_if = "Option::is_none")]
     pub processor_count: Option<i32>,
-    #[doc = "Count of huge pages"]
-    #[serde(rename = "hugePage2M", default, skip_serializing_if = "Option::is_none")]
-    pub huge_page2_m: Option<i32>,
-    #[doc = "Count of huge pages"]
-    #[serde(rename = "hugePage1G", default, skip_serializing_if = "Option::is_none")]
-    pub huge_page1_g: Option<i32>,
 }
 impl KubernetesRoleCompute {
     pub fn new(vm_profile: String) -> Self {
@@ -2184,8 +1962,6 @@ impl KubernetesRoleCompute {
             vm_profile,
             memory_in_bytes: None,
             processor_count: None,
-            huge_page2_m: None,
-            huge_page1_g: None,
         }
     }
 }
@@ -2349,27 +2125,10 @@ pub struct LoadBalancerConfig {
     #[doc = "Load balancer version"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
-    pub component_type: Option<load_balancer_config::ComponentType>,
 }
 impl LoadBalancerConfig {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod load_balancer_config {
-    use super::*;
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComponentType {
-        Invalid,
-        Cluster,
-        Node,
-        Etcd,
-        #[serde(rename = "CNI")]
-        Cni,
-        LoadBalancer,
     }
 }
 #[doc = "MEC role."]
@@ -2610,18 +2369,18 @@ pub mod metric_specification_v1 {
 pub struct MonitoringMetricConfiguration {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Metrics properties"]
-    pub properties: MonitoringMetricConfigurationProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Metrics properties"]
+    pub properties: MonitoringMetricConfigurationProperties,
 }
 impl MonitoringMetricConfiguration {
     pub fn new(properties: MonitoringMetricConfigurationProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -2817,12 +2576,12 @@ pub mod network_adapter_position {
 pub struct NetworkSettings {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The properties of network settings."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<NetworkSettingsProperties>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The properties of network settings."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<NetworkSettingsProperties>,
 }
 impl NetworkSettings {
     pub fn new() -> Self {
@@ -2867,9 +2626,6 @@ pub struct NodeInfo {
     #[doc = "IP Configuration of the Kubernetes node."]
     #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configuration: Vec<KubernetesIpConfiguration>,
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
-    pub component_type: Option<node_info::ComponentType>,
 }
 impl NodeInfo {
     pub fn new() -> Self {
@@ -2884,20 +2640,6 @@ pub mod node_info {
         Invalid,
         Master,
         Worker,
-        ManagementCluster,
-        ControlPlane,
-        NodePool,
-    }
-    #[doc = "ComponentType of the Kubernetes node."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComponentType {
-        Invalid,
-        Cluster,
-        Node,
-        Etcd,
-        #[serde(rename = "CNI")]
-        Cni,
-        LoadBalancer,
     }
 }
 #[doc = "Collection of Nodes."]
@@ -2960,36 +2702,6 @@ pub mod node_properties {
         Down,
         Rebooting,
         ShuttingDown,
-    }
-}
-#[doc = "NUMA node data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct NumaNodeData {
-    #[doc = "The NUMA node index."]
-    #[serde(rename = "numaNodeIndex", default, skip_serializing_if = "Option::is_none")]
-    pub numa_node_index: Option<i32>,
-    #[doc = "The total memory on the NUMA node."]
-    #[serde(rename = "totalMemoryInMb", default, skip_serializing_if = "Option::is_none")]
-    pub total_memory_in_mb: Option<i64>,
-    #[doc = "The logical cores per core count."]
-    #[serde(rename = "logicalCoreCountPerCore", default, skip_serializing_if = "Option::is_none")]
-    pub logical_core_count_per_core: Option<i32>,
-    #[doc = "The effective available memory on the NUMA node in MB."]
-    #[serde(rename = "effectiveAvailableMemoryInMb", default, skip_serializing_if = "Option::is_none")]
-    pub effective_available_memory_in_mb: Option<i64>,
-    #[doc = "The free VCPU indices for the Hpn VMs."]
-    #[serde(rename = "freeVCpuIndexesForHpn", default, skip_serializing_if = "Vec::is_empty")]
-    pub free_v_cpu_indexes_for_hpn: Vec<i32>,
-    #[doc = "The VCPU indices for Hpn VMs"]
-    #[serde(rename = "vCpuIndexesForHpn", default, skip_serializing_if = "Vec::is_empty")]
-    pub v_cpu_indexes_for_hpn: Vec<i32>,
-    #[doc = "The VCPU indices for the root."]
-    #[serde(rename = "vCpuIndexesForRoot", default, skip_serializing_if = "Vec::is_empty")]
-    pub v_cpu_indexes_for_root: Vec<i32>,
-}
-impl NumaNodeData {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "Operations."]
@@ -3073,9 +2785,6 @@ impl OperationsList {
 pub struct Order {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "It specify the order api version."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -3109,14 +2818,11 @@ impl OrderList {
     }
 }
 #[doc = "Order properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrderProperties {
-    #[doc = "It specify the order resource id."]
-    #[serde(rename = "orderId", default, skip_serializing_if = "Option::is_none")]
-    pub order_id: Option<String>,
     #[doc = "Contains all the contact details of the customer."]
-    #[serde(rename = "contactInformation", default, skip_serializing_if = "Option::is_none")]
-    pub contact_information: Option<ContactDetails>,
+    #[serde(rename = "contactInformation")]
+    pub contact_information: ContactDetails,
     #[doc = "The shipping address of the customer."]
     #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
     pub shipping_address: Option<Address>,
@@ -3140,8 +2846,17 @@ pub struct OrderProperties {
     pub shipment_type: Option<order_properties::ShipmentType>,
 }
 impl OrderProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(contact_information: ContactDetails) -> Self {
+        Self {
+            contact_information,
+            shipping_address: None,
+            current_status: None,
+            order_history: Vec::new(),
+            serial_number: None,
+            delivery_tracking_info: Vec::new(),
+            return_tracking_info: Vec::new(),
+            shipment_type: None,
+        }
     }
 }
 pub mod order_properties {
@@ -3438,6 +3153,21 @@ pub mod resource_move_details {
         ResourceMoveFailed,
     }
 }
+#[doc = "Resource type Sku object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceTypeSku {
+    #[doc = "The resource type."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "The skus."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub skus: Vec<SkuInformation>,
+}
+impl ResourceTypeSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Compute role."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Role {
@@ -3567,18 +3297,18 @@ impl ServiceSpecification {
 pub struct Share {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The share properties."]
-    pub properties: ShareProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The share properties."]
+    pub properties: ShareProperties,
 }
 impl Share {
     pub fn new(properties: ShareProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -3781,14 +3511,6 @@ pub mod sku {
         #[serde(rename = "RDC")]
         Rdc,
         Management,
-        #[serde(rename = "EP2_64_Mx1_W")]
-        Ep264Mx1W,
-        #[serde(rename = "EP2_128_GPU1_Mx1_W")]
-        Ep2128Gpu1Mx1W,
-        #[serde(rename = "EP2_256_GPU2_Mx1")]
-        Ep2256Gpu2Mx1,
-        #[serde(rename = "EdgeMR_TCP")]
-        EdgeMrTcp,
     }
     #[doc = "The SKU tier. This is based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3829,6 +3551,57 @@ impl SkuCost {
         Self::default()
     }
 }
+#[doc = "Sku information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SkuInformation {
+    #[doc = "The sku name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The sku tier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[doc = "The sku kind."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[doc = "The Sku family."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[doc = "The pricing info of the Sku."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub costs: Vec<SkuCost>,
+    #[doc = "The locations where Sku is available."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[doc = "The locations where Sku is available with zones and sites info"]
+    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub location_info: Vec<SkuLocationInfo>,
+    #[doc = "The required quotaIds for the sku to be available."]
+    #[serde(rename = "requiredQuotaIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_quota_ids: Vec<String>,
+    #[doc = "The required features for the sku to be available."]
+    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_features: Vec<String>,
+}
+impl SkuInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of SKU Information objects"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SkuInformationList {
+    #[doc = "List of ResourceTypeSku objects"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ResourceTypeSku>,
+    #[doc = "Links to the next set of results"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl SkuInformationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The location info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuLocationInfo {
@@ -3852,18 +3625,18 @@ impl SkuLocationInfo {
 pub struct StorageAccount {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The storage account properties."]
-    pub properties: StorageAccountProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The storage account properties."]
+    pub properties: StorageAccountProperties,
 }
 impl StorageAccount {
     pub fn new(properties: StorageAccountProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -3872,18 +3645,18 @@ impl StorageAccount {
 pub struct StorageAccountCredential {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The storage account credential properties."]
-    pub properties: StorageAccountCredentialProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The storage account credential properties."]
+    pub properties: StorageAccountCredentialProperties,
 }
 impl StorageAccountCredential {
     pub fn new(properties: StorageAccountCredentialProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -4076,7 +3849,7 @@ pub struct SupportPackageRequestProperties {
     #[doc = "MinimumTimeStamp from where logs need to be collected"]
     #[serde(rename = "minimumTimeStamp", default, skip_serializing_if = "Option::is_none")]
     pub minimum_time_stamp: Option<String>,
-    #[doc = "Start of the timespan of the log collection"]
+    #[doc = "MaximumTimeStamp until where logs need to be collected"]
     #[serde(rename = "maximumTimeStamp", default, skip_serializing_if = "Option::is_none")]
     pub maximum_time_stamp: Option<String>,
     #[doc = "Type of files, which need to be included in the logs\r\nThis will contain the type of logs (Default/DefaultWithDumps/None/All/DefaultWithArchived)\r\nor a comma separated list of log types that are required"]
@@ -4172,18 +3945,18 @@ impl TrackingInfo {
 pub struct Trigger {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Trigger Kind."]
-    pub kind: trigger::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Trigger Kind."]
+    pub kind: trigger::Kind,
 }
 impl Trigger {
     pub fn new(kind: trigger::Kind) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            kind,
             system_data: None,
+            kind,
         }
     }
 }
@@ -4362,12 +4135,12 @@ impl UpdateInstallProgress {
 pub struct UpdateSummary {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The device update information summary."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UpdateSummaryProperties>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The device update information summary."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UpdateSummaryProperties>,
 }
 impl UpdateSummary {
     pub fn new() -> Self {
@@ -4556,18 +4329,18 @@ pub mod upload_certificate_response {
 pub struct User {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "The user properties."]
-    pub properties: UserProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "The user properties."]
+    pub properties: UserProperties,
 }
 impl User {
     pub fn new(properties: UserProperties) -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            properties,
             system_data: None,
+            properties,
         }
     }
 }
@@ -4647,87 +4420,5 @@ pub mod user_properties {
         LocalManagement,
         #[serde(rename = "ARM")]
         Arm,
-    }
-}
-#[doc = "VmMemory Data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VmMemory {
-    #[doc = "The total amount of RAM in the virtual machine, as seen by the guest  operating system. For a virtual machine with dynamic memory enabled, this represents the initial memory available at startup."]
-    #[serde(rename = "startupMemoryMB", default, skip_serializing_if = "Option::is_none")]
-    pub startup_memory_mb: Option<i64>,
-    #[doc = "The current memory used by the virtual machine."]
-    #[serde(rename = "currentMemoryUsageMB", default, skip_serializing_if = "Option::is_none")]
-    pub current_memory_usage_mb: Option<i64>,
-}
-impl VmMemory {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "List of VM sizes being checked for creation on appliance along with corresponding result."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VmPlacementRequestResult {
-    #[doc = "List of VM sizes being checked."]
-    #[serde(rename = "vmSize", default, skip_serializing_if = "Vec::is_empty")]
-    pub vm_size: Vec<String>,
-    #[doc = "Boolean value indicating if the\u{202f}VM(s)\u{202f}in\u{202f}VmSize\u{202f}can\u{202f}be\u{202f}created."]
-    #[serde(rename = "isFeasible", default, skip_serializing_if = "Option::is_none")]
-    pub is_feasible: Option<bool>,
-    #[doc = "MessageCode\u{202f}indicating reason for success or failure."]
-    #[serde(rename = "messageCode", default, skip_serializing_if = "Option::is_none")]
-    pub message_code: Option<String>,
-    #[doc = "Localized message\u{202f}to\u{202f}be\u{202f}displayed\u{202f}to\u{202f}the\u{202f}user\u{202f}to\u{202f}explain\u{202f}the\u{202f}check\u{202f}result."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-impl VmPlacementRequestResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Metadata pertaining to creation and last modification of the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SystemData {
-    #[doc = "The identity that created the resource."]
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[doc = "The identity that last modified the resource."]
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-impl SystemData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod system_data {
-    use super::*;
-    #[doc = "The type of identity that created the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[doc = "The type of identity that last modified the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
     }
 }
