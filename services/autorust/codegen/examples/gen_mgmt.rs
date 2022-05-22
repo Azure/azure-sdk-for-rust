@@ -16,9 +16,8 @@ const SKIP_SERVICES: &[&str] = &[
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
-    "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
-    "service-map",   // Ident "Ref:machine"
-    "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
+    "mixedreality",               // TODO #83 AccountKeyRegenerateRequest not generated
+    "servicefabric",              // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
 ];
 
