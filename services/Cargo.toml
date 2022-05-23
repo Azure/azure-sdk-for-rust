@@ -171,6 +171,7 @@ members = [
   "mgmt/securityinsights",
   "mgmt/serialconsole",
   "mgmt/servicebus",
+  "mgmt/servicefabricmanagedclusters",
   "mgmt/servicefabricmesh",
   "mgmt/servicelinker",
   "mgmt/servicemap",
