@@ -25,14 +25,14 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-2020-06", "package-2020-10", "package-2021-04"]
+all-features = true
 
 [features]
 default = ["package-2021-06", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-2020-06" = []
-"package-2020-10" = []
-"package-2021-04" = []
 "package-2021-06" = []
+"package-2021-04" = []
+"package-2020-10" = []
+"package-2020-06" = []

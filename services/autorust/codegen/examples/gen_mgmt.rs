@@ -11,42 +11,17 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 
 const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICES: &[&str] = &[
-    "datamigration",
-    "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
-    "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
-    "iotspaces",                  // no operations
-    "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
-    "marketplace",
-    "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
-    "service-map",   // Ident "Ref:machine"
-    "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
-    "servicefabricmanagedclusters",
-];
-
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times
     ("applicationinsights", "package-2021-11-01"), // duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
     ("analysisservices", "package-2017-08"),
-    ("authorization", "package-2020-10-01-preview"),
-    ("authorization", "package-2018-05-01-preview"),
-    ("authorization", "package-2021-03-01-preview-only"),
-    ("authorization", "package-2021-07-01-preview-only"),
-    ("authorization", "package-preview-2021-11"),
     ("azureactivedirectory", "package-preview-2020-07"),
     ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
     ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
     ("databoxedge", "package-2022-03-01"), // duplicate SystemData https://github.com/Azure/azure-rest-api-specs/pull/18526
     ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
-    // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
-    ("datamigration", "package-2018-07-15-preview"),
-    ("datamigration", "package-2018-04-19"),
-    ("datamigration", "package-2018-03-31-preview"),
-    ("datamigration", "package-2018-03-15-preview"),
-    ("datamigration", "package-2017-11-15-preview"),
-    ("datamigration", "package-2021-06"),
     ("deploymentmanager", "package-2018-09-01-preview"), //  identifiers are bound more than once in param list.   https://github.com/Azure/azure-sdk-for-rust/issues/415
     ("iothub", "package-preview-2021-07"),               // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
     ("iothub", "package-2021-07"),                       // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
@@ -55,9 +30,6 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("marketplace", "package-2020-12-01"),
     ("marketplace", "package-composite-v1"),             // mixing versions
     ("marketplace", "package-composite-v2"),             // mixing versions
-    ("monitor", "package-2021-09"),                      // AzureResource defined in 2021-09-01/actionGroups_API.json is different
-    ("monitor", "package-2021-07"),                      // also AzureResource difference
-    ("monitor", "package-2022-04"),                      // also AzureResource difference
     ("recoveryservicesbackup", "package-2020-07"),       // duplicate fn get_operation_status
     ("recoveryservicesbackup", "package-2020-10"),       // duplicate fn get_operation_status
     ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
@@ -195,13 +167,8 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     // dataprotection
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/dataprotection.json", "InnerError", "embeddedInnerError"),
-    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-02-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
-    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-06-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
-    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-10-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
-    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-12-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
-    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2022-02-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
-    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2022-03-31-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-03-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/stable/2021-11-30/dedicatedhsm.json", "Error", "innererror"),
@@ -322,7 +289,7 @@ fn main() -> Result<()> {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec, run_config)?;
             }
-        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+        } else {
             println!("{} {}", i + 1, spec.spec());
             gen_crate(spec, run_config)?;
         }
@@ -335,9 +302,19 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
     let service_name = &spec.service_name();
     let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
     let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
-    let package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    if package_config.tags.sort.is_none() {
+        package_config.tags.sort = Some(true);
+    }
+    if package_config.tags.deny_contains_only.is_none() {
+        package_config.tags.deny_contains_only = Some(true);
+    }
+    if package_config.tags.limit.is_none() {
+        package_config.tags.limit = Some(5);
+    }
+    // TODO remove skip_service_tags and use the autorust.toml files
     let tags = spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
-    let tags = &package_config.tags(tags);
+    let tags = &package_config.filter_tags(tags);
     if tags.is_empty() {
         println!("not generating {} - no tags", spec.spec());
         return Ok(());
@@ -376,7 +353,14 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
         );
     }
 
-    let default_tag = cargo_toml::get_default_tag(tags, spec_config.tag());
+    let default_tag_name = if let Some(name) = package_config.default_tag() {
+        Some(name)
+    } else if let Some(name) = spec_config.tag() {
+        Some(name)
+    } else {
+        None
+    };
+    let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
     cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {

@@ -25,15 +25,15 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-commitmentPlans-2016-05-preview", "package-workspaces-2016-04", "package-workspaces-2019-10", "package-webservices-2016-05-preview"]
+all-features = true
 
 [features]
-default = ["package-webservices-2017-01", "enable_reqwest"]
+default = ["package-workspaces-2019-10", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-webservices-2017-01" = []
-"package-commitmentPlans-2016-05-preview" = []
-"package-workspaces-2016-04" = []
 "package-workspaces-2019-10" = []
+"package-workspaces-2016-04" = []
+"package-webservices-2017-01" = []
 "package-webservices-2016-05-preview" = []
+"package-commitmentPlans-2016-05-preview" = []

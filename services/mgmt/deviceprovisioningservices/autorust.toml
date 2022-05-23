@@ -1,0 +1,4 @@
+[tags]
+# certificate_name used as parameter more than once
+# https://github.com/Azure/azure-sdk-for-rust/issues/223
+limit = 0

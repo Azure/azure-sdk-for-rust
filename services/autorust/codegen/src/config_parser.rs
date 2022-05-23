@@ -79,6 +79,14 @@ pub struct Tag {
     #[serde(skip_deserializing)]
     tag: String,
 }
+impl Tag {
+    pub fn new(tag: impl Into<String>) -> Self {
+        Self {
+            tag: tag.into(),
+            input_files: Vec::new(),
+        }
+    }
+}
 
 impl Tag {
     pub fn input_files(&self) -> Vec<Utf8PathBuf> {

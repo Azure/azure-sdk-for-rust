@@ -23,19 +23,3 @@ pub use package_composite_v3::{models, operations, operations::Client, operation
 pub mod package_composite_v2;
 #[cfg(all(feature = "package-composite-v2", not(feature = "no-default-tag")))]
 pub use package_composite_v2::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-composite-v1")]
-pub mod package_composite_v1;
-#[cfg(all(feature = "package-composite-v1", not(feature = "no-default-tag")))]
-pub use package_composite_v1::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2017-03-preview")]
-pub mod package_2017_03_preview;
-#[cfg(all(feature = "package-2017-03-preview", not(feature = "no-default-tag")))]
-pub use package_2017_03_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2015-05-preview")]
-pub mod package_2015_05_preview;
-#[cfg(all(feature = "package-2015-05-preview", not(feature = "no-default-tag")))]
-pub use package_2015_05_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2014-04")]
-pub mod package_2014_04;
-#[cfg(all(feature = "package-2014-04", not(feature = "no-default-tag")))]
-pub use package_2014_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

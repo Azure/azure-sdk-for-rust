@@ -23,23 +23,3 @@ pub use package_2020_05::{models, operations, operations::Client, operations::Cl
 pub mod package_2020_02_preview;
 #[cfg(all(feature = "package-2020-02-preview", not(feature = "no-default-tag")))]
 pub use package_2020_02_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2019-09-preview")]
-pub mod package_2019_09_preview;
-#[cfg(all(feature = "package-2019-09-preview", not(feature = "no-default-tag")))]
-pub use package_2019_09_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-07")]
-pub mod package_2018_07;
-#[cfg(all(feature = "package-2018-07", not(feature = "no-default-tag")))]
-pub use package_2018_07::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2015-10")]
-pub mod package_2015_10;
-#[cfg(all(feature = "package-2015-10", not(feature = "no-default-tag")))]
-pub use package_2015_10::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-03-preview")]
-pub mod package_2018_03_preview;
-#[cfg(all(feature = "package-2018-03-preview", not(feature = "no-default-tag")))]
-pub use package_2018_03_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-06-preview")]
-pub mod package_2018_06_preview;
-#[cfg(all(feature = "package-2018-06-preview", not(feature = "no-default-tag")))]
-pub use package_2018_06_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

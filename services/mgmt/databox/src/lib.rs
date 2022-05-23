@@ -23,19 +23,3 @@ pub use package_2021_05::{models, operations, operations::Client, operations::Cl
 pub mod package_2021_03;
 #[cfg(all(feature = "package-2021-03", not(feature = "no-default-tag")))]
 pub use package_2021_03::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-11")]
-pub mod package_2020_11;
-#[cfg(all(feature = "package-2020-11", not(feature = "no-default-tag")))]
-pub use package_2020_11::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2020-04")]
-pub mod package_2020_04;
-#[cfg(all(feature = "package-2020-04", not(feature = "no-default-tag")))]
-pub use package_2020_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2019-09")]
-pub mod package_2019_09;
-#[cfg(all(feature = "package-2019-09", not(feature = "no-default-tag")))]
-pub use package_2019_09::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-2018-01")]
-pub mod package_2018_01;
-#[cfg(all(feature = "package-2018-01", not(feature = "no-default-tag")))]
-pub use package_2018_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

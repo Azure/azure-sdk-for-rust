@@ -7,11 +7,11 @@
 pub mod v1;
 #[cfg(all(feature = "v1", not(feature = "no-default-tag")))]
 pub use v1::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "20171001")]
-pub mod v20171001;
-#[cfg(all(feature = "20171001", not(feature = "no-default-tag")))]
-pub use v20171001::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "20210519")]
 pub mod v20210519;
 #[cfg(all(feature = "20210519", not(feature = "no-default-tag")))]
 pub use v20210519::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "20171001")]
+pub mod v20171001;
+#[cfg(all(feature = "20171001", not(feature = "no-default-tag")))]
+pub use v20171001::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

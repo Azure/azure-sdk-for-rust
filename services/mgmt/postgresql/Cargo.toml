@@ -25,24 +25,15 @@ tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-2021-06-15-privatepreview", "package-flexibleserver-2021-06-preview", "package-2021-04-10-privatepreview", "package-2021-03-31-privatepreview"]
+all-features = true
 
 [features]
 default = ["package-flexibleserver-2021-06", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-2021-06-15-privatepreview" = []
-"package-flexibleserver-2021-06" = []
 "package-flexibleserver-2021-06-preview" = []
+"package-flexibleserver-2021-06" = []
+"package-2021-06-15-privatepreview" = []
 "package-2021-04-10-privatepreview" = []
 "package-2021-03-31-privatepreview" = []
-"package-2020-11-05-preview" = []
-"package-2020-02-14-preview" = []
-"package-2020-02-14-privatepreview" = []
-"package-2020-01-01-privatepreview" = []
-"package-2020-01-01" = []
-"package-2018-06-01-privatepreview" = []
-"package-2018-06-01" = []
-"package-2017-12-01-preview" = []
-"package-2017-12-01" = []

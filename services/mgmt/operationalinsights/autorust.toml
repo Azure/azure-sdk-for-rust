@@ -1,0 +1,3 @@
+[tags]
+# duplicate SystemData
+deny = ["package-2022-02"]
