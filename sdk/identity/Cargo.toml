@@ -34,7 +34,7 @@ uuid = { version = "1.0",  features = ["v4"] }
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 serde_test = "1"
-azure_security_keyvault = { path = "../security_keyvault", version = "0.2"}
+azure_security_keyvault = { path = "../security_keyvault" }
 
 [features]
 default = ["development", "enable_reqwest"]
