@@ -1,4 +1,6 @@
 [tags]
+# Properties need to be boxed for all tags.
+# This limitation can be lifted when we add a more generic way to box properties.
 allow = [
     "package-2021-01-01",
   ]
