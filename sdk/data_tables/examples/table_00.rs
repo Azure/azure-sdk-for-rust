@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut stream = Box::pin(
         table_client
             .query()
-            .filter("Name = 'Carl'")
+            .filter("Name eq 'Carl'")
             .top(2)
             .stream::<MyEntity>(),
     );
