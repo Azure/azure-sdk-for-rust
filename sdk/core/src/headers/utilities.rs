@@ -8,11 +8,6 @@ use http::header::{DATE, ETAG, LAST_MODIFIED, SERVER};
 use http::HeaderMap;
 use std::str::FromStr;
 
-#[cfg(feature = "enable_hyper")]
-use http::status::StatusCode;
-#[cfg(feature = "enable_hyper")]
-use hyper::{Body, Client, Request};
-
 pub fn get_option_str_from_headers<'a>(
     headers: &'a HeaderMap,
     key: &str,

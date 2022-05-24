@@ -44,7 +44,9 @@ pub use context::Context;
 pub use errors::*;
 #[doc(inline)]
 pub use headers::Header;
-pub use http_client::{new_http_client, to_json, HttpClient};
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+pub use http_client::new_http_client;
+pub use http_client::{to_json, HttpClient};
 pub use models::*;
 pub use options::*;
 pub use pageable::*;
