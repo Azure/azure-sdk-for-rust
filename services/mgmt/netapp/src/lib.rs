@@ -6,20 +6,20 @@
 #[cfg(feature = "package-netapp-2021-10-01")]
 pub mod package_netapp_2021_10_01;
 #[cfg(all(feature = "package-netapp-2021-10-01", not(feature = "no-default-tag")))]
-pub use package_netapp_2021_10_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_netapp_2021_10_01::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-netapp-2021-08-01")]
 pub mod package_netapp_2021_08_01;
 #[cfg(all(feature = "package-netapp-2021-08-01", not(feature = "no-default-tag")))]
-pub use package_netapp_2021_08_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_netapp_2021_08_01::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-netapp-2021-06-01")]
 pub mod package_netapp_2021_06_01;
 #[cfg(all(feature = "package-netapp-2021-06-01", not(feature = "no-default-tag")))]
-pub use package_netapp_2021_06_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_netapp_2021_06_01::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-netapp-2021-04-01-preview")]
 pub mod package_netapp_2021_04_01_preview;
 #[cfg(all(feature = "package-netapp-2021-04-01-preview", not(feature = "no-default-tag")))]
-pub use package_netapp_2021_04_01_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_netapp_2021_04_01_preview::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-netapp-2021-04-01")]
 pub mod package_netapp_2021_04_01;
 #[cfg(all(feature = "package-netapp-2021-04-01", not(feature = "no-default-tag")))]
-pub use package_netapp_2021_04_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_netapp_2021_04_01::{models, operations, operations::Client, operations::ClientBuilder};

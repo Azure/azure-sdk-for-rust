@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2021-06-30-preview")]
 pub mod package_2021_06_30_preview;
 #[cfg(all(feature = "package-2021-06-30-preview", not(feature = "no-default-tag")))]
-pub use package_2021_06_30_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2021_06_30_preview::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2020-10-31")]
 pub mod package_2020_10_31;
 #[cfg(all(feature = "package-2020-10-31", not(feature = "no-default-tag")))]
-pub use package_2020_10_31::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2020_10_31::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2020-05-31-preview")]
 pub mod package_2020_05_31_preview;
 #[cfg(all(feature = "package-2020-05-31-preview", not(feature = "no-default-tag")))]
-pub use package_2020_05_31_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2020_05_31_preview::{models, operations, operations::Client, operations::ClientBuilder};

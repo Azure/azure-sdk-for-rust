@@ -6,8 +6,8 @@
 #[cfg(feature = "package-2021-12")]
 pub mod package_2021_12;
 #[cfg(all(feature = "package-2021-12", not(feature = "no-default-tag")))]
-pub use package_2021_12::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2021_12::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2021-06-01")]
 pub mod package_2021_06_01;
 #[cfg(all(feature = "package-2021-06-01", not(feature = "no-default-tag")))]
-pub use package_2021_06_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2021_06_01::{models, operations, operations::Client, operations::ClientBuilder};

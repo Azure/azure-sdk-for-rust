@@ -6,4 +6,4 @@
 #[cfg(feature = "1_6")]
 pub mod v1_6;
 #[cfg(all(feature = "1_6", not(feature = "no-default-tag")))]
-pub use v1_6::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use v1_6::{models, operations, operations::Client, operations::ClientBuilder};

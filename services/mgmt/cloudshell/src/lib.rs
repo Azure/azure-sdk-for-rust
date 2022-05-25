@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2018-10-01")]
 pub mod package_2018_10_01;
 #[cfg(all(feature = "package-2018-10-01", not(feature = "no-default-tag")))]
-pub use package_2018_10_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2018_10_01::{models, operations, operations::Client, operations::ClientBuilder};

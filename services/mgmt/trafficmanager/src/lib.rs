@@ -6,20 +6,20 @@
 #[cfg(feature = "package-2018-08")]
 pub mod package_2018_08;
 #[cfg(all(feature = "package-2018-08", not(feature = "no-default-tag")))]
-pub use package_2018_08::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2018_08::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2018-04")]
 pub mod package_2018_04;
 #[cfg(all(feature = "package-2018-04", not(feature = "no-default-tag")))]
-pub use package_2018_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2018_04::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2018-03")]
 pub mod package_2018_03;
 #[cfg(all(feature = "package-2018-03", not(feature = "no-default-tag")))]
-pub use package_2018_03::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2018_03::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2018-02")]
 pub mod package_2018_02;
 #[cfg(all(feature = "package-2018-02", not(feature = "no-default-tag")))]
-pub use package_2018_02::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2018_02::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2017-09-preview")]
 pub mod package_2017_09_preview;
 #[cfg(all(feature = "package-2017-09-preview", not(feature = "no-default-tag")))]
-pub use package_2017_09_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2017_09_preview::{models, operations, operations::Client, operations::ClientBuilder};

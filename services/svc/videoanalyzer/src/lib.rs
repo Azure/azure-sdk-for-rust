@@ -6,8 +6,8 @@
 #[cfg(feature = "package-preview-1_1_0")]
 pub mod package_preview_1_1_0;
 #[cfg(all(feature = "package-preview-1_1_0", not(feature = "no-default-tag")))]
-pub use package_preview_1_1_0::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_preview_1_1_0::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-ava-edge-1-0-0-preview")]
 pub mod package_ava_edge_1_0_0_preview;
 #[cfg(all(feature = "package-ava-edge-1-0-0-preview", not(feature = "no-default-tag")))]
-pub use package_ava_edge_1_0_0_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_ava_edge_1_0_0_preview::{models, operations, operations::Client, operations::ClientBuilder};
