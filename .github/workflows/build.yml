@@ -95,6 +95,9 @@ jobs:
       - name: services check
         run: cargo check --manifest-path services/Cargo.toml --all
 
+      - name: services check examples
+        run: cargo check --manifest-path services/Cargo.toml --examples
+
       - name: services clippy
         run: cargo clippy --manifest-path services/Cargo.toml --all
 
