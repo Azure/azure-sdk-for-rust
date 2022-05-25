@@ -3,7 +3,7 @@ use crate::{
     codegen::{parse_params, type_name_gen, PARAM_RE},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
-    status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
+    status_codes::get_success_responses,
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
@@ -512,9 +512,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
     let responses = &operation.0.responses;
     let success_responses = get_success_responses(responses);
-    let error_responses = get_error_responses(responses);
     let is_single_response = success_responses.len() == 1;
-    let has_default_response = has_default_response(responses);
 
     /*
     let fresponse = if is_single_response {
@@ -575,34 +573,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         }
     }
 
-    let mut error_responses_ts = TokenStream::new();
-    for (status_code, rsp) in &error_responses {
-        let tp = create_response_type(rsp)?;
-        let tp = match tp {
-            Some(tp) => quote! { value: #tp, },
-            None => quote! {},
-        };
-        let response_type = &get_response_type_name(status_code)?;
-        if response_type == "DefaultResponse" {
-            error_responses_ts.extend(quote! {
-                #[error("HTTP status code {}", status_code)]
-                DefaultResponse { status_code: http::StatusCode, #tp },
-            });
-        } else {
-            let response_type = parse_ident(response_type).map_err(Error::ResponseTypeName)?;
-            error_responses_ts.extend(quote! {
-                #[error("Error response #response_type")]
-                #response_type { #tp },
-            });
-        }
-    }
-    if !has_default_response {
-        error_responses_ts.extend(quote! {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-        });
-    }
-
     let mut match_status = TokenStream::new();
     for (status_code, rsp) in &success_responses {
         match status_code {
@@ -655,57 +625,11 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             autorust_openapi::StatusCode::Default => {}
         }
     }
-    for (status_code, rsp) in &error_responses {
-        match status_code {
-            autorust_openapi::StatusCode::Code(_) => {
-                let tp = create_response_type(rsp)?.map(TypeNameCode::into_token_stream);
-                let rsp_value = create_rsp_value(tp.as_ref());
-                let status_code_name = get_status_code_ident(status_code)?;
-                let response_type_name = get_response_type_ident(status_code)?;
-                match tp {
-                    Some(_tp) => {
-                        match_status.extend(quote! {
-                            http::StatusCode::#status_code_name => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                #rsp_value
-                                Err(Error::#response_type_name{value: rsp_value})
-                            }
-                        });
-                    }
-                    None => {
-                        match_status.extend(quote! {
-                            http::StatusCode::#status_code_name => {
-                                Err(Error::#response_type_name{})
-                            }
-                        });
-                    }
-                }
-            }
-            autorust_openapi::StatusCode::Default => {}
+    match_status.extend(quote! {
+        status_code => {
+            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code.as_u16(), error_code: None }))
         }
-    }
-    // default must be last
-    if has_default_response {
-        for (status_code, _rsp) in responses {
-            match status_code {
-                autorust_openapi::StatusCode::Code(_) => {}
-                autorust_openapi::StatusCode::Default => {
-                    match_status.extend(quote! {
-                        status_code => {
-                            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code.as_u16(), error_code: None }))
-                        }
-                    });
-                }
-            }
-        }
-    } else {
-        match_status.extend(quote! {
-            status_code => {
-                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                Err(Error::UnexpectedResponse{status_code, body: rsp_body})
-            }
-        });
-    }
+    });
 
     let in_group = operation.0.in_group();
     let builder_instance_code = create_builder_instance_code(operation, &parameters, in_group)?;
