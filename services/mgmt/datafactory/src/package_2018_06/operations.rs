@@ -647,7 +647,6 @@ pub mod factories {
                                 let rsp_value: models::Factory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -1631,7 +1630,6 @@ pub mod integration_runtimes {
                                 let rsp_value: models::IntegrationRuntimeResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -3200,7 +3198,6 @@ pub mod linked_services {
                                 let rsp_value: models::LinkedServiceResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -3566,7 +3563,6 @@ pub mod datasets {
                                 let rsp_value: models::DatasetResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -3952,7 +3948,6 @@ pub mod pipelines {
                                 let rsp_value: models::PipelineResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -4899,7 +4894,6 @@ pub mod triggers {
                                 let rsp_value: models::TriggerResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

@@ -212,22 +212,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::Conversion = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -293,31 +281,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::Conversion = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::CONFLICT => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Conflict409 { value: rsp_value })
-                            }
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -397,21 +364,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::ConversionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -467,22 +423,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::SessionProperties = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -548,31 +492,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::SessionProperties = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::CONFLICT => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Conflict409 { value: rsp_value })
-                            }
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -629,27 +552,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::SessionProperties = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::UNPROCESSABLE_ENTITY => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnprocessableEntity422 { value: rsp_value })
-                            }
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -701,22 +607,10 @@ pub mod remote_rendering {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -796,21 +690,10 @@ pub mod remote_rendering {
                                 let rsp_value: models::SessionsList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
-                            http::StatusCode::FORBIDDEN => Err(Error::Forbidden403 {}),
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };

@@ -620,26 +620,6 @@ pub mod accounts {
                                 let rsp_value: models::Account = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
-                            }
-                            http::StatusCode::CONFLICT => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Conflict409 { value: rsp_value })
-                            }
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -710,21 +690,6 @@ pub mod accounts {
                                 let rsp_value: models::Account = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
-                            }
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -788,11 +753,6 @@ pub mod accounts {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -882,26 +842,6 @@ pub mod generate {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::AccessToken = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
-                            }
-                            http::StatusCode::CONFLICT => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Conflict409 { value: rsp_value })
-                            }
-                            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::InternalServerError500 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),

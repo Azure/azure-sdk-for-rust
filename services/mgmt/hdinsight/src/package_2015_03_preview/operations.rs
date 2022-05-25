@@ -1228,7 +1228,6 @@ pub mod clusters {
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::OK => Ok(Response::Ok200),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

@@ -818,7 +818,6 @@ pub mod recovery_points {
                                 let rsp_value: models::CrrAccessTokenResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => Err(Error::BadRequest400 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

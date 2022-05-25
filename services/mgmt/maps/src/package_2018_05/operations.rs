@@ -251,7 +251,6 @@ pub mod accounts {
                                 let rsp_value: models::MapsAccount = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -385,7 +384,6 @@ pub mod accounts {
                                 let rsp_value: models::MapsAccount = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -680,7 +678,6 @@ pub mod accounts {
                                 let rsp_value: models::MapsAccountKeys = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -743,7 +740,6 @@ pub mod accounts {
                                 let rsp_value: models::MapsAccountKeys = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

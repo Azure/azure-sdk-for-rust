@@ -179,18 +179,10 @@ pub mod public_offers {
                                 let rsp_value: models::CatalogItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -255,18 +247,10 @@ pub mod public_offers {
                                 let rsp_value: models::PageResultOfCatalogItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                Err(Error::UnexpectedResponse {
-                                    status_code,
-                                    body: rsp_body,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })

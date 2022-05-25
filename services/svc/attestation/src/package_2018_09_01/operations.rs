@@ -170,16 +170,6 @@ pub mod policy {
                                 let rsp_value: String = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -233,16 +223,6 @@ pub mod policy {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::AttestationPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
@@ -300,16 +280,6 @@ pub mod policy {
                                 let rsp_value: String = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -362,16 +332,6 @@ pub mod policy {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -447,16 +407,6 @@ pub mod policy_certificates {
                                 let rsp_value: String = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -510,16 +460,6 @@ pub mod policy_certificates {
                                 let rsp_value: String = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -572,16 +512,6 @@ pub mod policy_certificates {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: String = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
-                            http::StatusCode::UNAUTHORIZED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: String = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::Unauthorized401 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
@@ -643,11 +573,6 @@ pub mod signing_certificates {
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -707,11 +632,6 @@ pub mod metadata_configuration {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::BAD_REQUEST => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::CloudError = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::BadRequest400 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),

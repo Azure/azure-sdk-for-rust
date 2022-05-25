@@ -8312,7 +8312,6 @@ pub mod app_service_plans {
                                 let rsp_value: models::AppServicePlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -9450,7 +9449,6 @@ pub mod app_service_plans {
                                 let rsp_value: models::VnetInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -9676,7 +9674,6 @@ pub mod app_service_plans {
                                 let rsp_value: Vec<models::VnetRoute> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -9735,8 +9732,6 @@ pub mod app_service_plans {
                                 let rsp_value: models::VnetRoute = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => Err(Error::BadRequest400 {}),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -9795,8 +9790,6 @@ pub mod app_service_plans {
                                 let rsp_value: models::VnetRoute = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::BAD_REQUEST => Err(Error::BadRequest400 {}),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -9849,7 +9842,6 @@ pub mod app_service_plans {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -27900,7 +27892,6 @@ pub mod web_apps {
                                 let rsp_value: models::Site = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -28122,7 +28113,6 @@ pub mod web_apps {
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -28523,7 +28513,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -31373,7 +31362,6 @@ pub mod web_apps {
                                 let rsp_value: models::ContinuousWebJob = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -31496,7 +31484,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -31556,7 +31543,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -32430,7 +32416,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployStatus = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::CONFLICT => Err(Error::Conflict409 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -32491,7 +32476,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployLog = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -32583,7 +32567,6 @@ pub mod web_apps {
                                 let rsp_value: models::FunctionEnvelopeCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -32707,7 +32690,6 @@ pub mod web_apps {
                                 let rsp_value: models::FunctionEnvelope = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -32831,7 +32813,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -32967,7 +32948,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -33404,7 +33384,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -33910,7 +33889,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34279,7 +34257,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34561,7 +34538,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployStatus = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::CONFLICT => Err(Error::Conflict409 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34624,7 +34600,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployLog = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34718,7 +34693,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34784,7 +34758,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34845,7 +34818,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -34910,7 +34882,6 @@ pub mod web_apps {
                                 let rsp_value = rsp_body;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -35006,7 +34977,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -35074,7 +35044,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -35170,7 +35139,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -35754,7 +35722,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -35817,7 +35784,6 @@ pub mod web_apps {
                                 let rsp_value: models::NetworkFeatures = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37430,7 +37396,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37494,7 +37459,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37553,7 +37517,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37616,7 +37579,6 @@ pub mod web_apps {
                                 let rsp_value = rsp_body;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37710,7 +37672,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37776,7 +37737,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -37870,7 +37830,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -38628,7 +38587,6 @@ pub mod web_apps {
                                 let rsp_value: models::SiteExtensionInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -38692,7 +38650,6 @@ pub mod web_apps {
                                 let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -38765,7 +38722,6 @@ pub mod web_apps {
                                 let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -38824,7 +38780,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -38979,7 +38934,6 @@ pub mod web_apps {
                                 let rsp_value: models::Site = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -39207,7 +39161,6 @@ pub mod web_apps {
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -39620,7 +39573,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -42358,7 +42310,6 @@ pub mod web_apps {
                                 let rsp_value: models::ContinuousWebJob = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -42485,7 +42436,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -42547,7 +42497,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -43447,7 +43396,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployStatus = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::CONFLICT => Err(Error::Conflict409 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -43510,7 +43458,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployLog = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -43604,7 +43551,6 @@ pub mod web_apps {
                                 let rsp_value: models::FunctionEnvelopeCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -43732,7 +43678,6 @@ pub mod web_apps {
                                 let rsp_value: models::FunctionEnvelope = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -43860,7 +43805,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -44000,7 +43944,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -44451,7 +44394,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -44969,7 +44911,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45350,7 +45291,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45624,7 +45564,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployStatus = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::CONFLICT => Err(Error::Conflict409 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45681,7 +45620,6 @@ pub mod web_apps {
                                 let rsp_value: models::MsDeployLog = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45777,7 +45715,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45845,7 +45782,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45908,7 +45844,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -45966,7 +45901,6 @@ pub mod web_apps {
                                 let rsp_value = rsp_body;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -46055,7 +45989,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -46115,7 +46048,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -46204,7 +46136,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -46609,7 +46540,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -46674,7 +46604,6 @@ pub mod web_apps {
                                 let rsp_value: models::NetworkFeatures = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48324,7 +48253,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48390,7 +48318,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48451,7 +48378,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48516,7 +48442,6 @@ pub mod web_apps {
                                 let rsp_value = rsp_body;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48612,7 +48537,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48680,7 +48604,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -48776,7 +48699,6 @@ pub mod web_apps {
                                 let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -49556,7 +49478,6 @@ pub mod web_apps {
                                 let rsp_value: models::SiteExtensionInfoCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -49622,7 +49543,6 @@ pub mod web_apps {
                                 let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -49697,7 +49617,6 @@ pub mod web_apps {
                                 let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -49758,7 +49677,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -50416,7 +50334,6 @@ pub mod web_apps {
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -50973,7 +50890,6 @@ pub mod web_apps {
                                 let rsp_value: models::TriggeredWebJob = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -51134,7 +51050,6 @@ pub mod web_apps {
                                 let rsp_value: models::TriggeredJobHistoryCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -51193,7 +51108,6 @@ pub mod web_apps {
                                 let rsp_value: models::TriggeredJobHistory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -51255,7 +51169,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -51676,7 +51589,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -51734,7 +51646,6 @@ pub mod web_apps {
                                 let rsp_value: models::VnetGateway = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -52652,7 +52563,6 @@ pub mod web_apps {
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -53193,7 +53103,6 @@ pub mod web_apps {
                                 let rsp_value: models::TriggeredWebJob = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -53350,7 +53259,6 @@ pub mod web_apps {
                                 let rsp_value: models::TriggeredJobHistoryCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -53416,7 +53324,6 @@ pub mod web_apps {
                                 let rsp_value: models::TriggeredJobHistory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -53476,7 +53383,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -53885,7 +53791,6 @@ pub mod web_apps {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -53942,7 +53847,6 @@ pub mod web_apps {
                                 let rsp_value: models::VnetGateway = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

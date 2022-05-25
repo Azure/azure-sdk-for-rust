@@ -347,11 +347,6 @@ pub mod schema {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::Error = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -408,11 +403,6 @@ pub mod schema {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::NO_CONTENT => Ok(()),
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::Error = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

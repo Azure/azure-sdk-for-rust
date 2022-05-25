@@ -149,13 +149,10 @@ pub mod list_operations {
                             let rsp_value: models::SerialConsoleOperations = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            Err(Error::UnexpectedResponse {
-                                status_code,
-                                body: rsp_body,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -210,18 +207,10 @@ pub mod get_console_status {
                             let rsp_value: models::SerialConsoleStatus = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        http::StatusCode::NOT_FOUND => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            let rsp_value: models::GetSerialConsoleSubscriptionNotFound = serde_json::from_slice(&rsp_body)?;
-                            Err(Error::NotFound404 { value: rsp_value })
-                        }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            Err(Error::UnexpectedResponse {
-                                status_code,
-                                body: rsp_body,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -277,18 +266,10 @@ pub mod disable_console {
                             let rsp_value: models::DisableSerialConsoleResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        http::StatusCode::NOT_FOUND => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            let rsp_value: models::GetSerialConsoleSubscriptionNotFound = serde_json::from_slice(&rsp_body)?;
-                            Err(Error::NotFound404 { value: rsp_value })
-                        }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            Err(Error::UnexpectedResponse {
-                                status_code,
-                                body: rsp_body,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -344,18 +325,10 @@ pub mod enable_console {
                             let rsp_value: models::EnableSerialConsoleResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        http::StatusCode::NOT_FOUND => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            let rsp_value: models::GetSerialConsoleSubscriptionNotFound = serde_json::from_slice(&rsp_body)?;
-                            Err(Error::NotFound404 { value: rsp_value })
-                        }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            Err(Error::UnexpectedResponse {
-                                status_code,
-                                body: rsp_body,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })

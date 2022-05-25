@@ -2127,7 +2127,6 @@ pub mod device_management {
                                 let rsp_value: models::DeviceOperation = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -2858,7 +2857,6 @@ pub mod device_update {
                                 let rsp_value: models::Update = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -3358,7 +3356,6 @@ pub mod device_update {
                                 let rsp_value: models::UpdateFile = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -3525,7 +3522,6 @@ pub mod device_update {
                                 let rsp_value: models::UpdateOperation = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_MODIFIED => Err(Error::NotModified304 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

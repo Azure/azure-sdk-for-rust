@@ -840,8 +840,6 @@ pub mod services {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                            http::StatusCode::CONFLICT => Err(Error::Conflict409 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -900,8 +898,6 @@ pub mod services {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(()),
-                            http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
-                            http::StatusCode::CONFLICT => Err(Error::Conflict409 {}),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

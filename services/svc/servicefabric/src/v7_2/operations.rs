@@ -15702,11 +15702,6 @@ pub mod submit_property_batch {
                             let rsp_value: models::SuccessfulPropertyBatchInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        http::StatusCode::CONFLICT => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            let rsp_value: models::FailedPropertyBatchInfo = serde_json::from_slice(&rsp_body)?;
-                            Err(Error::Conflict409 { value: rsp_value })
-                        }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code.as_u16(),
                             error_code: None,

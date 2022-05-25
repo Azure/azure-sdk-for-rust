@@ -220,11 +220,6 @@ pub mod marketplace_agreements {
                                 let rsp_value: models::AgreementTerms = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -282,11 +277,6 @@ pub mod marketplace_agreements {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::AgreementTerms = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
@@ -351,11 +341,6 @@ pub mod marketplace_agreements {
                                 let rsp_value: models::OldAgreementTerms = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -419,11 +404,6 @@ pub mod marketplace_agreements {
                                 let rsp_value: models::OldAgreementTerms = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -486,11 +466,6 @@ pub mod marketplace_agreements {
                                 let rsp_value: models::OldAgreementTerms = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -546,11 +521,6 @@ pub mod marketplace_agreements {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::AgreementTermsList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
@@ -642,11 +612,6 @@ pub mod operations {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::OperationListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::UnsupportedMediaTypeErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::UnsupportedMediaType415 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),

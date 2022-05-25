@@ -149,11 +149,6 @@ pub mod recommendation_metadata {
                                 let rsp_value: models::MetadataEntity = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ArmErrorResponseBody = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -1084,11 +1079,6 @@ pub mod suppressions {
                                 let rsp_value: models::SuppressionContract = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ArmErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
-                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -1150,11 +1140,6 @@ pub mod suppressions {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SuppressionContract = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
-                            }
-                            http::StatusCode::NOT_FOUND => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ArmErrorResponse = serde_json::from_slice(&rsp_body)?;
-                                Err(Error::NotFound404 { value: rsp_value })
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
