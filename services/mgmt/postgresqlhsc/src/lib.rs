@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2020-10-05-privatepreview")]
 pub mod package_2020_10_05_privatepreview;
 #[cfg(all(feature = "package-2020-10-05-privatepreview", not(feature = "no-default-tag")))]
-pub use package_2020_10_05_privatepreview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2020_10_05_privatepreview::{models, operations, operations::Client, operations::ClientBuilder};

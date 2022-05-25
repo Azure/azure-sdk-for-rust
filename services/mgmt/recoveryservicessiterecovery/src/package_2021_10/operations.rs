@@ -157,291 +157,6 @@ impl Client {
         target_compute_sizes::Client(self.clone())
     }
 }
-#[non_exhaustive]
-#[derive(Debug, thiserror :: Error)]
-#[allow(non_camel_case_types)]
-pub enum Error {
-    #[error(transparent)]
-    Operations_List(#[from] operations::list::Error),
-    #[error(transparent)]
-    ReplicationAlertSettings_List(#[from] replication_alert_settings::list::Error),
-    #[error(transparent)]
-    ReplicationAlertSettings_Get(#[from] replication_alert_settings::get::Error),
-    #[error(transparent)]
-    ReplicationAlertSettings_Create(#[from] replication_alert_settings::create::Error),
-    #[error(transparent)]
-    ReplicationEligibilityResults_List(#[from] replication_eligibility_results::list::Error),
-    #[error(transparent)]
-    ReplicationEligibilityResults_Get(#[from] replication_eligibility_results::get::Error),
-    #[error(transparent)]
-    ReplicationEvents_List(#[from] replication_events::list::Error),
-    #[error(transparent)]
-    ReplicationEvents_Get(#[from] replication_events::get::Error),
-    #[error(transparent)]
-    ReplicationFabrics_List(#[from] replication_fabrics::list::Error),
-    #[error(transparent)]
-    ReplicationFabrics_Get(#[from] replication_fabrics::get::Error),
-    #[error(transparent)]
-    ReplicationFabrics_Create(#[from] replication_fabrics::create::Error),
-    #[error(transparent)]
-    ReplicationFabrics_Purge(#[from] replication_fabrics::purge::Error),
-    #[error(transparent)]
-    ReplicationFabrics_CheckConsistency(#[from] replication_fabrics::check_consistency::Error),
-    #[error(transparent)]
-    ReplicationFabrics_MigrateToAad(#[from] replication_fabrics::migrate_to_aad::Error),
-    #[error(transparent)]
-    ReplicationFabrics_ReassociateGateway(#[from] replication_fabrics::reassociate_gateway::Error),
-    #[error(transparent)]
-    ReplicationFabrics_Delete(#[from] replication_fabrics::delete::Error),
-    #[error(transparent)]
-    ReplicationFabrics_RenewCertificate(#[from] replication_fabrics::renew_certificate::Error),
-    #[error(transparent)]
-    ReplicationLogicalNetworks_ListByReplicationFabrics(#[from] replication_logical_networks::list_by_replication_fabrics::Error),
-    #[error(transparent)]
-    ReplicationLogicalNetworks_Get(#[from] replication_logical_networks::get::Error),
-    #[error(transparent)]
-    ReplicationNetworks_ListByReplicationFabrics(#[from] replication_networks::list_by_replication_fabrics::Error),
-    #[error(transparent)]
-    ReplicationNetworks_Get(#[from] replication_networks::get::Error),
-    #[error(transparent)]
-    ReplicationNetworkMappings_ListByReplicationNetworks(#[from] replication_network_mappings::list_by_replication_networks::Error),
-    #[error(transparent)]
-    ReplicationNetworkMappings_Get(#[from] replication_network_mappings::get::Error),
-    #[error(transparent)]
-    ReplicationNetworkMappings_Create(#[from] replication_network_mappings::create::Error),
-    #[error(transparent)]
-    ReplicationNetworkMappings_Update(#[from] replication_network_mappings::update::Error),
-    #[error(transparent)]
-    ReplicationNetworkMappings_Delete(#[from] replication_network_mappings::delete::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_ListByReplicationFabrics(#[from] replication_protection_containers::list_by_replication_fabrics::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_Get(#[from] replication_protection_containers::get::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_Create(#[from] replication_protection_containers::create::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_DiscoverProtectableItem(#[from] replication_protection_containers::discover_protectable_item::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_Delete(#[from] replication_protection_containers::delete::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_ListByReplicationProtectionContainers(
-        #[from] replication_migration_items::list_by_replication_protection_containers::Error,
-    ),
-    #[error(transparent)]
-    ReplicationMigrationItems_Get(#[from] replication_migration_items::get::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_Create(#[from] replication_migration_items::create::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_Update(#[from] replication_migration_items::update::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_Delete(#[from] replication_migration_items::delete::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_Migrate(#[from] replication_migration_items::migrate::Error),
-    #[error(transparent)]
-    MigrationRecoveryPoints_ListByReplicationMigrationItems(#[from] migration_recovery_points::list_by_replication_migration_items::Error),
-    #[error(transparent)]
-    MigrationRecoveryPoints_Get(#[from] migration_recovery_points::get::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_Resync(#[from] replication_migration_items::resync::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_TestMigrate(#[from] replication_migration_items::test_migrate::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_TestMigrateCleanup(#[from] replication_migration_items::test_migrate_cleanup::Error),
-    #[error(transparent)]
-    ReplicationProtectableItems_ListByReplicationProtectionContainers(
-        #[from] replication_protectable_items::list_by_replication_protection_containers::Error,
-    ),
-    #[error(transparent)]
-    ReplicationProtectableItems_Get(#[from] replication_protectable_items::get::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_ListByReplicationProtectionContainers(
-        #[from] replication_protected_items::list_by_replication_protection_containers::Error,
-    ),
-    #[error(transparent)]
-    ReplicationProtectedItems_Get(#[from] replication_protected_items::get::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_Create(#[from] replication_protected_items::create::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_Update(#[from] replication_protected_items::update::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_Purge(#[from] replication_protected_items::purge::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_AddDisks(#[from] replication_protected_items::add_disks::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_ApplyRecoveryPoint(#[from] replication_protected_items::apply_recovery_point::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_FailoverCancel(#[from] replication_protected_items::failover_cancel::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_FailoverCommit(#[from] replication_protected_items::failover_commit::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_PlannedFailover(#[from] replication_protected_items::planned_failover::Error),
-    #[error(transparent)]
-    RecoveryPoints_ListByReplicationProtectedItems(#[from] recovery_points::list_by_replication_protected_items::Error),
-    #[error(transparent)]
-    RecoveryPoints_Get(#[from] recovery_points::get::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_Delete(#[from] replication_protected_items::delete::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_RemoveDisks(#[from] replication_protected_items::remove_disks::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_RepairReplication(#[from] replication_protected_items::repair_replication::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_Reprotect(#[from] replication_protected_items::reprotect::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_ResolveHealthErrors(#[from] replication_protected_items::resolve_health_errors::Error),
-    #[error(transparent)]
-    TargetComputeSizes_ListByReplicationProtectedItems(#[from] target_compute_sizes::list_by_replication_protected_items::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_TestFailover(#[from] replication_protected_items::test_failover::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_TestFailoverCleanup(#[from] replication_protected_items::test_failover_cleanup::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_UnplannedFailover(#[from] replication_protected_items::unplanned_failover::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_UpdateAppliance(#[from] replication_protected_items::update_appliance::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_UpdateMobilityService(#[from] replication_protected_items::update_mobility_service::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_ListByReplicationProtectionContainers(
-        #[from] replication_protection_container_mappings::list_by_replication_protection_containers::Error,
-    ),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_Get(#[from] replication_protection_container_mappings::get::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_Create(#[from] replication_protection_container_mappings::create::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_Update(#[from] replication_protection_container_mappings::update::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_Purge(#[from] replication_protection_container_mappings::purge::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_Delete(#[from] replication_protection_container_mappings::delete::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_SwitchProtection(#[from] replication_protection_containers::switch_protection::Error),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_ListByReplicationFabrics(
-        #[from] replication_recovery_services_providers::list_by_replication_fabrics::Error,
-    ),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_Get(#[from] replication_recovery_services_providers::get::Error),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_Create(#[from] replication_recovery_services_providers::create::Error),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_Purge(#[from] replication_recovery_services_providers::purge::Error),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_RefreshProvider(#[from] replication_recovery_services_providers::refresh_provider::Error),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_Delete(#[from] replication_recovery_services_providers::delete::Error),
-    #[error(transparent)]
-    ReplicationStorageClassifications_ListByReplicationFabrics(
-        #[from] replication_storage_classifications::list_by_replication_fabrics::Error,
-    ),
-    #[error(transparent)]
-    ReplicationStorageClassifications_Get(#[from] replication_storage_classifications::get::Error),
-    #[error(transparent)]
-    ReplicationStorageClassificationMappings_ListByReplicationStorageClassifications(
-        #[from] replication_storage_classification_mappings::list_by_replication_storage_classifications::Error,
-    ),
-    #[error(transparent)]
-    ReplicationStorageClassificationMappings_Get(#[from] replication_storage_classification_mappings::get::Error),
-    #[error(transparent)]
-    ReplicationStorageClassificationMappings_Create(#[from] replication_storage_classification_mappings::create::Error),
-    #[error(transparent)]
-    ReplicationStorageClassificationMappings_Delete(#[from] replication_storage_classification_mappings::delete::Error),
-    #[error(transparent)]
-    ReplicationvCenters_ListByReplicationFabrics(#[from] replicationv_centers::list_by_replication_fabrics::Error),
-    #[error(transparent)]
-    ReplicationvCenters_Get(#[from] replicationv_centers::get::Error),
-    #[error(transparent)]
-    ReplicationvCenters_Create(#[from] replicationv_centers::create::Error),
-    #[error(transparent)]
-    ReplicationvCenters_Update(#[from] replicationv_centers::update::Error),
-    #[error(transparent)]
-    ReplicationvCenters_Delete(#[from] replicationv_centers::delete::Error),
-    #[error(transparent)]
-    ReplicationJobs_List(#[from] replication_jobs::list::Error),
-    #[error(transparent)]
-    ReplicationJobs_Get(#[from] replication_jobs::get::Error),
-    #[error(transparent)]
-    ReplicationJobs_Cancel(#[from] replication_jobs::cancel::Error),
-    #[error(transparent)]
-    ReplicationJobs_Restart(#[from] replication_jobs::restart::Error),
-    #[error(transparent)]
-    ReplicationJobs_Resume(#[from] replication_jobs::resume::Error),
-    #[error(transparent)]
-    ReplicationJobs_Export(#[from] replication_jobs::export::Error),
-    #[error(transparent)]
-    ReplicationMigrationItems_List(#[from] replication_migration_items::list::Error),
-    #[error(transparent)]
-    ReplicationNetworkMappings_List(#[from] replication_network_mappings::list::Error),
-    #[error(transparent)]
-    ReplicationNetworks_List(#[from] replication_networks::list::Error),
-    #[error(transparent)]
-    ReplicationPolicies_List(#[from] replication_policies::list::Error),
-    #[error(transparent)]
-    ReplicationPolicies_Get(#[from] replication_policies::get::Error),
-    #[error(transparent)]
-    ReplicationPolicies_Create(#[from] replication_policies::create::Error),
-    #[error(transparent)]
-    ReplicationPolicies_Update(#[from] replication_policies::update::Error),
-    #[error(transparent)]
-    ReplicationPolicies_Delete(#[from] replication_policies::delete::Error),
-    #[error(transparent)]
-    ReplicationProtectedItems_List(#[from] replication_protected_items::list::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainerMappings_List(#[from] replication_protection_container_mappings::list::Error),
-    #[error(transparent)]
-    ReplicationProtectionContainers_List(#[from] replication_protection_containers::list::Error),
-    #[error(transparent)]
-    ReplicationProtectionIntents_List(#[from] replication_protection_intents::list::Error),
-    #[error(transparent)]
-    ReplicationProtectionIntents_Get(#[from] replication_protection_intents::get::Error),
-    #[error(transparent)]
-    ReplicationProtectionIntents_Create(#[from] replication_protection_intents::create::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_List(#[from] replication_recovery_plans::list::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_Get(#[from] replication_recovery_plans::get::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_Create(#[from] replication_recovery_plans::create::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_Update(#[from] replication_recovery_plans::update::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_Delete(#[from] replication_recovery_plans::delete::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_FailoverCancel(#[from] replication_recovery_plans::failover_cancel::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_FailoverCommit(#[from] replication_recovery_plans::failover_commit::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_PlannedFailover(#[from] replication_recovery_plans::planned_failover::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_Reprotect(#[from] replication_recovery_plans::reprotect::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_TestFailover(#[from] replication_recovery_plans::test_failover::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_TestFailoverCleanup(#[from] replication_recovery_plans::test_failover_cleanup::Error),
-    #[error(transparent)]
-    ReplicationRecoveryPlans_UnplannedFailover(#[from] replication_recovery_plans::unplanned_failover::Error),
-    #[error(transparent)]
-    ReplicationRecoveryServicesProviders_List(#[from] replication_recovery_services_providers::list::Error),
-    #[error(transparent)]
-    ReplicationStorageClassificationMappings_List(#[from] replication_storage_classification_mappings::list::Error),
-    #[error(transparent)]
-    ReplicationStorageClassifications_List(#[from] replication_storage_classifications::list::Error),
-    #[error(transparent)]
-    SupportedOperatingSystems_Get(#[from] supported_operating_systems::get::Error),
-    #[error(transparent)]
-    ReplicationVaultHealth_Get(#[from] replication_vault_health::get::Error),
-    #[error(transparent)]
-    ReplicationVaultHealth_Refresh(#[from] replication_vault_health::refresh::Error),
-    #[error(transparent)]
-    ReplicationVaultSetting_List(#[from] replication_vault_setting::list::Error),
-    #[error(transparent)]
-    ReplicationVaultSetting_Get(#[from] replication_vault_setting::get::Error),
-    #[error(transparent)]
-    ReplicationVaultSetting_Create(#[from] replication_vault_setting::create::Error),
-    #[error(transparent)]
-    ReplicationvCenters_List(#[from] replicationv_centers::list::Error),
-}
 pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -457,26 +172,8 @@ pub mod operations {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::OperationsDiscoveryCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -484,7 +181,7 @@ pub mod operations {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -494,12 +191,14 @@ pub mod operations {
                             &this.subscription_id,
                             &this.resource_group_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -510,12 +209,17 @@ pub mod operations {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -523,26 +227,30 @@ pub mod operations {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::OperationsDiscoveryCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::OperationsDiscoveryCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -611,26 +319,8 @@ pub mod replication_alert_settings {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::AlertCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -639,7 +329,7 @@ pub mod replication_alert_settings {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -650,12 +340,14 @@ pub mod replication_alert_settings {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -666,12 +358,17 @@ pub mod replication_alert_settings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -679,26 +376,30 @@ pub mod replication_alert_settings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::AlertCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::AlertCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -713,26 +414,8 @@ pub mod replication_alert_settings {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Alert;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -742,35 +425,40 @@ pub mod replication_alert_settings {
             pub(crate) alert_setting_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationAlertSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . alert_setting_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Alert =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Alert = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -784,26 +472,8 @@ pub mod replication_alert_settings {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Alert;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -814,36 +484,41 @@ pub mod replication_alert_settings {
             pub(crate) request: models::ConfigureAlertRequest,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationAlertSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . alert_setting_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.request).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.request)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Alert =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Alert = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -891,26 +566,8 @@ pub mod replication_eligibility_results {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationEligibilityResultsCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -919,35 +576,40 @@ pub mod replication_eligibility_results {
             pub(crate) virtual_machine_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.RecoveryServices/replicationEligibilityResults" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . virtual_machine_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationEligibilityResultsCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationEligibilityResultsCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -961,26 +623,8 @@ pub mod replication_eligibility_results {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationEligibilityResults;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -989,35 +633,40 @@ pub mod replication_eligibility_results {
             pub(crate) virtual_machine_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.RecoveryServices/replicationEligibilityResults/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . virtual_machine_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationEligibilityResults =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationEligibilityResults = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1068,26 +717,8 @@ pub mod replication_events {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::EventCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1101,7 +732,7 @@ pub mod replication_events {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -1112,12 +743,14 @@ pub mod replication_events {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -1128,12 +761,17 @@ pub mod replication_events {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -1141,7 +779,7 @@ pub mod replication_events {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -1150,20 +788,24 @@ pub mod replication_events {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::EventCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::EventCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1178,26 +820,8 @@ pub mod replication_events {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Event;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1207,7 +831,7 @@ pub mod replication_events {
             pub(crate) event_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1219,30 +843,35 @@ pub mod replication_events {
                             &this.resource_name,
                             &this.event_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Event =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Event = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1411,26 +1040,8 @@ pub mod replication_fabrics {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::FabricCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1439,7 +1050,7 @@ pub mod replication_fabrics {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -1450,12 +1061,14 @@ pub mod replication_fabrics {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -1466,12 +1079,17 @@ pub mod replication_fabrics {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -1479,26 +1097,30 @@ pub mod replication_fabrics {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::FabricCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::FabricCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1513,26 +1135,8 @@ pub mod replication_fabrics {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Fabric;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1547,7 +1151,7 @@ pub mod replication_fabrics {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1559,14 +1163,14 @@ pub mod replication_fabrics {
                             &this.resource_name,
                             &this.fabric_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         if let Some(filter) = &this.filter {
@@ -1574,18 +1178,23 @@ pub mod replication_fabrics {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Fabric =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Fabric = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1599,29 +1208,11 @@ pub mod replication_fabrics {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Fabric),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1634,7 +1225,7 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1646,32 +1237,37 @@ pub mod replication_fabrics {
                             &this.resource_name,
                             &this.fabric_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Fabric =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Fabric = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1685,29 +1281,11 @@ pub mod replication_fabrics {
     }
     pub mod purge {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1719,7 +1297,7 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1731,26 +1309,32 @@ pub mod replication_fabrics {
                             &this.resource_name,
                             &this.fabric_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1764,29 +1348,11 @@ pub mod replication_fabrics {
     }
     pub mod check_consistency {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Fabric),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1798,37 +1364,42 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/checkConsistency" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Fabric =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Fabric = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1842,29 +1413,11 @@ pub mod replication_fabrics {
     }
     pub mod migrate_to_aad {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1876,32 +1429,38 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/migratetoaad" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1915,29 +1474,11 @@ pub mod replication_fabrics {
     }
     pub mod reassociate_gateway {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Fabric),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1950,37 +1491,42 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/reassociateGateway" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.failover_process_server_request).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.failover_process_server_request)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Fabric =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Fabric = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -1994,29 +1540,11 @@ pub mod replication_fabrics {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2028,32 +1556,38 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/remove" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2067,29 +1601,11 @@ pub mod replication_fabrics {
     }
     pub mod renew_certificate {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Fabric),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2102,37 +1618,42 @@ pub mod replication_fabrics {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/renewCertificate" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.renew_certificate).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.renew_certificate)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Fabric =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Fabric = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2186,26 +1707,8 @@ pub mod replication_logical_networks {
     }
     pub mod list_by_replication_fabrics {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::LogicalNetworkCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2215,17 +1718,19 @@ pub mod replication_logical_networks {
             pub(crate) fabric_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationLogicalNetworks" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -2236,12 +1741,17 @@ pub mod replication_logical_networks {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2249,26 +1759,30 @@ pub mod replication_logical_networks {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::LogicalNetworkCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::LogicalNetworkCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2283,26 +1797,8 @@ pub mod replication_logical_networks {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::LogicalNetwork;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2313,35 +1809,40 @@ pub mod replication_logical_networks {
             pub(crate) logical_network_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationLogicalNetworks/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . logical_network_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::LogicalNetwork =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::LogicalNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2409,26 +1910,8 @@ pub mod replication_networks {
     }
     pub mod list_by_replication_fabrics {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::NetworkCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2438,17 +1921,19 @@ pub mod replication_networks {
             pub(crate) fabric_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -2459,12 +1944,17 @@ pub mod replication_networks {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2472,26 +1962,30 @@ pub mod replication_networks {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2506,26 +2000,8 @@ pub mod replication_networks {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Network;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2536,35 +2012,40 @@ pub mod replication_networks {
             pub(crate) network_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . network_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Network =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Network = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2578,26 +2059,8 @@ pub mod replication_networks {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::NetworkCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2606,7 +2069,7 @@ pub mod replication_networks {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -2617,12 +2080,14 @@ pub mod replication_networks {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -2633,12 +2098,17 @@ pub mod replication_networks {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2646,26 +2116,30 @@ pub mod replication_networks {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2802,26 +2276,8 @@ pub mod replication_network_mappings {
     }
     pub mod list_by_replication_networks {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::NetworkMappingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2832,17 +2288,19 @@ pub mod replication_network_mappings {
             pub(crate) network_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks/{}/replicationNetworkMappings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . network_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -2853,12 +2311,17 @@ pub mod replication_network_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2866,26 +2329,30 @@ pub mod replication_network_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkMappingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkMappingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2900,26 +2367,8 @@ pub mod replication_network_mappings {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::NetworkMapping;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2931,35 +2380,40 @@ pub mod replication_network_mappings {
             pub(crate) network_mapping_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks/{}/replicationNetworkMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . network_name , & this . network_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -2973,29 +2427,11 @@ pub mod replication_network_mappings {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::NetworkMapping),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3010,37 +2446,42 @@ pub mod replication_network_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks/{}/replicationNetworkMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . network_name , & this . network_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3054,29 +2495,11 @@ pub mod replication_network_mappings {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::NetworkMapping),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3091,37 +2514,42 @@ pub mod replication_network_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks/{}/replicationNetworkMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . network_name , & this . network_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3135,29 +2563,11 @@ pub mod replication_network_mappings {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3171,31 +2581,37 @@ pub mod replication_network_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationNetworks/{}/replicationNetworkMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . network_name , & this . network_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3209,26 +2625,8 @@ pub mod replication_network_mappings {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::NetworkMappingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3237,17 +2635,19 @@ pub mod replication_network_mappings {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationNetworkMappings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -3258,12 +2658,17 @@ pub mod replication_network_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3271,26 +2676,30 @@ pub mod replication_network_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::NetworkMappingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NetworkMappingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3437,26 +2846,8 @@ pub mod replication_protection_containers {
     }
     pub mod list_by_replication_fabrics {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectionContainerCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3466,17 +2857,19 @@ pub mod replication_protection_containers {
             pub(crate) fabric_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -3487,12 +2880,17 @@ pub mod replication_protection_containers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3500,26 +2898,30 @@ pub mod replication_protection_containers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3534,26 +2936,8 @@ pub mod replication_protection_containers {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectionContainer;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3564,35 +2948,40 @@ pub mod replication_protection_containers {
             pub(crate) protection_container_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainer =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainer = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3606,29 +2995,11 @@ pub mod replication_protection_containers {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ProtectionContainer),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3642,37 +3013,42 @@ pub mod replication_protection_containers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.creation_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.creation_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainer =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainer = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3686,29 +3062,11 @@ pub mod replication_protection_containers {
     }
     pub mod discover_protectable_item {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ProtectionContainer),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3722,37 +3080,42 @@ pub mod replication_protection_containers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/discoverProtectableItem" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.discover_protectable_item_request).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.discover_protectable_item_request)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainer =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainer = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3766,29 +3129,11 @@ pub mod replication_protection_containers {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3801,32 +3146,38 @@ pub mod replication_protection_containers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/remove" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3840,29 +3191,11 @@ pub mod replication_protection_containers {
     }
     pub mod switch_protection {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ProtectionContainer),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3876,37 +3209,42 @@ pub mod replication_protection_containers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/switchprotection" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.switch_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.switch_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainer =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainer = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -3920,26 +3258,8 @@ pub mod replication_protection_containers {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectionContainerCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3948,17 +3268,19 @@ pub mod replication_protection_containers {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationProtectionContainers" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -3969,12 +3291,17 @@ pub mod replication_protection_containers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3982,26 +3309,30 @@ pub mod replication_protection_containers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4233,26 +3564,8 @@ pub mod replication_migration_items {
     }
     pub mod list_by_replication_protection_containers {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::MigrationItemCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -4278,17 +3591,19 @@ pub mod replication_migration_items {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -4299,12 +3614,17 @@ pub mod replication_migration_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -4312,7 +3632,7 @@ pub mod replication_migration_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -4327,20 +3647,24 @@ pub mod replication_migration_items {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItemCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItemCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4355,26 +3679,8 @@ pub mod replication_migration_items {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::MigrationItem;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -4386,35 +3692,40 @@ pub mod replication_migration_items {
             pub(crate) migration_item_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4428,29 +3739,11 @@ pub mod replication_migration_items {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::MigrationItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4465,37 +3758,42 @@ pub mod replication_migration_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4509,29 +3807,11 @@ pub mod replication_migration_items {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::MigrationItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4546,37 +3826,42 @@ pub mod replication_migration_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4590,29 +3875,11 @@ pub mod replication_migration_items {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4631,19 +3898,19 @@ pub mod replication_migration_items {
                 self
             }
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         if let Some(delete_option) = &this.delete_option {
@@ -4651,14 +3918,20 @@ pub mod replication_migration_items {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4672,29 +3945,11 @@ pub mod replication_migration_items {
     }
     pub mod migrate {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::MigrationItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4709,37 +3964,42 @@ pub mod replication_migration_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}/migrate" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.migrate_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.migrate_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4753,29 +4013,11 @@ pub mod replication_migration_items {
     }
     pub mod resync {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::MigrationItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4790,37 +4032,42 @@ pub mod replication_migration_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}/resync" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4834,29 +4081,11 @@ pub mod replication_migration_items {
     }
     pub mod test_migrate {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::MigrationItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4871,37 +4100,42 @@ pub mod replication_migration_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}/testMigrate" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.test_migrate_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.test_migrate_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4915,29 +4149,11 @@ pub mod replication_migration_items {
     }
     pub mod test_migrate_cleanup {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::MigrationItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -4952,37 +4168,42 @@ pub mod replication_migration_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}/testMigrateCleanup" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.test_migrate_cleanup_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.test_migrate_cleanup_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -4996,26 +4217,8 @@ pub mod replication_migration_items {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::MigrationItemCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5039,17 +4242,19 @@ pub mod replication_migration_items {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationMigrationItems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -5060,12 +4265,17 @@ pub mod replication_migration_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -5073,7 +4283,7 @@ pub mod replication_migration_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -5088,20 +4298,24 @@ pub mod replication_migration_items {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationItemCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationItemCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -5164,26 +4378,8 @@ pub mod migration_recovery_points {
     }
     pub mod list_by_replication_migration_items {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::MigrationRecoveryPointCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5195,17 +4391,19 @@ pub mod migration_recovery_points {
             pub(crate) migration_item_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}/migrationRecoveryPoints" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -5216,12 +4414,17 @@ pub mod migration_recovery_points {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -5229,26 +4432,30 @@ pub mod migration_recovery_points {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationRecoveryPointCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationRecoveryPointCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -5263,26 +4470,8 @@ pub mod migration_recovery_points {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::MigrationRecoveryPoint;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5295,35 +4484,40 @@ pub mod migration_recovery_points {
             pub(crate) migration_recovery_point_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationMigrationItems/{}/migrationRecoveryPoints/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . migration_item_name , & this . migration_recovery_point_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::MigrationRecoveryPoint =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::MigrationRecoveryPoint = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -5384,26 +4578,8 @@ pub mod replication_protectable_items {
     }
     pub mod list_by_replication_protection_containers {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectableItemCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5429,17 +4605,19 @@ pub mod replication_protectable_items {
                 self.skip_token = Some(skip_token.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectableItems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -5450,12 +4628,17 @@ pub mod replication_protectable_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -5463,7 +4646,7 @@ pub mod replication_protectable_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -5478,20 +4661,24 @@ pub mod replication_protectable_items {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectableItemCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectableItemCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -5506,26 +4693,8 @@ pub mod replication_protectable_items {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectableItem;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5537,35 +4706,40 @@ pub mod replication_protectable_items {
             pub(crate) protectable_item_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectableItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . protectable_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectableItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectableItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6027,26 +5201,8 @@ pub mod replication_protected_items {
     }
     pub mod list_by_replication_protection_containers {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationProtectedItemCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -6057,17 +5213,19 @@ pub mod replication_protected_items {
             pub(crate) protection_container_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -6078,12 +5236,17 @@ pub mod replication_protected_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -6091,26 +5254,30 @@ pub mod replication_protected_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItemCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItemCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6125,26 +5292,8 @@ pub mod replication_protected_items {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationProtectedItem;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -6156,35 +5305,40 @@ pub mod replication_protected_items {
             pub(crate) replicated_protected_item_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6198,29 +5352,11 @@ pub mod replication_protected_items {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6235,37 +5371,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6279,29 +5420,11 @@ pub mod replication_protected_items {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6316,37 +5439,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.update_protection_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.update_protection_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6360,29 +5488,11 @@ pub mod replication_protected_items {
     }
     pub mod purge {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6396,31 +5506,37 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6434,29 +5550,11 @@ pub mod replication_protected_items {
     }
     pub mod add_disks {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6471,37 +5569,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/addDisks" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.add_disks_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.add_disks_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6515,29 +5618,11 @@ pub mod replication_protected_items {
     }
     pub mod apply_recovery_point {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6552,37 +5637,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/applyRecoveryPoint" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.apply_recovery_point_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.apply_recovery_point_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6596,29 +5686,11 @@ pub mod replication_protected_items {
     }
     pub mod failover_cancel {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6632,37 +5704,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/failoverCancel" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6676,29 +5753,11 @@ pub mod replication_protected_items {
     }
     pub mod failover_commit {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6712,37 +5771,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/failoverCommit" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6756,29 +5820,11 @@ pub mod replication_protected_items {
     }
     pub mod planned_failover {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6793,37 +5839,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/plannedFailover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.failover_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.failover_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6837,29 +5888,11 @@ pub mod replication_protected_items {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6874,32 +5907,38 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/remove" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.disable_protection_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.disable_protection_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6913,29 +5952,11 @@ pub mod replication_protected_items {
     }
     pub mod remove_disks {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -6950,37 +5971,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/removeDisks" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.remove_disks_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.remove_disks_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -6994,29 +6020,11 @@ pub mod replication_protected_items {
     }
     pub mod repair_replication {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7030,37 +6038,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/repairReplication" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7074,29 +6087,11 @@ pub mod replication_protected_items {
     }
     pub mod reprotect {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7111,37 +6106,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/reProtect" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.reprotect_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.reprotect_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7155,29 +6155,11 @@ pub mod replication_protected_items {
     }
     pub mod resolve_health_errors {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7192,37 +6174,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/resolveHealthErrors" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.resolve_health_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.resolve_health_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7236,29 +6223,11 @@ pub mod replication_protected_items {
     }
     pub mod test_failover {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7273,37 +6242,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/testFailover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.testfailover_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.testfailover_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7317,29 +6291,11 @@ pub mod replication_protected_items {
     }
     pub mod test_failover_cleanup {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7354,37 +6310,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/testFailoverCleanup" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.cleanup_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.cleanup_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7398,29 +6359,11 @@ pub mod replication_protected_items {
     }
     pub mod unplanned_failover {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7435,37 +6378,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/unplannedFailover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.failover_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.failover_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7479,29 +6427,11 @@ pub mod replication_protected_items {
     }
     pub mod update_appliance {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7516,37 +6446,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/updateAppliance" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.appliance_update_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.appliance_update_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7560,29 +6495,11 @@ pub mod replication_protected_items {
     }
     pub mod update_mobility_service {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ReplicationProtectedItem),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -7597,37 +6514,42 @@ pub mod replication_protected_items {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/updateMobilityService" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replication_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.update_mobility_service_request).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.update_mobility_service_request)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItem =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItem = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7641,26 +6563,8 @@ pub mod replication_protected_items {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationProtectedItemCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -7679,17 +6583,19 @@ pub mod replication_protected_items {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationProtectedItems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -7700,12 +6606,17 @@ pub mod replication_protected_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -7713,7 +6624,7 @@ pub mod replication_protected_items {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -7725,20 +6636,24 @@ pub mod replication_protected_items {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectedItemCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectedItemCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7801,26 +6716,8 @@ pub mod recovery_points {
     }
     pub mod list_by_replication_protected_items {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryPointCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -7832,17 +6729,19 @@ pub mod recovery_points {
             pub(crate) replicated_protected_item_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/recoveryPoints" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -7853,12 +6752,17 @@ pub mod recovery_points {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -7866,26 +6770,30 @@ pub mod recovery_points {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPointCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPointCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -7900,26 +6808,8 @@ pub mod recovery_points {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryPoint;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -7932,35 +6822,40 @@ pub mod recovery_points {
             pub(crate) recovery_point_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/recoveryPoints/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name , & this . recovery_point_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPoint =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPoint = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8000,26 +6895,8 @@ pub mod target_compute_sizes {
     }
     pub mod list_by_replication_protected_items {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::TargetComputeSizeCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -8031,17 +6908,19 @@ pub mod target_compute_sizes {
             pub(crate) replicated_protected_item_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/targetComputeSizes" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -8052,12 +6931,17 @@ pub mod target_compute_sizes {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -8065,26 +6949,30 @@ pub mod target_compute_sizes {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::TargetComputeSizeCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::TargetComputeSizeCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8243,26 +7131,8 @@ pub mod replication_protection_container_mappings {
     }
     pub mod list_by_replication_protection_containers {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectionContainerMappingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -8273,17 +7143,19 @@ pub mod replication_protection_container_mappings {
             pub(crate) protection_container_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectionContainerMappings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -8294,12 +7166,17 @@ pub mod replication_protection_container_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -8307,26 +7184,30 @@ pub mod replication_protection_container_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerMappingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerMappingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8341,26 +7222,8 @@ pub mod replication_protection_container_mappings {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectionContainerMapping;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -8372,35 +7235,40 @@ pub mod replication_protection_container_mappings {
             pub(crate) mapping_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectionContainerMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8414,29 +7282,11 @@ pub mod replication_protection_container_mappings {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ProtectionContainerMapping),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8451,37 +7301,42 @@ pub mod replication_protection_container_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectionContainerMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.creation_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.creation_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8495,29 +7350,11 @@ pub mod replication_protection_container_mappings {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ProtectionContainerMapping),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8532,37 +7369,42 @@ pub mod replication_protection_container_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectionContainerMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.update_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.update_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8576,29 +7418,11 @@ pub mod replication_protection_container_mappings {
     }
     pub mod purge {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8612,31 +7436,37 @@ pub mod replication_protection_container_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectionContainerMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8650,29 +7480,11 @@ pub mod replication_protection_container_mappings {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -8687,32 +7499,38 @@ pub mod replication_protection_container_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectionContainerMappings/{}/remove" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.removal_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.removal_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8726,26 +7544,8 @@ pub mod replication_protection_container_mappings {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ProtectionContainerMappingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -8754,17 +7554,19 @@ pub mod replication_protection_container_mappings {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationProtectionContainerMappings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -8775,12 +7577,17 @@ pub mod replication_protection_container_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -8788,26 +7595,30 @@ pub mod replication_protection_container_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ProtectionContainerMappingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProtectionContainerMappingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -8950,26 +7761,8 @@ pub mod replication_recovery_services_providers {
     }
     pub mod list_by_replication_fabrics {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryServicesProviderCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -8979,17 +7772,19 @@ pub mod replication_recovery_services_providers {
             pub(crate) fabric_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationRecoveryServicesProviders" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -9000,12 +7795,17 @@ pub mod replication_recovery_services_providers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -9013,26 +7813,30 @@ pub mod replication_recovery_services_providers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryServicesProviderCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryServicesProviderCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9047,26 +7851,8 @@ pub mod replication_recovery_services_providers {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryServicesProvider;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -9077,35 +7863,40 @@ pub mod replication_recovery_services_providers {
             pub(crate) provider_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationRecoveryServicesProviders/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . provider_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryServicesProvider =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryServicesProvider = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9119,29 +7910,11 @@ pub mod replication_recovery_services_providers {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryServicesProvider),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9155,37 +7928,42 @@ pub mod replication_recovery_services_providers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationRecoveryServicesProviders/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . provider_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.add_provider_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.add_provider_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryServicesProvider =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryServicesProvider = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9199,29 +7977,11 @@ pub mod replication_recovery_services_providers {
     }
     pub mod purge {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9234,31 +7994,37 @@ pub mod replication_recovery_services_providers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationRecoveryServicesProviders/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . provider_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9272,29 +8038,11 @@ pub mod replication_recovery_services_providers {
     }
     pub mod refresh_provider {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryServicesProvider),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9307,37 +8055,42 @@ pub mod replication_recovery_services_providers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationRecoveryServicesProviders/{}/refreshProvider" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . provider_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryServicesProvider =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryServicesProvider = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9351,29 +8104,11 @@ pub mod replication_recovery_services_providers {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -9386,32 +8121,38 @@ pub mod replication_recovery_services_providers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationRecoveryServicesProviders/{}/remove" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . provider_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9425,26 +8166,8 @@ pub mod replication_recovery_services_providers {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryServicesProviderCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -9453,17 +8176,19 @@ pub mod replication_recovery_services_providers {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryServicesProviders" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -9474,12 +8199,17 @@ pub mod replication_recovery_services_providers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -9487,26 +8217,30 @@ pub mod replication_recovery_services_providers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryServicesProviderCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryServicesProviderCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9575,26 +8309,8 @@ pub mod replication_storage_classifications {
     }
     pub mod list_by_replication_fabrics {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::StorageClassificationCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -9604,17 +8320,19 @@ pub mod replication_storage_classifications {
             pub(crate) fabric_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationStorageClassifications" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -9625,12 +8343,17 @@ pub mod replication_storage_classifications {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -9638,26 +8361,30 @@ pub mod replication_storage_classifications {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassificationCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassificationCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9672,26 +8399,8 @@ pub mod replication_storage_classifications {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::StorageClassification;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -9702,35 +8411,40 @@ pub mod replication_storage_classifications {
             pub(crate) storage_classification_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationStorageClassifications/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . storage_classification_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassification =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassification = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9744,26 +8458,8 @@ pub mod replication_storage_classifications {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::StorageClassificationCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -9772,17 +8468,19 @@ pub mod replication_storage_classifications {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationStorageClassifications" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -9793,12 +8491,17 @@ pub mod replication_storage_classifications {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -9806,26 +8509,30 @@ pub mod replication_storage_classifications {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassificationCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassificationCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -9940,26 +8647,8 @@ pub mod replication_storage_classification_mappings {
     }
     pub mod list_by_replication_storage_classifications {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::StorageClassificationMappingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -9970,17 +8659,19 @@ pub mod replication_storage_classification_mappings {
             pub(crate) storage_classification_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationStorageClassifications/{}/replicationStorageClassificationMappings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . storage_classification_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -9991,12 +8682,17 @@ pub mod replication_storage_classification_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -10004,26 +8700,30 @@ pub mod replication_storage_classification_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassificationMappingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassificationMappingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10038,26 +8738,8 @@ pub mod replication_storage_classification_mappings {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::StorageClassificationMapping;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -10069,35 +8751,40 @@ pub mod replication_storage_classification_mappings {
             pub(crate) storage_classification_mapping_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationStorageClassifications/{}/replicationStorageClassificationMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . storage_classification_name , & this . storage_classification_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassificationMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassificationMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10111,29 +8798,11 @@ pub mod replication_storage_classification_mappings {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::StorageClassificationMapping),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10148,37 +8817,42 @@ pub mod replication_storage_classification_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationStorageClassifications/{}/replicationStorageClassificationMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . storage_classification_name , & this . storage_classification_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.pairing_input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.pairing_input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassificationMapping =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassificationMapping = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10192,29 +8866,11 @@ pub mod replication_storage_classification_mappings {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10228,31 +8884,37 @@ pub mod replication_storage_classification_mappings {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationStorageClassifications/{}/replicationStorageClassificationMappings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . storage_classification_name , & this . storage_classification_mapping_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10266,26 +8928,8 @@ pub mod replication_storage_classification_mappings {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::StorageClassificationMappingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -10294,17 +8938,19 @@ pub mod replication_storage_classification_mappings {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationStorageClassificationMappings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -10315,12 +8961,17 @@ pub mod replication_storage_classification_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -10328,26 +8979,30 @@ pub mod replication_storage_classification_mappings {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::StorageClassificationMappingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StorageClassificationMappingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10474,26 +9129,8 @@ pub mod replicationv_centers {
     }
     pub mod list_by_replication_fabrics {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VCenterCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -10503,17 +9140,19 @@ pub mod replicationv_centers {
             pub(crate) fabric_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationvCenters" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -10524,12 +9163,17 @@ pub mod replicationv_centers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -10537,26 +9181,30 @@ pub mod replicationv_centers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VCenterCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VCenterCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10571,26 +9219,8 @@ pub mod replicationv_centers {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VCenter;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -10601,35 +9231,40 @@ pub mod replicationv_centers {
             pub(crate) vcenter_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationvCenters/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . vcenter_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VCenter =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VCenter = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10643,29 +9278,11 @@ pub mod replicationv_centers {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VCenter),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10679,37 +9296,42 @@ pub mod replicationv_centers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationvCenters/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . vcenter_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.add_v_center_request).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.add_v_center_request)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VCenter =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VCenter = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10723,29 +9345,11 @@ pub mod replicationv_centers {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VCenter),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10759,37 +9363,42 @@ pub mod replicationv_centers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationvCenters/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . vcenter_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.update_v_center_request).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.update_v_center_request)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VCenter =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VCenter = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10803,29 +9412,11 @@ pub mod replicationv_centers {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -10838,31 +9429,37 @@ pub mod replicationv_centers {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationvCenters/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . vcenter_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -10876,26 +9473,8 @@ pub mod replicationv_centers {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VCenterCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -10904,7 +9483,7 @@ pub mod replicationv_centers {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -10915,12 +9494,14 @@ pub mod replicationv_centers {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -10931,12 +9512,17 @@ pub mod replicationv_centers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -10944,26 +9530,30 @@ pub mod replicationv_centers {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VCenterCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VCenterCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11081,26 +9671,8 @@ pub mod replication_jobs {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::JobCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -11114,7 +9686,7 @@ pub mod replication_jobs {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -11125,12 +9697,14 @@ pub mod replication_jobs {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -11141,12 +9715,17 @@ pub mod replication_jobs {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -11154,7 +9733,7 @@ pub mod replication_jobs {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -11163,20 +9742,24 @@ pub mod replication_jobs {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::JobCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::JobCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11191,26 +9774,8 @@ pub mod replication_jobs {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Job;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -11220,7 +9785,7 @@ pub mod replication_jobs {
             pub(crate) job_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -11232,30 +9797,35 @@ pub mod replication_jobs {
                             &this.resource_name,
                             &this.job_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Job =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Job = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11269,29 +9839,11 @@ pub mod replication_jobs {
     }
     pub mod cancel {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Job),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11303,37 +9855,42 @@ pub mod replication_jobs {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationJobs/{}/cancel" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . job_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Job =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Job = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11347,29 +9904,11 @@ pub mod replication_jobs {
     }
     pub mod restart {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Job),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11381,37 +9920,42 @@ pub mod replication_jobs {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationJobs/{}/restart" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . job_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Job =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Job = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11425,29 +9969,11 @@ pub mod replication_jobs {
     }
     pub mod resume {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Job),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11460,37 +9986,42 @@ pub mod replication_jobs {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationJobs/{}/resume" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . job_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.resume_job_params).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.resume_job_params)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Job =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Job = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11504,29 +10035,11 @@ pub mod replication_jobs {
     }
     pub mod export {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Job),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11538,7 +10051,7 @@ pub mod replication_jobs {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -11549,32 +10062,37 @@ pub mod replication_jobs {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.job_query_parameter).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.job_query_parameter)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Job =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Job = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11676,26 +10194,8 @@ pub mod replication_policies {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::PolicyCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -11704,7 +10204,7 @@ pub mod replication_policies {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -11715,12 +10215,14 @@ pub mod replication_policies {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -11731,12 +10233,17 @@ pub mod replication_policies {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -11744,26 +10251,30 @@ pub mod replication_policies {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::PolicyCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::PolicyCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11778,26 +10289,8 @@ pub mod replication_policies {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::Policy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -11807,7 +10300,7 @@ pub mod replication_policies {
             pub(crate) policy_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -11819,30 +10312,35 @@ pub mod replication_policies {
                             &this.resource_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Policy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Policy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11856,29 +10354,11 @@ pub mod replication_policies {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Policy),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11891,7 +10371,7 @@ pub mod replication_policies {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -11903,32 +10383,37 @@ pub mod replication_policies {
                             &this.resource_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Policy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Policy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -11942,29 +10427,11 @@ pub mod replication_policies {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Policy),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -11977,7 +10444,7 @@ pub mod replication_policies {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -11989,32 +10456,37 @@ pub mod replication_policies {
                             &this.resource_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Policy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Policy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12028,29 +10500,11 @@ pub mod replication_policies {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12062,7 +10516,7 @@ pub mod replication_policies {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -12074,26 +10528,32 @@ pub mod replication_policies {
                             &this.resource_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12163,26 +10623,8 @@ pub mod replication_protection_intents {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationProtectionIntentCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -12201,17 +10643,19 @@ pub mod replication_protection_intents {
                 self.take_token = Some(take_token.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationProtectionIntents" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -12222,12 +10666,17 @@ pub mod replication_protection_intents {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -12235,7 +10684,7 @@ pub mod replication_protection_intents {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -12247,20 +10696,24 @@ pub mod replication_protection_intents {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectionIntentCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectionIntentCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12275,26 +10728,8 @@ pub mod replication_protection_intents {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationProtectionIntent;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -12304,35 +10739,40 @@ pub mod replication_protection_intents {
             pub(crate) intent_object_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationProtectionIntents/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . intent_object_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectionIntent =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectionIntent = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12346,26 +10786,8 @@ pub mod replication_protection_intents {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ReplicationProtectionIntent;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -12376,36 +10798,41 @@ pub mod replication_protection_intents {
             pub(crate) input: models::CreateProtectionIntentInput,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationProtectionIntents/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . intent_object_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ReplicationProtectionIntent =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationProtectionIntent = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12627,26 +11054,8 @@ pub mod replication_recovery_plans {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryPlanCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -12655,7 +11064,7 @@ pub mod replication_recovery_plans {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -12666,12 +11075,14 @@ pub mod replication_recovery_plans {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -12682,12 +11093,17 @@ pub mod replication_recovery_plans {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -12695,26 +11111,30 @@ pub mod replication_recovery_plans {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlanCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlanCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12729,26 +11149,8 @@ pub mod replication_recovery_plans {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::RecoveryPlan;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -12758,35 +11160,40 @@ pub mod replication_recovery_plans {
             pub(crate) recovery_plan_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12800,29 +11207,11 @@ pub mod replication_recovery_plans {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12835,37 +11224,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12879,29 +11273,11 @@ pub mod replication_recovery_plans {
     }
     pub mod update {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12914,37 +11290,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -12958,29 +11339,11 @@ pub mod replication_recovery_plans {
     }
     pub mod delete {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -12992,31 +11355,37 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13030,29 +11399,11 @@ pub mod replication_recovery_plans {
     }
     pub mod failover_cancel {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13064,37 +11415,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/failoverCancel" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13108,29 +11464,11 @@ pub mod replication_recovery_plans {
     }
     pub mod failover_commit {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13142,37 +11480,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/failoverCommit" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13186,29 +11529,11 @@ pub mod replication_recovery_plans {
     }
     pub mod planned_failover {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13221,37 +11546,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/plannedFailover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13265,29 +11595,11 @@ pub mod replication_recovery_plans {
     }
     pub mod reprotect {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13299,37 +11611,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/reProtect" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13343,29 +11660,11 @@ pub mod replication_recovery_plans {
     }
     pub mod test_failover {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13378,37 +11677,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/testFailover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13422,29 +11726,11 @@ pub mod replication_recovery_plans {
     }
     pub mod test_failover_cleanup {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13457,37 +11743,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/testFailoverCleanup" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13501,29 +11792,11 @@ pub mod replication_recovery_plans {
     }
     pub mod unplanned_failover {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RecoveryPlan),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13536,37 +11809,42 @@ pub mod replication_recovery_plans {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationRecoveryPlans/{}/unplannedFailover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . recovery_plan_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::RecoveryPlan =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::RecoveryPlan = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13601,26 +11879,8 @@ pub mod supported_operating_systems {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::SupportedOperatingSystems;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -13634,19 +11894,19 @@ pub mod supported_operating_systems {
                 self.instance_type = Some(instance_type.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationSupportedOperatingSystems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         if let Some(instance_type) = &this.instance_type {
@@ -13654,18 +11914,23 @@ pub mod supported_operating_systems {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::SupportedOperatingSystems =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::SupportedOperatingSystems = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13713,26 +11978,8 @@ pub mod replication_vault_health {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VaultHealthDetails;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -13741,7 +11988,7 @@ pub mod replication_vault_health {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -13752,30 +11999,35 @@ pub mod replication_vault_health {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VaultHealthDetails =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VaultHealthDetails = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13789,29 +12041,11 @@ pub mod replication_vault_health {
     }
     pub mod refresh {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VaultHealthDetails),
             Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -13822,37 +12056,42 @@ pub mod replication_vault_health {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationVaultHealth/default/refresh" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VaultHealthDetails =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VaultHealthDetails = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -13920,26 +12159,8 @@ pub mod replication_vault_setting {
     }
     pub mod list {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VaultSettingCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -13948,7 +12169,7 @@ pub mod replication_vault_setting {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -13959,12 +12180,14 @@ pub mod replication_vault_setting {
                             &this.resource_group_name,
                             &this.resource_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2021-10-01");
@@ -13975,12 +12198,17 @@ pub mod replication_vault_setting {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -13988,26 +12216,30 @@ pub mod replication_vault_setting {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VaultSettingCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VaultSettingCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -14022,26 +12254,8 @@ pub mod replication_vault_setting {
     }
     pub mod get {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VaultSetting;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -14051,35 +12265,40 @@ pub mod replication_vault_setting {
             pub(crate) vault_setting_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationVaultSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . vault_setting_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VaultSetting =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VaultSetting = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,
@@ -14093,26 +12312,8 @@ pub mod replication_vault_setting {
     }
     pub mod create {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::VaultSetting;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -14124,36 +12325,41 @@ pub mod replication_vault_setting {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
                         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationVaultSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . vault_setting_name) ;
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.input).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.input)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::VaultSetting =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::VaultSetting = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 Err(Error::UnexpectedResponse {
                                     status_code,
                                     body: rsp_body,

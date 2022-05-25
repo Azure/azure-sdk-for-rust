@@ -6,4 +6,4 @@
 #[cfg(feature = "package-managedapplications-2021-07")]
 pub mod package_managedapplications_2021_07;
 #[cfg(all(feature = "package-managedapplications-2021-07", not(feature = "no-default-tag")))]
-pub use package_managedapplications_2021_07::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_managedapplications_2021_07::{models, operations, operations::Client, operations::ClientBuilder};

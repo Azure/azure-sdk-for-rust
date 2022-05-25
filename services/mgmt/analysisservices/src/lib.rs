@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2017-08-beta")]
 pub mod package_2017_08_beta;
 #[cfg(all(feature = "package-2017-08-beta", not(feature = "no-default-tag")))]
-pub use package_2017_08_beta::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2017_08_beta::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2017-07")]
 pub mod package_2017_07;
 #[cfg(all(feature = "package-2017-07", not(feature = "no-default-tag")))]
-pub use package_2017_07::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2017_07::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2016-05")]
 pub mod package_2016_05;
 #[cfg(all(feature = "package-2016-05", not(feature = "no-default-tag")))]
-pub use package_2016_05::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2016_05::{models, operations, operations::Client, operations::ClientBuilder};

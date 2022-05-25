@@ -6,20 +6,20 @@
 #[cfg(feature = "package-skus-2017-09")]
 pub mod package_skus_2017_09;
 #[cfg(all(feature = "package-skus-2017-09", not(feature = "no-default-tag")))]
-pub use package_skus_2017_09::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_skus_2017_09::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-disks-2018-04")]
 pub mod package_disks_2018_04;
 #[cfg(all(feature = "package-disks-2018-04", not(feature = "no-default-tag")))]
-pub use package_disks_2018_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_disks_2018_04::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-container-service-2017-01")]
 pub mod package_container_service_2017_01;
 #[cfg(all(feature = "package-container-service-2017-01", not(feature = "no-default-tag")))]
-pub use package_container_service_2017_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_container_service_2017_01::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-container-service-2016-09")]
 pub mod package_container_service_2016_09;
 #[cfg(all(feature = "package-container-service-2016-09", not(feature = "no-default-tag")))]
-pub use package_container_service_2016_09::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_container_service_2016_09::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-container-service-2016-03")]
 pub mod package_container_service_2016_03;
 #[cfg(all(feature = "package-container-service-2016-03", not(feature = "no-default-tag")))]
-pub use package_container_service_2016_03::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_container_service_2016_03::{models, operations, operations::Client, operations::ClientBuilder};

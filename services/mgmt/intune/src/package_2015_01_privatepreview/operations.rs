@@ -82,77 +82,6 @@ impl Client {
         ios::Client(self.clone())
     }
 }
-#[non_exhaustive]
-#[derive(Debug, thiserror :: Error)]
-#[allow(non_camel_case_types)]
-pub enum Error {
-    #[error(transparent)]
-    GetLocations(#[from] get_locations::Error),
-    #[error(transparent)]
-    GetLocationByHostName(#[from] get_location_by_host_name::Error),
-    #[error(transparent)]
-    GetApps(#[from] get_apps::Error),
-    #[error(transparent)]
-    Ios_GetMamPolicies(#[from] ios::get_mam_policies::Error),
-    #[error(transparent)]
-    Android_GetMamPolicies(#[from] android::get_mam_policies::Error),
-    #[error(transparent)]
-    Ios_GetMamPolicyByName(#[from] ios::get_mam_policy_by_name::Error),
-    #[error(transparent)]
-    Ios_CreateOrUpdateMamPolicy(#[from] ios::create_or_update_mam_policy::Error),
-    #[error(transparent)]
-    Ios_PatchMamPolicy(#[from] ios::patch_mam_policy::Error),
-    #[error(transparent)]
-    Ios_DeleteMamPolicy(#[from] ios::delete_mam_policy::Error),
-    #[error(transparent)]
-    Android_GetMamPolicyByName(#[from] android::get_mam_policy_by_name::Error),
-    #[error(transparent)]
-    Android_CreateOrUpdateMamPolicy(#[from] android::create_or_update_mam_policy::Error),
-    #[error(transparent)]
-    Android_PatchMamPolicy(#[from] android::patch_mam_policy::Error),
-    #[error(transparent)]
-    Android_DeleteMamPolicy(#[from] android::delete_mam_policy::Error),
-    #[error(transparent)]
-    Ios_GetAppForMamPolicy(#[from] ios::get_app_for_mam_policy::Error),
-    #[error(transparent)]
-    Android_GetAppForMamPolicy(#[from] android::get_app_for_mam_policy::Error),
-    #[error(transparent)]
-    Ios_AddAppForMamPolicy(#[from] ios::add_app_for_mam_policy::Error),
-    #[error(transparent)]
-    Ios_DeleteAppForMamPolicy(#[from] ios::delete_app_for_mam_policy::Error),
-    #[error(transparent)]
-    Android_AddAppForMamPolicy(#[from] android::add_app_for_mam_policy::Error),
-    #[error(transparent)]
-    Android_DeleteAppForMamPolicy(#[from] android::delete_app_for_mam_policy::Error),
-    #[error(transparent)]
-    Ios_GetGroupsForMamPolicy(#[from] ios::get_groups_for_mam_policy::Error),
-    #[error(transparent)]
-    Android_GetGroupsForMamPolicy(#[from] android::get_groups_for_mam_policy::Error),
-    #[error(transparent)]
-    Ios_AddGroupForMamPolicy(#[from] ios::add_group_for_mam_policy::Error),
-    #[error(transparent)]
-    Ios_DeleteGroupForMamPolicy(#[from] ios::delete_group_for_mam_policy::Error),
-    #[error(transparent)]
-    Android_AddGroupForMamPolicy(#[from] android::add_group_for_mam_policy::Error),
-    #[error(transparent)]
-    Android_DeleteGroupForMamPolicy(#[from] android::delete_group_for_mam_policy::Error),
-    #[error(transparent)]
-    GetMamUserDevices(#[from] get_mam_user_devices::Error),
-    #[error(transparent)]
-    GetMamUserDeviceByDeviceName(#[from] get_mam_user_device_by_device_name::Error),
-    #[error(transparent)]
-    WipeMamUserDevice(#[from] wipe_mam_user_device::Error),
-    #[error(transparent)]
-    GetOperationResults(#[from] get_operation_results::Error),
-    #[error(transparent)]
-    GetMamStatuses(#[from] get_mam_statuses::Error),
-    #[error(transparent)]
-    GetMamFlaggedUsers(#[from] get_mam_flagged_users::Error),
-    #[error(transparent)]
-    GetMamFlaggedUserByName(#[from] get_mam_flagged_user_by_name::Error),
-    #[error(transparent)]
-    GetMamUserFlaggedEnrolledApps(#[from] get_mam_user_flagged_enrolled_apps::Error),
-}
 impl Client {
     pub fn get_locations(&self) -> get_locations::Builder {
         get_locations::Builder { client: self.clone() }
@@ -259,45 +188,26 @@ impl Client {
 }
 pub mod get_locations {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::LocationCollection;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
     }
     impl Builder {
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
                     let url_str = &format!("{}/providers/Microsoft.Intune/locations", this.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -308,12 +218,17 @@ pub mod get_locations {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -321,33 +236,32 @@ pub mod get_locations {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::LocationCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::LocationCollection = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -357,70 +271,49 @@ pub mod get_locations {
 }
 pub mod get_location_by_host_name {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::Location;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
     }
     impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
                     let url_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", this.client.endpoint(),);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential
                         .get_token(&this.client.scopes().join(" "))
                         .await
-                        .map_err(Error::GetToken)?;
+                        .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                    let req = req_builder
+                        .body(req_body)
+                        .context(azure_core::error::ErrorKind::Other, "build request")?;
+                    let rsp = this
+                        .client
+                        .send(req)
+                        .await
+                        .context(azure_core::error::ErrorKind::Io, "execute request")?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Location =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::Location = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -429,29 +322,8 @@ pub mod get_location_by_host_name {
 }
 pub mod get_apps {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::ApplicationCollection;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -473,7 +345,7 @@ pub mod get_apps {
             self.select = Some(select.into());
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
@@ -482,12 +354,14 @@ pub mod get_apps {
                         this.client.endpoint(),
                         &this.host_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -498,12 +372,17 @@ pub mod get_apps {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -511,7 +390,7 @@ pub mod get_apps {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -526,27 +405,26 @@ pub mod get_apps {
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ApplicationCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::ApplicationCollection = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -556,29 +434,8 @@ pub mod get_apps {
 }
 pub mod get_mam_user_devices {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::DeviceCollection;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -601,7 +458,7 @@ pub mod get_mam_user_devices {
             self.select = Some(select.into());
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
@@ -611,12 +468,14 @@ pub mod get_mam_user_devices {
                         &this.host_name,
                         &this.user_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -627,12 +486,17 @@ pub mod get_mam_user_devices {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -640,7 +504,7 @@ pub mod get_mam_user_devices {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -655,27 +519,26 @@ pub mod get_mam_user_devices {
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::DeviceCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::DeviceCollection = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -685,29 +548,8 @@ pub mod get_mam_user_devices {
 }
 pub mod get_mam_user_device_by_device_name {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::Device;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -721,7 +563,7 @@ pub mod get_mam_user_device_by_device_name {
             self.select = Some(select.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -732,14 +574,14 @@ pub mod get_mam_user_device_by_device_name {
                         &this.user_name,
                         &this.device_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential
                         .get_token(&this.client.scopes().join(" "))
                         .await
-                        .map_err(Error::GetToken)?;
+                        .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                     if let Some(select) = &this.select {
@@ -747,25 +589,25 @@ pub mod get_mam_user_device_by_device_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                    let req = req_builder
+                        .body(req_body)
+                        .context(azure_core::error::ErrorKind::Other, "build request")?;
+                    let rsp = this
+                        .client
+                        .send(req)
+                        .await
+                        .context(azure_core::error::ErrorKind::Io, "execute request")?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Device =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::Device = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -774,29 +616,8 @@ pub mod get_mam_user_device_by_device_name {
 }
 pub mod wipe_mam_user_device {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::WipeDeviceOperationResult;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -805,7 +626,7 @@ pub mod wipe_mam_user_device {
         pub(crate) device_name: String,
     }
     impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -816,38 +637,38 @@ pub mod wipe_mam_user_device {
                         &this.user_name,
                         &this.device_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential
                         .get_token(&this.client.scopes().join(" "))
                         .await
-                        .map_err(Error::GetToken)?;
+                        .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                    let req = req_builder
+                        .body(req_body)
+                        .context(azure_core::error::ErrorKind::Other, "build request")?;
+                    let rsp = this
+                        .client
+                        .send(req)
+                        .await
+                        .context(azure_core::error::ErrorKind::Io, "execute request")?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::WipeDeviceOperationResult =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::WipeDeviceOperationResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -856,29 +677,8 @@ pub mod wipe_mam_user_device {
 }
 pub mod get_operation_results {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::OperationResultCollection;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -900,7 +700,7 @@ pub mod get_operation_results {
             self.select = Some(select.into());
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
@@ -909,12 +709,14 @@ pub mod get_operation_results {
                         this.client.endpoint(),
                         &this.host_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -925,12 +727,17 @@ pub mod get_operation_results {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -938,7 +745,7 @@ pub mod get_operation_results {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -953,27 +760,26 @@ pub mod get_operation_results {
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::OperationResultCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::OperationResultCollection = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -983,36 +789,15 @@ pub mod get_operation_results {
 }
 pub mod get_mam_statuses {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::StatusesDefault;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
     }
     impl Builder {
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
@@ -1021,12 +806,14 @@ pub mod get_mam_statuses {
                         this.client.endpoint(),
                         &this.host_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1037,12 +824,17 @@ pub mod get_mam_statuses {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -1050,33 +842,32 @@ pub mod get_mam_statuses {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::StatusesDefault =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::StatusesDefault = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -1086,29 +877,8 @@ pub mod get_mam_statuses {
 }
 pub mod get_mam_flagged_users {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::FlaggedUserCollection;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -1130,7 +900,7 @@ pub mod get_mam_flagged_users {
             self.select = Some(select.into());
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
@@ -1139,12 +909,14 @@ pub mod get_mam_flagged_users {
                         this.client.endpoint(),
                         &this.host_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1155,12 +927,17 @@ pub mod get_mam_flagged_users {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -1168,7 +945,7 @@ pub mod get_mam_flagged_users {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1183,27 +960,26 @@ pub mod get_mam_flagged_users {
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::FlaggedUserCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::FlaggedUserCollection = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -1213,29 +989,8 @@ pub mod get_mam_flagged_users {
 }
 pub mod get_mam_flagged_user_by_name {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::FlaggedUser;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -1248,7 +1003,7 @@ pub mod get_mam_flagged_user_by_name {
             self.select = Some(select.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1258,14 +1013,14 @@ pub mod get_mam_flagged_user_by_name {
                         &this.host_name,
                         &this.user_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential
                         .get_token(&this.client.scopes().join(" "))
                         .await
-                        .map_err(Error::GetToken)?;
+                        .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                     if let Some(select) = &this.select {
@@ -1273,25 +1028,25 @@ pub mod get_mam_flagged_user_by_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                    let req = req_builder
+                        .body(req_body)
+                        .context(azure_core::error::ErrorKind::Other, "build request")?;
+                    let rsp = this
+                        .client
+                        .send(req)
+                        .await
+                        .context(azure_core::error::ErrorKind::Io, "execute request")?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::FlaggedUser =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::FlaggedUser = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             })
@@ -1300,29 +1055,8 @@ pub mod get_mam_flagged_user_by_name {
 }
 pub mod get_mam_user_flagged_enrolled_apps {
     use super::models;
+    use azure_core::error::ResultExt;
     type Response = models::FlaggedEnrolledAppCollection;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::error::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::error::Error),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
     #[derive(Clone)]
     pub struct Builder {
         pub(crate) client: super::Client,
@@ -1345,7 +1079,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
             self.select = Some(select.into());
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                 let this = self.clone();
                 async move {
@@ -1355,12 +1089,14 @@ pub mod get_mam_user_flagged_enrolled_apps {
                         &this.host_name,
                         &this.user_name
                     );
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                     let mut req_builder = http::request::Builder::new();
                     let rsp = match continuation {
                         Some(token) => {
                             url.set_path("");
-                            url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                            url = url
+                                .join(&token.into_raw())
+                                .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                             let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                             if !has_api_version_already {
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1371,12 +1107,17 @@ pub mod get_mam_user_flagged_enrolled_apps {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             let req_body = azure_core::EMPTY_BODY;
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                         None => {
                             req_builder = req_builder.method(http::Method::GET);
@@ -1384,7 +1125,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
                             let token_response = credential
                                 .get_token(&this.client.scopes().join(" "))
                                 .await
-                                .map_err(Error::GetToken)?;
+                                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                             req_builder =
                                 req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                             url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1399,27 +1140,26 @@ pub mod get_mam_user_flagged_enrolled_apps {
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req_builder = req_builder.uri(url.as_str());
-                            let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                            this.client.send(req).await.map_err(Error::SendRequest)?
+                            let req = req_builder
+                                .body(req_body)
+                                .context(azure_core::error::ErrorKind::Other, "build request")?;
+                            this.client
+                                .send(req)
+                                .await
+                                .context(azure_core::error::ErrorKind::Io, "execute request")?
                         }
                     };
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::FlaggedEnrolledAppCollection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_value: models::FlaggedEnrolledAppCollection = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
-                        status_code => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::Error =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Err(Error::DefaultResponse {
-                                status_code,
-                                value: rsp_value,
-                            })
-                        }
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
                 }
             };
@@ -1569,29 +1309,8 @@ pub mod ios {
     }
     pub mod get_mam_policies {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::IosmamPolicyCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1613,7 +1332,7 @@ pub mod ios {
                 self.select = Some(select.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -1622,12 +1341,14 @@ pub mod ios {
                             this.client.endpoint(),
                             &this.host_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1638,12 +1359,17 @@ pub mod ios {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -1651,7 +1377,7 @@ pub mod ios {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -1666,27 +1392,26 @@ pub mod ios {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::IosmamPolicyCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::IosmamPolicyCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -1696,29 +1421,8 @@ pub mod ios {
     }
     pub mod get_mam_policy_by_name {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::IOsmamPolicy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1731,7 +1435,7 @@ pub mod ios {
                 self.select = Some(select.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1741,14 +1445,14 @@ pub mod ios {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         if let Some(select) = &this.select {
@@ -1756,25 +1460,25 @@ pub mod ios {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::IOsmamPolicy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::IOsmamPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -1783,29 +1487,8 @@ pub mod ios {
     }
     pub mod create_or_update_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::IOsmamPolicy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1814,7 +1497,7 @@ pub mod ios {
             pub(crate) parameters: models::IOsmamPolicy,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1824,38 +1507,38 @@ pub mod ios {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::IOsmamPolicy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::IOsmamPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -1864,29 +1547,8 @@ pub mod ios {
     }
     pub mod patch_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::IOsmamPolicy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1895,7 +1557,7 @@ pub mod ios {
             pub(crate) parameters: models::IOsmamPolicy,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1905,38 +1567,38 @@ pub mod ios {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::IOsmamPolicy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::IOsmamPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -1945,32 +1607,11 @@ pub mod ios {
     }
     pub mod delete_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1979,7 +1620,7 @@ pub mod ios {
             pub(crate) policy_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1989,33 +1630,34 @@ pub mod ios {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -2024,29 +1666,8 @@ pub mod ios {
     }
     pub mod get_app_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ApplicationCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2069,7 +1690,7 @@ pub mod ios {
                 self.select = Some(select.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -2079,12 +1700,14 @@ pub mod ios {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -2095,12 +1718,17 @@ pub mod ios {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2108,7 +1736,7 @@ pub mod ios {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -2123,27 +1751,26 @@ pub mod ios {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ApplicationCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ApplicationCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -2153,32 +1780,11 @@ pub mod ios {
     }
     pub mod add_app_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2189,7 +1795,7 @@ pub mod ios {
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2200,34 +1806,35 @@ pub mod ios {
                             &this.policy_name,
                             &this.app_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -2236,32 +1843,11 @@ pub mod ios {
     }
     pub mod delete_app_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2271,7 +1857,7 @@ pub mod ios {
             pub(crate) app_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2282,33 +1868,34 @@ pub mod ios {
                             &this.policy_name,
                             &this.app_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -2317,29 +1904,8 @@ pub mod ios {
     }
     pub mod get_groups_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::GroupsCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2347,7 +1913,7 @@ pub mod ios {
             pub(crate) policy_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -2357,12 +1923,14 @@ pub mod ios {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -2373,12 +1941,17 @@ pub mod ios {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2386,33 +1959,32 @@ pub mod ios {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::GroupsCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::GroupsCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -2422,32 +1994,11 @@ pub mod ios {
     }
     pub mod add_group_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2458,7 +2009,7 @@ pub mod ios {
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2469,34 +2020,35 @@ pub mod ios {
                             &this.policy_name,
                             &this.group_id
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -2505,32 +2057,11 @@ pub mod ios {
     }
     pub mod delete_group_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -2540,7 +2071,7 @@ pub mod ios {
             pub(crate) group_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2551,33 +2082,34 @@ pub mod ios {
                             &this.policy_name,
                             &this.group_id
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -2727,29 +2259,8 @@ pub mod android {
     }
     pub mod get_mam_policies {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::AndroidMamPolicyCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2771,7 +2282,7 @@ pub mod android {
                 self.select = Some(select.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -2780,12 +2291,14 @@ pub mod android {
                             this.client.endpoint(),
                             &this.host_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -2796,12 +2309,17 @@ pub mod android {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2809,7 +2327,7 @@ pub mod android {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -2824,27 +2342,26 @@ pub mod android {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::AndroidMamPolicyCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::AndroidMamPolicyCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -2854,29 +2371,8 @@ pub mod android {
     }
     pub mod get_mam_policy_by_name {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::AndroidMamPolicy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2889,7 +2385,7 @@ pub mod android {
                 self.select = Some(select.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2899,14 +2395,14 @@ pub mod android {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         if let Some(select) = &this.select {
@@ -2914,25 +2410,25 @@ pub mod android {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::AndroidMamPolicy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::AndroidMamPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -2941,29 +2437,8 @@ pub mod android {
     }
     pub mod create_or_update_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::AndroidMamPolicy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2972,7 +2447,7 @@ pub mod android {
             pub(crate) parameters: models::AndroidMamPolicy,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2982,38 +2457,38 @@ pub mod android {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::AndroidMamPolicy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::AndroidMamPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -3022,29 +2497,8 @@ pub mod android {
     }
     pub mod patch_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::AndroidMamPolicy;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3053,7 +2507,7 @@ pub mod android {
             pub(crate) parameters: models::AndroidMamPolicy,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3063,38 +2517,38 @@ pub mod android {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PATCH);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::AndroidMamPolicy =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::AndroidMamPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -3103,32 +2557,11 @@ pub mod android {
     }
     pub mod delete_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3137,7 +2570,7 @@ pub mod android {
             pub(crate) policy_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3147,33 +2580,34 @@ pub mod android {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -3182,29 +2616,8 @@ pub mod android {
     }
     pub mod get_app_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::ApplicationCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3227,7 +2640,7 @@ pub mod android {
                 self.select = Some(select.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -3237,12 +2650,14 @@ pub mod android {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -3253,12 +2668,17 @@ pub mod android {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3266,7 +2686,7 @@ pub mod android {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -3281,27 +2701,26 @@ pub mod android {
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::ApplicationCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ApplicationCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -3311,32 +2730,11 @@ pub mod android {
     }
     pub mod add_app_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3347,7 +2745,7 @@ pub mod android {
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3358,34 +2756,35 @@ pub mod android {
                             &this.policy_name,
                             &this.app_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -3394,32 +2793,11 @@ pub mod android {
     }
     pub mod delete_app_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3429,7 +2807,7 @@ pub mod android {
             pub(crate) app_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3440,33 +2818,34 @@ pub mod android {
                             &this.policy_name,
                             &this.app_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -3475,29 +2854,8 @@ pub mod android {
     }
     pub mod get_groups_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         type Response = models::GroupsCollection;
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
-        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3505,7 +2863,7 @@ pub mod android {
             pub(crate) policy_name: String,
         }
         impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
@@ -3515,12 +2873,14 @@ pub mod android {
                             &this.host_name,
                             &this.policy_name
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
                                     url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
@@ -3531,12 +2891,17 @@ pub mod android {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                             None => {
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3544,33 +2909,32 @@ pub mod android {
                                 let token_response = credential
                                     .get_token(&this.client.scopes().join(" "))
                                     .await
-                                    .map_err(Error::GetToken)?;
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                                 url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                this.client.send(req).await.map_err(Error::SendRequest)?
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::GroupsCollection =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::GroupsCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 };
@@ -3580,32 +2944,11 @@ pub mod android {
     }
     pub mod add_group_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3616,7 +2959,7 @@ pub mod android {
             pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3627,34 +2970,35 @@ pub mod android {
                             &this.policy_name,
                             &this.group_id
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })
@@ -3663,32 +3007,11 @@ pub mod android {
     }
     pub mod delete_group_for_mam_policy {
         use super::models;
+        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            #[error("Failed to parse request URL")]
-            ParseUrl(#[source] url::ParseError),
-            #[error("Failed to build request")]
-            BuildRequest(#[source] http::Error),
-            #[error("Failed to serialize request body")]
-            Serialize(#[source] serde_json::Error),
-            #[error("Failed to get access token")]
-            GetToken(#[source] azure_core::Error),
-            #[error("Failed to execute request")]
-            SendRequest(#[source] azure_core::error::Error),
-            #[error("Failed to get response bytes")]
-            ResponseBytes(#[source] azure_core::error::Error),
-            #[error("Failed to deserialize response, body: {1:?}")]
-            Deserialize(#[source] serde_json::Error, bytes::Bytes),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -3698,7 +3021,7 @@ pub mod android {
             pub(crate) group_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3709,33 +3032,34 @@ pub mod android {
                             &this.policy_name,
                             &this.group_id
                         );
-                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential
                             .get_token(&this.client.scopes().join(" "))
                             .await
-                            .map_err(Error::GetToken)?;
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2015-01-14-privatepreview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                        let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
                             http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                let rsp_value: models::Error =
-                                    serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                                Err(Error::DefaultResponse {
-                                    status_code,
-                                    value: rsp_value,
-                                })
-                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
                         }
                     }
                 })

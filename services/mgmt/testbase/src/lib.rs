@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2020-12-16-preview")]
 pub mod package_2020_12_16_preview;
 #[cfg(all(feature = "package-2020-12-16-preview", not(feature = "no-default-tag")))]
-pub use package_2020_12_16_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2020_12_16_preview::{models, operations, operations::Client, operations::ClientBuilder};
