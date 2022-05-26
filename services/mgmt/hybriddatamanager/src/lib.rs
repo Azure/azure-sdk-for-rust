@@ -6,8 +6,8 @@
 #[cfg(feature = "package-2019-06")]
 pub mod package_2019_06;
 #[cfg(all(feature = "package-2019-06", not(feature = "no-default-tag")))]
-pub use package_2019_06::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2019_06::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2016-06")]
 pub mod package_2016_06;
 #[cfg(all(feature = "package-2016-06", not(feature = "no-default-tag")))]
-pub use package_2016_06::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+pub use package_2016_06::{models, operations, operations::Client, operations::ClientBuilder};

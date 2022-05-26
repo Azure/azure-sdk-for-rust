@@ -51,7 +51,7 @@ impl ToTokens for BodyCode {
                 #[cfg(feature = #feature_name)]
                 pub mod #mod_name;
                 #[cfg(all(feature = #feature_name, not(feature = "no-default-tag")))]
-                pub use #mod_name::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+                pub use #mod_name::{models, operations, operations::Client, operations::ClientBuilder};
             });
         }
         let generated_by = create_generated_by_header();

@@ -3,7 +3,7 @@ use crate::{
     codegen::{parse_params, type_name_gen, PARAM_RE},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
-    status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
+    status_codes::get_success_responses,
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
@@ -173,15 +173,6 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         });
     }
 
-    file.extend(quote! {
-        #[non_exhaustive]
-        #[derive(Debug, thiserror::Error)]
-        #[allow(non_camel_case_types)]
-        pub enum Error {
-            #errors
-        }
-    });
-
     for operation in operations {
         let module_name = operation.rust_module_name();
         let code = create_operation_code(cg, &operation)?;
@@ -310,7 +301,7 @@ impl ToTokens for AuthCode {
             let token_response = credential
                 .get_token(&this.client.scopes().join(" "))
                 .await
-                .map_err(Error::GetToken)?;
+                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         })
     }
@@ -471,14 +462,14 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                 if !param.optional() || is_vec {
                     ts_request_builder.extend(quote! {
                         #set_content_type
-                        let req_body = azure_core::to_json(&this.#param_name_var).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&this.#param_name_var)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = &this.#param_name_var {
                                 #set_content_type
-                                azure_core::to_json(#param_name_var).map_err(Error::Serialize)?
+                                azure_core::to_json(#param_name_var)?
                             } else {
                                 azure_core::EMPTY_BODY
                             };
@@ -521,9 +512,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
     let responses = &operation.0.responses;
     let success_responses = get_success_responses(responses);
-    let error_responses = get_error_responses(responses);
     let is_single_response = success_responses.len() == 1;
-    let has_default_response = has_default_response(responses);
 
     /*
     let fresponse = if is_single_response {
@@ -584,34 +573,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         }
     }
 
-    let mut error_responses_ts = TokenStream::new();
-    for (status_code, rsp) in &error_responses {
-        let tp = create_response_type(rsp)?;
-        let tp = match tp {
-            Some(tp) => quote! { value: #tp, },
-            None => quote! {},
-        };
-        let response_type = &get_response_type_name(status_code)?;
-        if response_type == "DefaultResponse" {
-            error_responses_ts.extend(quote! {
-                #[error("HTTP status code {}", status_code)]
-                DefaultResponse { status_code: http::StatusCode, #tp },
-            });
-        } else {
-            let response_type = parse_ident(response_type).map_err(Error::ResponseTypeName)?;
-            error_responses_ts.extend(quote! {
-                #[error("Error response #response_type")]
-                #response_type { #tp },
-            });
-        }
-    }
-    if !has_default_response {
-        error_responses_ts.extend(quote! {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-        });
-    }
-
     let mut match_status = TokenStream::new();
     for (status_code, rsp) in &success_responses {
         match status_code {
@@ -626,7 +587,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         Some(_) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                     #rsp_value
                                     Ok(rsp_value)
                                 }
@@ -645,7 +606,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         Some(_) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                     #rsp_value
                                     Ok(Response::#response_type_name(rsp_value))
                                 }
@@ -664,72 +625,11 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             autorust_openapi::StatusCode::Default => {}
         }
     }
-    for (status_code, rsp) in &error_responses {
-        match status_code {
-            autorust_openapi::StatusCode::Code(_) => {
-                let tp = create_response_type(rsp)?.map(TypeNameCode::into_token_stream);
-                let rsp_value = create_rsp_value(tp.as_ref());
-                let status_code_name = get_status_code_ident(status_code)?;
-                let response_type_name = get_response_type_ident(status_code)?;
-                match tp {
-                    Some(_tp) => {
-                        match_status.extend(quote! {
-                            http::StatusCode::#status_code_name => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                #rsp_value
-                                Err(Error::#response_type_name{value: rsp_value})
-                            }
-                        });
-                    }
-                    None => {
-                        match_status.extend(quote! {
-                            http::StatusCode::#status_code_name => {
-                                Err(Error::#response_type_name{})
-                            }
-                        });
-                    }
-                }
-            }
-            autorust_openapi::StatusCode::Default => {}
+    match_status.extend(quote! {
+        status_code => {
+            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code.as_u16(), error_code: None }))
         }
-    }
-    // default must be last
-    if has_default_response {
-        for (status_code, rsp) in responses {
-            match status_code {
-                autorust_openapi::StatusCode::Code(_) => {}
-                autorust_openapi::StatusCode::Default => {
-                    let tp = create_response_type(rsp)?.map(TypeNameCode::into_token_stream);
-                    let rsp_value = create_rsp_value(tp.as_ref());
-                    match tp {
-                        Some(_tp) => {
-                            match_status.extend(quote! {
-                                status_code => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                                    #rsp_value
-                                    Err(Error::DefaultResponse{status_code, value: rsp_value})
-                                }
-                            });
-                        }
-                        None => {
-                            match_status.extend(quote! {
-                                status_code => {
-                                    Err(Error::DefaultResponse{status_code})
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        match_status.extend(quote! {
-            status_code => {
-                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                Err(Error::UnexpectedResponse{status_code, body: rsp_body})
-            }
-        });
-    }
+    });
 
     let in_group = operation.0.in_group();
     let builder_instance_code = create_builder_instance_code(operation, &parameters, in_group)?;
@@ -737,17 +637,17 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let builder_setters_code = create_builder_setters_code(&parameters)?;
 
     let basic_future = quote! {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
                     let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
-                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                     let mut req_builder = http::request::Builder::new();
                     #ts_request_builder
                     req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                    let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
+                    let req = req_builder.body(req_body).context(azure_core::error::ErrorKind::Other, "build request")?;
+                    let rsp = this.client.send(req).await.context(azure_core::error::ErrorKind::Io, "execute request")?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         #match_status
@@ -790,33 +690,32 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             }
 
             quote! {
-                pub fn into_stream(self) -> azure_core::Pageable<Response, Error> {
+                pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                     let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                         let this = self.clone();
                         async move {
                             let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
-                            let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                            let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
 
                             let mut req_builder = http::request::Builder::new();
                             let rsp = match continuation {
                                 Some(token) => {
                                     url.set_path("");
-                                    url = url.join(&token.into_raw()).map_err(Error::ParseUrl)?;
+                                    url = url.join(&token.into_raw()).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                     #stream_api_version
                                     req_builder = req_builder.uri(url.as_str());
                                     #request_code
                                     let req_body = azure_core::EMPTY_BODY;
-                                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                    this.client.send(req).await.map_err(Error::SendRequest)?
+                                    let req = req_builder.body(req_body).context(azure_core::error::ErrorKind::Other, "build request")?;
+                                    this.client.send(req).await.context(azure_core::error::ErrorKind::Io, "execute request")?
                                 }
                                 None => {
                                     #ts_request_builder
                                     req_builder = req_builder.uri(url.as_str());
-                                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                                    this.client.send(req).await.map_err(Error::SendRequest)?
+                                    let req = req_builder.body(req_body).context(azure_core::error::ErrorKind::Other, "build request")?;
+                                    this.client.send(req).await.context(azure_core::error::ErrorKind::Io, "execute request")?
                                 }
                             };
-                            // let rsp = this.client.send(req).await.map_err(Error::SendRequest)?;
                             let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                             match rsp_status {
                                 #match_status
@@ -851,27 +750,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
         pub mod #fname {
             use super::models;
+            use azure_core::error::ResultExt;
 
             #response_enum
-
-            #[derive(Debug, thiserror::Error)]
-            pub enum Error {
-                #error_responses_ts
-                #[error("Failed to parse request URL")]
-                ParseUrl(#[source] url::ParseError),
-                #[error("Failed to build request")]
-                BuildRequest(#[source] http::Error),
-                #[error("Failed to serialize request body")]
-                Serialize(#[source] serde_json::Error),
-                #[error("Failed to get access token")]
-                GetToken(#[source] azure_core::Error),
-                #[error("Failed to execute request")]
-                SendRequest(#[source] azure_core::error::Error),
-                #[error("Failed to get response bytes")]
-                ResponseBytes(#[source] azure_core::error::Error),
-                #[error("Failed to deserialize response, body: {1:?}")]
-                Deserialize(#[source] serde_json::Error, bytes::Bytes),
-            }
 
             #builder_struct_code
 
@@ -897,7 +778,7 @@ fn create_rsp_value(tp: Option<&TokenStream>) -> TokenStream {
         }
     } else {
         quote! {
-            let rsp_value: #tp = serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+            let rsp_value: #tp = serde_json::from_slice(&rsp_body)?;
         }
     }
 }

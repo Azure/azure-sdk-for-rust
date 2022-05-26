@@ -1,0 +1,12 @@
+[tags]
+# manually selected from
+# https://github.com/Azure/azure-rest-api-specs/blob/main/specification/resources/resource-manager/readme.md
+allow = [
+  "package-deploymentscripts-2020-10",
+  "package-features-2021-07",
+  "package-locks-2020-05",
+  "package-policy-2021-06",
+  "package-resources-2021-04",
+  "package-subscriptions-2021-01",
+  ]
+default = "package-resources-2021-04"

@@ -14,7 +14,6 @@ azure_core = { path = "../../../sdk/core", version = "0.2", default-features = f
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 bytes = "1.0"
-thiserror = "1.0"
 http = "0.2"
 url = "2.2"
 futures = "0.3"
@@ -23,19 +22,14 @@ futures = "0.3"
 azure_identity = { path = "../../../sdk/identity" }
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
+chrono = "0.4"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-0_3-preview_1", "package-0_3-preview_0", "package-0_2-preview_1", "package-0_2-preview_0"]
+all-features = true
 
 [features]
 default = ["package-2021-01-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
-"package-0_3-preview_1" = []
-"package-0_3-preview_0" = []
-"package-0_2-preview_1" = []
 "package-2021-01-01" = []
-"package-0_2-preview_0" = []
-"package-2021-01-01-preview" = []
-"package-2019-02-28-preview" = []

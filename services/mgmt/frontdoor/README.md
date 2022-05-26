@@ -15,8 +15,3 @@ The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/servi
 - `package-2020-04` has 36 operations from 2 API versions: `2019-11-01`, `2020-04-01`. Use crate feature `package-2020-04` to enable. The operations will be in the `package_2020_04` module.
 - `package-2020-01` has 36 operations from 3 API versions: `2019-10-01`, `2019-11-01`, `2020-01-01`. Use crate feature `package-2020-01` to enable. The operations will be in the `package_2020_01` module.
 - `package-2019-11` has 32 operations from 3 API versions: `2019-05-01`, `2019-10-01`, `2019-11-01`. Use crate feature `package-2019-11` to enable. The operations will be in the `package_2019_11` module.
-- `package-2019-10` has 18 operations from 2 API versions: `2019-05-01`, `2019-10-01`. Use crate feature `package-2019-10` to enable. The operations will be in the `package_2019_10` module.
-- `package-2019-05` has 18 operations from 2 API versions: `2019-03-01`, `2019-05-01`. Use crate feature `package-2019-05` to enable. The operations will be in the `package_2019_05` module.
-- `package-2019-04` has 18 operations from 2 API versions: `2019-03-01`, `2019-04-01`. Use crate feature `package-2019-04` to enable. The operations will be in the `package_2019_04` module.
-- `package-2019-03-preview` has 18 operations from 2 API versions: `2018-08-01`, `2019-03-01`. Use crate feature `package-2019-03-preview` to enable. The operations will be in the `package_2019_03_preview` module.
-- `package-2018-08-preview` has 17 operations from 1 API versions: `2018-08-01`. Use crate feature `package-2018-08-preview` to enable. The operations will be in the `package_2018_08_preview` module.

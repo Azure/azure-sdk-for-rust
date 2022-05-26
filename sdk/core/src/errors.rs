@@ -1,3 +1,4 @@
+use http::StatusCode;
 use std::cmp::PartialEq;
 use std::fmt::Debug;
 

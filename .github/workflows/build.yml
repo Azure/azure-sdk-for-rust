@@ -76,8 +76,40 @@ jobs:
             echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
           fi
 
-  test-wasi:
-    name: WASI Tests
+  test-services:
+    name: Services Tests
+    runs-on: ubuntu-20.04
+    env:
+      RUSTFLAGS: -Dwarnings -Aunreachable-code -Aunused-assignments -Adead-code -Aclippy::new-without-default -Aclippy::unnecessary_to_owned
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: services check
+        run: cargo check --manifest-path services/Cargo.toml --all
+
+      - name: services check examples
+        run: cargo check --manifest-path services/Cargo.toml --examples
+
+      - name: services clippy
+        run: cargo clippy --manifest-path services/Cargo.toml --all
+
+      - name: services fmt
+        run: cargo fmt --manifest-path services/Cargo.toml --all -- --check
+
+      - name: display free disk space
+        run: df -h /
+        if: ${{ always() }}
+
+  test-integration:
+    name: Integration Tests
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2

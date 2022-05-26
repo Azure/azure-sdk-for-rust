@@ -20,7 +20,6 @@ chrono = "0.4"
 dyn-clone = "1.0"
 futures = "0.3"
 http = "0.2"
-hyper-rustls = { version = "0.23", optional = true }
 log = "0.4"
 oauth2 = { version = "4.0", default-features = false }
 rand = "0.8"

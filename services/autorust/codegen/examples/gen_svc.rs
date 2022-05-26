@@ -11,21 +11,10 @@ const OUTPUT_FOLDER: &str = "../svc";
 
 const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICES: &[&str] = &[
-    "datalake-store",          // query param "sources" not used
-    "machinelearningservices", // need to box inner errors
-    "hdinsight",               // job_id appears multiple times https://github.com/Azure/azure-sdk-for-rust/issues/503
-    "videoanalyzer",           // no operations
-    "mediaservices",           // no operations
-];
-
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
     ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
     ("maps", "package-1.0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    ("servicefabric", "6.2"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6.3"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6.4"),                   // invalid model TimeBasedBackupScheduleDescription
     ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
@@ -72,16 +61,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/stable/2021-01-01/mr-arr.json",
         "error",
         "innerError",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/2021-01-01-preview/mr-arr.json",
-        "error",
-        "innerError",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/0.3-preview.0/mr-aoa.json",
-        "InnerError",
-        "innererror",
     ),
     // confidentialledger
     (
@@ -189,7 +168,7 @@ fn main() -> Result<()> {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec, run_config)?;
             }
-        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+        } else {
             println!("{} {}", i + 1, spec.spec());
             gen_crate(spec, run_config)?;
         }
@@ -202,9 +181,19 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
     let service_name = &spec.service_name();
     let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
     let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
-    let package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
+    if package_config.tags.sort.is_none() {
+        package_config.tags.sort = Some(true);
+    }
+    if package_config.tags.deny_contains_only.is_none() {
+        package_config.tags.deny_contains_only = Some(true);
+    }
+    if package_config.tags.limit.is_none() {
+        package_config.tags.limit = Some(5);
+    }
+    // TODO remove skip_service_tags and use the autorust.toml files
     let tags = spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
-    let tags = &package_config.tags(tags);
+    let tags = &package_config.filter_tags(tags);
     if tags.is_empty() {
         println!("not generating {} - no tags", spec.spec());
         return Ok(());
@@ -243,7 +232,14 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
         );
     }
 
-    let default_tag = cargo_toml::get_default_tag(tags, spec_config.tag());
+    let default_tag_name = if let Some(name) = package_config.default_tag() {
+        Some(name)
+    } else if let Some(name) = spec_config.tag() {
+        Some(name)
+    } else {
+        None
+    };
+    let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
     cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {

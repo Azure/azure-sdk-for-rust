@@ -5557,18 +5557,19 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "Resource location"]
-    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 impl Resource {
-    pub fn new(location: String) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             name: None,
             type_: None,
-            location,
+            location: None,
             tags: None,
         }
     }

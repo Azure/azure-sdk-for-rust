@@ -91,26 +91,6 @@ pub fn get_success_responses(responses: &IndexMap<StatusCode, Response>) -> Inde
     map
 }
 
-pub fn get_error_responses(responses: &IndexMap<StatusCode, Response>) -> IndexMap<StatusCode, Response> {
-    let mut map = IndexMap::new();
-    for (status_code, rsp) in responses {
-        if !is_success(status_code) {
-            map.insert(status_code.to_owned(), rsp.to_owned());
-        }
-    }
-    map
-}
-
-pub fn has_default_response(responses: &IndexMap<StatusCode, Response>) -> bool {
-    for (status_code, _rsp) in responses {
-        match status_code {
-            StatusCode::Code(_) => {}
-            StatusCode::Default => return true,
-        }
-    }
-    false
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

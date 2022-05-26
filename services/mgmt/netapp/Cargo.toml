@@ -14,7 +14,6 @@ azure_core = { path = "../../../sdk/core", version = "0.2", default-features = f
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 bytes = "1.0"
-thiserror = "1.0"
 http = "0.2"
 url = "2.2"
 futures = "0.3"
@@ -23,9 +22,10 @@ futures = "0.3"
 azure_identity = { path = "../../../sdk/identity" }
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
+chrono = "0.4"
 
 [package.metadata.docs.rs]
-features = ["no-default-tag", "package-netapp-2021-08-01", "package-netapp-2021-06-01", "package-netapp-2021-04-01", "package-netapp-2021-04-01-preview"]
+all-features = true
 
 [features]
 default = ["package-netapp-2021-10-01", "enable_reqwest"]
@@ -35,22 +35,5 @@ no-default-tag = []
 "package-netapp-2021-10-01" = []
 "package-netapp-2021-08-01" = []
 "package-netapp-2021-06-01" = []
-"package-netapp-2021-04-01" = []
 "package-netapp-2021-04-01-preview" = []
-"package-netapp-2021-02-01" = []
-"package-netapp-2020-12-01" = []
-"package-netapp-2020-11-01" = []
-"package-netapp-2020-09-01" = []
-"package-netapp-2020-08-01" = []
-"package-netapp-2020-07-01" = []
-"package-netapp-2020-06-01" = []
-"package-netapp-2020-05-01" = []
-"package-netapp-2020-03-01" = []
-"package-netapp-2020-02-01" = []
-"package-netapp-2019-11-01" = []
-"package-netapp-2019-10-01" = []
-"package-netapp-2019-08-01" = []
-"package-netapp-2019-07-01" = []
-"package-netapp-2019-06-01" = []
-"package-netapp-2019-05-01" = []
-"package-2017-08-15" = []
+"package-netapp-2021-04-01" = []

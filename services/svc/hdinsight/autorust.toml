@@ -1,0 +1,4 @@
+[tags]
+# job_id appears multiple times
+# https://github.com/Azure/azure-sdk-for-rust/issues/503
+limit = 0
