@@ -35,7 +35,7 @@ fn prepare_request(
     let sas = generate_signature(
         policy_name,
         signing_key,
-        &url,
+        url,
         Duration::hours(DEFAULT_SAS_DURATION),
     );
 
@@ -76,8 +76,7 @@ fn generate_signature(
         let sig = ::base64::encode(sig.as_ref());
         let mut ser = Serializer::new(String::new());
         ser.append_pair("sig", &sig);
-        let sig = ser.finish();
-        sig
+        ser.finish()
     };
 
     // format sas
