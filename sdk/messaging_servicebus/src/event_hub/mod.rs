@@ -1,25 +1,27 @@
+#![allow(clippy::too_many_arguments)]
+use azure_core::{headers::MS_DATE, HttpClient};
+use bytes::Bytes;
 use chrono::Duration;
-use hyper::{self, header, Body, StatusCode};
-use hyper_rustls::HttpsConnector;
+use http::{
+    header::{AUTHORIZATION, CONTENT_LENGTH},
+    Request, Response,
+};
 use ring::hmac;
-use std::ops::Add;
+use std::{ops::Add, sync::Arc};
 use url::{form_urlencoded, Url};
 
 mod client;
 pub use self::client::Client;
 
-type HttpClient = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
-
 #[inline]
 fn send_event_prepare<B: Into<String>>(
-    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
     event_body: B,
     duration: Duration,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<http::Request<Bytes>> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
@@ -32,27 +34,60 @@ fn send_event_prepare<B: Into<String>>(
     debug!("sas == {}", sas);
 
     let event_body = event_body.into();
-    let request = hyper::Request::post(url)
-        .header(header::AUTHORIZATION, sas)
-        .body(event_body.into())?;
 
-    Ok(http_client.request(request))
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let mut request = Request::builder();
+    request = request.method(http::Method::POST).uri(url.as_str());
+    request = request
+        .header(MS_DATE, time)
+        .header("x-ms-version", "2019-12-12")
+        .header(AUTHORIZATION, sas)
+        .header(CONTENT_LENGTH, "0");
+    let request = request.body(event_body.into())?;
+
+    Ok(request)
 }
 
+async fn send_event(
+    http_client: &Arc<dyn HttpClient>,
+    namespace: &str,
+    event_hub: &str,
+    policy_name: &str,
+    hmac: &hmac::Key,
+    event_body: &str,
+    duration: Duration,
+) -> crate::Result<()> {
+    let req = send_event_prepare(
+        namespace,
+        event_hub,
+        policy_name,
+        hmac,
+        event_body,
+        duration,
+    )?;
+
+    http_client
+        .execute_request_check_status(req, http::StatusCode::CREATED)
+        .await?;
+    Ok(())
+}
+
+#[inline]
 fn peek_lock_prepare(
-    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<http::Request<Bytes>> {
     // prepare the url to call
     let mut url = Url::parse(&format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
         namespace, event_hub
     ))?;
+
     if let Some(t) = timeout {
         url.query_pairs_mut()
             .append_pair("timeout", &t.num_seconds().to_string());
@@ -60,74 +95,73 @@ fn peek_lock_prepare(
     debug!("url == {:?}", url);
 
     // generate sas signature based on key name, key value, url and duration.
-    let sas = generate_signature(policy_name, signing_key, &url.as_str(), duration);
+    let sas = generate_signature(policy_name, signing_key, url.as_str(), duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::post(Into::<String>::into(url))
-        .header(header::AUTHORIZATION, sas)
-        .header(header::CONTENT_LENGTH, 0)
-        .body(Body::empty())?;
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let mut request = Request::builder();
+    request = request.method(http::Method::POST).uri(url.as_str());
+    request = request
+        .header(MS_DATE, time)
+        .header("x-ms-version", "2019-12-12")
+        .header(AUTHORIZATION, sas)
+        .header(CONTENT_LENGTH, "0");
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
-    Ok(http_client.request(request))
+    Ok(request)
 }
 
 async fn peek_lock(
-    http_client: &HttpClient,
+    http_client: &Arc<dyn HttpClient>,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<String, azure_core::Error> {
-    let req = peek_lock_prepare(
-        http_client,
-        namespace,
-        event_hub,
-        policy_name,
-        hmac,
-        duration,
-        timeout,
-    );
+) -> crate::Result<Response<Bytes>> {
+    let req = peek_lock_prepare(namespace, event_hub, policy_name, hmac, duration, timeout)?;
 
-    check_status_extract_body(req?, StatusCode::CREATED).await
+    Ok(http_client
+        .execute_request_check_status(req, http::StatusCode::CREATED)
+        .await?)
 }
 
 async fn peek_lock_full(
-    http_client: &HttpClient,
+    http_client: &Arc<dyn HttpClient>,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<PeekLockResponse, azure_core::Error> {
-    let req = peek_lock_prepare(
-        http_client,
-        namespace,
-        event_hub,
-        policy_name,
-        hmac,
-        duration,
-        timeout,
-    );
+) -> crate::Result<PeekLockResponse> {
+    let req = peek_lock_prepare(namespace, event_hub, policy_name, hmac, duration, timeout)?;
 
-    let a = extract_location_status_and_body(req?).await?;
+    let res = http_client.execute_request(req).await?;
+
+    let status = res.status();
+    let location: String = match res.headers().get("Location") {
+        Some(header_value) => header_value.to_str()?.to_owned(),
+        _ => "".to_owned(),
+    };
+    let body = std::str::from_utf8(res.body())?.to_string();
 
     Ok(PeekLockResponse {
-        http_client: http_client.to_owned(),
-        status: a.0,
-        delete_location: a.1,
-        body: a.2,
-        duration: duration.clone(),
+        http_client: http_client.clone(),
+        status,
+        delete_location: location,
+        body,
+        duration,
         policy_name: policy_name.to_owned(),
         signing_key: hmac.to_owned(),
     })
 }
 
 pub struct PeekLockResponse {
-    http_client: HttpClient,
-    status: StatusCode,
+    http_client: Arc<dyn HttpClient>,
+    status: http::StatusCode,
     delete_location: String,
     body: String,
     policy_name: String,
@@ -139,30 +173,31 @@ impl PeekLockResponse {
     pub fn body(&self) -> String {
         self.body.clone()
     }
-    pub fn status(&self) -> StatusCode {
+    pub fn status(&self) -> http::StatusCode {
         self.status
     }
-    pub async fn delete_message(&self) -> Result<String, azure_core::Error> {
+    pub async fn delete_message(&self) -> crate::Result<Response<Bytes>> {
         let req = delete_message_get_request(
-            &self.http_client,
             &self.policy_name,
             &self.signing_key,
             self.duration,
             self.delete_location.clone(),
-        );
+        )?;
 
-        check_status_extract_body(req?, StatusCode::OK).await
+        Ok(self
+            .http_client
+            .execute_request_check_status(req, http::StatusCode::CREATED)
+            .await?)
     }
 }
 
 fn receive_and_delete_prepare(
-    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
     duration: Duration,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<Request<Bytes>> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
@@ -174,35 +209,36 @@ fn receive_and_delete_prepare(
     let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::delete(url)
-        .header(header::AUTHORIZATION, sas)
-        .body(Body::empty())?;
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let mut request = Request::builder();
+    request = request.method(http::Method::DELETE).uri(url.as_str());
+    request = request
+        .header(MS_DATE, time)
+        .header("x-ms-version", "2019-12-12")
+        .header(AUTHORIZATION, sas)
+        .header(CONTENT_LENGTH, "0");
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
-    Ok(http_client.request(request))
+    Ok(request)
 }
 
 async fn receive_and_delete(
-    http_client: &HttpClient,
+    http_client: &Arc<dyn HttpClient>,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
-) -> Result<String, azure_core::Error> {
-    let req = receive_and_delete_prepare(
-        http_client,
-        namespace,
-        event_hub,
-        policy_name,
-        hmac,
-        duration,
-    );
+) -> crate::Result<Response<Bytes>> {
+    let req = receive_and_delete_prepare(namespace, event_hub, policy_name, hmac, duration)?;
 
-    check_status_extract_body(req?, StatusCode::OK).await
+    Ok(http_client
+        .execute_request_check_status(req, http::StatusCode::OK)
+        .await?)
 }
 
 fn delete_message_prepare(
-    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -210,7 +246,7 @@ fn delete_message_prepare(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<Request<Bytes>> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/{}/{}",
@@ -220,28 +256,34 @@ fn delete_message_prepare(
 
     // generate sas signature based on key name, key value, url and duration.
 
-    delete_message_get_request(http_client, policy_name, signing_key, duration, url)
+    delete_message_get_request(policy_name, signing_key, duration, url)
 }
 
 fn delete_message_get_request(
-    http_client: &HttpClient,
     policy_name: &str,
     signing_key: &hmac::Key,
     duration: Duration,
     url: String,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<Request<Bytes>> {
     let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::delete(url)
-        .header(header::AUTHORIZATION, sas)
-        .body(Body::empty())?;
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let mut request = Request::builder();
+    request = request.method(http::Method::DELETE).uri(url.as_str());
+    request = request
+        .header(MS_DATE, time)
+        .header("x-ms-version", "2019-12-12")
+        .header(AUTHORIZATION, sas)
+        .header(CONTENT_LENGTH, "0");
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
-    Ok(http_client.request(request))
+    Ok(request)
 }
 
 async fn delete_message(
-    http_client: &HttpClient,
+    http_client: &Arc<dyn HttpClient>,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -249,26 +291,25 @@ async fn delete_message(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<(), azure_core::Error> {
-    check_status_extract_body(
-        delete_message_prepare(
-            http_client,
-            namespace,
-            event_hub,
-            policy_name,
-            hmac,
-            duration,
-            message_id,
-            lock_token,
-        )?,
-        StatusCode::OK,
-    )
-    .await?;
+) -> crate::Result<()> {
+    http_client
+        .execute_request_check_status(
+            delete_message_prepare(
+                namespace,
+                event_hub,
+                policy_name,
+                hmac,
+                duration,
+                message_id,
+                lock_token,
+            )?,
+            http::StatusCode::OK,
+        )
+        .await?;
     Ok(())
 }
 
 fn unlock_message_prepare(
-    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -276,7 +317,7 @@ fn unlock_message_prepare(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<Request<Bytes>> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/{}/{}",
@@ -288,15 +329,22 @@ fn unlock_message_prepare(
     let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::put(url)
-        .header(header::AUTHORIZATION, sas)
-        .body(Body::empty())?;
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let mut request = Request::builder();
+    request = request.method(http::Method::PUT).uri(url.as_str());
+    request = request
+        .header(MS_DATE, time)
+        .header("x-ms-version", "2019-12-12")
+        .header(AUTHORIZATION, sas)
+        .header(CONTENT_LENGTH, "0");
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
-    Ok(http_client.request(request))
+    Ok(request)
 }
 
 async fn unlock_message(
-    http_client: &HttpClient,
+    http_client: &Arc<dyn HttpClient>,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -304,26 +352,25 @@ async fn unlock_message(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<(), azure_core::Error> {
-    check_status_extract_body(
-        unlock_message_prepare(
-            http_client,
-            namespace,
-            event_hub,
-            policy_name,
-            hmac,
-            duration,
-            message_id,
-            lock_token,
-        )?,
-        StatusCode::OK,
-    )
-    .await?;
+) -> crate::Result<()> {
+    http_client
+        .execute_request_check_status(
+            unlock_message_prepare(
+                namespace,
+                event_hub,
+                policy_name,
+                hmac,
+                duration,
+                message_id,
+                lock_token,
+            )?,
+            http::StatusCode::OK,
+        )
+        .await?;
     Ok(())
 }
 
 fn renew_lock_prepare(
-    http_client: &HttpClient,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -331,7 +378,7 @@ fn renew_lock_prepare(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
+) -> crate::Result<Request<Bytes>> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/{}/{}",
@@ -343,15 +390,22 @@ fn renew_lock_prepare(
     let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::post(url)
-        .header(header::AUTHORIZATION, sas)
-        .body(Body::empty())?;
+    let dt = chrono::Utc::now();
+    let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+    let mut request = Request::builder();
+    request = request.method(http::Method::POST).uri(url.as_str());
+    request = request
+        .header(MS_DATE, time)
+        .header("x-ms-version", "2019-12-12")
+        .header(AUTHORIZATION, sas)
+        .header(CONTENT_LENGTH, "0");
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
-    Ok(http_client.request(request))
+    Ok(request)
 }
 
 async fn renew_lock(
-    http_client: &HttpClient,
+    http_client: &Arc<dyn HttpClient>,
     namespace: &str,
     event_hub: &str,
     policy_name: &str,
@@ -359,44 +413,21 @@ async fn renew_lock(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<(), azure_core::Error> {
-    check_status_extract_body(
-        renew_lock_prepare(
-            http_client,
-            namespace,
-            event_hub,
-            policy_name,
-            hmac,
-            duration,
-            message_id,
-            lock_token,
-        )?,
-        StatusCode::OK,
-    )
-    .await?;
-    Ok(())
-}
-
-async fn send_event(
-    http_client: &HttpClient,
-    namespace: &str,
-    event_hub: &str,
-    policy_name: &str,
-    hmac: &hmac::Key,
-    event_body: &str,
-    duration: Duration,
-) -> Result<(), azure_core::Error> {
-    let req = send_event_prepare(
-        http_client,
-        namespace,
-        event_hub,
-        policy_name,
-        hmac,
-        event_body,
-        duration,
-    );
-
-    check_status_extract_body(req?, StatusCode::CREATED).await?;
+) -> crate::Result<()> {
+    http_client
+        .execute_request_check_status(
+            renew_lock_prepare(
+                namespace,
+                event_hub,
+                policy_name,
+                hmac,
+                duration,
+                message_id,
+                lock_token,
+            )?,
+            http::StatusCode::OK,
+        )
+        .await?;
     Ok(())
 }
 
