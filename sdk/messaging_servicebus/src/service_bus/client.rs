@@ -7,7 +7,10 @@ use crate::service_bus::{
 use chrono::Duration;
 use ring::hmac::Key;
 
-use azure_core::HttpClient;
+use azure_core::{
+    error::{Error, ErrorKind, ResultExt},
+    HttpClient,
+};
 
 /// Client object that allows interaction with the ServiceBus API
 pub struct Client {
@@ -26,7 +29,7 @@ impl Client {
         queue: Q,
         policy_name: P,
         policy_key: K,
-    ) -> Result<Client, azure_core::Error>
+    ) -> Result<Client, Error>
     where
         N: Into<String>,
         Q: Into<String>,
@@ -45,7 +48,7 @@ impl Client {
     }
 
     /// Sends a message to the queue
-    pub async fn send_message(&mut self, msg: &str) -> crate::Result<()> {
+    pub async fn send_message(&mut self, msg: &str) -> Result<(), Error> {
         send_message(
             &self.http_client,
             &self.namespace,
@@ -58,7 +61,7 @@ impl Client {
     }
 
     /// Receive and delete a message
-    pub async fn receive_and_delete_message(&mut self) -> crate::Result<String> {
+    pub async fn receive_and_delete_message(&mut self) -> Result<String, Error> {
         Ok(std::str::from_utf8(
             &receive_and_delete_message(
                 &self.http_client,
@@ -69,6 +72,10 @@ impl Client {
             )
             .await?
             .into_body(),
+        )
+        .context(
+            ErrorKind::DataConversion,
+            "Failed to convert body bytes to UTF8",
         )?
         .to_string())
     }
@@ -81,7 +88,7 @@ impl Client {
     /// the message can be consumed by others. If you want to keep
     /// track of this message (i.e., have the possibility of deletion),
     /// use `peek_lock_message2`.
-    pub async fn peek_lock_message(&mut self, timeout: Option<Duration>) -> crate::Result<String> {
+    pub async fn peek_lock_message(&mut self, timeout: Option<Duration>) -> Result<String, Error> {
         Ok(std::str::from_utf8(
             &peek_lock_message(
                 &self.http_client,
@@ -93,6 +100,10 @@ impl Client {
             )
             .await?
             .into_body(),
+        )
+        .context(
+            ErrorKind::DataConversion,
+            "Failed to convert body bytes to UTF8",
         )?
         .to_string())
     }
@@ -104,7 +115,7 @@ impl Client {
     pub async fn peek_lock_message2(
         &mut self,
         timeout: Option<Duration>,
-    ) -> crate::Result<PeekLockResponse> {
+    ) -> Result<PeekLockResponse, Error> {
         peek_lock_message2(
             &self.http_client,
             &self.namespace,

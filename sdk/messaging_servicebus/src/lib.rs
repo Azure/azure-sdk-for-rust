@@ -3,8 +3,5 @@
 
 extern crate log;
 
-pub mod errors;
 pub mod prelude;
 pub mod service_bus;
-
-pub use self::errors::{Error, Result};

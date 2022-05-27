@@ -1,4 +1,7 @@
-use azure_core::HttpClient;
+use azure_core::{
+    error::{Error, ErrorKind, ResultExt},
+    HttpClient,
+};
 use bytes::Bytes;
 use chrono::Duration;
 use http::{
@@ -27,7 +30,7 @@ fn prepare_request(
     body: Option<String>,
     policy_name: &str,
     signing_key: &hmac::Key,
-) -> crate::Result<http::Request<Bytes>> {
+) -> Result<http::Request<Bytes>, Error> {
     // generate sas auth
     let sas = generate_signature(
         policy_name,
@@ -92,7 +95,7 @@ async fn send_message(
     policy_name: &str,
     signing_key: &hmac::Key,
     msg: &str,
-) -> crate::Result<()> {
+) -> Result<(), Error> {
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
         namespace, queue
@@ -119,7 +122,7 @@ async fn receive_and_delete_message(
     queue: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
-) -> crate::Result<Response<Bytes>> {
+) -> Result<Response<Bytes>, Error> {
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
         namespace, queue
@@ -147,11 +150,15 @@ async fn peek_lock_message(
     policy_name: &str,
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
-) -> crate::Result<Response<Bytes>> {
+) -> Result<Response<Bytes>, Error> {
     let mut url = Url::parse(&format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
         namespace, queue
-    ))?;
+    ))
+    .context(
+        ErrorKind::DataConversion,
+        "Failed to parse peek_lock_message URL",
+    )?;
 
     // add timeout, if given
     if let Some(t) = lock_expiry {
@@ -183,11 +190,15 @@ async fn peek_lock_message2(
     policy_name: &str,
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
-) -> crate::Result<PeekLockResponse> {
+) -> Result<PeekLockResponse, Error> {
     let mut url = Url::parse(&format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
         namespace, queue
-    ))?;
+    ))
+    .context(
+        ErrorKind::DataConversion,
+        "Failed to parse peek_lock_message URL",
+    )?;
 
     if let Some(t) = lock_expiry {
         url.query_pairs_mut()
@@ -206,10 +217,21 @@ async fn peek_lock_message2(
 
     let status = res.status();
     let lock_location: String = match res.headers().get("Location") {
-        Some(header_value) => header_value.to_str()?.to_owned(),
+        Some(header_value) => header_value
+            .to_str()
+            .context(
+                ErrorKind::DataConversion,
+                "Failed to get lock location from header",
+            )?
+            .to_owned(),
         _ => "".to_owned(),
     };
-    let body = std::str::from_utf8(res.body())?.to_string();
+    let body = std::str::from_utf8(res.body())
+        .context(
+            ErrorKind::DataConversion,
+            "Failed to convert body bytes to UTF8",
+        )?
+        .to_string();
 
     Ok(PeekLockResponse {
         body,
@@ -243,7 +265,7 @@ impl PeekLockResponse {
     }
 
     /// Delete message in the lock
-    pub async fn delete_message(&self) -> crate::Result<Response<Bytes>> {
+    pub async fn delete_message(&self) -> Result<Response<Bytes>, Error> {
         let req = prepare_request(
             &self.lock_location.clone(),
             Method::DELETE,
@@ -259,7 +281,7 @@ impl PeekLockResponse {
     }
 
     /// Unlock a message in the lock
-    pub async fn unlock_message(&self) -> crate::Result<()> {
+    pub async fn unlock_message(&self) -> Result<(), Error> {
         let req = prepare_request(
             &self.lock_location.clone(),
             Method::PUT,
@@ -276,7 +298,7 @@ impl PeekLockResponse {
     }
 
     /// Renew a message in the lock
-    pub async fn renew_lock(&self) -> crate::Result<()> {
+    pub async fn renew_lock(&self) -> Result<(), Error> {
         let req = prepare_request(
             &self.lock_location.clone(),
             Method::POST,
