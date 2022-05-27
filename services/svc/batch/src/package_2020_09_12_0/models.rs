@@ -2,7 +2,9 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use azure_core::util::case_insensitive_deserialize;
-use serde::{Deserialize, Serialize};
+use serde::de::{value, Deserializer, IntoDeserializer};
+use serde::{Deserialize, Serialize, Serializer};
+use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountListSupportedImagesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
