@@ -88,7 +88,10 @@ impl Client {
     /// the message can be consumed by others. If you want to keep
     /// track of this message (i.e., have the possibility of deletion),
     /// use `peek_lock_message2`.
-    pub async fn peek_lock_message(&mut self, timeout: Option<Duration>) -> Result<String, Error> {
+    pub async fn peek_lock_message(
+        &mut self,
+        lock_expiry: Option<Duration>,
+    ) -> Result<String, Error> {
         Ok(std::str::from_utf8(
             &peek_lock_message(
                 &self.http_client,
@@ -96,7 +99,7 @@ impl Client {
                 &self.queue,
                 &self.policy_name,
                 &self.signing_key,
-                timeout,
+                lock_expiry,
             )
             .await?
             .into_body(),

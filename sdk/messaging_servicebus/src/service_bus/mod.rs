@@ -297,8 +297,8 @@ impl PeekLockResponse {
         Ok(())
     }
 
-    /// Renew a message in the lock
-    pub async fn renew_lock(&self) -> Result<(), Error> {
+    /// Renew a message's lock
+    pub async fn renew_message_lock(&self) -> Result<(), Error> {
         let req = prepare_request(
             &self.lock_location.clone(),
             Method::POST,

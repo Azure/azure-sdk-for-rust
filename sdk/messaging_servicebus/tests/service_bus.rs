@@ -2,6 +2,7 @@
 extern crate log;
 
 use azure_messaging_servicebus::service_bus::Client;
+use chrono::Duration;
 
 #[tokio::test]
 async fn send_message_test() {
@@ -14,19 +15,65 @@ async fn send_message_test() {
 
 #[tokio::test]
 async fn receive_and_delete_message_test() {
-    let message_to_send = "hello, world!";
     let mut client = create_client().unwrap();
     client
-        .send_message(message_to_send)
-        .await
-        .expect("Failed to send message while testing receive");
-
-    let received_message = client
         .receive_and_delete_message()
         .await
         .expect("Failed to receive message");
+}
 
-    assert_eq!(message_to_send, received_message);
+#[tokio::test]
+async fn peek_lock_message_test() {
+    let mut client = create_client().unwrap();
+    client
+        .peek_lock_message(None)
+        .await
+        .expect("Failed to receive message");
+}
+
+#[tokio::test]
+async fn peek_lock_message2_test() {
+    let mut client = create_client().unwrap();
+    client
+        .peek_lock_message2(None)
+        .await
+        .expect("Failed to receive message");
+}
+
+#[tokio::test]
+async fn delete_message_test() {
+    let mut client = create_client().unwrap();
+    client
+        .peek_lock_message2(None)
+        .await
+        .expect("Failed to receive message")
+        .delete_message()
+        .await
+        .expect("Failed to delete message");
+}
+
+#[tokio::test]
+async fn renew_message_lock_test() {
+    let mut client = create_client().unwrap();
+    client
+        .peek_lock_message2(Some(Duration::seconds(60)))
+        .await
+        .expect("Failed to receive message")
+        .renew_message_lock()
+        .await
+        .expect("Failed to delete message");
+}
+
+#[tokio::test]
+async fn unlock_message() {
+    let mut client = create_client().unwrap();
+    client
+        .peek_lock_message2(None)
+        .await
+        .expect("Failed to receive message")
+        .unlock_message()
+        .await
+        .expect("Failed to delete message");
 }
 
 fn create_client() -> Result<Client, azure_core::Error> {
