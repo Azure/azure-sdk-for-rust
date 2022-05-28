@@ -1,0 +1,3 @@
+[tags]
+# Some of the old tags use a different naming convention.
+deny_contains = ["compute", "disk", "skus", "container"]

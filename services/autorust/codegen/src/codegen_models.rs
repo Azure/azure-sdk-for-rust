@@ -61,6 +61,13 @@ impl SchemaGen {
         !self.schema.common.enum_.is_empty()
     }
 
+    fn is_model_as_string_enum(&self) -> bool {
+        match &self.schema.common.x_ms_enum {
+            Some(x_ms_enum) => x_ms_enum.model_as_string == Some(true),
+            None => false,
+        }
+    }
+
     fn is_local_struct(&self) -> bool {
         !self.schema.properties.is_empty()
     }
@@ -292,7 +299,9 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     file.extend(quote! {
         #![allow(non_camel_case_types)]
         #![allow(unused_imports)]
-        use serde::{Deserialize, Serialize};
+        use std::str::FromStr;
+        use serde::{Serialize, Deserialize, Serializer};
+        use serde::de::{value, Deserializer, IntoDeserializer};
     });
     if has_case_workaround {
         file.extend(quote! {
@@ -401,14 +410,15 @@ fn create_enum(
         source,
         property: property_name.to_owned(),
     })?;
+
     let mut values = TokenStream::new();
-    for enum_value in enum_values {
+    for enum_value in &enum_values {
         let value = &enum_value.value;
         let nm = value.to_camel_case_ident().map_err(|source| Error::EnumName {
             source,
             property: property_name.to_owned(),
         })?;
-        let doc_comment = match enum_value.description {
+        let doc_comment = match &enum_value.description {
             Some(description) => {
                 quote! { #[doc = #description] }
             }
@@ -429,6 +439,96 @@ fn create_enum(
         };
         values.extend(value_token);
     }
+
+    // The x-ms-enum modelAsString enum field indicates that the enum is
+    // subject to change, so should be treated as extensible. The document
+    // says that if this field is set, "the enum will be modeled as a
+    // string. No validation will happen."
+    // https://azure.github.io/autorest/extensions/#x-ms-enum
+    //
+    // With Rust enums we can do better than that - use enum variants
+    // for the known values but with an additional `UnknownValue(String)`
+    // that can capture and store an unknown value as a `String`.
+    // Unfortunately the standard `serde` attributes do not support this,
+    // but it can be implemented via a custom deserializer using the
+    // workaround suggested in this issue:
+    // https://github.com/serde-rs/serde/issues/912
+
+    // If `model_as_string` then add the `UnknownValue(String)` field to the enum variants
+    if property.is_model_as_string_enum() {
+        let value_token = quote! {
+            #[serde(skip_deserializing)]
+            UnknownValue(String)
+        };
+        values.extend(value_token);
+    }
+
+    // Need the id as a string as it needs to be quoted in some places in the
+    // generated code.
+    let id_str = id.to_string();
+
+    // If `model_as_string` then set the `serde` `remote` attribute to indicate
+    // that the Serializer/Deserializer will be defined elsewhere.
+    let maybe_remote_attr = if property.is_model_as_string_enum() {
+        quote! {
+            #[serde(remote = #id_str)]
+        }
+    } else {
+        quote! {}
+    };
+
+    // If `model_as_string` then provide custom `Deserialize` and `Serialize`
+    // implementations.
+    let custom_serde_code = if property.is_model_as_string_enum() {
+        let mut serialize_fields = TokenStream::new();
+        for (index, enum_value) in enum_values.iter().enumerate() {
+            let value = &enum_value.value;
+            let nm = value.to_camel_case_ident().map_err(|source| Error::EnumName {
+                source,
+                property: property_name.to_owned(),
+            })?;
+            let variant_index = index as u32;
+            serialize_fields.extend(quote! {
+                Self::#nm => serializer.serialize_unit_variant(#id_str, #variant_index, #value),
+            });
+        }
+
+        quote! {
+            impl FromStr for #id {
+                type Err = value::Error;
+
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+
+            impl<'de> Deserialize<'de> for #id {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                    where D: Deserializer<'de>
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(
+                        Self::UnknownValue(s)
+                    );
+                    Ok(deserialized)
+                }
+            }
+
+            impl Serialize for #id {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        #serialize_fields
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
 
     let nm = property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
@@ -460,9 +560,11 @@ fn create_enum(
     let code = quote! {
         #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #maybe_remote_attr
         pub enum #nm {
             #values
         }
+        #custom_serde_code
         #default_code
     };
     let type_name = TypeNameCode::from(vec![namespace, Some(id)]);

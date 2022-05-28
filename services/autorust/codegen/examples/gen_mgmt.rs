@@ -124,6 +124,11 @@ const OPTIONAL_PROPERTIES: &[(&str, &str, &str)] = &[
         "Resource",
         "location",
     ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-11-01/compute.json",
+        "Resource",
+        "location",
+    ),
 ];
 
 // because of recursive types, some properties have to be boxed
