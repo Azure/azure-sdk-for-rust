@@ -5,6 +5,7 @@ mod codegen_models;
 mod codegen_operations;
 pub mod config_parser;
 pub mod crates;
+pub mod gen;
 pub mod identifier;
 pub mod io;
 pub mod jinja;
