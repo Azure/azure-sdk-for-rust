@@ -284,7 +284,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
 
 fn main() -> Result<()> {
     let run_config = &mut RunConfig::new("azure_mgmt_");
-    run_config.set_skip_service_tags(SKIP_SERVICE_TAGS);
     run_config.set_box_properties(BOX_PROPERTIES);
     run_config.set_optional_properties(OPTIONAL_PROPERTIES);
 
@@ -318,8 +317,7 @@ fn gen_crate(spec: &SpecReadme, run_config: &RunConfig) -> Result<()> {
         package_config.tags.limit = Some(5);
     }
     // TODO remove skip_service_tags and use the autorust.toml files
-    let tags = spec_config.tags_filtered(spec.spec(), run_config.skip_service_tags());
-    let tags = &package_config.filter_tags(tags);
+    let tags = &package_config.filter_tags(spec_config.tags());
     if tags.is_empty() {
         println!("not generating {} - no tags", spec.spec());
         return Ok(());

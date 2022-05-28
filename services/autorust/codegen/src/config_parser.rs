@@ -1,6 +1,5 @@
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
-use std::collections::HashSet;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -49,14 +48,8 @@ impl Configuration {
         self.basic_info.tag.as_deref()
     }
     /// All `Tag`s in `Configuration`
-    pub fn tags(&self) -> &Vec<Tag> {
-        &self.tags
-    }
-    pub fn tags_filtered(&self, spec_name: &str, skip_service_tags: &HashSet<&(&str, &str)>) -> Vec<&Tag> {
-        self.tags()
-            .iter()
-            .filter(|tag| !skip_service_tags.contains(&(spec_name, tag.name())))
-            .collect()
+    pub fn tags(&self) -> Vec<&Tag> {
+        self.tags.iter().collect()
     }
 }
 

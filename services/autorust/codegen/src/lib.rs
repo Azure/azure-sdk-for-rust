@@ -71,7 +71,6 @@ pub enum Runs {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RunConfig {
     pub crate_name_prefix: &'static str,
-    pub skip_service_tags: HashSet<&'static (&'static str, &'static str)>,
     pub box_properties: HashSet<PropertyName>,
     pub optional_properties: HashSet<PropertyName>,
     pub fix_case_properties: HashSet<&'static str>,
@@ -89,13 +88,6 @@ fn to_property(file_schema_property: &(&str, &str, &str)) -> PropertyName {
 }
 
 impl RunConfig {
-    pub fn set_skip_service_tags(&mut self, skip_service_tags: &'static [(&str, &str)]) {
-        self.skip_service_tags = skip_service_tags.iter().collect();
-    }
-    pub fn skip_service_tags(&self) -> &HashSet<&(&str, &str)> {
-        &self.skip_service_tags
-    }
-
     pub fn set_box_properties(&mut self, box_properties: &'static [(&str, &str, &str)]) {
         self.box_properties = box_properties.iter().map(to_property).collect()
     }
@@ -117,7 +109,6 @@ impl RunConfig {
     pub fn new(crate_name_prefix: &'static str) -> Self {
         Self {
             crate_name_prefix,
-            skip_service_tags: HashSet::new(),
             box_properties: HashSet::new(),
             optional_properties: HashSet::new(),
             fix_case_properties: HashSet::new(),
