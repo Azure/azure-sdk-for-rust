@@ -48,7 +48,7 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
             output_folder,
             input_files,
         };
-        let cg = crate::run(crate_config)?;
+        let cg = crate::run(crate_config, &package_config)?;
         operation_totals.insert(tag.name(), cg.spec.operations()?.len());
         let mut versions = cg.spec.api_versions();
         versions.sort_unstable();

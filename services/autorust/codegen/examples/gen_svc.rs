@@ -143,10 +143,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
 
 fn main() -> Result<()> {
     let run_config = &mut RunConfig::new("azure_svc_");
-    run_config.set_fix_case_properties(FIX_CASE_PROPERTIES);
-    run_config.set_box_properties(BOX_PROPERTIES);
-    run_config.set_invalid_types(INVALID_TYPE_WORKAROUND);
-
     for (i, spec) in get_svc_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {

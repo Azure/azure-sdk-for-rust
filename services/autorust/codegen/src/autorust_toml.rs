@@ -7,6 +7,8 @@ use std::{collections::HashSet, fs};
 pub struct PackageConfig {
     #[serde(default)]
     pub tags: Tags,
+    #[serde(default)]
+    pub properties: Properties,
 }
 
 const NO_LIMIT: i32 = -1;
@@ -24,6 +26,18 @@ pub struct Tags {
     pub limit: Option<i32>,
     pub sort: Option<bool>,
     pub default: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct Properties {
+    #[serde(default)]
+    pub boxed: Vec<Vec<String>>,
+    #[serde(default)]
+    pub optional: Vec<Vec<String>>,
+    #[serde(default)]
+    pub fix_case: Vec<String>,
+    #[serde(default)]
+    pub invalid_type: Vec<Vec<String>>,
 }
 
 impl<'a> PackageConfig {
@@ -270,6 +284,22 @@ mod tests {
             "#,
         )?;
         assert_eq!(Some("package-resources-2021-04".to_string()), config.tags.default);
+        Ok(())
+    }
+
+    #[test]
+    fn boxed() -> Result<(), Error> {
+        let config: PackageConfig = toml::from_str(
+            r#"
+            [properties]
+            boxed = [
+                ["../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json", "errorInfo", "innererror"]
+              ]
+            "#,
+        )?;
+        assert_eq!(1, config.properties.boxed.len());
+        assert_eq!("errorInfo", config.properties.boxed[0][1]);
+        assert_eq!("innererror", config.properties.boxed[0][2]);
         Ok(())
     }
 }

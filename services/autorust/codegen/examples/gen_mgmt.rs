@@ -250,9 +250,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
 
 fn main() -> Result<()> {
     let run_config = &mut RunConfig::new("azure_mgmt_");
-    run_config.set_box_properties(BOX_PROPERTIES);
-    run_config.set_optional_properties(OPTIONAL_PROPERTIES);
-
     for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {

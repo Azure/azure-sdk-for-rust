@@ -13,6 +13,7 @@ pub mod lib_rs;
 pub mod readme_md;
 pub mod spec;
 mod status_codes;
+use autorust_toml::PackageConfig;
 use camino::{Utf8Path, Utf8PathBuf};
 use config_parser::Configuration;
 use proc_macro2::TokenStream;
@@ -72,48 +73,14 @@ pub enum Runs {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RunConfig {
     pub crate_name_prefix: &'static str,
-    pub box_properties: HashSet<PropertyName>,
-    pub optional_properties: HashSet<PropertyName>,
-    pub fix_case_properties: HashSet<&'static str>,
-    pub invalid_types: HashSet<PropertyName>,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,
-}
-
-fn to_property(file_schema_property: &(&str, &str, &str)) -> PropertyName {
-    PropertyName {
-        file_path: Utf8PathBuf::from(file_schema_property.0),
-        schema_name: file_schema_property.1.to_string(),
-        property_name: file_schema_property.2.to_string(),
-    }
-}
-
-impl RunConfig {
-    pub fn set_box_properties(&mut self, box_properties: &'static [(&str, &str, &str)]) {
-        self.box_properties = box_properties.iter().map(to_property).collect()
-    }
-
-    pub fn set_optional_properties(&mut self, optional_properties: &'static [(&str, &str, &str)]) {
-        self.optional_properties = optional_properties.iter().map(to_property).collect()
-    }
-
-    pub fn set_fix_case_properties(&mut self, fix_case_properties: &'static [&str]) {
-        self.fix_case_properties = fix_case_properties.iter().map(AsRef::as_ref).collect()
-    }
-
-    pub fn set_invalid_types(&mut self, invalid_types: &'static [(&str, &str, &str)]) {
-        self.invalid_types = invalid_types.iter().map(to_property).collect()
-    }
 }
 
 impl RunConfig {
     pub fn new(crate_name_prefix: &'static str) -> Self {
         Self {
             crate_name_prefix,
-            box_properties: HashSet::new(),
-            optional_properties: HashSet::new(),
-            fix_case_properties: HashSet::new(),
-            invalid_types: HashSet::new(),
             runs: vec![Runs::Models, Runs::Operations],
             print_writing_file: false,
         }
@@ -137,30 +104,50 @@ impl<'a> CrateConfig<'a> {
     }
 }
 
-pub fn run<'a>(config: &'a CrateConfig) -> Result<CodeGen<'a>, Error> {
-    let directory = &config.output_folder;
+fn to_property_name(triple: &Vec<String>) -> PropertyName {
+    PropertyName {
+        file_path: Utf8PathBuf::from(triple[0].clone()),
+        schema_name: triple[1].clone(),
+        property_name: triple[2].clone(),
+    }
+}
+
+pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig) -> Result<CodeGen<'a>, Error> {
+    let directory = &crate_config.output_folder;
     fs::create_dir_all(directory).map_err(|source| io::Error::CreateOutputDirectory {
         source,
         directory: directory.into(),
     })?;
-    let cg = CodeGen::new(config)?;
+
+    let box_properties: HashSet<PropertyName> = package_config.properties.boxed.iter().map(to_property_name).collect();
+    let optional_properties: HashSet<PropertyName> = package_config.properties.optional.iter().map(to_property_name).collect();
+    let fix_case_properties: HashSet<&'a str> = package_config.properties.fix_case.iter().map(AsRef::as_ref).collect();
+    let invalid_types: HashSet<PropertyName> = package_config.properties.invalid_type.iter().map(to_property_name).collect();
+
+    let cg = CodeGen::new(
+        crate_config,
+        box_properties,
+        optional_properties,
+        fix_case_properties,
+        invalid_types,
+    )?;
 
     // create models from schemas
-    if config.should_run(&Runs::Models) {
+    if crate_config.should_run(&Runs::Models) {
         let models = codegen_models::create_models(&cg)?;
-        let models_path = io::join(&config.output_folder, "models.rs")?;
-        write_file(&models_path, &models, config.print_writing_file())?;
+        let models_path = io::join(&crate_config.output_folder, "models.rs")?;
+        write_file(&models_path, &models, crate_config.print_writing_file())?;
     }
 
     // create api client from operations
-    if config.should_run(&Runs::Operations) {
+    if crate_config.should_run(&Runs::Operations) {
         let operations = codegen_operations::create_operations(&cg)?;
-        let operations_path = io::join(&config.output_folder, "operations.rs")?;
-        write_file(&operations_path, &operations, config.print_writing_file())?;
+        let operations_path = io::join(&crate_config.output_folder, "operations.rs")?;
+        write_file(&operations_path, &operations, crate_config.print_writing_file())?;
 
         let operations = create_mod();
-        let operations_path = io::join(&config.output_folder, "mod.rs")?;
-        write_file(&operations_path, &operations, config.print_writing_file())?;
+        let operations_path = io::join(&crate_config.output_folder, "mod.rs")?;
+        write_file(&operations_path, &operations, crate_config.print_writing_file())?;
     }
 
     Ok(cg)
