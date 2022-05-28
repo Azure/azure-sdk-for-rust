@@ -4,14 +4,9 @@ use autorust_codegen::{self, gen::gen_crate, get_svc_readmes, Result, RunConfig}
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &[];
+const ONLY_SERVICES: &[&str] = &["applicationinsights"];
 
 const INVALID_TYPE_WORKAROUND: &[(&str, &str, &str)] = &[
-    (
-        "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",
-        "table",
-        "rows",
-    ),
     (
         "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/stable/v1/OperationalInsights.json",
         "table",
@@ -24,8 +19,6 @@ const FIX_CASE_PROPERTIES: &[&str] = &["BatchServiceClient", "BatchService"];
 // because of recursive types, some properties have to be boxed
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
-    // applicationinsights
-    ("../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json", "errorInfo", "innererror"),
     // keyvault
     ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.0/keyvault.json" , "Error" , "innererror"),
     ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.1/common.json" , "Error" , "innererror"),
