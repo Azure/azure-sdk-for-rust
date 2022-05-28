@@ -1,0 +1,6 @@
+[tags]
+deny = [
+    "package-2018-03", # defines get_balances_by_billing_account twice
+    "package-2019-11", # ReservationRecommendationDetails_Get has a path and query param both named "scope"
+    "package-2021-05",
+  ]

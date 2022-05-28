@@ -11,35 +11,6 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 
 const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
-    ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times
-    ("applicationinsights", "package-2021-11-01"), // duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
-    ("analysisservices", "package-2017-08"),
-    ("azureactivedirectory", "package-preview-2020-07"),
-    ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
-    ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
-    ("consumption", "package-2021-05"),
-    ("databoxedge", "package-2022-03-01"), // duplicate SystemData https://github.com/Azure/azure-rest-api-specs/pull/18526
-    ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
-    // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
-    ("deploymentmanager", "package-2018-09-01-preview"), //  identifiers are bound more than once in param list.   https://github.com/Azure/azure-sdk-for-rust/issues/415
-    ("iothub", "package-preview-2021-07"),               // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
-    ("iothub", "package-2021-07"),                       // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
-    ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
-    ("marketplace", "package-2020-01-01"),
-    ("marketplace", "package-2020-12-01"),
-    ("marketplace", "package-composite-v1"),             // mixing versions
-    ("marketplace", "package-composite-v2"),             // mixing versions
-    ("recoveryservicesbackup", "package-2020-07"),       // duplicate fn get_operation_status
-    ("recoveryservicesbackup", "package-2020-10"),       // duplicate fn get_operation_status
-    ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
-    ("resources", "package-policy-2020-03"),
-    ("resources", "package-policy-2020-09"), // SchemaNotFound { ref_key: RefKey { file_path: "../../../azure-rest-api-specs/specification/resources/resource-manager/Microsoft.Authorization/stable/2020-09-01/dataPolicyManifests.json", name: "CloudError"
-    ("security", "package-2020-01-preview-only"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/pull/13828
-    ("security", "package-2019-08-only"),    // defines `start_time_utc` param twice.
-    ("securityinsights", "package-2021-10"), // invalid unicode code point https://github.com/Azure/azure-rest-api-specs/pull/18068
-];
-
 // because of a bug in compute specs, some properties need to be forced to be optional
 // https://github.com/Azure/azure-rest-api-specs/issues/14459
 // https://github.com/Azure/azure-sdk-for-rust/issues/54

@@ -1,0 +1,4 @@
+[tags]
+deny = [
+    "package-2021-04-01-preview", # duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
+  ]

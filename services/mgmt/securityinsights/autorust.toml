@@ -1,0 +1,4 @@
+[tags]
+deny = [
+    "package-2021-10", # invalid unicode code point https://github.com/Azure/azure-rest-api-specs/pull/18068
+  ]

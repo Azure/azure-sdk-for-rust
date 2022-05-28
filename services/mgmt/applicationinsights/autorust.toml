@@ -1,0 +1,5 @@
+[tags]
+deny = [
+    "package-preview-2020-06", # defines operation `list` multiple times
+    "package-2021-11-01", # duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
+  ]
