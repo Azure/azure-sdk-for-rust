@@ -46,12 +46,15 @@ fn prepare_request(
     request = request.method(method).uri(url);
 
     // add auth header with sas
-    request = request.header(AUTHORIZATION, sas).header(CONTENT_LENGTH, 0);
+    request = request.header(AUTHORIZATION, sas);
 
     // get req body to return
     let ret = match body {
         Some(msg) => request.body(Bytes::from(msg)),
-        None => request.body(azure_core::EMPTY_BODY),
+        None => {
+            request = request.header(CONTENT_LENGTH, 0); // added to avoid truncation errors
+            request.body(azure_core::EMPTY_BODY)
+        }
     }?;
 
     Ok(ret)
