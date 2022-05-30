@@ -4,7 +4,7 @@ use autorust_codegen::{self, gen::gen_crate, get_svc_readmes, Result, RunConfig}
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &["purview"];
+const ONLY_SERVICES: &[&str] = &[];
 
 fn main() -> Result<()> {
     let run_config = &mut RunConfig::new("azure_svc_");
