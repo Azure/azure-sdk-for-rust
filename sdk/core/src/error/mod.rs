@@ -301,9 +301,8 @@ struct Custom {
 
 #[cfg(test)]
 mod tests {
-    use bytes::Bytes;
-
     use super::*;
+    use bytes::Bytes;
     use std::io;
 
     #[allow(dead_code, unconditional_recursion)]
