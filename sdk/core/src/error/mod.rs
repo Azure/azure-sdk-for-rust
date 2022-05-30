@@ -301,6 +301,8 @@ struct Custom {
 
 #[cfg(test)]
 mod tests {
+    use bytes::Bytes;
+
     use super::*;
     use std::io;
 
