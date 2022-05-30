@@ -104,6 +104,7 @@ impl<'a> CrateConfig<'a> {
     }
 }
 
+#[allow(clippy::ptr_arg)]
 fn to_property_name(triple: &Vec<String>) -> PropertyName {
     PropertyName {
         file_path: Utf8PathBuf::from(triple[0].clone()),
