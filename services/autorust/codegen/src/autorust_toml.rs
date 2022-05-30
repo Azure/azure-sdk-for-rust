@@ -3,10 +3,14 @@ use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 use std::{collections::HashSet, fs};
 
+/// `autorust.toml` files are used to configure code generation for a crate
 #[derive(Deserialize, Debug, Default)]
 pub struct PackageConfig {
+    /// A section for configuring which tags are selected for code generation
     #[serde(default)]
     pub tags: Tags,
+
+    /// A section for workarounds that apply to properties
     #[serde(default)]
     pub properties: Properties,
 }
@@ -15,27 +19,77 @@ const NO_LIMIT: i32 = -1;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Tags {
+    /// A list of tag names to filter for
     #[serde(default)]
     pub allow: Vec<String>,
+
+    /// A list of tag names to filter out
     #[serde(default)]
     pub deny: Vec<String>,
+
+    /// A list of strings for filtering out tag names
+    /// If the tag names contains any of the strings, it is filtered out
     #[serde(default)]
     pub deny_contains: Vec<String>,
+
+    /// Filter out any tag names that contain `preview`
     pub deny_contains_preview: Option<bool>,
+
+    /// Filter out any tag names that contain `only`
     pub deny_contains_only: Option<bool>,
+
+    /// Limit the number of tags for code generation
     pub limit: Option<i32>,
+
+    /// Sort the tags alphabetically
     pub sort: Option<bool>,
+
+    /// Choose which tag should be the default
+    /// This overrides a default value set in the readme.md
     pub default: Option<String>,
+}
+
+impl Tags {
+    pub fn new(
+        allow: Vec<String>,
+        deny: Vec<String>,
+        deny_contains: Vec<String>,
+        deny_contains_preview: Option<bool>,
+        deny_contains_only: Option<bool>,
+        limit: Option<i32>,
+        sort: Option<bool>,
+        default: Option<String>,
+    ) -> Self {
+        Self {
+            allow,
+            deny,
+            deny_contains,
+            deny_contains_preview,
+            deny_contains_only,
+            limit,
+            sort,
+            default,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Properties {
+    /// Some properties need to have `Box<_>` added to avoid recursive types
+    /// This is common in error definitions
     #[serde(default)]
     pub boxed: Vec<Vec<String>>,
+
+    /// Some properties need to have `Option<_>` added
     #[serde(default)]
     pub optional: Vec<Vec<String>>,
+
+    /// Enumeration cases are case sensitive by default
+    /// This allows an enum type to be case insensitive
     #[serde(default)]
     pub fix_case: Vec<String>,
+
+    /// Some properties need to be left as `serde_json::Value`
     #[serde(default)]
     pub invalid_type: Vec<Vec<String>>,
 }
