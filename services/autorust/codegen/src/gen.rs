@@ -61,10 +61,8 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
 
     let default_tag_name = if let Some(name) = package_config.default_tag() {
         Some(name)
-    } else if let Some(name) = spec_config.tag() {
-        Some(name)
     } else {
-        None
+        spec_config.tag()
     };
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
     cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
