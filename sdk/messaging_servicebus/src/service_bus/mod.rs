@@ -11,12 +11,12 @@ use http::{
 };
 use ring::hmac;
 use std::{ops::Add, sync::Arc};
-use url::{
-    form_urlencoded::{self, Serializer},
-    Url,
-};
+use url::form_urlencoded::{self, Serializer};
 
 mod client;
+
+use crate::utils::{body_bytes_to_utf8, craft_peek_lock_url};
+
 pub use self::client::Client;
 
 /// Default duration for the SAS token in days — We might want to make this configurable at some point
@@ -153,20 +153,7 @@ async fn peek_lock_message(
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
 ) -> Result<Response<Bytes>, Error> {
-    let mut url = Url::parse(&format!(
-        "https://{}.servicebus.windows.net/{}/messages/head",
-        namespace, queue
-    ))
-    .context(
-        ErrorKind::DataConversion,
-        "failed to parse peek_lock_message URL",
-    )?;
-
-    // add timeout, if given
-    if let Some(t) = lock_expiry {
-        url.query_pairs_mut()
-            .append_pair("timeout", &t.num_seconds().to_string());
-    }
+    let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
     let req = prepare_request(
         &url.to_string(),
@@ -193,19 +180,7 @@ async fn peek_lock_message2(
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
 ) -> Result<PeekLockResponse, Error> {
-    let mut url = Url::parse(&format!(
-        "https://{}.servicebus.windows.net/{}/messages/head",
-        namespace, queue
-    ))
-    .context(
-        ErrorKind::DataConversion,
-        "failed to parse peek_lock_message URL",
-    )?;
-
-    if let Some(t) = lock_expiry {
-        url.query_pairs_mut()
-            .append_pair("timeout", &t.num_seconds().to_string());
-    }
+    let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
     let req = prepare_request(
         &url.to_string(),
@@ -228,12 +203,7 @@ async fn peek_lock_message2(
             .to_owned(),
         _ => "".to_owned(),
     };
-    let body = std::str::from_utf8(res.body())
-        .context(
-            ErrorKind::DataConversion,
-            "failed to convert body bytes to UTF8",
-        )?
-        .to_string();
+    let body = body_bytes_to_utf8(res.body())?;
 
     Ok(PeekLockResponse {
         body,

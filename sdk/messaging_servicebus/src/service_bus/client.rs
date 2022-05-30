@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use crate::service_bus::{
-    peek_lock_message, peek_lock_message2, receive_and_delete_message, send_message,
-    PeekLockResponse,
+use crate::{
+    service_bus::{
+        peek_lock_message, peek_lock_message2, receive_and_delete_message, send_message,
+        PeekLockResponse,
+    },
+    utils::body_bytes_to_utf8,
 };
 use chrono::Duration;
 use ring::hmac::Key;
 
-use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
-    HttpClient,
-};
+use azure_core::{error::Error, HttpClient};
 
 /// Client object that allows interaction with the ServiceBus API
 pub struct Client {
@@ -62,7 +62,7 @@ impl Client {
 
     /// Receive and delete a message
     pub async fn receive_and_delete_message(&mut self) -> Result<String, Error> {
-        Ok(std::str::from_utf8(
+        body_bytes_to_utf8(
             &receive_and_delete_message(
                 &self.http_client,
                 &self.namespace,
@@ -73,11 +73,6 @@ impl Client {
             .await?
             .into_body(),
         )
-        .context(
-            ErrorKind::DataConversion,
-            "failed to convert body bytes to UTF8",
-        )?
-        .to_string())
     }
 
     /// Non-destructively read a message
@@ -92,7 +87,7 @@ impl Client {
         &mut self,
         lock_expiry: Option<Duration>,
     ) -> Result<String, Error> {
-        Ok(std::str::from_utf8(
+        body_bytes_to_utf8(
             &peek_lock_message(
                 &self.http_client,
                 &self.namespace,
@@ -104,11 +99,6 @@ impl Client {
             .await?
             .into_body(),
         )
-        .context(
-            ErrorKind::DataConversion,
-            "failed to convert body bytes to UTF8",
-        )?
-        .to_string())
     }
 
     /// Non-destructively read a message but track it
