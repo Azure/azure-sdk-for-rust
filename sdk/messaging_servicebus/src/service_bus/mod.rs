@@ -23,7 +23,6 @@ pub use self::client::Client;
 const DEFAULT_SAS_DURATION: i64 = 1;
 
 /// Prepares an HTTP request
-#[inline]
 fn prepare_request(
     url: &str,
     method: http::Method,
@@ -61,7 +60,6 @@ fn prepare_request(
 }
 
 /// Generates a SAS signature
-#[inline]
 fn generate_signature(
     policy_name: &str,
     signing_key: &hmac::Key,
