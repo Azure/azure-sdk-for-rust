@@ -302,7 +302,6 @@ struct Custom {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bytes::Bytes;
     use std::io;
 
     #[allow(dead_code, unconditional_recursion)]
@@ -380,7 +379,7 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(418, &Bytes::from_static(b"{}"));
+        let kind = ErrorKind::http_response_from_body(418, b"{}");
 
         assert!(matches!(
             kind,
@@ -390,10 +389,7 @@ mod tests {
             }
         ));
 
-        let kind = ErrorKind::http_response_from_body(
-            418,
-            &Bytes::from_static(br#"{"error": {"code":"teepot"}}"#),
-        );
+        let kind = ErrorKind::http_response_from_body(418, br#"{"error": {"code":"teepot"}}"#);
 
         assert!(matches!(
             kind,
