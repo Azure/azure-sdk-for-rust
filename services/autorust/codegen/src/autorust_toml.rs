@@ -50,6 +50,7 @@ pub struct Tags {
 }
 
 impl Tags {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         allow: Vec<String>,
         deny: Vec<String>,
