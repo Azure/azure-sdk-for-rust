@@ -1,0 +1,8 @@
+[properties]
+boxed = [
+    [
+        "../../../azure-rest-api-specs/specification/webpubsub/data-plane/WebPubSub/stable/2021-10-01/webpubsub.json",
+        "InnerError",
+        "inner"
+    ]
+]
