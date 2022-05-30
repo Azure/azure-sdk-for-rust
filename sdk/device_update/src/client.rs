@@ -74,12 +74,12 @@ impl DeviceUpdateClient {
             .bearer_auth(self.get_token().await?.token.secret())
             .send()
             .await
-            .map_err(|e| Error::Core(CoreError::Http(HttpError::ExecuteRequest(e))))?;
+            .map_err(|e| Error::Core(CoreError::Http(HttpError::ExecuteRequest(e.into()))))?;
 
         let body = resp
             .bytes()
             .await
-            .map_err(|e| Error::Core(CoreError::Http(HttpError::ReadBytes(e))))?;
+            .map_err(|e| Error::Core(CoreError::Http(HttpError::ReadBytes(e.into()))))?;
         serde_json::from_slice(&body).map_err(|e| Error::Core(CoreError::Json(e)))
     }
 
@@ -97,7 +97,7 @@ impl DeviceUpdateClient {
         let resp = req
             .send()
             .await
-            .map_err(|e| Error::Core(CoreError::Http(HttpError::ExecuteRequest(e))))?;
+            .map_err(|e| Error::Core(CoreError::Http(HttpError::ExecuteRequest(e.into()))))?;
 
         if resp.status() == 202u16 {
             let headers = resp.headers();
@@ -120,11 +120,11 @@ impl DeviceUpdateClient {
             .header("Content-Type", "application/json")
             .send()
             .await
-            .map_err(|e| Error::Core(CoreError::Http(HttpError::ExecuteRequest(e))))?;
+            .map_err(|e| Error::Core(CoreError::Http(HttpError::ExecuteRequest(e.into()))))?;
         let body = resp
             .text()
             .await
-            .map_err(|e| Error::Core(CoreError::Http(HttpError::ReadBytes(e))))?;
+            .map_err(|e| Error::Core(CoreError::Http(HttpError::ReadBytes(e.into()))))?;
         Ok(body)
     }
 }
