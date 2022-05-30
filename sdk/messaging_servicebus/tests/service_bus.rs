@@ -16,6 +16,7 @@ async fn send_message_test() {
 #[tokio::test]
 async fn receive_and_delete_message_test() {
     let mut client = create_client().unwrap();
+    send_message_test(); // send message to ensure we can receive something
     client
         .receive_and_delete_message()
         .await
@@ -25,6 +26,7 @@ async fn receive_and_delete_message_test() {
 #[tokio::test]
 async fn peek_lock_message_test() {
     let mut client = create_client().unwrap();
+    send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message(None)
         .await
@@ -34,6 +36,7 @@ async fn peek_lock_message_test() {
 #[tokio::test]
 async fn peek_lock_message2_test() {
     let mut client = create_client().unwrap();
+    send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message2(None)
         .await
@@ -43,6 +46,7 @@ async fn peek_lock_message2_test() {
 #[tokio::test]
 async fn delete_message_test() {
     let mut client = create_client().unwrap();
+    send_message_test(); // send message to ensure we can delete something
     client
         .peek_lock_message2(None)
         .await
@@ -55,25 +59,27 @@ async fn delete_message_test() {
 #[tokio::test]
 async fn renew_message_lock_test() {
     let mut client = create_client().unwrap();
+    send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message2(Some(Duration::seconds(60)))
         .await
         .expect("Failed to receive message")
         .renew_message_lock()
         .await
-        .expect("Failed to delete message");
+        .expect("Failed to renew message's lock");
 }
 
 #[tokio::test]
 async fn unlock_message() {
     let mut client = create_client().unwrap();
+    send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message2(None)
         .await
         .expect("Failed to receive message")
         .unlock_message()
         .await
-        .expect("Failed to delete message");
+        .expect("Failed to unlock message's lock");
 }
 
 fn create_client() -> Result<Client, azure_core::Error> {
