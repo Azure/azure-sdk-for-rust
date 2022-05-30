@@ -51,10 +51,7 @@ impl From<super::error::Error> for Error {
     }
 }
 
-#[cfg(feature = "enable_hyper")]
-type HttpClientError = hyper::Error;
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-type HttpClientError = reqwest::Error;
+type HttpClientError = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 /// An error caused by a failure to parse data.
 #[non_exhaustive]

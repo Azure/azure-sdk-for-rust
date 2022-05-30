@@ -13,6 +13,7 @@ pub(crate) struct ResponseBuilder {
 }
 
 impl ResponseBuilder {
+    #[allow(dead_code)]
     pub fn new(status: StatusCode) -> Self {
         Self {
             status,
@@ -26,6 +27,7 @@ impl ResponseBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_pinned_stream(self, response: PinnedStream) -> Response {
         Response::new(self.status, self.headers, response)
     }

@@ -1,5 +1,5 @@
 use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
-use crate::{new_http_client, HttpClient};
+use crate::HttpClient;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -15,7 +15,7 @@ use std::time::Duration;
 ///     .retry(RetryOptions::default().max_retries(10u32))
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
 /// ```
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ClientOptions {
     /// Policies called per call.
     pub(crate) per_call_policies: Vec<Arc<dyn Policy>>,
@@ -29,9 +29,23 @@ pub struct ClientOptions {
     pub(crate) transport: TransportOptions,
 }
 
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+impl Default for ClientOptions {
+    /// Creates an instance of the `ClientOptions` using the default `TransportOptions`.
+    fn default() -> Self {
+        Self::new(TransportOptions::default())
+    }
+}
+
 impl ClientOptions {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(transport: TransportOptions) -> Self {
+        Self {
+            per_call_policies: Vec::new(),
+            per_retry_policies: Vec::new(),
+            retry: RetryOptions::default(),
+            telemetry: TelemetryOptions::default(),
+            transport,
+        }
     }
 
     #[cfg(feature = "mock_transport_framework")]
@@ -185,17 +199,19 @@ impl TransportOptions {
     }
 
     #[cfg(feature = "mock_transport_framework")]
+    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
     pub fn new_with_transaction_name(transaction_name: String) -> Self {
         Self {
-            http_client: new_http_client(),
+            http_client: crate::http_client::new_http_client(),
             transaction_name,
         }
     }
 }
 
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(new_http_client())
+        Self::new(crate::http_client::new_http_client())
     }
 }
