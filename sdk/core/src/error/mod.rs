@@ -37,7 +37,7 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body<'a>(status: u16, body: &'a [u8]) -> Self {
+    pub fn http_response_from_body(status: u16, body: &[u8]) -> Self {
         let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
     }
