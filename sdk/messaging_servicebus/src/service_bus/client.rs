@@ -75,7 +75,7 @@ impl Client {
         )
         .context(
             ErrorKind::DataConversion,
-            "Failed to convert body bytes to UTF8",
+            "failed to convert body bytes to UTF8",
         )?
         .to_string())
     }
@@ -106,7 +106,7 @@ impl Client {
         )
         .context(
             ErrorKind::DataConversion,
-            "Failed to convert body bytes to UTF8",
+            "failed to convert body bytes to UTF8",
         )?
         .to_string())
     }

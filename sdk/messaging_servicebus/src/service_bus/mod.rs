@@ -159,7 +159,7 @@ async fn peek_lock_message(
     ))
     .context(
         ErrorKind::DataConversion,
-        "Failed to parse peek_lock_message URL",
+        "failed to parse peek_lock_message URL",
     )?;
 
     // add timeout, if given
@@ -199,7 +199,7 @@ async fn peek_lock_message2(
     ))
     .context(
         ErrorKind::DataConversion,
-        "Failed to parse peek_lock_message URL",
+        "failed to parse peek_lock_message URL",
     )?;
 
     if let Some(t) = lock_expiry {
@@ -223,7 +223,7 @@ async fn peek_lock_message2(
             .to_str()
             .context(
                 ErrorKind::DataConversion,
-                "Failed to get lock location from header",
+                "failed to get lock location from header",
             )?
             .to_owned(),
         _ => "".to_owned(),
@@ -231,7 +231,7 @@ async fn peek_lock_message2(
     let body = std::str::from_utf8(res.body())
         .context(
             ErrorKind::DataConversion,
-            "Failed to convert body bytes to UTF8",
+            "failed to convert body bytes to UTF8",
         )?
         .to_string();
 
