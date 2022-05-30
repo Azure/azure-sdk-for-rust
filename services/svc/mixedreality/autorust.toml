@@ -4,3 +4,11 @@
 allow = [
     "package-2021-01-01",
   ]
+[properties]
+boxed = [
+    [
+        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/stable/2021-01-01/mr-arr.json",
+        "error",
+        "innerError"
+    ]
+]

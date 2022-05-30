@@ -1,0 +1,4 @@
+[tags]
+deny = [
+    "package-2016-08", # duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
+  ]

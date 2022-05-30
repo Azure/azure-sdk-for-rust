@@ -1,3 +1,9 @@
 [tags]
 # duplicate SystemData
 deny = ["package-2022-02"]
+
+[properties]
+boxed = [
+    ["../../../azure-rest-api-specs/specification/operationalinsights/resource-manager/Microsoft.OperationalInsights/preview/2019-09-01-preview/QueryPackQueries_API.json", "ErrorInfo", "innererror"],
+    ["../../../azure-rest-api-specs/specification/operationalinsights/resource-manager/Microsoft.OperationalInsights/preview/2019-09-01-preview/QueryPacks_API.json", "ErrorInfo", "innererror"],
+]

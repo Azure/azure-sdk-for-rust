@@ -1,0 +1,5 @@
+[tags]
+deny = [
+    "package-preview-2.0", # global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    "package-1.0-preview", # global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+  ]

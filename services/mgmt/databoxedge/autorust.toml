@@ -1,5 +1,6 @@
 [tags]
 deny = [
-  "package-2022-04-01-preview", # duplicate SystemData
-  "profile-hybrid-2020-09-01", # older and not using same naming
+    "package-2022-04-01-preview", # duplicate SystemData
+    "profile-hybrid-2020-09-01", # older and not using same naming
+    "package-2022-03-01", # duplicate SystemData https://github.com/Azure/azure-rest-api-specs/pull/18526
   ]

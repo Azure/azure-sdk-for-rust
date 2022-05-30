@@ -1,0 +1,4 @@
+[tags]
+deny = [
+    "package-2018-09-01-preview", #  identifiers are bound more than once in param list.   https://github.com/Azure/azure-sdk-for-rust/issues/415
+  ]

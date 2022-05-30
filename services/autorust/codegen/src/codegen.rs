@@ -10,7 +10,7 @@ use once_cell::sync::Lazy;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use regex::Regex;
-use std::convert::TryFrom;
+use std::{collections::HashSet, convert::TryFrom};
 use syn::{
     punctuated::Punctuated,
     token::{Gt, Impl, Lt},
@@ -20,42 +20,61 @@ use syn::{
 
 /// code generation context
 pub struct CodeGen<'a> {
-    config: &'a CrateConfig<'a>,
+    crate_config: &'a CrateConfig<'a>,
     pub spec: Spec,
+
+    // workarounds
+    box_properties: HashSet<PropertyName>,
+    optional_properties: HashSet<PropertyName>,
+    fix_case_properties: HashSet<&'a str>,
+    invalid_types: HashSet<PropertyName>,
 }
 
 impl<'a> CodeGen<'a> {
-    pub fn new(config: &'a CrateConfig) -> Result<Self, Error> {
-        let spec = Spec::read_files(&config.input_files).map_err(Error::Spec)?;
-        Ok(Self { config, spec })
+    pub fn new(
+        crate_config: &'a CrateConfig,
+        box_properties: HashSet<PropertyName>,
+        optional_properties: HashSet<PropertyName>,
+        fix_case_properties: HashSet<&'a str>,
+        invalid_types: HashSet<PropertyName>,
+    ) -> Result<Self, Error> {
+        let spec = Spec::read_files(&crate_config.input_files).map_err(Error::Spec)?;
+        Ok(Self {
+            crate_config,
+            spec,
+            box_properties,
+            optional_properties,
+            fix_case_properties,
+            invalid_types,
+        })
     }
 
     pub fn input_files(&self) -> &[Utf8PathBuf] {
-        &self.config.input_files
+        &self.crate_config.input_files
     }
 
     pub fn output_folder(&self) -> &Utf8Path {
-        &self.config.output_folder
+        &self.crate_config.output_folder
     }
 
     pub fn should_workaround_case(&self) -> bool {
         if let Some(title) = self.spec.title() {
-            self.config.run_config.fix_case_properties.contains(title)
+            self.fix_case_properties.contains(title)
         } else {
             false
         }
     }
 
     pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
-        self.config.run_config.optional_properties.contains(prop_nm)
+        self.optional_properties.contains(prop_nm)
     }
 
     pub fn should_force_obj(&self, prop_nm: &PropertyName) -> bool {
-        self.config.run_config.invalid_types.contains(prop_nm)
+        self.invalid_types.contains(prop_nm)
     }
 
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
-        self.config.run_config.box_properties.contains(prop_nm)
+        self.box_properties.contains(prop_nm)
     }
 
     pub fn get_request_content_type_json(&self) -> String {
