@@ -86,7 +86,7 @@ fn get_error_code_from_header(response: &Response) -> Option<String> {
 /// Gets the error code if it's present in the body
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-pub(crate) fn get_error_code_from_body(body: &Bytes) -> Option<String> {
+pub(crate) fn get_error_code_from_body<'a>(body: &'a [u8]) -> Option<String> {
     Some(
         serde_json::from_slice::<serde_json::Value>(body)
             .ok()?

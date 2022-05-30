@@ -4,7 +4,6 @@ mod azure_core_errors;
 mod http_error;
 mod hyperium_http;
 mod macros;
-use bytes::Bytes;
 pub use http_error::HttpError;
 
 /// A convenience alias for `Result` where the error type is hard coded to `Error`
@@ -38,7 +37,7 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body(status: u16, body: &Bytes) -> Self {
+    pub fn http_response_from_body<'a>(status: u16, body: &'a [u8]) -> Self {
         let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
     }
