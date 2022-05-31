@@ -77,17 +77,24 @@ async fn document_operations() {
     assert!(documents.documents.len() == 1);
 
     // now query all documents and see if we get the correct result
-    let query_result = collection
+    let mut query_result = collection
         .query_documents("SELECT * FROM c")
         .query_cross_partition(true)
-        .into_stream::<MyDocument>()
-        .next()
-        .await
-        .unwrap()
-        .unwrap()
-        .into_documents()
-        .unwrap()
-        .results;
+        .into_stream::<MyDocument>();
+
+    // Ensure that the query stream can be sent to a task
+    let query_result = tokio::spawn(async move {
+        query_result
+            .next()
+            .await
+            .unwrap()
+            .unwrap()
+            .into_documents()
+            .unwrap()
+            .results
+    })
+    .await
+    .unwrap();
 
     assert!(query_result.len() == 1);
     assert!(
