@@ -2,6 +2,7 @@ use super::TokenCredential;
 use azure_core::auth::TokenResponse;
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
+use reqwest::header::HeaderMap;
 use serde::{
     de::{self, Deserializer},
     Deserialize,
@@ -72,11 +73,6 @@ impl ImdsManagedIdentityCredential {
 pub enum ManagedIdentityCredentialError {
     #[error("Error parsing url for MSI endpoint: {0}")]
     MsiEndpointParseUrlError(url::ParseError),
-    #[error(
-        "Missing MSI secret set in {} environment variable",
-        MSI_SECRET_ENV_KEY
-    )]
-    MissingMsiSecret(std::env::VarError),
     #[error("Refresh token send error: {0}")]
     SendError(reqwest::Error),
     #[error("Error deserializing refresh token: {0}")]
@@ -97,6 +93,9 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
+        let mut headers = HeaderMap::new();
+        headers.insert("Metadata", "true".parse().unwrap());
+
         match (
             self.object_id.as_ref(),
             self.client_id.as_ref(),
@@ -111,14 +110,15 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
             .map_err(ManagedIdentityCredentialError::MsiEndpointParseUrlError)?;
 
-        let msi_secret = std::env::var(MSI_SECRET_ENV_KEY)
-            .map_err(ManagedIdentityCredentialError::MissingMsiSecret)?;
+        let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
+        if let Ok(val) = msi_secret {
+            headers.insert("X-IDENTITY-HEADER", val.parse().unwrap());
+        };
 
         let client = reqwest::Client::new();
         let response = client
             .get(msi_endpoint_url)
-            .header("Metadata", "true")
-            .header("X-IDENTITY-HEADER", msi_secret)
+            .headers(headers)
             .send()
             .await
             .map_err(ManagedIdentityCredentialError::SendError)?;
