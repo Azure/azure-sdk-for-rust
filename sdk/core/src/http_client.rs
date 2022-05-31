@@ -169,21 +169,21 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_kind(ErrorKind::Other)?,
+                .context(ErrorKind::Other, "failed to build request")?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_kind(ErrorKind::Other)?
+                    .context(ErrorKind::Other, "failed to build request")?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_kind(ErrorKind::Io)?;
+            .context(ErrorKind::Io, "failed to execute request")?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
