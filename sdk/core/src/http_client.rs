@@ -169,21 +169,21 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_err(|e| Error::new(ErrorKind::Other, e))?,
+                .map_kind(ErrorKind::Other)?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_err(|e| Error::new(ErrorKind::Other, e))?
+                    .map_kind(ErrorKind::Other)?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(|e| Error::new(ErrorKind::Io, e))?;
+            .map_kind(ErrorKind::Io)?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
