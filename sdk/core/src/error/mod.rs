@@ -197,23 +197,25 @@ impl From<ErrorKind> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Self {
-            context: Context::Custom(Custom {
-                kind: ErrorKind::Io,
-                error: Box::new(error),
-            }),
-        }
+        Self::new(ErrorKind::Io, error)
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
-        Self {
-            context: Context::Custom(Custom {
-                kind: ErrorKind::DataConversion,
-                error: Box::new(error),
-            }),
-        }
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
+impl From<std::str::Utf8Error> for Error {
+    fn from(error: std::str::Utf8Error) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
+impl From<url::ParseError> for Error {
+    fn from(error: url::ParseError) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
     }
 }
 
