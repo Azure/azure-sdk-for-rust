@@ -1,19 +1,19 @@
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
-use http::{header::HeaderName, HeaderMap, HeaderValue, StatusCode};
+use http::{HeaderMap, StatusCode};
 use std::pin::Pin;
 
 type PinnedStream = Pin<Box<dyn Stream<Item = crate::error::Result<Bytes>> + Send + Sync>>;
 
-#[allow(dead_code)]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub(crate) struct ResponseBuilder {
     status: StatusCode,
     headers: HeaderMap,
 }
 
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 impl ResponseBuilder {
-    #[allow(dead_code)]
     pub fn new(status: StatusCode) -> Self {
         Self {
             status,
@@ -21,13 +21,16 @@ impl ResponseBuilder {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn with_header(&mut self, key: &HeaderName, value: HeaderValue) -> &mut Self {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn with_header(
+        &mut self,
+        key: &http::header::HeaderName,
+        value: http::HeaderValue,
+    ) -> &mut Self {
         self.headers.append(key, value);
         self
     }
 
-    #[allow(dead_code)]
     pub fn with_pinned_stream(self, response: PinnedStream) -> Response {
         Response::new(self.status, self.headers, response)
     }
@@ -41,6 +44,7 @@ pub struct Response {
 }
 
 impl Response {
+    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
     pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
         Self {
             status,
