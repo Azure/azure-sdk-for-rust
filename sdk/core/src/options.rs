@@ -16,6 +16,10 @@ use std::time::Duration;
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
 /// ```
 #[derive(Clone, Debug)]
+#[cfg_attr(
+    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"),
+    derive(Default)
+)]
 pub struct ClientOptions {
     /// Policies called per call.
     pub(crate) per_call_policies: Vec<Arc<dyn Policy>>,
@@ -27,14 +31,6 @@ pub struct ClientOptions {
     pub(crate) telemetry: TelemetryOptions,
     /// Transport options.
     pub(crate) transport: TransportOptions,
-}
-
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-impl Default for ClientOptions {
-    /// Creates an instance of the `ClientOptions` using the default `TransportOptions`.
-    fn default() -> Self {
-        Self::new(TransportOptions::default())
-    }
 }
 
 impl ClientOptions {
