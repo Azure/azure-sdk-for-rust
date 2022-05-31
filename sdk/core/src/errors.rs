@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use http::StatusCode;
 use std::cmp::PartialEq;
 use std::fmt::Debug;
@@ -115,7 +116,7 @@ pub enum StreamError {
 #[derive(Debug, thiserror::Error)]
 pub enum HttpError {
     #[error("HTTP error status (status: {:?}, body: {:?})", status, body)]
-    StatusCode { status: StatusCode, body: String },
+    StatusCode { status: StatusCode, body: Bytes },
     #[error("UTF8 conversion error: {0}")]
     Utf8(#[from] std::str::Utf8Error),
     #[error("failed to build request")]

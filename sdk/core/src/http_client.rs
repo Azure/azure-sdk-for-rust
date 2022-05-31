@@ -60,7 +60,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         if (200..400).contains(&status.as_u16()) {
             Ok(response)
         } else {
-            let body = std::str::from_utf8(response.body())?.to_owned();
+            let body = response.into_body();
             Err(crate::HttpError::StatusCode { status, body })
         }
     }

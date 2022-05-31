@@ -1,14 +1,12 @@
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
-
 mod azure_core_errors;
 mod http_error;
 mod hyperium_http;
 mod macros;
-
 pub use http_error::HttpError;
 
-/// A convience alias for `Result` where the error type is hard coded to `Error`
+/// A convenience alias for `Result` where the error type is hard coded to `Error`
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// The kind of error
@@ -39,7 +37,7 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body(status: u16, body: &str) -> Self {
+    pub fn http_response_from_body(status: u16, body: &[u8]) -> Self {
         let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
     }
@@ -232,7 +230,7 @@ impl Display for Error {
     }
 }
 
-/// An extention to the `Result` type that easy allows creating `Error` values from exsiting errors
+/// An extension to the `Result` type that easy allows creating `Error` values from existing errors
 ///
 /// This trait cannot be implemented on custom types and is meant for usage with `Result`
 pub trait ResultExt<T>: private::Sealed {
@@ -381,7 +379,7 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(418, "{}");
+        let kind = ErrorKind::http_response_from_body(418, b"{}");
 
         assert!(matches!(
             kind,
@@ -391,7 +389,7 @@ mod tests {
             }
         ));
 
-        let kind = ErrorKind::http_response_from_body(418, r#"{"error": {"code":"teepot"}}"#);
+        let kind = ErrorKind::http_response_from_body(418, br#"{"error": {"code":"teepot"}}"#);
 
         assert!(matches!(
             kind,
