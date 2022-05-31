@@ -36,6 +36,14 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         request: &crate::Request,
     ) -> Result<crate::Response, HttpError>;
 
+    /// Send out a request using `azure_core`'s types.
+    ///
+    /// Same as `execute_request2`, but using the new error types.
+    // async fn execute_request3(
+    //     &self,
+    //     request: &crate::Request,
+    // ) -> Result<crate::Response, crate::error::Error>;
+
     /// Send out a request and validate it was in the `2xx` range, using
     /// `hyperium/http`'s types.
     ///
@@ -59,8 +67,8 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait]
 impl HttpClient for reqwest::Client {
     async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
         let url = url::Url::parse(&request.uri().to_string())?;
@@ -97,7 +105,6 @@ impl HttpClient for reqwest::Client {
         Ok(response)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     async fn execute_request2(
         &self,
         request: &crate::Request,
@@ -148,19 +155,55 @@ impl HttpClient for reqwest::Client {
         Ok(response)
     }
 
-    #[cfg(target_arch = "wasm32")]
-    /// Stub implementation. Will remove as soon as reqwest starts
-    /// supporting wasm.
-    async fn execute_request2(
-        &self,
-        _request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
-        let response = crate::ResponseBuilder::new(http::StatusCode::OK);
+    // async fn execute_request3(
+    //     &self,
+    //     request: &crate::Request,
+    // ) -> Result<crate::Response, crate::error::Error> {
+    //     let url = url::Url::parse(&request.uri().to_string())?;
+    //     let mut reqwest_request = self.request(request.method(), url);
+    //     for (name, value) in request.headers().iter() {
+    //         reqwest_request = reqwest_request.header(name, value);
+    //     }
 
-        let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));
+    //     // We clone the body since we need to give ownership of it to Reqwest.
+    //     let body = request.body().clone();
 
-        Ok(response)
-    }
+    //     let reqwest_request = match body {
+    //         Body::Bytes(bytes) => reqwest_request
+    //             .body(bytes)
+    //             .build()
+    //             .map_err(|error| HttpError::BuildClientRequest(error.into()))?,
+    //         Body::SeekableStream(mut seekable_stream) => {
+    //             seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
+
+    //             reqwest_request
+    //                 .body(reqwest::Body::wrap_stream(seekable_stream))
+    //                 .build()
+    //                 .map_err(|error| HttpError::BuildClientRequest(error.into()))?
+    //         }
+    //     };
+
+    //     let reqwest_response = self
+    //         .execute(reqwest_request)
+    //         .await
+    //         .map_err(|error| HttpError::ExecuteRequest(error.into()))?;
+    //     let mut response = crate::ResponseBuilder::new(reqwest_response.status());
+
+    //     for (key, value) in reqwest_response.headers() {
+    //         response.with_header(key, value.clone());
+    //     }
+
+    //     let response =
+    //         response.with_pinned_stream(Box::pin(reqwest_response.bytes_stream().map_err(|e| {
+    //             crate::error::Error::full(
+    //                 crate::error::ErrorKind::Io,
+    //                 e,
+    //                 "error converting `reqwest` request into a byte stream",
+    //             )
+    //         })));
+
+    //     Ok(response)
+    // }
 }
 
 /// Serialize a type to json.
