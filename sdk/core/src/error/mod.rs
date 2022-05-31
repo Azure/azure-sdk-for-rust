@@ -234,11 +234,18 @@ impl Display for Error {
 ///
 /// This trait cannot be implemented on custom types and is meant for usage with `Result`
 pub trait ResultExt<T>: private::Sealed {
+    /// Creates a new error with the specified kind
+    fn map_kind(self, kind: ErrorKind) -> Result<T>
+    where
+        Self: Sized;
+
+    /// Creates a new error with the specified kind and message
     fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>;
 
+    /// Creates a new error with the specified kind and formatted message
     fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
     where
         Self: Sized,
@@ -256,6 +263,13 @@ impl<T, E> ResultExt<T> for std::result::Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
+    fn map_kind(self, kind: ErrorKind) -> Result<T>
+    where
+        Self: Sized,
+    {
+        self.map_err(|e| Error::new(kind, e))
+    }
+
     fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
@@ -399,5 +413,12 @@ mod tests {
             }
             if error_code.as_deref() == Some("teepot")
         ));
+    }
+
+    #[test]
+    fn set_result_kind() {
+        let result = std::result::Result::<(), _>::Err(create_error());
+        let result = result.map_kind(ErrorKind::Io);
+        assert_eq!(&ErrorKind::Io, result.unwrap_err().kind());
     }
 }
