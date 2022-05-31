@@ -1,9 +1,8 @@
 #[allow(unused_imports)]
+use crate::error::{ErrorKind, ResultExt};
+#[allow(unused_imports)]
 use crate::Body;
-use crate::{
-    error::{Error, ErrorKind, ResultExt},
-    HttpError,
-};
+use crate::{error::Error, HttpError};
 use async_trait::async_trait;
 use bytes::Bytes;
 #[allow(unused_imports)]
@@ -13,6 +12,7 @@ use serde::Serialize;
 
 /// Construct a new `HttpClient` with the `reqwest` backend.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
     std::sync::Arc::new(reqwest::Client::new())
 }
