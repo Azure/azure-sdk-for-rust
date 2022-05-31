@@ -235,7 +235,7 @@ impl Display for Error {
 /// This trait cannot be implemented on custom types and is meant for usage with `Result`
 pub trait ResultExt<T>: private::Sealed {
     /// Creates a new error with the specified kind
-    fn kind(self, kind: ErrorKind) -> Result<T>
+    fn map_kind(self, kind: ErrorKind) -> Result<T>
     where
         Self: Sized;
 
@@ -263,7 +263,7 @@ impl<T, E> ResultExt<T> for std::result::Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
-    fn kind(self, kind: ErrorKind) -> Result<T>
+    fn map_kind(self, kind: ErrorKind) -> Result<T>
     where
         Self: Sized,
     {
@@ -418,7 +418,7 @@ mod tests {
     #[test]
     fn set_result_kind() {
         let result = std::result::Result::<(), _>::Err(create_error());
-        let result = result.kind(ErrorKind::Io);
+        let result = result.map_kind(ErrorKind::Io);
         assert_eq!(&ErrorKind::Io, result.unwrap_err().kind());
     }
 }
