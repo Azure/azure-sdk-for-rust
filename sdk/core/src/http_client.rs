@@ -6,22 +6,12 @@ use bytes::Bytes;
 #[allow(unused_imports)]
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
-#[cfg(feature = "enable_hyper")]
-#[allow(unused_imports)]
-use hyper_rustls::HttpsConnector;
 use serde::Serialize;
-use std::sync::Arc;
 
-/// Construct a new HTTP client with the `reqwest` backend.
+/// Construct a new `HttpClient` with the `reqwest` backend.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-pub fn new_http_client() -> Arc<dyn HttpClient> {
-    Arc::new(reqwest::Client::new())
-}
-
-/// Construct a new HTTP client with the `hyper` backend.
-#[cfg(feature = "enable_hyper")]
-pub fn new_http_client() -> Arc<dyn HttpClient> {
-    Arc::new(hyper::Client::builder().build(hyper_rustls::HttpsConnector::with_native_roots()))
+pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
+    std::sync::Arc::new(reqwest::Client::new())
 }
 
 /// An HTTP client which can send requests.
@@ -82,12 +72,12 @@ impl HttpClient for reqwest::Client {
         let reqwest_request = reqwest_request
             .body(request.into_body())
             .build()
-            .map_err(HttpError::BuildClientRequest)?;
+            .map_err(|error| HttpError::BuildClientRequest(error.into()))?;
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(HttpError::ExecuteRequest)?;
+            .map_err(|error| HttpError::ExecuteRequest(error.into()))?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -100,7 +90,7 @@ impl HttpClient for reqwest::Client {
                 reqwest_response
                     .bytes()
                     .await
-                    .map_err(HttpError::ReadBytes)?,
+                    .map_err(|error| HttpError::ReadBytes(error.into()))?,
             )
             .map_err(HttpError::BuildResponse)?;
 
@@ -125,21 +115,21 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_err(HttpError::BuildClientRequest)?,
+                .map_err(|error| HttpError::BuildClientRequest(error.into()))?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_err(HttpError::BuildClientRequest)?
+                    .map_err(|error| HttpError::BuildClientRequest(error.into()))?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(HttpError::ExecuteRequest)?;
+            .map_err(|error| HttpError::ExecuteRequest(error.into()))?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
