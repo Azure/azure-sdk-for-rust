@@ -1,6 +1,6 @@
 use super::AuthorizationToken;
-use azure_core::{Context, PipelineError, Policy, PolicyResult, Request, Response};
-use http::{HeaderMap, HeaderValue, Method, Uri};
+use azure_core::{headers::Headers, Context, Policy, PolicyResult, Request};
+use http::{HeaderValue, Method, Uri};
 use log::trace;
 use ring::hmac;
 use std::sync::Arc;
@@ -25,14 +25,13 @@ impl Policy for AuthorizationPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 
-        if next.is_empty() {
-            return Err(Box::new(PipelineError::InvalidTailPolicy(
-                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
-            )));
-        }
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
 
         match &self.authorization_token {
             AuthorizationToken::SASToken {} => todo!(),
@@ -47,7 +46,7 @@ impl Policy for AuthorizationPolicy {
                 );
                 request
                     .headers_mut()
-                    .append("authorization", HeaderValue::from_str(&token).unwrap());
+                    .insert("authorization", HeaderValue::from_str(&token)?);
             }
         }
 
@@ -64,7 +63,7 @@ impl Policy for AuthorizationPolicy {
 /// * canonicalized resource (for example, /devstoreaccount1/devstoreaccount1/Tables)
 /// log example:
 fn shared_key_token(
-    headers: &HeaderMap,
+    headers: &Headers,
     uri: &Uri,
     method: &Method,
     account: &str,
