@@ -6,7 +6,7 @@ use chrono::Duration;
 
 #[tokio::test]
 async fn send_message_test() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     client
         .send_message("hello, world!")
         .await
@@ -15,7 +15,7 @@ async fn send_message_test() {
 
 #[tokio::test]
 async fn receive_and_delete_message_test() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
     client
         .receive_and_delete_message()
@@ -25,7 +25,7 @@ async fn receive_and_delete_message_test() {
 
 #[tokio::test]
 async fn peek_lock_message_test() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message(None)
@@ -35,7 +35,7 @@ async fn peek_lock_message_test() {
 
 #[tokio::test]
 async fn peek_lock_message2_test() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message2(None)
@@ -45,7 +45,7 @@ async fn peek_lock_message2_test() {
 
 #[tokio::test]
 async fn delete_message_test() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can delete something
     client
         .peek_lock_message2(None)
@@ -58,7 +58,7 @@ async fn delete_message_test() {
 
 #[tokio::test]
 async fn renew_message_lock_test() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message2(Some(Duration::seconds(60)))
@@ -71,7 +71,7 @@ async fn renew_message_lock_test() {
 
 #[tokio::test]
 async fn unlock_message() {
-    let mut client = create_client().unwrap();
+    let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
     client
         .peek_lock_message2(None)

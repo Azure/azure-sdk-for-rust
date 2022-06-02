@@ -13,6 +13,7 @@ use ring::hmac::Key;
 use azure_core::{error::Error, HttpClient};
 
 /// Client object that allows interaction with the ServiceBus API
+#[derive(Debug, Clone)]
 pub struct Client {
     http_client: Arc<dyn HttpClient>,
     namespace: String,
@@ -48,7 +49,7 @@ impl Client {
     }
 
     /// Sends a message to the queue
-    pub async fn send_message(&mut self, msg: &str) -> Result<(), Error> {
+    pub async fn send_message(&self, msg: &str) -> Result<(), Error> {
         send_message(
             &self.http_client,
             &self.namespace,
@@ -61,7 +62,7 @@ impl Client {
     }
 
     /// Receive and delete a message
-    pub async fn receive_and_delete_message(&mut self) -> Result<String, Error> {
+    pub async fn receive_and_delete_message(&self) -> Result<String, Error> {
         body_bytes_to_utf8(
             &receive_and_delete_message(
                 &self.http_client,
@@ -83,10 +84,7 @@ impl Client {
     /// the message can be consumed by others. If you want to keep
     /// track of this message (i.e., have the possibility of deletion),
     /// use `peek_lock_message2`.
-    pub async fn peek_lock_message(
-        &mut self,
-        lock_expiry: Option<Duration>,
-    ) -> Result<String, Error> {
+    pub async fn peek_lock_message(&self, lock_expiry: Option<Duration>) -> Result<String, Error> {
         body_bytes_to_utf8(
             &peek_lock_message(
                 &self.http_client,
@@ -106,7 +104,7 @@ impl Client {
     /// Note: This function returns a `PeekLockResponse`
     /// that contains a helper `delete_message` function.
     pub async fn peek_lock_message2(
-        &mut self,
+        &self,
         timeout: Option<Duration>,
     ) -> Result<PeekLockResponse, Error> {
         peek_lock_message2(
