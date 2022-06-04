@@ -1,1 +1,1 @@
-pub use crate::event_hub::Client;
+pub use crate::service_bus::Client;
