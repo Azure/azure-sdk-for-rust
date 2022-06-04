@@ -1,6 +1,6 @@
 //! Azure authentication and authorization.
 
-use crate::Error;
+use crate::error::Error;
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use std::fmt::Debug;

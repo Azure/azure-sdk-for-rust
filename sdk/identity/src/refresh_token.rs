@@ -1,28 +1,10 @@
 //! Refresh token utilities
 
 use crate::errors::ErrorToken;
-use log::debug;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
-use std::convert::TryInto;
 use url::form_urlencoded;
-
-#[non_exhaustive]
-#[allow(missing_docs)]
-#[derive(Debug, thiserror::Error)]
-/// An unrecognized error response from an identity service.
-pub enum Error {
-    #[error("Refresh token send error")]
-    Send(#[source] reqwest::Error),
-    #[error("Error getting text for refresh token")]
-    Text(#[source] reqwest::Error),
-    #[error("Error deserializing refresh token")]
-    Deserialize(#[source] serde_json::Error),
-    #[error("Error parsing url for refresh token")]
-    ParseUrl(#[source] url::ParseError),
-    #[error("Error requesting token: {0}")]
-    Token(ErrorToken),
-}
 
 /// Exchange a refresh token for a new access token and refresh token
 pub async fn exchange(
@@ -31,7 +13,7 @@ pub async fn exchange(
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
-) -> Result<RefreshTokenResponse, Error> {
+) -> Result<RefreshTokenResponse> {
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("grant_type", "refresh_token");
     let encoded = encoded.append_pair("client_id", client_id.as_str());
@@ -44,34 +26,28 @@ pub async fn exchange(
     let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
     let encoded = encoded.finish();
 
-    debug!("encoded ==> {}", encoded);
-
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
-    ))
-    .map_err(Error::ParseUrl)?;
+    ))?;
 
-    let ret = client
+    let rsp = client
         .post(url)
         .header("ContentType", "application/x-www-form-urlencoded")
         .body(encoded)
         .send()
         .await
-        .map_err(Error::Send)?
-        .text()
-        .await
-        .map_err(Error::Text)?;
+        .map_kind(ErrorKind::Credential)?;
 
-    debug!("refresh token response: {:?}", ret);
+    let rsp_body = rsp.bytes().await.map_kind(ErrorKind::Credential)?;
 
-    match serde_json::from_str::<RefreshTokenResponse>(&ret).map_err(Error::Deserialize) {
+    match serde_json::from_slice::<RefreshTokenResponse>(&rsp_body) {
         Ok(r) => Ok(r),
         Err(e) => {
-            if let Ok(token_error) = serde_json::from_str::<ErrorToken>(&ret) {
-                Err(Error::Token(token_error))
+            if let Ok(token_error) = serde_json::from_slice::<ErrorToken>(&rsp_body) {
+                Err(crate::Error::Token(token_error).into())
             } else {
-                Err(e)
+                Err(e.into())
             }
         }
     }
@@ -124,13 +100,5 @@ mod deserialize {
     {
         let string: String = serde::Deserialize::deserialize(scope)?;
         Ok(string.split(' ').map(|s| s.to_owned()).collect())
-    }
-}
-
-impl TryInto<RefreshTokenResponse> for String {
-    type Error = serde_json::Error;
-
-    fn try_into(self) -> Result<RefreshTokenResponse, Self::Error> {
-        serde_json::from_str::<RefreshTokenResponse>(&self)
     }
 }

@@ -7,12 +7,14 @@ use std::pin::Pin;
 type PinnedStream = Pin<Box<dyn Stream<Item = crate::error::Result<Bytes>> + Send + Sync>>;
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) struct ResponseBuilder {
     status: StatusCode,
     headers: HeaderMap,
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+#[cfg(not(target_arch = "wasm32"))]
 impl ResponseBuilder {
     pub fn new(status: StatusCode) -> Self {
         Self {
@@ -45,6 +47,7 @@ pub struct Response {
 
 impl Response {
     #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
         Self {
             status,

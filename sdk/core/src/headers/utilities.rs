@@ -20,17 +20,16 @@ pub fn get_option_str_from_headers<'a>(
         Error::full(
             ErrorKind::DataConversion,
             e,
-            format!("could not convert header '{}' to string", key),
+            format!("could not convert header '{key}' to string"),
         )
     })?))
 }
 
 pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a str> {
     get_option_str_from_headers(headers, key)?.ok_or_else(|| {
-        Error::with_message(
-            ErrorKind::DataConversion,
-            format!("could not find '{}' in headers", key),
-        )
+        Error::with_message(ErrorKind::DataConversion, || {
+            format!("could not find '{key}' in headers")
+        })
     })
 }
 

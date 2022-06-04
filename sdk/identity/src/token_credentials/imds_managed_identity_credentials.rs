@@ -1,5 +1,5 @@
-use super::TokenCredential;
-use azure_core::auth::TokenResponse;
+use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
 use reqwest::header::HeaderMap;
@@ -67,27 +67,9 @@ impl ImdsManagedIdentityCredential {
     }
 }
 
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum ManagedIdentityCredentialError {
-    #[error("Error parsing url for MSI endpoint: {0}")]
-    MsiEndpointParseUrlError(url::ParseError),
-    #[error("Refresh token send error: {0}")]
-    SendError(reqwest::Error),
-    #[error("Error deserializing refresh token: {0}")]
-    DeserializeError(reqwest::Error),
-    #[error("The requested identity has not been assigned to this resource.")]
-    IdentityUnavailableError,
-    #[error("The request failed due to a gateway error.")]
-    GatewayError,
-}
-
 #[async_trait::async_trait]
 impl TokenCredential for ImdsManagedIdentityCredential {
-    type Error = ManagedIdentityCredentialError;
-
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
@@ -108,7 +90,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         }
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
-            .map_err(ManagedIdentityCredentialError::MsiEndpointParseUrlError)?;
+            .context(ErrorKind::Credential, "error parsing url for MSI endpoint")?;
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
@@ -121,16 +103,22 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             .headers(headers)
             .send()
             .await
-            .map_err(ManagedIdentityCredentialError::SendError)?;
+            .map_kind(ErrorKind::Credential)?;
 
         match response.status().as_u16() {
-            400 => Err(ManagedIdentityCredentialError::IdentityUnavailableError),
-            502 | 504 => Err(ManagedIdentityCredentialError::GatewayError),
+            400 => Err(Error::new(
+                ErrorKind::Credential,
+                "the requested identity has not been assigned to this resource",
+            )),
+            502 | 504 => Err(Error::new(
+                ErrorKind::Credential,
+                "the request failed due to a gateway error",
+            )),
             _ => {
                 let token_response = response
                     .json::<MsiTokenResponse>()
                     .await
-                    .map_err(ManagedIdentityCredentialError::DeserializeError)?;
+                    .map_kind(ErrorKind::Credential)?;
                 Ok(TokenResponse::new(
                     token_response.access_token,
                     token_response.expires_on,
@@ -140,19 +128,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
     }
 }
 
-#[async_trait::async_trait]
-impl azure_core::auth::TokenCredential for ImdsManagedIdentityCredential {
-    async fn get_token(
-        &self,
-        resource: &str,
-    ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
-        TokenCredential::get_token(self, resource)
-            .await
-            .map_err(|error| azure_core::Error::GetToken(Box::new(error)))
-    }
-}
-
-fn expires_on_string<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+fn expires_on_string<'de, D>(deserializer: D) -> std::result::Result<DateTime<Utc>, D::Error>
 where
     D: Deserializer<'de>,
 {

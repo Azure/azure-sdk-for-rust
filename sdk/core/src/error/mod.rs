@@ -33,6 +33,12 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    pub fn into_error(self) -> Error {
+        Error {
+            context: Context::Simple(self),
+        }
+    }
+
     pub fn http_response(status: u16, error_code: Option<String>) -> Self {
         Self::HttpResponse { status, error_code }
     }
@@ -103,7 +109,7 @@ impl Error {
     }
 
     /// Create an `Error` based on an error kind and some sort of message
-    pub fn with_message<C>(kind: ErrorKind, message: C) -> Self
+    pub fn message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
     {
@@ -111,6 +117,21 @@ impl Error {
             context: Context::Message {
                 kind,
                 message: message.into(),
+            },
+        }
+    }
+
+    /// Creates an `Error` based on an error kind and formatted message
+    pub fn with_message<F, C>(kind: ErrorKind, message: F) -> Self
+    where
+        Self: Sized,
+        F: FnOnce() -> C,
+        C: Into<Cow<'static, str>>,
+    {
+        Self {
+            context: Context::Message {
+                kind,
+                message: message().into(),
             },
         }
     }
@@ -197,23 +218,25 @@ impl From<ErrorKind> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Self {
-            context: Context::Custom(Custom {
-                kind: ErrorKind::Io,
-                error: Box::new(error),
-            }),
-        }
+        Self::new(ErrorKind::Io, error)
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
-        Self {
-            context: Context::Custom(Custom {
-                kind: ErrorKind::DataConversion,
-                error: Box::new(error),
-            }),
-        }
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
+impl From<std::str::Utf8Error> for Error {
+    fn from(error: std::str::Utf8Error) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
+impl From<url::ParseError> for Error {
+    fn from(error: url::ParseError) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
     }
 }
 

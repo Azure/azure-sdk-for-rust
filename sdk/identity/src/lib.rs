@@ -4,7 +4,8 @@
 //! For example, to authenticate using the recommended DefaultAzureCredential, you can do the following:
 //!
 //! ```no_run
-//! use azure_identity::{DefaultAzureCredential, TokenCredential};
+//! use azure_core::auth::TokenCredential;
+//! use azure_identity::{DefaultAzureCredential};
 //! use url::Url;
 //!
 //! use std::env;
@@ -53,4 +54,4 @@ pub mod refresh_token;
 mod token_credentials;
 
 pub use crate::token_credentials::*;
-pub use errors::Error;
+pub use errors::*;
