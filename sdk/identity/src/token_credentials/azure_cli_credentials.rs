@@ -74,20 +74,18 @@ impl AzureCliCredential {
             }
             Ok(az_output) => {
                 let output = String::from_utf8_lossy(&az_output.stderr);
-                Err(Error::with_message(
-                    ErrorKind::Credential,
-                    format!("az account get-access-token command failed: {}", output),
-                ))
+                Err(Error::with_message(ErrorKind::Credential, || {
+                    format!("az account get-access-token command failed: {}", output)
+                }))
             }
             Err(e) => match e.kind() {
-                std::io::ErrorKind::NotFound => Err(Error::with_message(
+                std::io::ErrorKind::NotFound => Err(Error::message(
                     ErrorKind::Credential,
                     "Azure CLI not installed",
                 )),
-                error_kind => Err(Error::with_message(
-                    ErrorKind::Credential,
-                    format!("Unknown error of kind: {error_kind:?}"),
-                )),
+                error_kind => Err(Error::with_message(ErrorKind::Credential, || {
+                    format!("Unknown error of kind: {error_kind:?}")
+                })),
             },
         }
     }

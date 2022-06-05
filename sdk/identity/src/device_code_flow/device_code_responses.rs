@@ -87,29 +87,29 @@ impl TryInto<DeviceCodeResponse> for String {
                                 ))
                             }
                             "authorization_declined" => {
-                                Err(Error::with_message(ErrorKind::Credential,
+                                Err(Error::with_message(ErrorKind::Credential, || {
                                     format!("authorization declined: {device_code_error_response}")
-                                ))
+                                }))
                             }
                             "bad_verification_code" => {
-                                Err(Error::with_message(ErrorKind::Credential,
+                                Err(Error::with_message(ErrorKind::Credential, || {
                                     format!("bad verification code: {device_code_error_response}")
-                                ))
+                                }))
                             }
                             "expired_token" => {
-                                Err(Error::with_message(ErrorKind::Credential,
+                                Err(Error::with_message(ErrorKind::Credential, || {
                                     format!("expired token: {device_code_error_response}")
-                                ))
+                                }))
                             }
-                            _ => Err(Error::with_message(ErrorKind::Credential,
+                            _ => Err(Error::with_message(ErrorKind::Credential, || {
                                 format!("unrecognized device code error response error kind: {device_code_error_response}")
-                            )),
+                            })),
                         }
                     }
                     // If we cannot, we bail out giving the full error as string
-                    Err(_) => Err(Error::with_message(ErrorKind::Credential,
+                    Err(_) => Err(Error::with_message(ErrorKind::Credential, || {
                         format!("the http response body could not be turned into a device code response: {self}")
-                    )),
+                    })),
                 }
             }
         }

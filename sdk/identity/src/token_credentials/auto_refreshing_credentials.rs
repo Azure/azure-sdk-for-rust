@@ -49,7 +49,9 @@ impl TokenCredential for AutoRefreshingTokenCredential {
                     *guard = Some(res);
                 }
                 Some(Err(err)) => {
-                    return Err(Error::with_message(ErrorKind::Credential, err.to_string()));
+                    return Err(Error::with_message(ErrorKind::Credential, || {
+                        err.to_string()
+                    }));
                 }
                 Some(Ok(token)) => {
                     if is_expired(token) {

@@ -106,11 +106,11 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             .map_kind(ErrorKind::Credential)?;
 
         match response.status().as_u16() {
-            400 => Err(Error::with_message(
+            400 => Err(Error::message(
                 ErrorKind::Credential,
                 "the requested identity has not been assigned to this resource",
             )),
-            502 | 504 => Err(Error::with_message(
+            502 | 504 => Err(Error::message(
                 ErrorKind::Credential,
                 "the request failed due to a gateway error",
             )),
