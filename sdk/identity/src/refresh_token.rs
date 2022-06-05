@@ -1,9 +1,9 @@
 //! Refresh token utilities
 
-use crate::errors::ErrorToken;
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
+use std::fmt;
 use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
@@ -39,18 +39,21 @@ pub async fn exchange(
         .await
         .map_kind(ErrorKind::Credential)?;
 
+    let rsp_status = rsp.status();
     let rsp_body = rsp.bytes().await.map_kind(ErrorKind::Credential)?;
 
-    match serde_json::from_slice::<RefreshTokenResponse>(&rsp_body) {
-        Ok(r) => Ok(r),
-        Err(e) => {
-            if let Ok(token_error) = serde_json::from_slice::<ErrorToken>(&rsp_body) {
-                Err(crate::errors::Error::Token(token_error).into())
-            } else {
-                Err(e.into())
-            }
+    if !rsp_status.is_success() {
+        if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {
+            return Err(Error::new(ErrorKind::Credential, token_error));
+        } else {
+            return Err(
+                ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
+            )
+            .map_kind(ErrorKind::Credential);
         }
     }
+
+    serde_json::from_slice::<RefreshTokenResponse>(&rsp_body).map_kind(ErrorKind::Credential)
 }
 
 /// A refresh token
@@ -100,5 +103,31 @@ mod deserialize {
     {
         let string: String = serde::Deserialize::deserialize(scope)?;
         Ok(string.split(' ').map(|s| s.to_owned()).collect())
+    }
+}
+
+/// An error response body when there is an error requesting a token
+#[derive(Debug, Clone, Deserialize)]
+#[allow(unused)]
+pub struct RefreshTokenError {
+    error: String,
+    error_description: String,
+    error_codes: Vec<i64>,
+    timestamp: Option<String>,
+    trace_id: Option<String>,
+    correlation_id: Option<String>,
+    suberror: Option<String>,
+    claims: Option<String>,
+}
+
+impl std::error::Error for RefreshTokenError {}
+
+impl fmt::Display for RefreshTokenError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+        writeln!(f, "error: {}", self.error)?;
+        if let Some(suberror) = &self.suberror {
+            writeln!(f, "suberror: {}", suberror)?;
+        }
+        writeln!(f, "description: {}", self.error_description)
     }
 }
