@@ -31,9 +31,10 @@ pub fn naive_redirect_server(
         let redirect_url = match request_line.split_whitespace().nth(1) {
             Some(redirect_url) => redirect_url,
             None => {
-                return Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("unexpected redirect url: {}", request_line)
-                }))
+                return Err(Error::with_message(
+                    ErrorKind::Credential,
+                    format!("unexpected redirect url: {}", request_line),
+                ))
             }
         };
         let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
@@ -61,13 +62,14 @@ pub fn naive_redirect_server(
         };
 
         if state.secret() != auth_obj.csrf_state.secret() {
-            return Err(Error::with_message(ErrorKind::Credential, || {
+            return Err(Error::with_message(
+                ErrorKind::Credential,
                 format!(
                     "State secret mismatch: expected {}, received: {}",
                     auth_obj.csrf_state.secret(),
                     state.secret()
-                )
-            }));
+                ),
+            ));
         }
 
         let message = "Authentication complete. You can close this window now.";
