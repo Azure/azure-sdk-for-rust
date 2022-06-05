@@ -45,7 +45,7 @@ pub async fn exchange(
         Ok(r) => Ok(r),
         Err(e) => {
             if let Ok(token_error) = serde_json::from_slice::<ErrorToken>(&rsp_body) {
-                Err(crate::Error::Token(token_error).into())
+                Err(crate::errors::Error::Token(token_error).into())
             } else {
                 Err(e.into())
             }

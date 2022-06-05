@@ -4,9 +4,9 @@ use std::fmt;
 
 /// Errors specific to identity services
 #[non_exhaustive]
-#[allow(missing_docs)]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// An error response body when there is an error requesting a token
     #[error("Error requesting token: {0}")]
     Token(ErrorToken),
 }
