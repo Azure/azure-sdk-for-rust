@@ -1,6 +1,6 @@
 use crate::client::API_VERSION_PARAM;
-use crate::Error;
 use crate::KeyClient;
+use azure_core::error::{Error, ErrorKind, ResultExt};
 
 use azure_core::auth::TokenCredential;
 use chrono::serde::{ts_seconds, ts_seconds_option};
@@ -151,13 +151,12 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         uri.set_query(Some(API_VERSION_PARAM));
 
         let response_body = self.get_authed(uri.to_string()).await?;
-        let response =
-            serde_json::from_str::<KeyVaultGetSecretResponse>(&response_body).map_err(|error| {
-                Error::BackupSecretParseError {
-                    error,
-                    secret_name: secret_name.to_string(),
-                    response_body,
-                }
+        let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&response_body)
+            .with_context(ErrorKind::DataConversion, || {
+                format!(
+                    "failed to parse KeyVaultGetSecretResponse. secret_name:{} secret_version_name:{} response_body:{}",
+                    secret_name, secret_version_name, response_body
+                )
             })?;
         Ok(KeyVaultSecret {
             expires_on: response.attributes.exp,
@@ -197,7 +196,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
-            let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
+            let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body)
+                .with_context(ErrorKind::DataConversion, || {
+                    format!(
+                        "failed to parse KeyVaultGetSecretsResponse. resp_body:{}",
+                        resp_body
+                    )
+                })?;
 
             secrets.extend(
                 response
@@ -255,7 +260,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
-            let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
+            let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body)
+                .with_context(ErrorKind::DataConversion, || {
+                    format!(
+                        "failed to parse KeyVaultGetSecretsResponse. resp_body:{}",
+                        resp_body
+                    )
+                })?;
 
             secret_versions.extend(
                 response
@@ -323,7 +334,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         );
 
         self.put_authed(uri.to_string(), Value::Object(request_body).to_string())
-            .await?;
+            .await
+            .with_context(ErrorKind::Other, || {
+                format!("failed to set secret. secret_name:{}", secret_name)
+            })?;
 
         Ok(())
     }
@@ -364,7 +378,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         attributes.insert("enabled".to_owned(), Value::Bool(enabled));
 
         self.update_secret(secret_name, secret_version, attributes)
-            .await?;
+            .await
+            .with_context(ErrorKind::Other, || {
+                format!("failed to update secret, secret_name:{}", secret_name)
+            })?;
 
         Ok(())
     }
@@ -543,10 +560,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
         let response_body = self.post_authed(uri.to_string(), None).await?;
         let backup_blob = serde_json::from_str::<KeyVaultSecretBackupResponseRaw>(&response_body)
-            .map_err(|error| Error::BackupSecretParseError {
-            error,
-            secret_name: secret_name.to_string(),
-            response_body,
+            .with_context(ErrorKind::DataConversion, || {
+            format!(
+                "failed to parse secret backup response. secret_name:{} response:{}",
+                secret_name, response_body
+            )
         })?;
 
         Ok(KeyVaultSecretBackupBlob {

@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display};
 
 use azure_core::auth::TokenCredential;
+use azure_core::error::{Error, ErrorKind};
 use base64::{CharacterSet, Config};
 use chrono::serde::ts_seconds_option;
 use chrono::{DateTime, Utc};
@@ -9,7 +10,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 
 use crate::client::API_VERSION_PARAM;
-use crate::Error;
 use crate::KeyClient;
 
 /// A KeyBundle consisting of a WebKey plus its attributes.
@@ -313,7 +313,10 @@ impl RsaDecryptParameters {
             EncryptionAlgorithm::Rsa15
             | EncryptionAlgorithm::RsaOaep
             | EncryptionAlgorithm::RsaOaep256 => Ok(Self { algorithm }),
-            _ => Err(Error::EncryptionAlgorithmMismatch),
+            _ => Err(Error::with_message(
+                ErrorKind::Other,
+                format!("unexpected encryption algorithm:{}", algorithm),
+            )),
         }
     }
 }
@@ -348,7 +351,10 @@ impl AesGcmDecryptParameters {
                 authentication_tag,
                 additional_authenticated_data,
             }),
-            _ => Err(Error::EncryptionAlgorithmMismatch),
+            _ => Err(Error::with_message(
+                ErrorKind::Other,
+                format!("unexpected encryption algorithm:{}", algorithm),
+            )),
         }
     }
 }
@@ -369,7 +375,10 @@ impl AesCbcDecryptParameters {
             | EncryptionAlgorithm::A128CbcPad
             | EncryptionAlgorithm::A192CbcPad
             | EncryptionAlgorithm::A256CbcPad => Ok(Self { algorithm, iv }),
-            _ => Err(Error::EncryptionAlgorithmMismatch),
+            _ => Err(Error::with_message(
+                ErrorKind::Other,
+                format!("unexpected encryption algorithm:{}", algorithm),
+            )),
         }
     }
 }
