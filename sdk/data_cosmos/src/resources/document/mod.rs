@@ -47,14 +47,12 @@ where
     type Error = azure_core::error::Error;
     fn try_from((_, body): (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
         use azure_core::error::ResultExt;
-        serde_json::from_slice::<Self>(body).with_context(
+        serde_json::from_slice::<Self>(body).context(
             azure_core::error::ErrorKind::DataConversion,
-            || {
-                format!(
-                    "could not convert json '{}' into Permission",
-                    std::str::from_utf8(body).unwrap_or("<NON-UTF8>")
-                )
-            },
+            format!(
+                "could not convert json '{}' into Permission",
+                std::str::from_utf8(body).unwrap_or("<NON-UTF8>")
+            ),
         )
     }
 }

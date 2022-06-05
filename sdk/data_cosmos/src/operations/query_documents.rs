@@ -145,14 +145,12 @@ where
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         use azure_core::error::ResultExt;
-        serde_json::from_slice::<Self>(response.body()).with_context(
+        serde_json::from_slice::<Self>(response.body()).context(
             azure_core::error::ErrorKind::DataConversion,
-            || {
-                format!(
-                    "could not convert json '{}' into Permission",
-                    std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
-                )
-            },
+            format!(
+                "could not convert json '{}' into Permission",
+                std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
+            ),
         )
     }
 }
