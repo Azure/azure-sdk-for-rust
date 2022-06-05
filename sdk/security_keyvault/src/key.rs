@@ -315,7 +315,7 @@ impl RsaDecryptParameters {
             | EncryptionAlgorithm::RsaOaep256 => Ok(Self { algorithm }),
             _ => Err(Error::with_message(
                 ErrorKind::Other,
-                format!("unexpected encryption algorithm: {}", algorithm),
+                format!("unexpected encryption algorithm: {algorithm}"),
             )),
         }
     }
@@ -353,7 +353,7 @@ impl AesGcmDecryptParameters {
             }),
             _ => Err(Error::with_message(
                 ErrorKind::Other,
-                format!("unexpected encryption algorithm: {}", algorithm),
+                format!("unexpected encryption algorithm: {algorithm}"),
             )),
         }
     }
@@ -377,7 +377,7 @@ impl AesCbcDecryptParameters {
             | EncryptionAlgorithm::A256CbcPad => Ok(Self { algorithm, iv }),
             _ => Err(Error::with_message(
                 ErrorKind::Other,
-                format!("unexpected encryption algorithm: {}", algorithm),
+                format!("unexpected encryption algorithm: {algorithm}"),
             )),
         }
     }
