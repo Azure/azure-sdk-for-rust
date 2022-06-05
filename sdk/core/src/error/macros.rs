@@ -4,13 +4,13 @@ macro_rules! format_err {
     ($kind:expr, $msg:literal $(,)?) => {{
         // Handle $:literal as a special case to make cargo-expanded code more
         // concise in the common case.
-        $crate::error::Error::new($kind, $msg)
+        $crate::error::Error::with_message($kind, $msg)
     }};
     ($kind:expr, $msg:expr $(,)?) => {{
-        $crate::error::Error::new($kind, $msg)
+        $crate::error::Error::with_message($kind, $msg)
     }};
     ($kind:expr, $msg:expr, $($arg:tt)*) => {{
-        $crate::error::Error::new($kind, format!($msg, $($arg)*))
+        $crate::error::Error::with_message($kind, format!($msg, $($arg)*))
     }};
 }
 

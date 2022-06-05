@@ -73,7 +73,7 @@ impl TokenCredential for EnvironmentCredential {
             todo!()
         }
 
-        Err(Error::new(
+        Err(Error::with_message(
             ErrorKind::Credential,
             "no valid environment credential providers",
         ))

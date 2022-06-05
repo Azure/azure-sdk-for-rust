@@ -44,7 +44,7 @@ pub fn naive_redirect_server(
         let code = match url.query_pairs().find(|(key, _)| key == "code") {
             Some((_, value)) => AuthorizationCode::new(value.into_owned()),
             None => {
-                return Err(Error::new(
+                return Err(Error::with_message(
                     ErrorKind::Credential,
                     "query pair not found: code",
                 ))
@@ -54,7 +54,7 @@ pub fn naive_redirect_server(
         let state = match url.query_pairs().find(|(key, _)| key == "state") {
             Some((_, value)) => CsrfToken::new(value.into_owned()),
             None => {
-                return Err(Error::new(
+                return Err(Error::with_message(
                     ErrorKind::Credential,
                     "query pair not found: state",
                 ))
