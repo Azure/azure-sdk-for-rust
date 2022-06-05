@@ -104,13 +104,12 @@ impl TokenCredential for ClientSecretCredential {
                 "{}/{}/oauth2/v2.0/token",
                 authority_host, self.tenant_id
             ))
-            .context(
-                ErrorKind::Credential,
+            .with_context(ErrorKind::Credential, || {
                 format!(
                     "failed to construct token endpoint with tenant id {}",
                     self.tenant_id
-                ),
-            )?,
+                )
+            })?,
         );
 
         let auth_url = AuthUrl::from_url(
@@ -118,13 +117,12 @@ impl TokenCredential for ClientSecretCredential {
                 "{}/{}/oauth2/v2.0/authorize",
                 authority_host, self.tenant_id
             ))
-            .context(
-                ErrorKind::Credential,
+            .with_context(ErrorKind::Credential, || {
                 format!(
                     "failed to construct authorize endpoint with tenant id {}",
                     self.tenant_id
-                ),
-            )?,
+                )
+            })?,
         );
 
         let client = BasicClient::new(

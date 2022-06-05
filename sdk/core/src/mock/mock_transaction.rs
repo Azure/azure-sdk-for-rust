@@ -51,10 +51,10 @@ impl MockTransaction {
 
         if !path.exists() {
             if create_when_not_exist {
-                std::fs::create_dir_all(&path).context(
-                    crate::error::ErrorKind::MockFramework,
-                    format!("cannot create transaction folder: {}", path.display()),
-                )?;
+                std::fs::create_dir_all(&path)
+                    .with_context(crate::error::ErrorKind::MockFramework, || {
+                        format!("cannot create transaction folder: {}", path.display())
+                    })?;
             } else {
                 return Err(super::MockFrameworkError::MissingTransaction(format!(
                     "the transaction location '{}' does not exist",

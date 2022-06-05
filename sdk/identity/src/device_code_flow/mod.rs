@@ -40,10 +40,9 @@ where
         "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode",
         tenant_id
     ))
-    .context(
-        ErrorKind::Credential,
-        format!("the supplied tenant id could not be url encoded: {tenant_id}"),
-    )?;
+    .with_context(ErrorKind::Credential, || {
+        format!("the supplied tenant id could not be url encoded: {tenant_id}")
+    })?;
 
     let response = client
         .post(url)
@@ -69,11 +68,9 @@ where
     }
 
     let device_code_response = serde_json::from_slice::<DeviceCodePhaseOneResponse>(&rsp_body)
-        .context(
+    .with_context(
         ErrorKind::Credential,
-        format!(
-            "the http response body could not be turned into a device code response: {rsp_body:?}"
-        ),
+        || format!("the http response body could not be turned into a device code response: {rsp_body:?}")
     )?;
 
     // we need to capture some variables that will be useful in

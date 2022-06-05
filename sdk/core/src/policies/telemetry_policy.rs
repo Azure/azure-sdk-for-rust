@@ -68,12 +68,14 @@ impl Policy for TelemetryPolicy {
         use crate::error::ResultExt;
         request.headers_mut().insert(
             USER_AGENT,
-            HeaderValue::from_str(&self.header).context(
+            HeaderValue::from_str(&self.header).with_context(
                 crate::error::ErrorKind::DataConversion,
-                format!(
-                    "user agent '{}' cannot be serialized as an ascii-only HTTP header",
-                    self.header
-                ),
+                || {
+                    format!(
+                        "user agent '{}' cannot be serialized as an ascii-only HTTP header",
+                        self.header
+                    )
+                },
             )?,
         );
 

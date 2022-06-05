@@ -62,10 +62,9 @@ pub async fn perform(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))
-    .context(
-        ErrorKind::Credential,
-        format!("The supplied tenant id could not be url encoded: {tenant_id}"),
-    )?;
+    .with_context(ErrorKind::Credential, || {
+        format!("The supplied tenant id could not be url encoded: {tenant_id}")
+    })?;
 
     let response = client
         .post(url)
