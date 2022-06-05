@@ -62,7 +62,7 @@ impl DeviceUpdateClient {
         self.token_credential
             .get_token(&self.endpoint)
             .await
-            .map_err(Error::Core)
+            .map_err(|e| Error::Core(e.into()))
     }
 
     pub(crate) async fn get<R>(&self, uri: String) -> Result<R>
