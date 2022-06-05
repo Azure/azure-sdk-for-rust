@@ -59,7 +59,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .token_credential
             .get_token(&self.endpoint)
             .await
-            .with_context(ErrorKind::Credential, || "get token failed")?;
+            .context(ErrorKind::Credential, "get token failed")?;
         self.token = Some(token);
         Ok(())
     }
@@ -74,7 +74,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .await
             .unwrap();
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         Ok(body)
     }
@@ -91,7 +91,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .await
             .unwrap();
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         Ok(body)
     }
@@ -114,11 +114,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         }
 
         let resp = req.send().await.with_context(ErrorKind::Io, || {
-            format!("failed to send request. uri:{}", uri)
+            format!("failed to send request. uri: {}", uri)
         })?;
 
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
@@ -127,7 +127,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 Error::with_message(
                     ErrorKind::DataConversion,
                     format!(
-                        "failed to read message field from error response. body:{}",
+                        "failed to read message field from error response. body: {}",
                         body
                     ),
                 )
@@ -158,7 +158,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .unwrap();
 
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
@@ -167,7 +167,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 Error::with_message(
                     ErrorKind::DataConversion,
                     format!(
-                        "failed to read message field from error response. body:{}",
+                        "failed to read message field from error response. body: {}",
                         body
                     ),
                 )
@@ -192,7 +192,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .await
             .unwrap();
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         Ok(body)
     }
@@ -266,7 +266,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .await
             .unwrap();
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         Ok(body)
     }
@@ -283,7 +283,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .await
             .unwrap();
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         Ok(body)
     }
@@ -306,11 +306,11 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         }
 
         let resp = req.send().await.with_context(ErrorKind::Io, || {
-            format!("failed to send request. uri:{}", uri)
+            format!("failed to send request. uri: {}", uri)
         })?;
 
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
@@ -319,7 +319,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
                 Error::with_message(
                     ErrorKind::DataConversion,
                     format!(
-                        "failed to read message field from error response. uri:{} body:{}",
+                        "failed to read message field from error response. uri: {} body: {}",
                         uri, body
                     ),
                 )
@@ -361,14 +361,14 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
                 Error::with_message(
                     ErrorKind::DataConversion,
                     format!(
-                        "failed to read message field from error response. body:{}",
+                        "failed to read message field from error response. body: {}",
                         body
                     ),
                 )
             })?;
             Err(Error::with_message(
                 ErrorKind::Other,
-                format!("post response error. uri:{} msg:{}", uri, msg),
+                format!("post response error. uri: {} msg: {}", uri, msg),
             ))
         } else {
             Ok(body)
@@ -386,7 +386,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .await
             .unwrap();
         let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri:{}", uri)
+            format!("failed to read response body text. uri: {}", uri)
         })?;
         Ok(body)
     }
@@ -400,7 +400,7 @@ fn extract_endpoint(url: &Url) -> Result<String, Error> {
         .ok_or_else(|| {
             Error::with_message(
                 ErrorKind::DataConversion,
-                format!("failed to parse host from url. url:{}", url),
+                format!("failed to parse host from url. url: {}", url),
             )
         })?
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
@@ -408,7 +408,7 @@ fn extract_endpoint(url: &Url) -> Result<String, Error> {
         .ok_or_else(|| {
             Error::with_message(
                 ErrorKind::DataConversion,
-                format!("failed to extract endpoint from url. url:{}", url),
+                format!("failed to extract endpoint from url. url: {}", url),
             )
         })?;
     Ok(format!("{}://{}", url.scheme(), endpoint))

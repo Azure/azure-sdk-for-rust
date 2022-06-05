@@ -206,7 +206,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         let response_body = self.get_authed(uri.to_string()).await?;
         let response = serde_json::from_str::<KeyVaultGetCertificateResponse>(&response_body)
             .with_context(ErrorKind::DataConversion, || {
-                format!("failed to parse get certificate response. uri:{} certificate_name:{} response_body:{}", uri, name, response_body)
+                format!("failed to parse get certificate response. uri: {} certificate_name: {} response_body: {}", uri, name, response_body)
             })?;
         Ok(KeyVaultCertificate {
             key_id: response.kid,
@@ -469,14 +469,14 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         let backup_blob =
             serde_json::from_str::<KeyVaultCertificateBackupResponseRaw>(&response_body)
                 .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse certificate backup response. uri:{}", uri)
+                    format!("failed to parse certificate backup response. uri: {}", uri)
                 })?;
 
         Ok(CertificateBackupResult {
-            backup: base64::decode(backup_blob.value)
-                .with_context(ErrorKind::DataConversion, || {
-                    "failed base64 decode of backup blob"
-                })?,
+            backup: base64::decode(backup_blob.value).context(
+                ErrorKind::DataConversion,
+                "failed base64 decode of backup blob",
+            )?,
         })
     }
 

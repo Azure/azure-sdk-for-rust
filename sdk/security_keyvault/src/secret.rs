@@ -154,7 +154,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&response_body)
             .with_context(ErrorKind::DataConversion, || {
                 format!(
-                    "failed to parse KeyVaultGetSecretResponse. secret_name:{} secret_version_name:{} response_body:{}",
+                    "failed to parse KeyVaultGetSecretResponse. secret_name: {} secret_version_name: {} response_body: {}",
                     secret_name, secret_version_name, response_body
                 )
             })?;
@@ -199,7 +199,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body)
                 .with_context(ErrorKind::DataConversion, || {
                     format!(
-                        "failed to parse KeyVaultGetSecretsResponse. resp_body:{}",
+                        "failed to parse KeyVaultGetSecretsResponse. resp_body: {}",
                         resp_body
                     )
                 })?;
@@ -263,7 +263,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body)
                 .with_context(ErrorKind::DataConversion, || {
                     format!(
-                        "failed to parse KeyVaultGetSecretsResponse. resp_body:{}",
+                        "failed to parse KeyVaultGetSecretsResponse. resp_body: {}",
                         resp_body
                     )
                 })?;
@@ -336,7 +336,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         self.put_authed(uri.to_string(), Value::Object(request_body).to_string())
             .await
             .with_context(ErrorKind::Other, || {
-                format!("failed to set secret. secret_name:{}", secret_name)
+                format!("failed to set secret. secret_name: {}", secret_name)
             })?;
 
         Ok(())
@@ -380,7 +380,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         self.update_secret(secret_name, secret_version, attributes)
             .await
             .with_context(ErrorKind::Other, || {
-                format!("failed to update secret, secret_name:{}", secret_name)
+                format!("failed to update secret, secret_name: {}", secret_name)
             })?;
 
         Ok(())
@@ -562,7 +562,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let backup_blob = serde_json::from_str::<KeyVaultSecretBackupResponseRaw>(&response_body)
             .with_context(ErrorKind::DataConversion, || {
             format!(
-                "failed to parse secret backup response. secret_name:{} response:{}",
+                "failed to parse secret backup response. secret_name: {} response: {}",
                 secret_name, response_body
             )
         })?;
