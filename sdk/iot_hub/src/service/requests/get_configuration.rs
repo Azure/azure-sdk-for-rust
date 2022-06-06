@@ -5,23 +5,22 @@ use http::{Method, Response, StatusCode};
 
 use crate::service::{ServiceClient, API_VERSION};
 
-/// Execute the request to get the identity of a device or module.
-pub(crate) async fn get_identity<T>(
+/// Execute the request to get the configuration of a given identifier.
+pub(crate) async fn get_configuration<T>(
     service_client: &ServiceClient,
-    device_id: String,
-    module_id: Option<String>,
+    configuration_id: Option<String>,
 ) -> crate::Result<T>
 where
     T: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
-    let uri = match module_id {
-        Some(module_id) => format!(
-            "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
-            service_client.iot_hub_name, device_id, module_id, API_VERSION
+    let uri = match configuration_id {
+        Some(val) => format!(
+            "https://{}.azure-devices.net/configurations/{}?api-version={}",
+            service_client.iot_hub_name, val, API_VERSION
         ),
         None => format!(
-            "https://{}.azure-devices.net/devices/{}?api-version={}",
-            service_client.iot_hub_name, device_id, API_VERSION
+            "https://{}.azure-devices.net/configurations?api-version={}",
+            service_client.iot_hub_name, API_VERSION
         ),
     };
 
