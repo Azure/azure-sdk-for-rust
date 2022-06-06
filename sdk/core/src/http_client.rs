@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
+use crate::error::{ErrorKind, ResultExt};
+#[allow(unused_imports)]
 use crate::Body;
-use crate::HttpError;
+use crate::{error::Error, HttpError};
 use async_trait::async_trait;
 use bytes::Bytes;
 #[allow(unused_imports)]
@@ -10,6 +12,7 @@ use serde::Serialize;
 
 /// Construct a new `HttpClient` with the `reqwest` backend.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
     std::sync::Arc::new(reqwest::Client::new())
 }
@@ -31,10 +34,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// responsibility of another policy (not the transport one). It does not consume the request.
     /// Implementors are expected to clone the necessary parts of the request and pass them to the
     /// underlying transport.
-    async fn execute_request2(
-        &self,
-        request: &crate::Request,
-    ) -> Result<crate::Response, HttpError>;
+    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response, Error>;
 
     /// Send out a request and validate it was in the `2xx` range, using
     /// `hyperium/http`'s types.
@@ -59,8 +59,8 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait]
 impl HttpClient for reqwest::Client {
     async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
         let url = url::Url::parse(&request.uri().to_string())?;
@@ -97,11 +97,7 @@ impl HttpClient for reqwest::Client {
         Ok(response)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    async fn execute_request2(
-        &self,
-        request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
+    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response, Error> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method(), url);
         for (name, value) in request.headers().iter() {
@@ -115,21 +111,21 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_err(|error| HttpError::BuildClientRequest(error.into()))?,
+                .context(ErrorKind::Other, "failed to build request")?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_err(|error| HttpError::BuildClientRequest(error.into()))?
+                    .context(ErrorKind::Other, "failed to build request")?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(|error| HttpError::ExecuteRequest(error.into()))?;
+            .context(ErrorKind::Io, "failed to execute request")?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
@@ -138,26 +134,12 @@ impl HttpClient for reqwest::Client {
 
         let response =
             response.with_pinned_stream(Box::pin(reqwest_response.bytes_stream().map_err(|e| {
-                crate::error::Error::full(
-                    crate::error::ErrorKind::Io,
+                Error::full(
+                    ErrorKind::Io,
                     e,
                     "error converting `reqwest` request into a byte stream",
                 )
             })));
-
-        Ok(response)
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    /// Stub implementation. Will remove as soon as reqwest starts
-    /// supporting wasm.
-    async fn execute_request2(
-        &self,
-        _request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
-        let response = crate::ResponseBuilder::new(http::StatusCode::OK);
-
-        let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));
 
         Ok(response)
     }

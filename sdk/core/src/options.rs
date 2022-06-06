@@ -17,7 +17,10 @@ use std::time::Duration;
 /// ```
 #[derive(Clone, Debug)]
 #[cfg_attr(
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"),
+    all(
+        any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"),
+        not(target_arch = "wasm32")
+    ),
     derive(Default)
 )]
 pub struct ClientOptions {
@@ -205,6 +208,7 @@ impl TransportOptions {
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+#[cfg(not(target_arch = "wasm32"))]
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
