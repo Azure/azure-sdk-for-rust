@@ -62,7 +62,7 @@ pub async fn perform(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))
-    .with_context(ErrorKind::Credential, || {
+    .with_context(ErrorKind::DataConversion, || {
         format!("The supplied tenant id could not be url encoded: {tenant_id}")
     })?;
 
@@ -72,16 +72,15 @@ pub async fn perform(
         .body(encoded)
         .send()
         .await
-        .map_kind(ErrorKind::Credential)?;
+        .map_kind(ErrorKind::Io)?;
 
     let rsp_status = response.status();
-    let rsp_body = response.bytes().await.map_kind(ErrorKind::Credential)?;
+    let rsp_body = response.bytes().await.map_kind(ErrorKind::Io)?;
     if !rsp_status.is_success() {
         return Err(
             ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
-        )
-        .map_kind(ErrorKind::Credential);
+        );
     }
 
-    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::Credential)
+    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)
 }

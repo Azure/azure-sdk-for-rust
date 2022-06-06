@@ -51,25 +51,24 @@ where
         .send()
         .await
         .context(
-            ErrorKind::Credential,
+            ErrorKind::Io,
             "an error occurred when trying to make a request",
         )?;
 
     let rsp_status = response.status();
     let rsp_body = response.bytes().await.context(
-        ErrorKind::Credential,
+        ErrorKind::Io,
         "an error occurred when trying to make a request",
     )?;
     if !rsp_status.is_success() {
         return Err(
             ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
-        )
-        .map_kind(ErrorKind::Credential);
+        );
     }
 
     let device_code_response = serde_json::from_slice::<DeviceCodePhaseOneResponse>(&rsp_body)
     .with_context(
-        ErrorKind::Credential,
+        ErrorKind::DataConversion,
         || format!("the http response body could not be turned into a device code response: {rsp_body:?}")
     )?;
 

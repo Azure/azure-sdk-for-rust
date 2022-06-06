@@ -66,10 +66,10 @@ impl AzureCliCredential {
 
         match Command::new(program).args(args).output() {
             Ok(az_output) if az_output.status.success() => {
-                let output = str::from_utf8(&az_output.stdout).map_kind(ErrorKind::Credential)?;
+                let output = str::from_utf8(&az_output.stdout)?;
 
                 let token_response = serde_json::from_str::<CliTokenResponse>(output)
-                    .map_kind(ErrorKind::Credential)?;
+                    .map_kind(ErrorKind::DataConversion)?;
                 Ok(token_response)
             }
             Ok(az_output) => {
