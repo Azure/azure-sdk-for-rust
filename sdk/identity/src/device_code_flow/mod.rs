@@ -152,7 +152,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                         .send()
                         .await
                         .context(
-                            ErrorKind::Credential,
+                            ErrorKind::Io,
                             "an error occurred when trying to make a request",
                         ) {
                         Ok(result) => result,
@@ -160,7 +160,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     };
 
                     let result = match result.text().await.context(
-                        ErrorKind::Credential,
+                        ErrorKind::Io,
                         "an error occurred when trying to make a request",
                     ) {
                         Ok(result) => result,

@@ -79,11 +79,10 @@ impl AzureCliCredential {
                 }))
             }
             Err(e) => match e.kind() {
-                std::io::ErrorKind::NotFound => Err(Error::message(
-                    ErrorKind::Credential,
-                    "Azure CLI not installed",
-                )),
-                error_kind => Err(Error::with_message(ErrorKind::Credential, || {
+                std::io::ErrorKind::NotFound => {
+                    Err(Error::message(ErrorKind::Other, "Azure CLI not installed"))
+                }
+                error_kind => Err(Error::with_message(ErrorKind::Other, || {
                     format!("Unknown error of kind: {error_kind:?}")
                 })),
             },

@@ -89,8 +89,10 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             _ => (),
         }
 
-        let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
-            .context(ErrorKind::Credential, "error parsing url for MSI endpoint")?;
+        let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items).context(
+            ErrorKind::DataConversion,
+            "error parsing url for MSI endpoint",
+        )?;
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
@@ -103,7 +105,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             .headers(headers)
             .send()
             .await
-            .map_kind(ErrorKind::Credential)?;
+            .map_kind(ErrorKind::Io)?;
 
         match response.status().as_u16() {
             400 => Err(Error::message(
@@ -115,10 +117,9 @@ impl TokenCredential for ImdsManagedIdentityCredential {
                 "the request failed due to a gateway error",
             )),
             _ => {
-                let token_response = response
-                    .json::<MsiTokenResponse>()
-                    .await
-                    .map_kind(ErrorKind::Credential)?;
+                let rsp_body = response.bytes().await.map_kind(ErrorKind::Io)?;
+                let token_response: MsiTokenResponse =
+                    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)?;
                 Ok(TokenResponse::new(
                     token_response.access_token,
                     token_response.expires_on,

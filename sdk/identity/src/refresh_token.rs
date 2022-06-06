@@ -37,10 +37,10 @@ pub async fn exchange(
         .body(encoded)
         .send()
         .await
-        .map_kind(ErrorKind::Credential)?;
+        .map_kind(ErrorKind::Io)?;
 
     let rsp_status = rsp.status();
-    let rsp_body = rsp.bytes().await.map_kind(ErrorKind::Credential)?;
+    let rsp_body = rsp.bytes().await.map_kind(ErrorKind::Io)?;
 
     if !rsp_status.is_success() {
         if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {
