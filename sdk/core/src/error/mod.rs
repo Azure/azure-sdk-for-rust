@@ -33,6 +33,12 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    pub fn into_error(self) -> Error {
+        Error {
+            context: Context::Simple(self),
+        }
+    }
+
     pub fn http_response(status: u16, error_code: Option<String>) -> Self {
         Self::HttpResponse { status, error_code }
     }
@@ -103,7 +109,7 @@ impl Error {
     }
 
     /// Create an `Error` based on an error kind and some sort of message
-    pub fn with_message<C>(kind: ErrorKind, message: C) -> Self
+    pub fn message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
     {
@@ -111,6 +117,21 @@ impl Error {
             context: Context::Message {
                 kind,
                 message: message.into(),
+            },
+        }
+    }
+
+    /// Creates an `Error` based on an error kind and formatted message
+    pub fn with_message<F, C>(kind: ErrorKind, message: F) -> Self
+    where
+        Self: Sized,
+        F: FnOnce() -> C,
+        C: Into<Cow<'static, str>>,
+    {
+        Self {
+            context: Context::Message {
+                kind,
+                message: message().into(),
             },
         }
     }

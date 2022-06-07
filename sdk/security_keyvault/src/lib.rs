@@ -88,7 +88,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl TokenCredential for MockCredential {
-        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, azure_core::Error> {
+        async fn get_token(
+            &self,
+            _resource: &str,
+        ) -> Result<TokenResponse, azure_core::error::Error> {
             Ok(TokenResponse::new(
                 AccessToken::new("TOKEN".to_owned()),
                 Utc::now() + Duration::days(14),

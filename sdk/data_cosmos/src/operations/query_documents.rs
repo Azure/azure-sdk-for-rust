@@ -393,7 +393,7 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
                     QueryResult::Document(document) => Ok(document),
                     QueryResult::Raw(_) => {
                         // Bail if there is a raw document
-                        Err(azure_core::error::Error::with_message(
+                        Err(azure_core::error::Error::message(
                             azure_core::error::ErrorKind::DataConversion,
                             "error when converting from a QueryDocumentsResponse to structured documents - expected no raw documents but a raw document was found."
                         ))

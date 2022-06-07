@@ -5,6 +5,7 @@
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
 
+use azure_core::error::{ErrorKind, Result, ResultExt};
 pub use device_code_responses::*;
 
 use async_timer::timer::new_timer;
@@ -24,7 +25,7 @@ pub async fn start<'a, 'b, T>(
     tenant_id: T,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
-) -> Result<DeviceCodePhaseOneResponse<'a>, DeviceCodeError>
+) -> Result<DeviceCodePhaseOneResponse<'a>>
 where
     T: Into<Cow<'a, str>>,
 {
@@ -39,7 +40,9 @@ where
         "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode",
         tenant_id
     ))
-    .map_err(|_| DeviceCodeError::InvalidTenantId(tenant_id.clone().into_owned()))?;
+    .with_context(ErrorKind::Credential, || {
+        format!("the supplied tenant id could not be url encoded: {tenant_id}")
+    })?;
 
     let response = client
         .post(url)
@@ -47,36 +50,41 @@ where
         .body(encoded)
         .send()
         .await
-        .map_err(|e| DeviceCodeError::Request(Box::new(e)))?;
+        .context(
+            ErrorKind::Io,
+            "an error occurred when trying to make a request",
+        )?;
 
-    if !response.status().is_success() {
-        return Err(DeviceCodeError::UnsuccessfulResponse(
-            response.status().as_u16(),
-            response.text().await.ok(),
-        ));
+    let rsp_status = response.status();
+    let rsp_body = response.bytes().await.context(
+        ErrorKind::Io,
+        "an error occurred when trying to make a request",
+    )?;
+    if !rsp_status.is_success() {
+        return Err(
+            ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
+        );
     }
-    let s = response
-        .text()
-        .await
-        .map_err(|e| DeviceCodeError::Request(Box::new(e)))?;
 
-    serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
-        // we need to capture some variables that will be useful in
-        // the second phase (the client, the tenant_id and the client_id)
-        .map(|device_code_response| {
-            Ok(DeviceCodePhaseOneResponse {
-                device_code: device_code_response.device_code,
-                user_code: device_code_response.user_code,
-                verification_uri: device_code_response.verification_uri,
-                expires_in: device_code_response.expires_in,
-                interval: device_code_response.interval,
-                message: device_code_response.message,
-                client: Some(client),
-                tenant_id,
-                client_id: client_id.as_str().to_string(),
-            })
-        })
-        .map_err(|_| DeviceCodeError::InvalidResponseBody(s))?
+    let device_code_response = serde_json::from_slice::<DeviceCodePhaseOneResponse>(&rsp_body)
+    .with_context(
+        ErrorKind::DataConversion,
+        || format!("the http response body could not be turned into a device code response: {rsp_body:?}")
+    )?;
+
+    // we need to capture some variables that will be useful in
+    // the second phase (the client, the tenant_id and the client_id)
+    Ok(DeviceCodePhaseOneResponse {
+        device_code: device_code_response.device_code,
+        user_code: device_code_response.user_code,
+        verification_uri: device_code_response.verification_uri,
+        expires_in: device_code_response.expires_in,
+        interval: device_code_response.interval,
+        message: device_code_response.message,
+        client: Some(client),
+        tenant_id,
+        client_id: client_id.as_str().to_string(),
+    })
 }
 
 /// Contains the required information to allow a user to sign in.
@@ -108,9 +116,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
     /// Polls the token endpoint while the user signs in.
     /// This will continue until either success or error is returned.
-    pub fn stream(
-        &self,
-    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + '_ {
+    pub fn stream(&self) -> impl futures::Stream<Item = Result<DeviceCodeResponse>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum NextState {
             Continue,
@@ -145,17 +151,18 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                         .body(encoded)
                         .send()
                         .await
-                        .map_err(|e| DeviceCodeError::Request(Box::new(e)))
-                    {
+                        .context(
+                            ErrorKind::Io,
+                            "an error occurred when trying to make a request",
+                        ) {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
                     };
 
-                    let result = match result
-                        .text()
-                        .await
-                        .map_err(|e| DeviceCodeError::Request(Box::new(e)))
-                    {
+                    let result = match result.text().await.context(
+                        ErrorKind::Io,
+                        "an error occurred when trying to make a request",
+                    ) {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
                     };

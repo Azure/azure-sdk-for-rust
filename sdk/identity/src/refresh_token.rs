@@ -1,28 +1,10 @@
 //! Refresh token utilities
 
-use crate::errors::ErrorToken;
-use log::debug;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
-use std::convert::TryInto;
+use std::fmt;
 use url::form_urlencoded;
-
-#[non_exhaustive]
-#[allow(missing_docs)]
-#[derive(Debug, thiserror::Error)]
-/// An unrecognized error response from an identity service.
-pub enum Error {
-    #[error("Refresh token send error")]
-    Send(#[source] reqwest::Error),
-    #[error("Error getting text for refresh token")]
-    Text(#[source] reqwest::Error),
-    #[error("Error deserializing refresh token")]
-    Deserialize(#[source] serde_json::Error),
-    #[error("Error parsing url for refresh token")]
-    ParseUrl(#[source] url::ParseError),
-    #[error("Error requesting token: {0}")]
-    Token(ErrorToken),
-}
 
 /// Exchange a refresh token for a new access token and refresh token
 pub async fn exchange(
@@ -31,7 +13,7 @@ pub async fn exchange(
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
-) -> Result<RefreshTokenResponse, Error> {
+) -> Result<RefreshTokenResponse> {
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("grant_type", "refresh_token");
     let encoded = encoded.append_pair("client_id", client_id.as_str());
@@ -44,37 +26,34 @@ pub async fn exchange(
     let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
     let encoded = encoded.finish();
 
-    debug!("encoded ==> {}", encoded);
-
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
-    ))
-    .map_err(Error::ParseUrl)?;
+    ))?;
 
-    let ret = client
+    let rsp = client
         .post(url)
         .header("ContentType", "application/x-www-form-urlencoded")
         .body(encoded)
         .send()
         .await
-        .map_err(Error::Send)?
-        .text()
-        .await
-        .map_err(Error::Text)?;
+        .map_kind(ErrorKind::Io)?;
 
-    debug!("refresh token response: {:?}", ret);
+    let rsp_status = rsp.status();
+    let rsp_body = rsp.bytes().await.map_kind(ErrorKind::Io)?;
 
-    match serde_json::from_str::<RefreshTokenResponse>(&ret).map_err(Error::Deserialize) {
-        Ok(r) => Ok(r),
-        Err(e) => {
-            if let Ok(token_error) = serde_json::from_str::<ErrorToken>(&ret) {
-                Err(Error::Token(token_error))
-            } else {
-                Err(e)
-            }
+    if !rsp_status.is_success() {
+        if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {
+            return Err(Error::new(ErrorKind::Credential, token_error));
+        } else {
+            return Err(
+                ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
+            )
+            .map_kind(ErrorKind::Credential);
         }
     }
+
+    serde_json::from_slice::<RefreshTokenResponse>(&rsp_body).map_kind(ErrorKind::Credential)
 }
 
 /// A refresh token
@@ -127,10 +106,28 @@ mod deserialize {
     }
 }
 
-impl TryInto<RefreshTokenResponse> for String {
-    type Error = serde_json::Error;
+/// An error response body when there is an error requesting a token
+#[derive(Debug, Clone, Deserialize)]
+#[allow(unused)]
+pub struct RefreshTokenError {
+    error: String,
+    error_description: String,
+    error_codes: Vec<i64>,
+    timestamp: Option<String>,
+    trace_id: Option<String>,
+    correlation_id: Option<String>,
+    suberror: Option<String>,
+    claims: Option<String>,
+}
 
-    fn try_into(self) -> Result<RefreshTokenResponse, Self::Error> {
-        serde_json::from_str::<RefreshTokenResponse>(&self)
+impl std::error::Error for RefreshTokenError {}
+
+impl fmt::Display for RefreshTokenError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+        writeln!(f, "error: {}", self.error)?;
+        if let Some(suberror) = &self.suberror {
+            writeln!(f, "suberror: {}", suberror)?;
+        }
+        writeln!(f, "description: {}", self.error_description)
     }
 }

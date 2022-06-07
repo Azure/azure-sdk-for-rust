@@ -1,8 +1,6 @@
 use async_lock::RwLock;
-use azure_core::{
-    auth::{TokenCredential, TokenResponse},
-    Error,
-};
+use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::error::{Error, ErrorKind, Result};
 use chrono::{Duration, Utc};
 use std::sync::Arc;
 
@@ -14,7 +12,7 @@ fn is_expired(token: &TokenResponse) -> bool {
 /// Wraps a TokenCredential and handles token refresh on token expiry
 pub struct AutoRefreshingTokenCredential {
     credential: Arc<dyn TokenCredential>,
-    current_token: Arc<RwLock<Option<std::result::Result<TokenResponse, Error>>>>,
+    current_token: Arc<RwLock<Option<Result<TokenResponse>>>>,
 }
 
 impl std::fmt::Debug for AutoRefreshingTokenCredential {
@@ -37,7 +35,7 @@ impl AutoRefreshingTokenCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for AutoRefreshingTokenCredential {
-    async fn get_token(&self, resource: &str) -> std::result::Result<TokenResponse, Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
         if let Some(Ok(token)) = self.current_token.read().await.as_ref() {
             if !is_expired(token) {
                 return Ok(token.clone());
@@ -51,7 +49,9 @@ impl TokenCredential for AutoRefreshingTokenCredential {
                     *guard = Some(res);
                 }
                 Some(Err(err)) => {
-                    return Err(Error::AuthorizationPolicy(err.to_string()));
+                    return Err(Error::with_message(ErrorKind::Credential, || {
+                        err.to_string()
+                    }));
                 }
                 Some(Ok(token)) => {
                     if is_expired(token) {

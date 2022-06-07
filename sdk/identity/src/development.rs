@@ -2,12 +2,12 @@
 //!
 //! These utilities should not be used in production
 use crate::authorization_code_flow::AuthorizationCodeFlow;
+use azure_core::error::{Error, ErrorKind, Result};
 use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
-use url::Url;
-
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
+use url::Url;
 
 /// A very naive implementation of a redirect server.
 ///
@@ -18,7 +18,7 @@ use std::net::TcpListener;
 pub fn naive_redirect_server(
     auth_obj: &AuthorizationCodeFlow,
     port: u32,
-) -> Result<AuthorizationCode, ServerReceiveError> {
+) -> Result<AuthorizationCode> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
 
     // The server will terminate itself after collecting the first code.
@@ -30,7 +30,11 @@ pub fn naive_redirect_server(
 
         let redirect_url = match request_line.split_whitespace().nth(1) {
             Some(redirect_url) => redirect_url,
-            None => return Err(ServerReceiveError::UnexpectedRedirectUrl { url: request_line }),
+            None => {
+                return Err(Error::with_message(ErrorKind::Credential, || {
+                    format!("unexpected redirect url: {}", request_line)
+                }))
+            }
         };
         let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
 
@@ -39,26 +43,31 @@ pub fn naive_redirect_server(
         let code = match url.query_pairs().find(|(key, _)| key == "code") {
             Some((_, value)) => AuthorizationCode::new(value.into_owned()),
             None => {
-                return Err(ServerReceiveError::QueryPairNotFound {
-                    query_pair: "code".to_owned(),
-                })
+                return Err(Error::message(
+                    ErrorKind::Credential,
+                    "query pair not found: code",
+                ))
             }
         };
 
         let state = match url.query_pairs().find(|(key, _)| key == "state") {
             Some((_, value)) => CsrfToken::new(value.into_owned()),
             None => {
-                return Err(ServerReceiveError::QueryPairNotFound {
-                    query_pair: "state".to_owned(),
-                })
+                return Err(Error::message(
+                    ErrorKind::Credential,
+                    "query pair not found: state",
+                ))
             }
         };
 
         if state.secret() != auth_obj.csrf_state.secret() {
-            return Err(ServerReceiveError::StateSecretMismatch {
-                expected_state_secret: auth_obj.csrf_state.secret().to_owned(),
-                received_state_secret: state.secret().to_owned(),
-            });
+            return Err(Error::with_message(ErrorKind::Credential, || {
+                format!(
+                    "State secret mismatch: expected {}, received: {}",
+                    auth_obj.csrf_state.secret(),
+                    state.secret()
+                )
+            }));
         }
 
         let message = "Authentication complete. You can close this window now.";
@@ -73,23 +82,4 @@ pub fn naive_redirect_server(
     }
 
     unreachable!()
-}
-
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum ServerReceiveError {
-    #[error("unexpected redirect url: {}", url)]
-    UnexpectedRedirectUrl { url: String },
-    #[error("query pair not found: {}", query_pair)]
-    QueryPairNotFound { query_pair: String },
-    #[error(
-        "State secret mismatch: expected {}, recieved: {}",
-        expected_state_secret,
-        received_state_secret
-    )]
-    StateSecretMismatch {
-        expected_state_secret: String,
-        received_state_secret: String,
-    },
 }

@@ -35,10 +35,11 @@
 //! }
 //! ```
 //!
-//! You can learn more about this athorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
+//! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
 
 mod login_response;
 
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use login_response::LoginResponse;
 use url::form_urlencoded;
 
@@ -49,7 +50,7 @@ pub async fn perform(
     client_secret: &oauth2::ClientSecret,
     scopes: &[&str],
     tenant_id: &str,
-) -> Result<LoginResponse, ClientCredentialError> {
+) -> Result<LoginResponse> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id.as_str())
         .append_pair("scope", &scopes.join(" "))
@@ -61,7 +62,9 @@ pub async fn perform(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))
-    .map_err(|_| ClientCredentialError::InvalidTenantId(tenant_id.to_owned()))?;
+    .with_context(ErrorKind::DataConversion, || {
+        format!("The supplied tenant id could not be url encoded: {tenant_id}")
+    })?;
 
     let response = client
         .post(url)
@@ -69,37 +72,15 @@ pub async fn perform(
         .body(encoded)
         .send()
         .await
-        .map_err(|e| ClientCredentialError::Request(Box::new(e)))?;
+        .map_kind(ErrorKind::Io)?;
 
-    if !response.status().is_success() {
-        return Err(ClientCredentialError::UnsuccessfulResponse(
-            response.status().as_u16(),
-            response.text().await.ok(),
-        ));
+    let rsp_status = response.status();
+    let rsp_body = response.bytes().await.map_kind(ErrorKind::Io)?;
+    if !rsp_status.is_success() {
+        return Err(
+            ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
+        );
     }
 
-    let b = response
-        .text()
-        .await
-        .map_err(|e| ClientCredentialError::Request(Box::new(e)))?;
-
-    serde_json::from_str::<LoginResponse>(&b)
-        .map_err(|_| ClientCredentialError::InvalidResponseBody(b))
-}
-
-/// Errors when performing the client credential flow
-#[derive(thiserror::Error, Debug)]
-pub enum ClientCredentialError {
-    /// The http response was unsuccessful
-    #[error("The http response was unsuccessful with status {0}: {}", .1.as_deref().unwrap_or("<NO UTF-8 BODY>"))]
-    UnsuccessfulResponse(u16, Option<String>),
-    /// The http response body was could not be turned into a client credential response
-    #[error("The http response body could not be turned into a client credential response: {0}")]
-    InvalidResponseBody(String),
-    /// The tenant id could not be url encoded
-    #[error("The supplied tenant id could not be url encoded: {0}")]
-    InvalidTenantId(String),
-    /// An error occurred when trying to make a request
-    #[error("An error occurred when trying to make a request")]
-    Request(#[source] Box<dyn std::error::Error + Send + Sync>),
+    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)
 }

@@ -1,3 +1,4 @@
+use azure_core::auth::TokenCredential;
 use azure_identity::*;
 use std::error::Error;
 use url::Url;

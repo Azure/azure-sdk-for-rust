@@ -4,7 +4,8 @@
 //! For example, to authenticate using the recommended DefaultAzureCredential, you can do the following:
 //!
 //! ```no_run
-//! use azure_identity::{DefaultAzureCredential, TokenCredential};
+//! use azure_core::auth::TokenCredential;
+//! use azure_identity::{DefaultAzureCredential};
 //! use url::Url;
 //!
 //! use std::env;
@@ -41,9 +42,6 @@
 //!
 //! This crate also includes utilities for handling refresh tokens and accessing token credentials from many different sources.
 
-#![deny(missing_docs)]
-mod errors;
-
 pub mod authorization_code_flow;
 pub mod client_credentials_flow;
 #[cfg(feature = "development")]
@@ -53,4 +51,3 @@ pub mod refresh_token;
 mod token_credentials;
 
 pub use crate::token_credentials::*;
-pub use errors::Error;

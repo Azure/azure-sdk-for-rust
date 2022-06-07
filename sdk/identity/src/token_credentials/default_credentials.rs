@@ -1,7 +1,6 @@
-use super::{
-    AzureCliCredential, EnvironmentCredential, ImdsManagedIdentityCredential, TokenCredential,
-};
-use azure_core::auth::TokenResponse;
+use super::{AzureCliCredential, EnvironmentCredential, ImdsManagedIdentityCredential};
+use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 
 #[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
@@ -68,23 +67,6 @@ impl DefaultAzureCredentialBuilder {
     }
 }
 
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum DefaultAzureCredentialError {
-    #[error("Error getting token credential from Azure CLI")]
-    AzureCliCredential(#[source] super::AzureCliCredentialError),
-    #[error("Error getting environment credential")]
-    EnvironmentCredential(#[source] super::EnvironmentCredentialError),
-    #[error("Error getting managed identity credential")]
-    ManagedIdentityCredential(#[source] super::ManagedIdentityCredentialError),
-    #[error(
-        "Multiple errors were encountered while attempting to authenticate:\n{}",
-        format_aggregate_error(.0)
-    )]
-    CredentialUnavailable(Vec<DefaultAzureCredentialError>),
-}
-
 /// Types of TokenCredential supported by DefaultAzureCredential
 pub enum DefaultAzureCredentialEnum {
     /// `TokenCredential` from environment variable.
@@ -97,22 +79,26 @@ pub enum DefaultAzureCredentialEnum {
 
 #[async_trait::async_trait]
 impl TokenCredential for DefaultAzureCredentialEnum {
-    type Error = DefaultAzureCredentialError;
-
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
         match self {
-            DefaultAzureCredentialEnum::Environment(credential) => credential
-                .get_token(resource)
-                .await
-                .map_err(DefaultAzureCredentialError::EnvironmentCredential),
-            DefaultAzureCredentialEnum::ManagedIdentity(credential) => credential
-                .get_token(resource)
-                .await
-                .map_err(DefaultAzureCredentialError::ManagedIdentityCredential),
-            DefaultAzureCredentialEnum::AzureCli(credential) => credential
-                .get_token(resource)
-                .await
-                .map_err(DefaultAzureCredentialError::AzureCliCredential),
+            DefaultAzureCredentialEnum::Environment(credential) => {
+                credential.get_token(resource).await.context(
+                    ErrorKind::Credential,
+                    "error getting environment credential",
+                )
+            }
+            DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
+                credential.get_token(resource).await.context(
+                    ErrorKind::Credential,
+                    "error getting managed identity credential",
+                )
+            }
+            DefaultAzureCredentialEnum::AzureCli(credential) => {
+                credential.get_token(resource).await.context(
+                    ErrorKind::Credential,
+                    "error getting token credential from Azure CLI",
+                )
+            }
         }
     }
 }
@@ -153,9 +139,8 @@ impl Default for DefaultAzureCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for DefaultAzureCredential {
-    type Error = DefaultAzureCredentialError;
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
         let mut errors = Vec::new();
         for source in &self.sources {
             let token_res = source.get_token(resource).await;
@@ -165,23 +150,16 @@ impl TokenCredential for DefaultAzureCredential {
                 Err(error) => errors.push(error),
             }
         }
-        Err(DefaultAzureCredentialError::CredentialUnavailable(errors))
+        Err(Error::with_message(ErrorKind::Credential, || {
+            format!(
+                "Multiple errors were encountered while attempting to authenticate:\n{}",
+                format_aggregate_error(&errors)
+            )
+        }))
     }
 }
 
-#[async_trait::async_trait]
-impl azure_core::auth::TokenCredential for DefaultAzureCredential {
-    async fn get_token(
-        &self,
-        resource: &str,
-    ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
-        TokenCredential::get_token(self, resource)
-            .await
-            .map_err(|error| azure_core::Error::GetToken(Box::new(error)))
-    }
-}
-
-fn format_aggregate_error(errors: &[DefaultAzureCredentialError]) -> String {
+fn format_aggregate_error(errors: &[Error]) -> String {
     errors
         .iter()
         .map(|error| error.to_string())
