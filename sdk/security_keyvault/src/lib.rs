@@ -8,7 +8,6 @@ pub use client::{CertificateClient, KeyClient};
 #[cfg(test)]
 mod tests {
     use azure_core::auth::{TokenCredential, TokenResponse};
-    use azure_core::Result;
     use chrono::{Duration, Utc};
     use oauth2::AccessToken;
 
