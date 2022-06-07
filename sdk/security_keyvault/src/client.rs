@@ -124,15 +124,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
         if let Some(err) = body_deserialized.get("error") {
             let msg = err.get("message").ok_or_else(|| {
-                Error::with_message(
-                    ErrorKind::DataConversion,
-                    format!("failed to read message field from error response. body: {body}"),
-                )
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to read message field from error response. body: {body}")
+                })
             })?;
-            Err(Error::with_message(
-                ErrorKind::Other,
-                format!("post response error: {msg}"),
-            ))
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("post response error: {msg}")
+            }))
         } else {
             Ok(body)
         }
@@ -161,15 +159,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
         if let Some(err) = body_deserialized.get("error") {
             let msg = err.get("message").ok_or_else(|| {
-                Error::with_message(
-                    ErrorKind::DataConversion,
-                    format!("failed to read message field from error response. body: {body}"),
-                )
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to read message field from error response. body: {body}")
+                })
             })?;
-            Err(Error::with_message(
-                ErrorKind::Other,
-                format!("patch response error: {}", msg),
-            ))
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("patch response error: {}", msg)
+            }))
         } else {
             Ok(body)
         }
@@ -310,17 +306,15 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
 
         if let Some(err) = body_deserialized.get("error") {
             let msg = err.get("message").ok_or_else(|| {
-                Error::with_message(
-                    ErrorKind::DataConversion,
+                Error::with_message(ErrorKind::DataConversion, || {
                     format!(
                         "failed to read message field from error response. uri: {uri} body: {body}"
-                    ),
-                )
+                    )
+                })
             })?;
-            Err(Error::with_message(
-                ErrorKind::Other,
-                format!("post response error: {msg}"),
-            ))
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("post response error: {msg}")
+            }))
         } else {
             Ok(body)
         }
@@ -351,15 +345,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
 
         if let Some(err) = body_deserialized.get("error") {
             let msg = err.get("message").ok_or_else(|| {
-                Error::with_message(
-                    ErrorKind::DataConversion,
-                    format!("failed to read message field from error response. body: {body}"),
-                )
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to read message field from error response. body: {body}")
+                })
             })?;
-            Err(Error::with_message(
-                ErrorKind::Other,
-                format!("post response error. uri: {uri} msg: {msg}"),
-            ))
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("post response error. uri: {uri} msg: {msg}")
+            }))
         } else {
             Ok(body)
         }
@@ -388,18 +380,16 @@ fn extract_endpoint(url: &Url) -> Result<String, Error> {
     let endpoint = url
         .host_str()
         .ok_or_else(|| {
-            Error::with_message(
-                ErrorKind::DataConversion,
-                format!("failed to parse host from url. url: {url}"),
-            )
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("failed to parse host from url. url: {url}")
+            })
         })?
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
         .last()
         .ok_or_else(|| {
-            Error::with_message(
-                ErrorKind::DataConversion,
-                format!("failed to extract endpoint from url. url: {url}"),
-            )
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("failed to extract endpoint from url. url: {url}")
+            })
         })?;
     Ok(format!("{}://{}", url.scheme(), endpoint))
 }

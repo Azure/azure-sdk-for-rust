@@ -313,10 +313,9 @@ impl RsaDecryptParameters {
             EncryptionAlgorithm::Rsa15
             | EncryptionAlgorithm::RsaOaep
             | EncryptionAlgorithm::RsaOaep256 => Ok(Self { algorithm }),
-            _ => Err(Error::with_message(
-                ErrorKind::Other,
-                format!("unexpected encryption algorithm: {algorithm}"),
-            )),
+            _ => Err(Error::with_message(ErrorKind::Other, || {
+                format!("unexpected encryption algorithm: {algorithm}")
+            })),
         }
     }
 }
@@ -351,10 +350,9 @@ impl AesGcmDecryptParameters {
                 authentication_tag,
                 additional_authenticated_data,
             }),
-            _ => Err(Error::with_message(
-                ErrorKind::Other,
-                format!("unexpected encryption algorithm: {algorithm}"),
-            )),
+            _ => Err(Error::with_message(ErrorKind::Other, || {
+                format!("unexpected encryption algorithm: {algorithm}")
+            })),
         }
     }
 }
@@ -375,10 +373,9 @@ impl AesCbcDecryptParameters {
             | EncryptionAlgorithm::A128CbcPad
             | EncryptionAlgorithm::A192CbcPad
             | EncryptionAlgorithm::A256CbcPad => Ok(Self { algorithm, iv }),
-            _ => Err(Error::with_message(
-                ErrorKind::Other,
-                format!("unexpected encryption algorithm: {algorithm}"),
-            )),
+            _ => Err(Error::with_message(ErrorKind::Other, || {
+                format!("unexpected encryption algorithm: {algorithm}")
+            })),
         }
     }
 }
