@@ -1,5 +1,5 @@
-use crate::Error;
 use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use const_format::formatcp;
 use url::Url;
 
@@ -36,7 +36,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
     pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self, Error> {
-        let vault_url = Url::parse(vault_url)?;
+        let vault_url = Url::parse(vault_url).with_context(ErrorKind::DataConversion, || {
+            format!("failed to parse vault url: {vault_url}")
+        })?;
         let endpoint = extract_endpoint(&vault_url)?;
         let client = KeyClient {
             vault_url,
@@ -57,7 +59,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .token_credential
             .get_token(&self.endpoint)
             .await
-            .map_err(|_| Error::Authorization)?;
+            .context(ErrorKind::Credential, "get token failed")?;
         self.token = Some(token);
         Ok(())
     }
@@ -71,7 +73,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
         Ok(body)
     }
 
@@ -86,7 +90,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await?;
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
         Ok(body)
     }
 
@@ -107,15 +113,24 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             req = req.header("Content-Length", 0);
         }
 
-        let resp = req.send().await?;
+        let resp = req.send().await.with_context(ErrorKind::Io, || {
+            format!("failed to send request. uri: {uri}")
+        })?;
 
-        let body = resp.text().await?;
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
+        let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
-        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-
-        if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(Error::UnparsableError)?;
-            Err(Error::General(msg.to_string()))
+        if let Some(err) = body_deserialized.get("error") {
+            let msg = err.get("message").ok_or_else(|| {
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to read message field from error response. body: {body}")
+                })
+            })?;
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("post response error: {msg}")
+            }))
         } else {
             Ok(body)
         }
@@ -137,13 +152,20 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .await
             .unwrap();
 
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
+        let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
-        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-
-        if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(Error::UnparsableError)?;
-            Err(Error::General(msg.to_string()))
+        if let Some(err) = body_deserialized.get("error") {
+            let msg = err.get("message").ok_or_else(|| {
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to read message field from error response. body: {body}")
+                })
+            })?;
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("patch response error: {}", msg)
+            }))
         } else {
             Ok(body)
         }
@@ -159,7 +181,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
         Ok(body)
     }
 }
@@ -194,7 +218,9 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// let client = CertificateClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
     pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self, Error> {
-        let vault_url = Url::parse(vault_url)?;
+        let vault_url = Url::parse(vault_url).with_context(ErrorKind::DataConversion, || {
+            format!("failed to parse vault url: {vault_url}")
+        })?;
         let endpoint = extract_endpoint(&vault_url)?;
         let client = CertificateClient {
             vault_url,
@@ -215,7 +241,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .token_credential
             .get_token(&self.endpoint)
             .await
-            .map_err(|_| Error::Authorization)?;
+            .context(ErrorKind::Credential, "failed to refresh token")?;
         self.token = Some(token);
         Ok(())
     }
@@ -229,7 +255,9 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
         Ok(body)
     }
 
@@ -244,7 +272,9 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await?;
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
         Ok(body)
     }
 
@@ -265,15 +295,26 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             req = req.header("Content-Length", 0);
         }
 
-        let resp = req.send().await?;
+        let resp = req.send().await.with_context(ErrorKind::Io, || {
+            format!("failed to send request. uri: {uri}")
+        })?;
 
-        let body = resp.text().await?;
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
+        let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
-        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-
-        if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(Error::UnparsableError)?;
-            Err(Error::General(msg.to_string()))
+        if let Some(err) = body_deserialized.get("error") {
+            let msg = err.get("message").ok_or_else(|| {
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!(
+                        "failed to read message field from error response. uri: {uri} body: {body}"
+                    )
+                })
+            })?;
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("post response error: {msg}")
+            }))
         } else {
             Ok(body)
         }
@@ -295,13 +336,22 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .await
             .unwrap();
 
-        let body = resp.text().await.unwrap();
+        let body = resp
+            .text()
+            .await
+            .context(ErrorKind::Io, "failed to read response body")?;
 
-        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
+        let body_deserialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
-        if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(Error::UnparsableError)?;
-            Err(Error::General(msg.to_string()))
+        if let Some(err) = body_deserialized.get("error") {
+            let msg = err.get("message").ok_or_else(|| {
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to read message field from error response. body: {body}")
+                })
+            })?;
+            Err(Error::with_message(ErrorKind::Other, || {
+                format!("post response error. uri: {uri} msg: {msg}")
+            }))
         } else {
             Ok(body)
         }
@@ -317,7 +367,9 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await.with_context(ErrorKind::Io, || {
+            format!("failed to read response body text. uri: {uri}")
+        })?;
         Ok(body)
     }
 }
@@ -327,10 +379,18 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
 fn extract_endpoint(url: &Url) -> Result<String, Error> {
     let endpoint = url
         .host_str()
-        .ok_or(Error::DomainParse)?
+        .ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("failed to parse host from url. url: {url}")
+            })
+        })?
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
         .last()
-        .ok_or(Error::DomainParse)?;
+        .ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("failed to extract endpoint from url. url: {url}")
+            })
+        })?;
     Ok(format!("{}://{}", url.scheme(), endpoint))
 }
 

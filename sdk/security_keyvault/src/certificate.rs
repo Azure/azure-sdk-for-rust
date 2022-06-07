@@ -1,6 +1,6 @@
 use crate::client::API_VERSION_PARAM;
 use crate::CertificateClient;
-use crate::Error;
+use azure_core::error::{Error, ErrorKind, ResultExt};
 
 use azure_core::auth::TokenCredential;
 use chrono::serde::{ts_seconds, ts_seconds_option};
@@ -205,10 +205,8 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
 
         let response_body = self.get_authed(uri.to_string()).await?;
         let response = serde_json::from_str::<KeyVaultGetCertificateResponse>(&response_body)
-            .map_err(|error| Error::BackupCertificateParseError {
-                error,
-                certificate_name: name.to_string(),
-                response_body,
+            .with_context(ErrorKind::DataConversion, || {
+                format!("failed to parse get certificate response. uri: {uri} certificate_name: {name} response_body: {response_body}")
             })?;
         Ok(KeyVaultCertificate {
             key_id: response.kid,
@@ -468,17 +466,17 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         uri.set_query(Some(API_VERSION_PARAM));
 
         let response_body = self.post_authed(uri.to_string(), None).await?;
-        let backup_blob = serde_json::from_str::<KeyVaultCertificateBackupResponseRaw>(
-            &response_body,
-        )
-        .map_err(|error| Error::BackupCertificateParseError {
-            error,
-            certificate_name: name.to_string(),
-            response_body,
-        })?;
+        let backup_blob =
+            serde_json::from_str::<KeyVaultCertificateBackupResponseRaw>(&response_body)
+                .with_context(ErrorKind::DataConversion, || {
+                    format!("failed to parse certificate backup response. uri: {uri}")
+                })?;
 
         Ok(CertificateBackupResult {
-            backup: base64::decode(backup_blob.value)?,
+            backup: base64::decode(backup_blob.value).context(
+                ErrorKind::DataConversion,
+                "failed base64 decode of backup blob",
+            )?,
         })
     }
 
