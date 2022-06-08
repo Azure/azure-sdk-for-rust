@@ -69,7 +69,7 @@ impl QueryDocumentsBuilder {
 
     pub fn into_stream<T>(self) -> QueryDocuments<T>
     where
-        T: DeserializeOwned,
+        T: DeserializeOwned + Send + Sync,
     {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
