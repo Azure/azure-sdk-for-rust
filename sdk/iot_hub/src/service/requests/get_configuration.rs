@@ -9,9 +9,9 @@ use crate::service::{ServiceClient, API_VERSION};
 pub(crate) async fn get_configuration<T>(
     service_client: &ServiceClient,
     configuration_id: Option<String>,
-) -> crate::Result<T>
+) -> Result<T>
 where
-    T: TryFrom<Response<Bytes>, Error = crate::Error>,
+    T: TryFrom<Response<Bytes>, Error = Error>,
 {
     let uri = match configuration_id {
         Some(val) => format!(

@@ -15,7 +15,7 @@ pub struct QueryResponse {
 impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponse {
     type Error = azure_core::Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> std::result::Result<Self, Self::Error> {
         let headers = response.headers();
         let body: &[u8] = response.body();
 

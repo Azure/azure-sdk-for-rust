@@ -1,13 +1,13 @@
-use http::Method;
-use serde::Serialize;
-use std::convert::TryInto;
-
 use crate::service::resources::{
     identity::DesiredCapability, identity::IdentityOperation, AuthenticationMechanism,
     DeviceCapabilities, Status,
 };
 use crate::service::responses::DeviceIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::{Result, ResultExt};
+use http::Method;
+use serde::Serialize;
+use std::convert::TryInto;
 
 /// The CreateOrUpdateDeviceIdentityBuilder is used to construct a new device identity
 /// or the update an existing one.
@@ -46,7 +46,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         device_id: S,
         status: Status,
         authentication: AuthenticationMechanism,
-    ) -> crate::Result<DeviceIdentityResponse>
+    ) -> Result<DeviceIdentityResponse>
     where
         S: AsRef<str>,
     {
@@ -64,7 +64,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
                 Some(etag) => {
                     request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
                 }
-                None => return Err(crate::Error::EtagNotSet),
+                None => return Err(Error::EtagNotSet),
             }
         }
 

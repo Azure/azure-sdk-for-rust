@@ -26,7 +26,7 @@ impl<'a> DeleteIdentityBuilder<'a> {
     }
 
     /// Execute the request to delete the module or device identity.
-    pub async fn execute(&self) -> crate::Result<()> {
+    pub async fn execute(&self) -> Result<()> {
         let uri = match &self.module_id {
             Some(module_id) => format!(
                 "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",

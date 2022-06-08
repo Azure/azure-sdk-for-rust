@@ -23,7 +23,7 @@ impl<'a> DeleteConfigurationBuilder<'a> {
     }
 
     /// Execute the request to delete the configuration.
-    pub async fn execute(&self) -> crate::Result<()> {
+    pub async fn execute(&self) -> Result<()> {
         let uri = format!(
             "https://{}.azure-devices.net/configurations/{}?api-version={}",
             self.service_client.iot_hub_name, self.configuration_id, API_VERSION

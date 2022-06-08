@@ -49,7 +49,7 @@ impl<'a> QueryBuilder<'a> {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let query_builder = iot_hub.query().max_item_count(1).continuation("some_token").execute("SELECT * FROM devices");
     /// ```
-    pub async fn execute<S>(self, query: S) -> crate::Result<QueryResponse>
+    pub async fn execute<S>(self, query: S) -> Result<QueryResponse>
     where
         S: Into<String>,
     {

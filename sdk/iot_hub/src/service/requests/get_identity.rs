@@ -10,9 +10,9 @@ pub(crate) async fn get_identity<T>(
     service_client: &ServiceClient,
     device_id: String,
     module_id: Option<String>,
-) -> crate::Result<T>
+) -> Result<T>
 where
-    T: TryFrom<Response<Bytes>, Error = crate::Error>,
+    T: TryFrom<Response<Bytes>, Error = Error>,
 {
     let uri = match module_id {
         Some(module_id) => format!(

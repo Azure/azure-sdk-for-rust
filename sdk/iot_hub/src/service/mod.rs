@@ -1,11 +1,11 @@
-use std::sync::Arc;
-
+use azure_core::error::{Result, ResultExt};
 use azure_core::HttpClient;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
 use http::request::Builder as RequestBuilder;
 use http::{header, Method};
 use sha2::Sha256;
+use std::sync::Arc;
 
 /// The requests module contains any request that the IoT Hub service client can perform.
 pub mod requests;
@@ -42,32 +42,6 @@ pub struct ServiceClient {
     pub iot_hub_name: String,
     /// The SAS token that is used for authentication.
     pub(crate) sas_token: String,
-}
-
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum FromConnectionStringError {
-    #[error("Given connection string is invalid")]
-    InvalidError,
-    #[error("Failed to get the hostname from the given connection string")]
-    FailedToGetHostname,
-    #[error("Failed to get the shared access key name from the given connection string")]
-    FailedToGetSharedAccessKey,
-    #[error("Failed to get the primary key from the given connection string")]
-    FailedToGetPrimaryKey,
-    #[error("Generate SAS token error: {0}")]
-    GenerateSasTokenError(GenerateSasTokenError),
-}
-
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum GenerateSasTokenError {
-    #[error("Failed to decode the given private key: {0}")]
-    DecodePrivateKeyError(base64::DecodeError),
-    #[error("Failed to use the given private key for the hashing algorithm: {0}")]
-    HashingFailed(hmac::digest::InvalidLength),
 }
 
 impl ServiceClient {
@@ -107,7 +81,7 @@ impl ServiceClient {
         key_name: &str,
         private_key: &str,
         expires_in_seconds: i64,
-    ) -> Result<String, GenerateSasTokenError> {
+    ) -> Result<String> {
         type HmacSHA256 = Hmac<Sha256>;
         let expiry_date = chrono::Utc::now() + chrono::Duration::seconds(expires_in_seconds);
         let expiry_date_seconds = expiry_date.timestamp();
@@ -332,7 +306,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> crate::Result<ModuleTwinResponse>
+    ) -> Result<ModuleTwinResponse>
     where
         S: Into<String>,
         T: Into<String>,
@@ -356,7 +330,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_device_twin("some-device");
     /// ```
-    pub async fn get_device_twin<S>(&self, device_id: S) -> crate::Result<DeviceTwinResponse>
+    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse>
     where
         S: Into<String>,
     {
@@ -479,10 +453,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_device_identity("some-device");
     /// ```
-    pub async fn get_device_identity<S>(
-        &self,
-        device_id: S,
-    ) -> crate::Result<DeviceIdentityResponse>
+    pub async fn get_device_identity<S>(&self, device_id: S) -> Result<DeviceIdentityResponse>
     where
         S: Into<String>,
     {
@@ -567,7 +538,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> crate::Result<ModuleIdentityResponse>
+    ) -> Result<ModuleIdentityResponse>
     where
         S: Into<String>,
         T: Into<String>,
@@ -689,10 +660,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configuration("some-configuration");
     /// ```
-    pub async fn get_configuration<S>(
-        &self,
-        configuration_id: S,
-    ) -> crate::Result<ConfigurationResponse>
+    pub async fn get_configuration<S>(&self, configuration_id: S) -> Result<ConfigurationResponse>
     where
         S: Into<String>,
     {
@@ -710,7 +678,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configurations();
     /// ```
-    pub async fn get_configurations(&self) -> crate::Result<MultipleConfigurationResponse> {
+    pub async fn get_configurations(&self) -> Result<MultipleConfigurationResponse> {
         get_configuration(self, None).await
     }
 

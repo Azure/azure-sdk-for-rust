@@ -1,12 +1,11 @@
-use std::convert::TryInto;
-
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::marker::PhantomData;
-
+use azure_core::error::{Error, Result, ResultExt};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 use serde::Serialize;
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+use std::marker::PhantomData;
 
 use crate::service::{ServiceClient, API_VERSION};
 
@@ -14,7 +13,7 @@ use crate::service::{ServiceClient, API_VERSION};
 /// updating or replacing a device or module twin.
 pub struct UpdateOrReplaceTwinBuilder<'a, R>
 where
-    R: TryFrom<Response<Bytes>, Error = crate::Error>,
+    R: TryFrom<Response<Bytes>, Error = Error>,
 {
     service_client: &'a ServiceClient,
     pub(crate) device_id: String,
@@ -28,7 +27,7 @@ where
 
 impl<'a, R> UpdateOrReplaceTwinBuilder<'a, R>
 where
-    R: TryFrom<Response<Bytes>, Error = crate::Error>,
+    R: TryFrom<Response<Bytes>, Error = Error>,
 {
     pub(crate) fn new(
         service_client: &'a ServiceClient,
@@ -127,7 +126,7 @@ where
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub async fn execute(self) -> crate::Result<R> {
+    pub async fn execute(self) -> Result<R> {
         let body = DesiredTwinBody {
             tags: self.desired_tags,
             properties: DesiredTwinProperties {
