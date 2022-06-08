@@ -71,7 +71,7 @@ impl CreateOrReplaceAttachmentBuilder {
                 media: &self.media,
             })?;
 
-            req.set_body(body.into());
+            req.set_body(body);
 
             let response = self
                 .client

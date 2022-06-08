@@ -47,7 +47,7 @@ impl CreateDatabaseBuilder {
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+            request.set_body(serde_json::to_vec(&body)?);
 
             let response = self
                 .client

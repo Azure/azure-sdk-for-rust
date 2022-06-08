@@ -71,7 +71,7 @@ impl ExecuteStoredProcedureBuilder {
                 Bytes::from_static(EMPTY_LIST)
             };
 
-            request.set_body(body.into());
+            request.set_body(body);
 
             let response = self
                 .client

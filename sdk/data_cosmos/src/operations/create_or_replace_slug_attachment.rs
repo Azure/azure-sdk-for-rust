@@ -78,7 +78,7 @@ impl CreateOrReplaceSlugAttachmentBuilder {
                 http::HeaderValue::from_str(&format!("{}", body.len())).unwrap(),
             );
 
-            request.set_body(body.into());
+            request.set_body(body);
             let response = self
                 .client
                 .pipeline()

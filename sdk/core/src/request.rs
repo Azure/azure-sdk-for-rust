@@ -1,5 +1,6 @@
 use crate::headers::{AsHeaders, Headers};
 use crate::SeekableStream;
+use bytes::Bytes;
 use http::{Method, Uri};
 use std::fmt::Debug;
 
@@ -12,9 +13,12 @@ pub enum Body {
     SeekableStream(Box<dyn SeekableStream>),
 }
 
-impl From<bytes::Bytes> for Body {
-    fn from(bytes: bytes::Bytes) -> Self {
-        Self::Bytes(bytes)
+impl<B> From<B> for Body
+where
+    B: Into<Bytes>,
+{
+    fn from(bytes: B) -> Self {
+        Self::Bytes(bytes.into())
     }
 }
 
@@ -73,8 +77,8 @@ impl Request {
         &self.body
     }
 
-    pub fn set_body(&mut self, body: Body) {
-        self.body = body;
+    pub fn set_body(&mut self, body: impl Into<Body>) {
+        self.body = body.into();
     }
 }
 

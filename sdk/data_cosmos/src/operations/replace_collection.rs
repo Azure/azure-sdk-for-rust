@@ -49,7 +49,7 @@ impl ReplaceCollectionBuilder {
                 partition_key: &self.partition_key,
             };
 
-            request.set_body(bytes::Bytes::from(serde_json::to_string(&collection)?).into());
+            request.set_body(serde_json::to_vec(&collection)?);
 
             let response = self
                 .client

@@ -102,7 +102,7 @@ impl QueryDocumentsBuilder {
                 request.insert_headers(&this.max_item_count);
                 request.insert_headers(&this.query_cross_partition);
 
-                request.set_body(bytes::Bytes::from(serde_json::to_string(&this.query)?).into());
+                request.set_body(serde_json::to_vec(&this.query)?);
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {
                     crate::cosmos_entity::add_as_partition_key_header_serialized2(
                         partition_key_serialized,
