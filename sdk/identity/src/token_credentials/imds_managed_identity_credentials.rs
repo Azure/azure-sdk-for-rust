@@ -115,8 +115,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         let url = Request::parse_uri(url.as_str())?;
         let mut req = Request::new(url, Method::GET);
 
-        let mut headers = HeaderMap::new();
-        headers.insert("Metadata", "true".parse()?);
+        req.headers_mut().insert("Metadata", "true");
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
