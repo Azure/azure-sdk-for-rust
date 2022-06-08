@@ -20,10 +20,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify the container name as second command line parameter");
 
-    let client = reqwest::Client::new();
+    let http_client = azure_core::new_http_client();
 
     let token = client_credentials_flow::perform(
-        client,
+        http_client.as_ref(),
         &client_id,
         &client_secret,
         &[&format!(

@@ -29,6 +29,7 @@ mod seekable_stream;
 
 pub mod auth;
 pub mod headers;
+pub use http;
 #[cfg(feature = "mock_transport_framework")]
 pub mod mock;
 pub mod parsing;
@@ -68,7 +69,7 @@ pub type SessionToken = String;
 
 /// An empty HTTP body.
 #[allow(clippy::declare_interior_mutable_const)]
-pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::from_static(&[]);
+pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();
 
 /// Add a new query pair into the target URL's query string.
 pub trait AppendToUrlQuery {

@@ -1,6 +1,12 @@
 //! Refresh token utilities
 
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::{
+    content_type,
+    error::{Error, ErrorKind, Result, ResultExt},
+    headers,
+    http::Method,
+    HttpClient, Request,
+};
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;
@@ -8,7 +14,7 @@ use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
 pub async fn exchange(
-    client: &reqwest::Client,
+    http_client: &dyn HttpClient,
     tenant_id: &str,
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
@@ -26,21 +32,22 @@ pub async fn exchange(
     let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
     let encoded = encoded.finish();
 
-    let url = url::Url::parse(&format!(
+    let url = Request::parse_uri(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))?;
 
-    let rsp = client
-        .post(url)
-        .header("ContentType", "application/x-www-form-urlencoded")
-        .body(encoded)
-        .send()
-        .await
-        .map_kind(ErrorKind::Io)?;
+    let mut req = Request::new(url, Method::POST);
+    req.headers_mut().insert(
+        headers::CONTENT_TYPE,
+        content_type::APPLICATION_X_WWW_FORM_URLENCODED,
+    );
+    req.set_body(encoded);
+
+    let rsp = http_client.execute_request2(&req).await?;
 
     let rsp_status = rsp.status();
-    let rsp_body = rsp.bytes().await.map_kind(ErrorKind::Io)?;
+    let rsp_body = rsp.into_body().await;
 
     if !rsp_status.is_success() {
         if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {

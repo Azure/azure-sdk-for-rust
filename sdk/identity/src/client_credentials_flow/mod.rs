@@ -21,10 +21,10 @@
 //!     let subscription_id =
 //!         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 //!
-//!     let client = reqwest::Client::new();
+//!     let http_client = azure_core::new_http_client();
 //!     // This will give you the final token to use in authorization.
 //!     let token = client_credentials_flow::perform(
-//!         client,
+//!         http_client.as_ref(),
 //!         &client_id,
 //!         &client_secret,
 //!         &["https://management.azure.com/"],
@@ -39,13 +39,19 @@
 
 mod login_response;
 
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::{
+    content_type,
+    error::{ErrorKind, Result, ResultExt},
+    headers,
+    http::Method,
+    HttpClient, Request,
+};
 use login_response::LoginResponse;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow
 pub async fn perform(
-    client: reqwest::Client,
+    http_client: &dyn HttpClient,
     client_id: &oauth2::ClientId,
     client_secret: &oauth2::ClientSecret,
     scopes: &[&str],
@@ -58,7 +64,7 @@ pub async fn perform(
         .append_pair("grant_type", "client_credentials")
         .finish();
 
-    let url = url::Url::parse(&format!(
+    let url = Request::parse_uri(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))
@@ -66,21 +72,19 @@ pub async fn perform(
         format!("The supplied tenant id could not be url encoded: {tenant_id}")
     })?;
 
-    let response = client
-        .post(url)
-        .header("ContentType", "Application / WwwFormUrlEncoded")
-        .body(encoded)
-        .send()
-        .await
-        .map_kind(ErrorKind::Io)?;
-
-    let rsp_status = response.status();
-    let rsp_body = response.bytes().await.map_kind(ErrorKind::Io)?;
+    let mut req = Request::new(url, Method::POST);
+    req.headers_mut().insert(
+        headers::CONTENT_TYPE,
+        content_type::APPLICATION_X_WWW_FORM_URLENCODED,
+    );
+    req.set_body(encoded);
+    let rsp = http_client.execute_request2(&req).await?;
+    let rsp_status = rsp.status();
+    let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {
         return Err(
             ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
         );
     }
-
     serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)
 }

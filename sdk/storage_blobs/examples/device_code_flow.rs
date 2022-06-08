@@ -1,4 +1,4 @@
-use azure_identity::device_code_flow::{self, DeviceCodeResponse};
+use azure_identity::device_code_flow;
 use azure_identity::refresh_token;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
@@ -51,13 +51,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // get either a Success or an error.
     let mut stream = Box::pin(device_code_flow.stream());
     let mut authorization = None;
-    while let Some(resp) = stream.next().await {
-        println!("{:?}", resp);
-
-        // if we have the authorization, let's store it for later use.
-        if let DeviceCodeResponse::AuthorizationSucceeded(auth) = resp? {
-            authorization = Some(auth);
-        }
+    while let Some(Ok(auth)) = stream.next().await {
+        println!("{:?}", auth);
+        authorization = Some(auth);
     }
 
     // remove the option (this is safe since we

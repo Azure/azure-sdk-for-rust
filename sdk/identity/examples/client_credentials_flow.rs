@@ -16,10 +16,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let subscription_id =
         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
-    let client = reqwest::Client::new();
+    let http_client = azure_core::new_http_client();
     // This will give you the final token to use in authorization.
     let token = client_credentials_flow::perform(
-        client,
+        http_client.as_ref(),
         &client_id,
         &client_secret,
         &["https://management.azure.com/"],

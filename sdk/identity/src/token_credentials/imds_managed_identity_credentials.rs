@@ -1,13 +1,15 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::http::{HeaderMap, Method};
+use azure_core::{HttpClient, Request};
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
-use reqwest::header::HeaderMap;
 use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
 use std::str;
+use std::sync::Arc;
 use url::Url;
 
 const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
@@ -19,14 +21,33 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
-#[derive(Default)]
 pub struct ImdsManagedIdentityCredential {
+    http_client: Arc<dyn HttpClient>,
     object_id: Option<String>,
     client_id: Option<String>,
     msi_res_id: Option<String>,
 }
 
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+#[cfg(not(target_arch = "wasm32"))]
+impl Default for ImdsManagedIdentityCredential {
+    /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
+    fn default() -> Self {
+        Self::new(azure_core::new_http_client())
+    }
+}
+
 impl ImdsManagedIdentityCredential {
+    /// Creates a new `ImdsManagedIdentityCredential` using the given `HttpClient`.
+    pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
+        Self {
+            http_client,
+            object_id: None,
+            client_id: None,
+            msi_res_id: None,
+        }
+    }
+
     /// Specifies the object id associated with a user assigned managed service identity resource that should be used to retrieve the access token.
     ///
     /// The values of client_id and msi_res_id are discarded, as only one id parameter may be set when getting a token.
@@ -75,9 +96,6 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
-        let mut headers = HeaderMap::new();
-        headers.insert("Metadata", "true".parse().unwrap());
-
         match (
             self.object_id.as_ref(),
             self.client_id.as_ref(),
@@ -89,43 +107,55 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             _ => (),
         }
 
-        let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items).context(
+        let url = Url::parse_with_params(&msi_endpoint, &query_items).context(
             ErrorKind::DataConversion,
             "error parsing url for MSI endpoint",
         )?;
 
+        let url = Request::parse_uri(url.as_str())?;
+        let mut req = Request::new(url, Method::GET);
+
+        let mut headers = HeaderMap::new();
+        headers.insert("Metadata", "true".parse()?);
+
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
-            headers.insert("X-IDENTITY-HEADER", val.parse().unwrap());
+            req.headers_mut().insert("X-IDENTITY-HEADER", val);
         };
 
-        let client = reqwest::Client::new();
-        let response = client
-            .get(msi_endpoint_url)
-            .headers(headers)
-            .send()
-            .await
-            .map_kind(ErrorKind::Io)?;
+        let rsp = self.http_client.execute_request2(&req).await?;
+        let rsp_status = rsp.status();
+        let rsp_body = rsp.into_body().await;
 
-        match response.status().as_u16() {
-            400 => Err(Error::message(
-                ErrorKind::Credential,
-                "the requested identity has not been assigned to this resource",
-            )),
-            502 | 504 => Err(Error::message(
-                ErrorKind::Credential,
-                "the request failed due to a gateway error",
-            )),
-            _ => {
-                let rsp_body = response.bytes().await.map_kind(ErrorKind::Io)?;
-                let token_response: MsiTokenResponse =
-                    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)?;
-                Ok(TokenResponse::new(
-                    token_response.access_token,
-                    token_response.expires_on,
-                ))
+        if !rsp_status.is_success() {
+            match rsp_status.as_u16() {
+                400 => {
+                    return Err(Error::message(
+                        ErrorKind::Credential,
+                        "the requested identity has not been assigned to this resource",
+                    ))
+                }
+                502 | 504 => {
+                    return Err(Error::message(
+                        ErrorKind::Credential,
+                        "the request failed due to a gateway error",
+                    ))
+                }
+                _ => {
+                    return Err(
+                        ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body)
+                            .into_error(),
+                    )
+                    .map_kind(ErrorKind::Credential)
+                }
             }
         }
+
+        let token_response: MsiTokenResponse = serde_json::from_slice(&rsp_body)?;
+        Ok(TokenResponse::new(
+            token_response.access_token,
+            token_response.expires_on,
+        ))
     }
 }
 

@@ -80,7 +80,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
             request.insert_headers(&self.indexing_directive);
             request.insert_headers(&self.allow_tentative_writes);
 
-            request.set_body(bytes::Bytes::from(serialized).into());
+            request.set_body(serialized);
             let response = self
                 .client
                 .pipeline()
