@@ -74,7 +74,7 @@ impl CreateOrReplaceTriggerBuilder {
                 body: &self.body,
             };
 
-            request.set_body(bytes::Bytes::from(serde_json::to_string(&request_body)?).into());
+            request.set_body(serde_json::to_vec(&request_body)?);
             let response = self
                 .client
                 .pipeline()
