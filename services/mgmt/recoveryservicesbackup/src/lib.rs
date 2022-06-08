@@ -11,6 +11,10 @@ pub use package_passivestamp_2021_11_15::{models, operations, operations::Client
 pub mod package_passivestamp_2018_12_20;
 #[cfg(all(feature = "package-passivestamp-2018-12-20", not(feature = "no-default-tag")))]
 pub use package_passivestamp_2018_12_20::{models, operations, operations::Client, operations::ClientBuilder};
+#[cfg(feature = "package-2022-03")]
+pub mod package_2022_03;
+#[cfg(all(feature = "package-2022-03", not(feature = "no-default-tag")))]
+pub use package_2022_03::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-2022-02")]
 pub mod package_2022_02;
 #[cfg(all(feature = "package-2022-02", not(feature = "no-default-tag")))]
@@ -19,7 +23,3 @@ pub use package_2022_02::{models, operations, operations::Client, operations::Cl
 pub mod package_2022_01;
 #[cfg(all(feature = "package-2022-01", not(feature = "no-default-tag")))]
 pub use package_2022_01::{models, operations, operations::Client, operations::ClientBuilder};
-#[cfg(feature = "package-2021-12")]
-pub mod package_2021_12;
-#[cfg(all(feature = "package-2021-12", not(feature = "no-default-tag")))]
-pub use package_2021_12::{models, operations, operations::Client, operations::ClientBuilder};

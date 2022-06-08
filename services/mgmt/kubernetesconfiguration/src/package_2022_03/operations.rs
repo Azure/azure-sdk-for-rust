@@ -326,7 +326,11 @@ pub mod extensions {
     pub mod update {
         use super::models;
         use azure_core::error::ResultExt;
-        type Response = models::Extension;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202(models::Extension),
+            Ok200(models::Extension),
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -371,7 +375,12 @@ pub mod extensions {
                             http::StatusCode::ACCEPTED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::Extension = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
+                                Ok(Response::Accepted202(rsp_value))
+                            }
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::Extension = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
@@ -963,7 +972,11 @@ pub mod flux_configurations {
     pub mod update {
         use super::models;
         use azure_core::error::ResultExt;
-        type Response = models::FluxConfiguration;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202(models::FluxConfiguration),
+            Ok200(models::FluxConfiguration),
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -1008,7 +1021,12 @@ pub mod flux_configurations {
                             http::StatusCode::ACCEPTED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::FluxConfiguration = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
+                                Ok(Response::Accepted202(rsp_value))
+                            }
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::FluxConfiguration = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),

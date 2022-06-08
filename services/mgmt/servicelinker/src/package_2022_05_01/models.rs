@@ -898,6 +898,24 @@ pub mod v_net_solution {
         }
     }
 }
+#[doc = "The validation operation result for a linker."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ValidateOperationResult {
+    #[doc = "The validation result for a linker."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ValidateResult>,
+    #[doc = "Validated linker id."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[doc = "Validation operation status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+impl ValidateOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The validation result for a linker."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateResult {
@@ -963,8 +981,8 @@ pub mod validation_result_item {
     pub enum Result {
         #[serde(rename = "success")]
         Success,
-        #[serde(rename = "failed")]
-        Failed,
+        #[serde(rename = "failure")]
+        Failure,
         #[serde(rename = "warning")]
         Warning,
         #[serde(skip_deserializing)]
@@ -993,7 +1011,7 @@ pub mod validation_result_item {
         {
             match self {
                 Self::Success => serializer.serialize_unit_variant("Result", 0u32, "success"),
-                Self::Failed => serializer.serialize_unit_variant("Result", 1u32, "failed"),
+                Self::Failure => serializer.serialize_unit_variant("Result", 1u32, "failure"),
                 Self::Warning => serializer.serialize_unit_variant("Result", 2u32, "warning"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }

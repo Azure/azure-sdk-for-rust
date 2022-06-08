@@ -145,7 +145,7 @@ impl AdaptiveApplicationControlGroupData {
         Self::default()
     }
 }
-#[doc = "Represents a list of machine groups and set of rules that are recommended by Azure Security Center to be allowed"]
+#[doc = "Represents a list of VM/server groups and set of rules that are Recommended by Microsoft Defender for Cloud to be allowed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveApplicationControlGroups {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2751,7 +2751,7 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
-#[doc = "Represents a security solution external to Azure Security Center which sends information to an OMS workspace and whose data is displayed by Azure Security Center."]
+#[doc = "Represents a security solution external to Microsoft Defender for Cloud which sends information to an OMS workspace and whose data is displayed by Microsoft Defender for Cloud."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalSecuritySolution {
     #[serde(flatten)]

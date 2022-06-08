@@ -1131,6 +1131,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_domainservices
 
+  azure_mgmt_dynatrace:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_dynatrace
+
   azure_mgmt_edgeorder:
     if: always()
     runs-on: ubuntu-latest
@@ -2074,6 +2090,38 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_network
+
+  azure_mgmt_networkfunction:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_networkfunction
+
+  azure_mgmt_nginx:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_nginx
 
   azure_mgmt_notificationhubs:
     if: always()
@@ -3291,6 +3339,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_workloadmonitor
 
+  azure_mgmt_workloads:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_workloads
+
   azure_svc_appconfiguration:
     if: always()
     runs-on: ubuntu-latest
@@ -3370,22 +3434,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_svc_blobstorage
-
-  azure_svc_confidentialledger:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v1
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_svc_confidentialledger
 
   azure_svc_containerregistry:
     if: always()

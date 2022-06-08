@@ -1,0 +1,8 @@
+[properties]
+boxed = [
+    [
+        "../../../azure-rest-api-specs/specification/workloads/resource-manager/Microsoft.Workloads/preview/2021-12-01-preview/monitors.json",
+        "innerError",
+        "innerError"
+    ]
+]

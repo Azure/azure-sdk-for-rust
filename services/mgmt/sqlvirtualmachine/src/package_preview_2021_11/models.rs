@@ -385,6 +385,7 @@ pub mod auto_patching_settings {
     #[doc = "Day of week to apply the patch on."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DayOfWeek {
+        Everyday,
         Monday,
         Tuesday,
         Wednesday,

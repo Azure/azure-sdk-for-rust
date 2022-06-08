@@ -93,6 +93,9 @@ impl Client {
     pub fn factories(&self) -> factories::Client {
         factories::Client(self.clone())
     }
+    pub fn global_parameters(&self) -> global_parameters::Client {
+        global_parameters::Client(self.clone())
+    }
     pub fn integration_runtime_nodes(&self) -> integration_runtime_nodes::Client {
         integration_runtime_nodes::Client(self.clone())
     }
@@ -7405,6 +7408,353 @@ pub mod private_link_resources {
                                 let rsp_value: models::PrivateLinkResourcesWrapper = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod global_parameters {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list_by_factory(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+        ) -> list_by_factory::Builder {
+            list_by_factory::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+            global_parameter_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+                global_parameter_name: global_parameter_name.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+            global_parameter_name: impl Into<String>,
+            default: impl Into<models::GlobalParameterResource>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+                global_parameter_name: global_parameter_name.into(),
+                default: default.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+            global_parameter_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+                global_parameter_name: global_parameter_name.into(),
+            }
+        }
+    }
+    pub mod list_by_factory {
+        use super::models;
+        use azure_core::error::ResultExt;
+        type Response = models::GlobalParameterListResponse;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/globalParameters",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name
+                        );
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let mut req_builder = http::request::Builder::new();
+                        let rsp = match continuation {
+                            Some(token) => {
+                                url.set_path("");
+                                url = url
+                                    .join(&token.into_raw())
+                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                                if !has_api_version_already {
+                                    url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                                }
+                                req_builder = req_builder.uri(url.as_str());
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                            }
+                            None => {
+                                req_builder = req_builder.method(http::Method::GET);
+                                let credential = this.client.token_credential();
+                                let token_response = credential
+                                    .get_token(&this.client.scopes().join(" "))
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                                req_builder =
+                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req_builder = req_builder.uri(url.as_str());
+                                let req = req_builder
+                                    .body(req_body)
+                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
+                                this.client
+                                    .send(req)
+                                    .await
+                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::GlobalParameterListResponse = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        use azure_core::error::ResultExt;
+        type Response = models::GlobalParameterResource;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+            pub(crate) global_parameter_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/globalParameters/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name,
+                            &this.global_parameter_name
+                        );
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::GlobalParameterResource = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        use azure_core::error::ResultExt;
+        type Response = models::GlobalParameterResource;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+            pub(crate) global_parameter_name: String,
+            pub(crate) default: models::GlobalParameterResource,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/globalParameters/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name,
+                            &this.global_parameter_name
+                        );
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.default)?;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::GlobalParameterResource = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        use azure_core::error::ResultExt;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+            pub(crate) global_parameter_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/globalParameters/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name,
+                            &this.global_parameter_name
+                        );
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2018-06-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

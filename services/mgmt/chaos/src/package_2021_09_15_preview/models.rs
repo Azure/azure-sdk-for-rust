@@ -261,11 +261,11 @@ impl Action {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionStatus {
     #[doc = "The name of the action status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(rename = "actionName", default, skip_serializing_if = "Option::is_none")]
+    pub action_name: Option<String>,
     #[doc = "The id of the action status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    #[serde(rename = "actionId", default, skip_serializing_if = "Option::is_none")]
+    pub action_id: Option<String>,
     #[doc = "The status of the action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -301,11 +301,11 @@ impl Branch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BranchStatus {
     #[doc = "The name of the branch status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(rename = "branchName", default, skip_serializing_if = "Option::is_none")]
+    pub branch_name: Option<String>,
     #[doc = "The id of the branch status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    #[serde(rename = "branchId", default, skip_serializing_if = "Option::is_none")]
+    pub branch_id: Option<String>,
     #[doc = "The status of the branch."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -510,11 +510,11 @@ pub struct ExperimentExecutionActionTargetDetailsProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "String that represents the failed date time."]
-    #[serde(rename = "failedDateUtc", default, skip_serializing_if = "Option::is_none")]
-    pub failed_date_utc: Option<String>,
+    #[serde(rename = "targetFailedTime", default, skip_serializing_if = "Option::is_none")]
+    pub target_failed_time: Option<String>,
     #[doc = "String that represents the completed date time."]
-    #[serde(rename = "completedDateUtc", default, skip_serializing_if = "Option::is_none")]
-    pub completed_date_utc: Option<String>,
+    #[serde(rename = "targetCompletedTime", default, skip_serializing_if = "Option::is_none")]
+    pub target_completed_time: Option<String>,
     #[doc = "Model that represents the Experiment action target details error model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ExperimentExecutionActionTargetDetailsError>,
@@ -578,17 +578,17 @@ pub struct ExperimentExecutionDetailsProperties {
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
     #[doc = "String that represents the created date time."]
-    #[serde(rename = "createdDateUtc", default, skip_serializing_if = "Option::is_none")]
-    pub created_date_utc: Option<String>,
+    #[serde(rename = "createdDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub created_date_time: Option<String>,
     #[doc = "String that represents the last action date time."]
-    #[serde(rename = "lastActionDateUtc", default, skip_serializing_if = "Option::is_none")]
-    pub last_action_date_utc: Option<String>,
+    #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_action_date_time: Option<String>,
     #[doc = "String that represents the start date time."]
-    #[serde(rename = "startDateUtc", default, skip_serializing_if = "Option::is_none")]
-    pub start_date_utc: Option<String>,
+    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_date_time: Option<String>,
     #[doc = "String that represents the stop date time."]
-    #[serde(rename = "stopDateUtc", default, skip_serializing_if = "Option::is_none")]
-    pub stop_date_utc: Option<String>,
+    #[serde(rename = "stopDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub stop_date_time: Option<String>,
     #[doc = "The information of the experiment run."]
     #[serde(rename = "runInformation", default, skip_serializing_if = "Option::is_none")]
     pub run_information: Option<experiment_execution_details_properties::RunInformation>,
@@ -802,11 +802,11 @@ impl Step {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StepStatus {
     #[doc = "The name of the step."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(rename = "stepName", default, skip_serializing_if = "Option::is_none")]
+    pub step_name: Option<String>,
     #[doc = "The id of the step."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    #[serde(rename = "stepId", default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
     #[doc = "The value of the status of the step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,

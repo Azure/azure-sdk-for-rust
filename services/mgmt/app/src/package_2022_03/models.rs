@@ -640,9 +640,7 @@ pub mod configuration {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ActiveRevisionsMode")]
     pub enum ActiveRevisionsMode {
-        #[serde(rename = "multiple")]
         Multiple,
-        #[serde(rename = "single")]
         Single,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -669,8 +667,8 @@ pub mod configuration {
             S: Serializer,
         {
             match self {
-                Self::Multiple => serializer.serialize_unit_variant("ActiveRevisionsMode", 0u32, "multiple"),
-                Self::Single => serializer.serialize_unit_variant("ActiveRevisionsMode", 1u32, "single"),
+                Self::Multiple => serializer.serialize_unit_variant("ActiveRevisionsMode", 0u32, "Multiple"),
+                Self::Single => serializer.serialize_unit_variant("ActiveRevisionsMode", 1u32, "Single"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -883,7 +881,7 @@ pub mod container_app_probe {
         pub port: i32,
         #[doc = "Scheme to use for connecting to the host. Defaults to HTTP."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub scheme: Option<String>,
+        pub scheme: Option<http_get::Scheme>,
     }
     impl HttpGet {
         pub fn new(port: i32) -> Self {
@@ -893,6 +891,48 @@ pub mod container_app_probe {
                 path: None,
                 port,
                 scheme: None,
+            }
+        }
+    }
+    pub mod http_get {
+        use super::*;
+        #[doc = "Scheme to use for connecting to the host. Defaults to HTTP."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "Scheme")]
+        pub enum Scheme {
+            #[serde(rename = "HTTP")]
+            Http,
+            #[serde(rename = "HTTPS")]
+            Https,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for Scheme {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for Scheme {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for Scheme {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Http => serializer.serialize_unit_variant("Scheme", 0u32, "HTTP"),
+                    Self::Https => serializer.serialize_unit_variant("Scheme", 1u32, "HTTPS"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
             }
         }
     }
@@ -914,11 +954,8 @@ pub mod container_app_probe {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Type")]
     pub enum Type {
-        #[serde(rename = "liveness")]
         Liveness,
-        #[serde(rename = "readiness")]
         Readiness,
-        #[serde(rename = "startup")]
         Startup,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -945,9 +982,9 @@ pub mod container_app_probe {
             S: Serializer,
         {
             match self {
-                Self::Liveness => serializer.serialize_unit_variant("Type", 0u32, "liveness"),
-                Self::Readiness => serializer.serialize_unit_variant("Type", 1u32, "readiness"),
-                Self::Startup => serializer.serialize_unit_variant("Type", 2u32, "startup"),
+                Self::Liveness => serializer.serialize_unit_variant("Type", 0u32, "Liveness"),
+                Self::Readiness => serializer.serialize_unit_variant("Type", 1u32, "Readiness"),
+                Self::Startup => serializer.serialize_unit_variant("Type", 2u32, "Startup"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2788,7 +2825,7 @@ impl UserAssignedIdentity {
 #[doc = "Configuration properties for apps environment to join a Virtual Network"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VnetConfiguration {
-    #[doc = "Boolean indicating the environment only has an internal load balancer. These environments do not have a public static IP resource, must provide ControlPlaneSubnetResourceId and AppSubnetResourceId if enabling this property"]
+    #[doc = "Boolean indicating the environment only has an internal load balancer. These environments do not have a public static IP resource. They must provide runtimeSubnetId and infrastructureSubnetId if enabling this property"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub internal: Option<bool>,
     #[doc = "Resource ID of a subnet for infrastructure components. This subnet must be in the same VNET as the subnet defined in runtimeSubnetId. Must not overlap with any other provided IP ranges."]

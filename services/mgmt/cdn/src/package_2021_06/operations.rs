@@ -9025,7 +9025,7 @@ pub mod custom_domains {
         use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
+            Ok200(models::CustomDomain),
             Accepted202(models::CustomDomain),
         }
         #[derive(Clone)]
@@ -9038,6 +9038,7 @@ pub mod custom_domains {
             pub(crate) subscription_id: String,
         }
         impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9066,7 +9067,11 @@ pub mod custom_domains {
                             .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::CustomDomain = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
                             http::StatusCode::ACCEPTED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::CustomDomain = serde_json::from_slice(&rsp_body)?;
@@ -9087,7 +9092,7 @@ pub mod custom_domains {
         use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
+            Ok200(models::CustomDomain),
             Accepted202(models::CustomDomain),
         }
         #[derive(Clone)]
@@ -9108,6 +9113,7 @@ pub mod custom_domains {
                 self.custom_domain_https_parameters = Some(custom_domain_https_parameters.into());
                 self
             }
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9140,7 +9146,11 @@ pub mod custom_domains {
                             .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::CustomDomain = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
                             http::StatusCode::ACCEPTED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::CustomDomain = serde_json::from_slice(&rsp_body)?;

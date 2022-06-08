@@ -106,6 +106,9 @@ pub struct CapabilityProperties {
     pub supported_flexible_server_editions: Vec<FlexibleServerEditionCapability>,
     #[serde(rename = "supportedHyperscaleNodeEditions", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_hyperscale_node_editions: Vec<HyperscaleNodeEditionCapability>,
+    #[doc = "Supported high availability mode"]
+    #[serde(rename = "supportedHAMode", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_ha_mode: Vec<String>,
     #[doc = "The status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -1439,6 +1442,12 @@ impl VirtualNetworkSubnetUsageParameter {
 #[doc = "Virtual network subnet usage data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkSubnetUsageResult {
+    #[doc = "The location the resource resides in."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "The subscription ID."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
     #[serde(rename = "delegatedSubnetsUsage", default, skip_serializing_if = "Vec::is_empty")]
     pub delegated_subnets_usage: Vec<DelegatedSubnetUsage>,
 }

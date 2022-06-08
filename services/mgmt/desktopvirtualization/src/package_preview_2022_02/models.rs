@@ -4,19 +4,19 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "The session host configuration for updating agent, monitoring agent, and stack component."]
+#[doc = "The preferred settings for updating the agent components (RDAgent, Geneva Monitoring agent, and side-by-side stack) on session hosts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentUpdatePatchProperties {
-    #[doc = "The type of maintenance for session host components."]
+    #[doc = "The preferred mechanism for updating the agent components. This is either Scheduled or Default."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<agent_update_patch_properties::Type>,
-    #[doc = "Whether to use localTime of the virtual machine."]
+    #[doc = "Boolean indicating whether to update the agent components in the local time zone of each session host in the host pool. By default, this is false."]
     #[serde(rename = "useSessionHostLocalTime", default, skip_serializing_if = "Option::is_none")]
     pub use_session_host_local_time: Option<bool>,
-    #[doc = "Time zone for maintenance as defined in https://docs.microsoft.com/en-us/dotnet/api/system.timezoneinfo.findsystemtimezonebyid?view=net-5.0. Must be set if useLocalTime is true."]
+    #[doc = "The time zone for updating the agent components. Valid time zones can be found here: https://docs.microsoft.com/en-us/dotnet/api/system.timezoneinfo.findsystemtimezonebyid?view=net-5.0. A time zone must be specified if useSessionHostLocalTime is false."]
     #[serde(rename = "maintenanceWindowTimeZone", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window_time_zone: Option<String>,
-    #[doc = "List of maintenance windows. Maintenance windows are 2 hours long."]
+    #[doc = "The maintenance windows (day and time) for updating the agent components. At least 1 window must be specified. Optionally, a 2nd window can be specified."]
     #[serde(rename = "maintenanceWindows", default, skip_serializing_if = "Vec::is_empty")]
     pub maintenance_windows: Vec<MaintenanceWindowPatchProperties>,
 }
@@ -27,7 +27,7 @@ impl AgentUpdatePatchProperties {
 }
 pub mod agent_update_patch_properties {
     use super::*;
-    #[doc = "The type of maintenance for session host components."]
+    #[doc = "The preferred mechanism for updating the agent components. This is either Scheduled or Default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Type")]
     pub enum Type {
@@ -65,19 +65,19 @@ pub mod agent_update_patch_properties {
         }
     }
 }
-#[doc = "The session host configuration for updating agent, monitoring agent, and stack component."]
+#[doc = "The preferred settings for updating the agent components (RDAgent, Geneva Monitoring agent, and side-by-side stack) on session hosts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentUpdateProperties {
-    #[doc = "The type of maintenance for session host components."]
+    #[doc = "The preferred mechanism for updating the agent components. This is either Scheduled or Default."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<agent_update_properties::Type>,
-    #[doc = "Whether to use localTime of the virtual machine."]
+    #[doc = "Boolean indicating whether to update the agent components in the local time zone of each session host in the host pool. By default, this is false."]
     #[serde(rename = "useSessionHostLocalTime", default, skip_serializing_if = "Option::is_none")]
     pub use_session_host_local_time: Option<bool>,
-    #[doc = "Time zone for maintenance as defined in https://docs.microsoft.com/en-us/dotnet/api/system.timezoneinfo.findsystemtimezonebyid?view=net-5.0. Must be set if useLocalTime is true."]
+    #[doc = "The time zone for updating the agent components. Valid time zones can be found here: https://docs.microsoft.com/en-us/dotnet/api/system.timezoneinfo.findsystemtimezonebyid?view=net-5.0. A time zone must be specified if useSessionHostLocalTime is false."]
     #[serde(rename = "maintenanceWindowTimeZone", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window_time_zone: Option<String>,
-    #[doc = "List of maintenance windows. Maintenance windows are 2 hours long."]
+    #[doc = "The maintenance windows (day and time) for updating the agent components. At least 1 window must be specified. Optionally, a 2nd window can be specified."]
     #[serde(rename = "maintenanceWindows", default, skip_serializing_if = "Vec::is_empty")]
     pub maintenance_windows: Vec<MaintenanceWindowProperties>,
 }
@@ -88,7 +88,7 @@ impl AgentUpdateProperties {
 }
 pub mod agent_update_properties {
     use super::*;
-    #[doc = "The type of maintenance for session host components."]
+    #[doc = "The preferred mechanism for updating the agent components. This is either Scheduled or Default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Type")]
     pub enum Type {
@@ -917,7 +917,7 @@ pub struct HostPoolPatchProperties {
     #[doc = "Enabled to allow this resource to be access from the public network"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<host_pool_patch_properties::PublicNetworkAccess>,
-    #[doc = "The session host configuration for updating agent, monitoring agent, and stack component."]
+    #[doc = "The preferred settings for updating the agent components (RDAgent, Geneva Monitoring agent, and side-by-side stack) on session hosts."]
     #[serde(rename = "agentUpdate", default, skip_serializing_if = "Option::is_none")]
     pub agent_update: Option<AgentUpdatePatchProperties>,
 }
@@ -1197,7 +1197,7 @@ pub struct HostPoolProperties {
     #[doc = "Enabled allows this resource to be accessed from both public and private networks, Disabled allows this resource to only be accessed via private endpoints"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<host_pool_properties::PublicNetworkAccess>,
-    #[doc = "The session host configuration for updating agent, monitoring agent, and stack component."]
+    #[doc = "The preferred settings for updating the agent components (RDAgent, Geneva Monitoring agent, and side-by-side stack) on session hosts."]
     #[serde(rename = "agentUpdate", default, skip_serializing_if = "Option::is_none")]
     pub agent_update: Option<AgentUpdateProperties>,
     #[doc = "List of private endpoint connection associated with the specified resource"]
@@ -1653,10 +1653,10 @@ impl MsixPackageProperties {
 #[doc = "Maintenance window starting hour and day of week."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceWindowPatchProperties {
-    #[doc = "The update start hour of the day. (0 - 23)"]
+    #[doc = "The starting hour of the maintenance window (0-23). Note that maintenance windows are 2 hours long. This means that updates can be applied anytime from the specified start hour to 2 hours after."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hour: Option<i32>,
-    #[doc = "Day of the week."]
+    #[doc = "The day of the week (Monday-Sunday)."]
     #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
     pub day_of_week: Option<maintenance_window_patch_properties::DayOfWeek>,
 }
@@ -1667,7 +1667,7 @@ impl MaintenanceWindowPatchProperties {
 }
 pub mod maintenance_window_patch_properties {
     use super::*;
-    #[doc = "Day of the week."]
+    #[doc = "The day of the week (Monday-Sunday)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DayOfWeek {
         Monday,
@@ -1682,10 +1682,10 @@ pub mod maintenance_window_patch_properties {
 #[doc = "Maintenance window starting hour and day of week."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceWindowProperties {
-    #[doc = "The update start hour of the day. (0 - 23)"]
+    #[doc = "The starting hour of the maintenance window (0-23). Note that maintenance windows are 2 hours long. This means that updates can be applied anytime from the specified start hour to 2 hours after."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hour: Option<i32>,
-    #[doc = "Day of the week."]
+    #[doc = "The day of the week (Monday-Sunday)."]
     #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
     pub day_of_week: Option<maintenance_window_properties::DayOfWeek>,
 }
@@ -1696,7 +1696,7 @@ impl MaintenanceWindowProperties {
 }
 pub mod maintenance_window_properties {
     use super::*;
-    #[doc = "Day of the week."]
+    #[doc = "The day of the week (Monday-Sunday)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DayOfWeek {
         Monday,

@@ -75,47 +75,17 @@ impl Client {
             pipeline,
         }
     }
-    pub fn approve(&self) -> approve::Client {
-        approve::Client(self.clone())
-    }
-    pub fn create(&self) -> create::Client {
-        create::Client(self.clone())
-    }
-    pub fn delete(&self) -> delete::Client {
-        delete::Client(self.clone())
-    }
-    pub fn deny(&self) -> deny::Client {
-        deny::Client(self.clone())
-    }
-    pub fn generate(&self) -> generate::Client {
-        generate::Client(self.clone())
-    }
-    pub fn get(&self) -> get::Client {
-        get::Client(self.clone())
-    }
-    pub fn grant(&self) -> grant::Client {
-        grant::Client(self.clone())
-    }
     pub fn grants(&self) -> grants::Client {
         grants::Client(self.clone())
     }
-    pub fn join_request(&self) -> join_request::Client {
-        join_request::Client(self.clone())
-    }
     pub fn join_requests(&self) -> join_requests::Client {
         join_requests::Client(self.clone())
-    }
-    pub fn lab(&self) -> lab::Client {
-        lab::Client(self.clone())
     }
     pub fn labs(&self) -> labs::Client {
         labs::Client(self.clone())
     }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
-    }
-    pub fn redeem(&self) -> redeem::Client {
-        redeem::Client(self.clone())
     }
     pub fn student_labs(&self) -> student_labs::Client {
         student_labs::Client(self.clone())
@@ -188,14 +158,30 @@ pub mod grants {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list_all(&self) -> list_all::Builder {
+            list_all::Builder {
                 client: self.0.clone(),
                 include_allocated_budget: None,
             }
         }
+        pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                include_allocated_budget: None,
+            }
+        }
+        pub fn get(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                include_allocated_budget: None,
+            }
+        }
     }
-    pub mod list {
+    pub mod list_all {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = models::GrantListResponse;
@@ -284,20 +270,6 @@ pub mod grants {
                     }
                 };
                 azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-}
-pub mod grant {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::Builder {
-            list::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                include_allocated_budget: None,
             }
         }
     }
@@ -400,56 +372,7 @@ pub mod grant {
             }
         }
     }
-}
-pub mod get {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn grant(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> grant::Builder {
-            grant::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                include_allocated_budget: None,
-            }
-        }
-        pub fn lab(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-        ) -> lab::Builder {
-            lab::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                include_budget: None,
-            }
-        }
-        pub fn student(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            student_alias: impl Into<String>,
-        ) -> student::Builder {
-            student::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                student_alias: student_alias.into(),
-            }
-        }
-        pub fn student_lab(&self, student_lab_name: impl Into<String>) -> student_lab::Builder {
-            student_lab::Builder {
-                client: self.0.clone(),
-                student_lab_name: student_lab_name.into(),
-            }
-        }
-    }
-    pub mod grant {
+    pub mod get {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = models::GrantDetails;
@@ -511,186 +434,13 @@ pub mod get {
             }
         }
     }
-    pub mod lab {
-        use super::models;
-        use azure_core::error::ResultExt;
-        type Response = models::LabDetails;
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) billing_account_name: String,
-            pub(crate) billing_profile_name: String,
-            pub(crate) invoice_section_name: String,
-            pub(crate) include_budget: Option<bool>,
-        }
-        impl Builder {
-            pub fn include_budget(mut self, include_budget: bool) -> Self {
-                self.include_budget = Some(include_budget);
-                self
-            }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
-                        if let Some(include_budget) = &this.include_budget {
-                            url.query_pairs_mut().append_pair("includeBudget", &include_budget.to_string());
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::LabDetails = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code.as_u16(),
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod student {
-        use super::models;
-        use azure_core::error::ResultExt;
-        type Response = models::StudentDetails;
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) billing_account_name: String,
-            pub(crate) billing_profile_name: String,
-            pub(crate) invoice_section_name: String,
-            pub(crate) student_alias: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default/students/{}" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name , & this . student_alias) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::StudentDetails = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code.as_u16(),
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod student_lab {
-        use super::models;
-        use azure_core::error::ResultExt;
-        type Response = models::StudentLabDetails;
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) student_lab_name: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!(
-                            "{}/providers/Microsoft.Education/studentLabs/{}",
-                            this.client.endpoint(),
-                            &this.student_lab_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::StudentLabDetails = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code.as_u16(),
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
 }
 pub mod labs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list_all(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list_all::Builder {
+            list_all::Builder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -698,8 +448,80 @@ pub mod labs {
                 include_deleted: None,
             }
         }
+        pub fn list(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                include_budget: None,
+            }
+        }
+        pub fn get(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                include_budget: None,
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            parameters: impl Into<models::LabDetails>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+            }
+        }
+        pub fn generate_invite_code(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            parameters: impl Into<models::InviteCodeGenerateRequest>,
+        ) -> generate_invite_code::Builder {
+            generate_invite_code::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                parameters: parameters.into(),
+                only_update_student_count_parameter: None,
+            }
+        }
     }
-    pub mod list {
+    pub mod list_all {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = models::LabListResult;
@@ -805,26 +627,6 @@ pub mod labs {
             }
         }
     }
-}
-pub mod lab {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn list(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                include_budget: None,
-            }
-        }
-    }
     pub mod list {
         use super::models;
         use azure_core::error::ResultExt;
@@ -919,45 +721,69 @@ pub mod lab {
             }
         }
     }
-}
-pub mod create {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn lab(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            parameters: impl Into<models::LabDetails>,
-        ) -> lab::Builder {
-            lab::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                parameters: parameters.into(),
-            }
+    pub mod get {
+        use super::models;
+        use azure_core::error::ResultExt;
+        type Response = models::LabDetails;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) billing_account_name: String,
+            pub(crate) billing_profile_name: String,
+            pub(crate) invoice_section_name: String,
+            pub(crate) include_budget: Option<bool>,
         }
-        pub fn student(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            student_alias: impl Into<String>,
-            parameters: impl Into<models::StudentDetails>,
-        ) -> student::Builder {
-            student::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                student_alias: student_alias.into(),
-                parameters: parameters.into(),
+        impl Builder {
+            pub fn include_budget(mut self, include_budget: bool) -> Self {
+                self.include_budget = Some(include_budget);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name) ;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
+                        if let Some(include_budget) = &this.include_budget {
+                            url.query_pairs_mut().append_pair("includeBudget", &include_budget.to_string());
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::LabDetails = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
             }
         }
     }
-    pub mod lab {
+    pub mod create_or_update {
         use super::models;
         use azure_core::error::ResultExt;
         #[derive(Debug)]
@@ -1022,107 +848,7 @@ pub mod create {
             }
         }
     }
-    pub mod student {
-        use super::models;
-        use azure_core::error::ResultExt;
-        #[derive(Debug)]
-        pub enum Response {
-            Created201(models::StudentDetails),
-            Ok200(models::StudentDetails),
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) billing_account_name: String,
-            pub(crate) billing_profile_name: String,
-            pub(crate) invoice_section_name: String,
-            pub(crate) student_alias: String,
-            pub(crate) parameters: models::StudentDetails,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default/students/{}" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name , & this . student_alias) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::CREATED => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::StudentDetails = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            http::StatusCode::OK => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::StudentDetails = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code.as_u16(),
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod delete {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn lab(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-        ) -> lab::Builder {
-            lab::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-            }
-        }
-        pub fn student(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            student_alias: impl Into<String>,
-        ) -> student::Builder {
-            student::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                student_alias: student_alias.into(),
-            }
-        }
-    }
-    pub mod lab {
+    pub mod delete {
         use super::models;
         use azure_core::error::ResultExt;
         #[derive(Debug)]
@@ -1177,85 +903,7 @@ pub mod delete {
             }
         }
     }
-    pub mod student {
-        use super::models;
-        use azure_core::error::ResultExt;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            NoContent204,
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) billing_account_name: String,
-            pub(crate) billing_profile_name: String,
-            pub(crate) invoice_section_name: String,
-            pub(crate) student_alias: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default/students/{}" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name , & this . student_alias) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => Ok(Response::Ok200),
-                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code.as_u16(),
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-}
-pub mod generate {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn invite_code(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            parameters: impl Into<models::InviteCodeGenerateRequest>,
-        ) -> invite_code::Builder {
-            invite_code::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                parameters: parameters.into(),
-                only_update_student_count_parameter: None,
-            }
-        }
-    }
-    pub mod invite_code {
+    pub mod generate_invite_code {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = models::LabDetails;
@@ -1337,6 +985,51 @@ pub mod join_requests {
                 billing_profile_name: billing_profile_name.into(),
                 invoice_section_name: invoice_section_name.into(),
                 include_denied: None,
+            }
+        }
+        pub fn get(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            join_request_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                join_request_name: join_request_name.into(),
+            }
+        }
+        pub fn approve(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            join_request_name: impl Into<String>,
+        ) -> approve::Builder {
+            approve::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                join_request_name: join_request_name.into(),
+            }
+        }
+        pub fn deny(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            join_request_name: impl Into<String>,
+        ) -> deny::Builder {
+            deny::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                join_request_name: join_request_name.into(),
             }
         }
     }
@@ -1434,27 +1127,6 @@ pub mod join_requests {
             }
         }
     }
-}
-pub mod join_request {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn get(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            join_request_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                join_request_name: join_request_name.into(),
-            }
-        }
-    }
     pub mod get {
         use super::models;
         use azure_core::error::ResultExt;
@@ -1510,28 +1182,7 @@ pub mod join_request {
             }
         }
     }
-}
-pub mod approve {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn invite(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            join_request_name: impl Into<String>,
-        ) -> invite::Builder {
-            invite::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                join_request_name: join_request_name.into(),
-            }
-        }
-    }
-    pub mod invite {
+    pub mod approve {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = ();
@@ -1583,28 +1234,7 @@ pub mod approve {
             }
         }
     }
-}
-pub mod deny {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn invite(
-            &self,
-            billing_account_name: impl Into<String>,
-            billing_profile_name: impl Into<String>,
-            invoice_section_name: impl Into<String>,
-            join_request_name: impl Into<String>,
-        ) -> invite::Builder {
-            invite::Builder {
-                client: self.0.clone(),
-                billing_account_name: billing_account_name.into(),
-                billing_profile_name: billing_profile_name.into(),
-                invoice_section_name: invoice_section_name.into(),
-                join_request_name: join_request_name.into(),
-            }
-        }
-    }
-    pub mod invite {
+    pub mod deny {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = ();
@@ -1657,64 +1287,60 @@ pub mod deny {
         }
     }
 }
-pub mod redeem {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn invite(&self, parameters: impl Into<models::RedeemRequest>) -> invite::Builder {
-            invite::Builder {
-                client: self.0.clone(),
-                parameters: parameters.into(),
-            }
+impl Client {
+    pub fn redeem_invitation_code(&self, parameters: impl Into<models::RedeemRequest>) -> redeem_invitation_code::Builder {
+        redeem_invitation_code::Builder {
+            client: self.clone(),
+            parameters: parameters.into(),
         }
     }
-    pub mod invite {
-        use super::models;
-        use azure_core::error::ResultExt;
-        type Response = ();
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) parameters: models::RedeemRequest,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url_str = &format!("{}/providers/Microsoft.Education/redeemInvitationCode", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
-                        let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            http::StatusCode::OK => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code.as_u16(),
-                                error_code: None,
-                            })),
-                        }
+}
+pub mod redeem_invitation_code {
+    use super::models;
+    use azure_core::error::ResultExt;
+    type Response = ();
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) parameters: models::RedeemRequest,
+    }
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            Box::pin({
+                let this = self.clone();
+                async move {
+                    let url_str = &format!("{}/providers/Microsoft.Education/redeemInvitationCode", this.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = this.client.token_credential();
+                    let token_response = credential
+                        .get_token(&this.client.scopes().join(" "))
+                        .await
+                        .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&this.parameters)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder
+                        .body(req_body)
+                        .context(azure_core::error::ErrorKind::Other, "build request")?;
+                    let rsp = this
+                        .client
+                        .send(req)
+                        .await
+                        .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                            status: status_code.as_u16(),
+                            error_code: None,
+                        })),
                     }
-                })
-            }
+                }
+            })
         }
     }
 }
@@ -1734,6 +1360,53 @@ pub mod students {
                 billing_profile_name: billing_profile_name.into(),
                 invoice_section_name: invoice_section_name.into(),
                 include_deleted: None,
+            }
+        }
+        pub fn get(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            student_alias: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                student_alias: student_alias.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            student_alias: impl Into<String>,
+            parameters: impl Into<models::StudentDetails>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                student_alias: student_alias.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+            invoice_section_name: impl Into<String>,
+            student_alias: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                billing_account_name: billing_account_name.into(),
+                billing_profile_name: billing_profile_name.into(),
+                invoice_section_name: invoice_section_name.into(),
+                student_alias: student_alias.into(),
             }
         }
     }
@@ -1831,16 +1504,199 @@ pub mod students {
             }
         }
     }
+    pub mod get {
+        use super::models;
+        use azure_core::error::ResultExt;
+        type Response = models::StudentDetails;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) billing_account_name: String,
+            pub(crate) billing_profile_name: String,
+            pub(crate) invoice_section_name: String,
+            pub(crate) student_alias: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default/students/{}" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name , & this . student_alias) ;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StudentDetails = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        use azure_core::error::ResultExt;
+        #[derive(Debug)]
+        pub enum Response {
+            Created201(models::StudentDetails),
+            Ok200(models::StudentDetails),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) billing_account_name: String,
+            pub(crate) billing_profile_name: String,
+            pub(crate) invoice_section_name: String,
+            pub(crate) student_alias: String,
+            pub(crate) parameters: models::StudentDetails,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default/students/{}" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name , & this . student_alias) ;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::PUT);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::CREATED => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StudentDetails = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Created201(rsp_value))
+                            }
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StudentDetails = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        use azure_core::error::ResultExt;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) billing_account_name: String,
+            pub(crate) billing_profile_name: String,
+            pub(crate) invoice_section_name: String,
+            pub(crate) student_alias: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections/{}/providers/Microsoft.Education/labs/default/students/{}" , this . client . endpoint () , & this . billing_account_name , & this . billing_profile_name , & this . invoice_section_name , & this . student_alias) ;
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::DELETE);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
 }
 pub mod student_labs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::Builder {
+            list_all::Builder { client: self.0.clone() }
+        }
+        pub fn get(&self, student_lab_name: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                student_lab_name: student_lab_name.into(),
+            }
         }
     }
-    pub mod list {
+    pub mod list_all {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = models::StudentLabListResult;
@@ -1920,6 +1776,62 @@ pub mod student_labs {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        use azure_core::error::ResultExt;
+        type Response = models::StudentLabDetails;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) student_lab_name: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url_str = &format!(
+                            "{}/providers/Microsoft.Education/studentLabs/{}",
+                            this.client.endpoint(),
+                            &this.student_lab_name
+                        );
+                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                        let mut req_builder = http::request::Builder::new();
+                        req_builder = req_builder.method(http::Method::GET);
+                        let credential = this.client.token_credential();
+                        let token_response = credential
+                            .get_token(&this.client.scopes().join(" "))
+                            .await
+                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
+                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                        url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder
+                            .body(req_body)
+                            .context(azure_core::error::ErrorKind::Other, "build request")?;
+                        let rsp = this
+                            .client
+                            .send(req)
+                            .await
+                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::StudentLabDetails = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code.as_u16(),
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
             }
         }
     }

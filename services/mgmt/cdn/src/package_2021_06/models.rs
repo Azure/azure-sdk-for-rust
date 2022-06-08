@@ -2062,7 +2062,7 @@ pub struct CustomDomainProperties {
     #[doc = "Resource status of the custom domain."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<custom_domain_properties::ResourceState>,
-    #[doc = "Provisioning status of Custom Https of the custom domain."]
+    #[doc = "Provisioning status of the custom domain."]
     #[serde(rename = "customHttpsProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_state: Option<custom_domain_properties::CustomHttpsProvisioningState>,
     #[doc = "Provisioning substate shows the progress of custom HTTPS enabling/disabling process step by step."]
@@ -2074,9 +2074,9 @@ pub struct CustomDomainProperties {
     #[doc = "Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China."]
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
-    #[doc = "Provisioning status of the custom domain."]
+    #[doc = "Provisioning status of Custom Https of the custom domain."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<custom_domain_properties::ProvisioningState>,
 }
 impl CustomDomainProperties {
     pub fn new(host_name: String) -> Self {
@@ -2132,7 +2132,7 @@ pub mod custom_domain_properties {
             }
         }
     }
-    #[doc = "Provisioning status of Custom Https of the custom domain."]
+    #[doc = "Provisioning status of the custom domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "CustomHttpsProvisioningState")]
     pub enum CustomHttpsProvisioningState {
@@ -2246,6 +2246,49 @@ pub mod custom_domain_properties {
                 Self::CertificateDeleted => {
                     serializer.serialize_unit_variant("CustomHttpsProvisioningSubstate", 9u32, "CertificateDeleted")
                 }
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Provisioning status of Custom Https of the custom domain."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Enabling,
+        Enabled,
+        Disabling,
+        Disabled,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabling => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Enabling"),
+                Self::Enabled => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Enabled"),
+                Self::Disabling => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Disabling"),
+                Self::Disabled => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Disabled"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3230,7 +3273,7 @@ pub struct EndpointProperties {
     pub resource_state: Option<endpoint_properties::ResourceState>,
     #[doc = "Provisioning status of the endpoint."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<endpoint_properties::ProvisioningState>,
 }
 impl EndpointProperties {
     pub fn new(origins: Vec<DeepCreatedOrigin>) -> Self {
@@ -3288,6 +3331,49 @@ pub mod endpoint_properties {
                 Self::Starting => serializer.serialize_unit_variant("ResourceState", 3u32, "Starting"),
                 Self::Stopped => serializer.serialize_unit_variant("ResourceState", 4u32, "Stopped"),
                 Self::Stopping => serializer.serialize_unit_variant("ResourceState", 5u32, "Stopping"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Provisioning status of the endpoint."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Updating,
+        Deleting,
+        Creating,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Deleting"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Creating"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -4199,7 +4285,7 @@ pub struct ManagedRuleGroupOverride {
     #[doc = "Describes the managed rule group within the rule set to override"]
     #[serde(rename = "ruleGroupName")]
     pub rule_group_name: String,
-    #[doc = "List of rules that will be disabled. If none specified, all rules in the group will be disabled."]
+    #[doc = "List of rules that will be enabled. If none specified, all rules in the group will be disabled."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<ManagedRuleOverride>,
 }
@@ -4873,7 +4959,7 @@ pub struct OriginGroupProperties {
     pub resource_state: Option<origin_group_properties::ResourceState>,
     #[doc = "Provisioning status of the origin group."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<origin_group_properties::ProvisioningState>,
 }
 impl OriginGroupProperties {
     pub fn new() -> Self {
@@ -4921,6 +5007,49 @@ pub mod origin_group_properties {
                 Self::Creating => serializer.serialize_unit_variant("ResourceState", 0u32, "Creating"),
                 Self::Active => serializer.serialize_unit_variant("ResourceState", 1u32, "Active"),
                 Self::Deleting => serializer.serialize_unit_variant("ResourceState", 2u32, "Deleting"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Provisioning status of the origin group."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Updating,
+        Deleting,
+        Creating,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Deleting"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Creating"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -4997,7 +5126,7 @@ pub struct OriginProperties {
     pub resource_state: Option<origin_properties::ResourceState>,
     #[doc = "Provisioning status of the origin."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<origin_properties::ProvisioningState>,
     #[doc = "The approval status for the connection to the Private Link"]
     #[serde(rename = "privateEndpointStatus", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_status: Option<PrivateEndpointStatus>,
@@ -5049,6 +5178,49 @@ pub mod origin_properties {
                 Self::Creating => serializer.serialize_unit_variant("ResourceState", 0u32, "Creating"),
                 Self::Active => serializer.serialize_unit_variant("ResourceState", 1u32, "Active"),
                 Self::Deleting => serializer.serialize_unit_variant("ResourceState", 2u32, "Deleting"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Provisioning status of the origin."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Updating,
+        Deleting,
+        Creating,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Deleting"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Creating"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -5298,7 +5470,7 @@ pub struct ProfileProperties {
     pub resource_state: Option<profile_properties::ResourceState>,
     #[doc = "Provisioning status of the profile."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<profile_properties::ProvisioningState>,
     #[doc = "The Id of the frontdoor."]
     #[serde(rename = "frontDoorId", default, skip_serializing_if = "Option::is_none")]
     pub front_door_id: Option<String>,
@@ -5350,6 +5522,49 @@ pub mod profile_properties {
                 Self::Active => serializer.serialize_unit_variant("ResourceState", 1u32, "Active"),
                 Self::Deleting => serializer.serialize_unit_variant("ResourceState", 2u32, "Deleting"),
                 Self::Disabled => serializer.serialize_unit_variant("ResourceState", 3u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Provisioning status of the profile."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Updating,
+        Deleting,
+        Creating,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Deleting"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Creating"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -6105,9 +6320,9 @@ pub struct ResourceUsage {
     #[doc = "Resource type for which the usage is provided."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
-    #[doc = "Unit of the usage. e.g. Count."]
+    #[doc = "Unit of the usage. e.g. count."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<String>,
+    pub unit: Option<resource_usage::Unit>,
     #[doc = "Actual value of usage on the specified resource type."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i32>,
@@ -6118,6 +6333,45 @@ pub struct ResourceUsage {
 impl ResourceUsage {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod resource_usage {
+    use super::*;
+    #[doc = "Unit of the usage. e.g. count."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Unit")]
+    pub enum Unit {
+        #[serde(rename = "count")]
+        Count,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Unit {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Unit {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Unit {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Count => serializer.serialize_unit_variant("Unit", 0u32, "count"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Output of check resource usage API."]
