@@ -43,7 +43,10 @@ impl ListDocumentsBuilder {
         partition_range_id: String => Some(PartitionRangeId::new(partition_range_id)),
     }
 
-    pub fn into_stream<T: DeserializeOwned>(self) -> ListDocuments<T> {
+    pub fn into_stream<T>(self) -> ListDocuments<T>
+    where
+        T: DeserializeOwned + Send + Sync,
+    {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();

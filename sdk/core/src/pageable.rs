@@ -25,7 +25,10 @@ pub struct Pageable<T, E> {
     stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> + Send>>,
 }
 
-impl<T: Continuable, E> Pageable<T, E> {
+impl<T, E> Pageable<T, E>
+where
+    T: Continuable + Send + Sync,
+{
     pub fn new<F>(make_request: impl Fn(Option<Continuation>) -> F + Clone + 'static + Send) -> Self
     where
         F: std::future::Future<Output = Result<T, E>> + Send + 'static,
