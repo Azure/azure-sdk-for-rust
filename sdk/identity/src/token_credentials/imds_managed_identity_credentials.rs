@@ -1,6 +1,6 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::http::{HeaderMap, Method};
+use azure_core::http::Method;
 use azure_core::{HttpClient, Request};
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
