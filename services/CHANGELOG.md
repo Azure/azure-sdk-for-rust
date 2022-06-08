@@ -1,3 +1,10 @@
+# 0.4 (2022-06)
+- generated from azure-rest-api-specs [commit from 2022-06-08](https://github.com/Azure/azure-rest-api-specs/commit/facedaf6dc920b45055d38765f40af696454755c)
+- [#768](https://github.com/Azure/azure-sdk-for-rust/issues/768) add support for x-ms-enum modelAsString
+- [#742](https://github.com/Azure/azure-sdk-for-rust/pull/742) add support for x-ms-pageable
+- [#766](https://github.com/Azure/azure-sdk-for-rust/pull/766) use azure_core::error::Error
+- [#761](https://github.com/Azure/azure-sdk-for-rust/pull/761) limit tags to 5
+
 # 0.3 (2022-04)
 
 - [#732](https://github.com/Azure/azure-sdk-for-rust/pull/732) generated from azure-rest-api-specs [commit from 2022-04-27](https://github.com/Azure/azure-rest-api-specs/commit/46ffdc4fe0f9a413ba29ed859b5ff4174ce1c7ec)
