@@ -10,8 +10,9 @@ use azure_core::auth::TokenCredential;
 use azure_core::headers::*;
 use azure_core::HttpClient;
 use bytes::Bytes;
+use http::header::AsHeaderName;
+use http::HeaderMap;
 use http::{
-    header::*,
     method::Method,
     request::{Builder, Request},
 };
