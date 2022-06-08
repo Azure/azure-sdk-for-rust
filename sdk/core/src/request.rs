@@ -1,10 +1,8 @@
-use crate::error::{ErrorKind, Result, ResultExt};
 use crate::headers::{AsHeaders, Headers};
 use crate::SeekableStream;
 use bytes::Bytes;
 use http::{Method, Uri};
 use std::fmt::Debug;
-use std::str::FromStr;
 
 /// An HTTP Body.
 #[derive(Debug, Clone)]
