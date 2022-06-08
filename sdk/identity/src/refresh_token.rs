@@ -3,10 +3,9 @@
 use azure_core::{
     content_type,
     error::{Error, ErrorKind, Result, ResultExt},
-    headers,
-    http::Method,
-    HttpClient, Request,
+    headers, HttpClient, Request,
 };
+use http::Method;
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;

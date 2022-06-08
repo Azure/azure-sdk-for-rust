@@ -6,9 +6,9 @@
 mod device_code_responses;
 
 use azure_core::error::{Error, ErrorKind, Result};
-use azure_core::http::Method;
 use azure_core::{content_type, headers, HttpClient, Request, Response};
 pub use device_code_responses::*;
+use http::Method;
 
 use async_timer::timer::new_timer;
 use futures::stream::unfold;
