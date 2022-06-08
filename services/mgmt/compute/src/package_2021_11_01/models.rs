@@ -6161,7 +6161,7 @@ pub struct OsProfile {
     #[doc = "Specifies whether extension operations should be allowed on the virtual machine. <br><br>This may only be set to False when no extensions are present on the virtual machine."]
     #[serde(rename = "allowExtensionOperations", default, skip_serializing_if = "Option::is_none")]
     pub allow_extension_operations: Option<bool>,
-    #[doc = "Specifies whether the guest provision signal is required to infer provision success of the virtual machine.  **Note: This property is for private testing only, and all customers must not set the property to false.**"]
+    #[doc = "Optional property which must either be set to True or omitted."]
     #[serde(rename = "requireGuestProvisionSignal", default, skip_serializing_if = "Option::is_none")]
     pub require_guest_provision_signal: Option<bool>,
 }

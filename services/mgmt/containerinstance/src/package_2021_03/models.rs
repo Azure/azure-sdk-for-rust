@@ -548,8 +548,8 @@ pub struct ContainerHttpGet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scheme: Option<container_http_get::Scheme>,
     #[doc = "The HTTP headers."]
-    #[serde(rename = "httpHeaders", default, skip_serializing_if = "Option::is_none")]
-    pub http_headers: Option<HttpHeaders>,
+    #[serde(rename = "httpHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    pub http_headers: Vec<HttpHeader>,
 }
 impl ContainerHttpGet {
     pub fn new(port: i32) -> Self {
@@ -557,7 +557,7 @@ impl ContainerHttpGet {
             path: None,
             port,
             scheme: None,
-            http_headers: None,
+            http_headers: Vec::new(),
         }
     }
 }
@@ -957,9 +957,9 @@ pub mod gpu_resource {
         }
     }
 }
-#[doc = "The HTTP headers."]
+#[doc = "The HTTP header"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HttpHeaders {
+pub struct HttpHeader {
     #[doc = "The header name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -967,7 +967,7 @@ pub struct HttpHeaders {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-impl HttpHeaders {
+impl HttpHeader {
     pub fn new() -> Self {
         Self::default()
     }

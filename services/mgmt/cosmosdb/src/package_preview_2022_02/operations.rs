@@ -5261,7 +5261,11 @@ pub mod sql_resources {
     pub mod sql_container_retrieve_throughput_distribution {
         use super::models;
         use azure_core::error::ResultExt;
-        type Response = ();
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(models::PhysicalPartitionThroughputInfoResult),
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5302,7 +5306,12 @@ pub mod sql_resources {
                             .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::ACCEPTED => Ok(()),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::PhysicalPartitionThroughputInfoResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -5316,7 +5325,11 @@ pub mod sql_resources {
     pub mod sql_container_redistribute_throughput {
         use super::models;
         use azure_core::error::ResultExt;
-        type Response = ();
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(models::PhysicalPartitionThroughputInfoResult),
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -5357,7 +5370,12 @@ pub mod sql_resources {
                             .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::ACCEPTED => Ok(()),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::PhysicalPartitionThroughputInfoResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -6749,7 +6767,7 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
-        pub fn sql_container_retrieve_throughput_distribution(
+        pub fn mongo_db_container_retrieve_throughput_distribution(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
@@ -6757,8 +6775,8 @@ pub mod mongo_db_resources {
             database_name: impl Into<String>,
             collection_name: impl Into<String>,
             retrieve_throughput_parameters: impl Into<models::RetrieveThroughputParameters>,
-        ) -> sql_container_retrieve_throughput_distribution::Builder {
-            sql_container_retrieve_throughput_distribution::Builder {
+        ) -> mongo_db_container_retrieve_throughput_distribution::Builder {
+            mongo_db_container_retrieve_throughput_distribution::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -7583,10 +7601,14 @@ pub mod mongo_db_resources {
             }
         }
     }
-    pub mod sql_container_retrieve_throughput_distribution {
+    pub mod mongo_db_container_retrieve_throughput_distribution {
         use super::models;
         use azure_core::error::ResultExt;
-        type Response = ();
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(models::PhysicalPartitionThroughputInfoResult),
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -7627,7 +7649,12 @@ pub mod mongo_db_resources {
                             .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::ACCEPTED => Ok(()),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::PhysicalPartitionThroughputInfoResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
@@ -7641,7 +7668,11 @@ pub mod mongo_db_resources {
     pub mod mongo_db_container_redistribute_throughput {
         use super::models;
         use azure_core::error::ResultExt;
-        type Response = ();
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(models::PhysicalPartitionThroughputInfoResult),
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -7682,7 +7713,12 @@ pub mod mongo_db_resources {
                             .context(azure_core::error::ErrorKind::Io, "execute request")?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            http::StatusCode::ACCEPTED => Ok(()),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::OK => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::PhysicalPartitionThroughputInfoResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,

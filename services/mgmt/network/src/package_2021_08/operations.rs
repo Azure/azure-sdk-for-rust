@@ -3241,7 +3241,7 @@ pub mod network_interfaces {
                                     .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3270,7 +3270,7 @@ pub mod network_interfaces {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder
@@ -3327,7 +3327,7 @@ pub mod network_interfaces {
                                     .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3356,7 +3356,7 @@ pub mod network_interfaces {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder
@@ -3419,7 +3419,7 @@ pub mod network_interfaces {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                        url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                         if let Some(expand) = &this.expand {
                             url.query_pairs_mut().append_pair("$expand", expand);
                         }
@@ -3484,7 +3484,7 @@ pub mod network_interfaces {
                                     .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -3513,7 +3513,7 @@ pub mod network_interfaces {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 if let Some(expand) = &this.expand {
                                     url.query_pairs_mut().append_pair("$expand", expand);
                                 }
@@ -3580,7 +3580,7 @@ pub mod network_interfaces {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                        url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                         if let Some(expand) = &this.expand {
                             url.query_pairs_mut().append_pair("$expand", expand);
                         }
@@ -18664,7 +18664,7 @@ pub mod public_ip_addresses {
                                     .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -18693,7 +18693,7 @@ pub mod public_ip_addresses {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder
@@ -18753,7 +18753,7 @@ pub mod public_ip_addresses {
                                     .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -18782,7 +18782,7 @@ pub mod public_ip_addresses {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                                url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder
@@ -18847,7 +18847,7 @@ pub mod public_ip_addresses {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-10-01");
+                        url.query_pairs_mut().append_pair("api-version", "2021-08-01");
                         if let Some(expand) = &this.expand {
                             url.query_pairs_mut().append_pair("$expand", expand);
                         }

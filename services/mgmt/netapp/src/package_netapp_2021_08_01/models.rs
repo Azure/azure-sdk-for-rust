@@ -480,6 +480,26 @@ impl SubscriptionQuotaItemProperties {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
+}
 #[doc = "Encryption settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountEncryption {
@@ -703,35 +723,19 @@ impl BackupPoliciesList {
 #[doc = "Backup policy information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Tags are a list of key-value pairs that describe the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
     #[doc = "Backup policy properties"]
     pub properties: BackupPolicyProperties,
 }
 impl BackupPolicy {
-    pub fn new(location: String, properties: BackupPolicyProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: BackupPolicyProperties) -> Self {
         Self {
-            location,
-            id: None,
-            name: None,
+            tracked_resource,
             etag: None,
-            type_: None,
-            tags: None,
             properties,
         }
     }
@@ -1043,35 +1047,19 @@ impl BreakReplicationRequest {
 #[doc = "Capacity pool resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapacityPool {
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Tags are a list of key-value pairs that describe the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
     #[doc = "Pool properties"]
     pub properties: PoolProperties,
 }
 impl CapacityPool {
-    pub fn new(location: String, properties: PoolProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: PoolProperties) -> Self {
         Self {
-            location,
-            id: None,
-            name: None,
+            tracked_resource,
             etag: None,
-            type_: None,
-            tags: None,
             properties,
         }
     }
@@ -1373,41 +1361,21 @@ impl MountTargetProperties {
 #[doc = "NetApp account resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetAppAccount {
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Tags are a list of key-value pairs that describe the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
     #[doc = "NetApp account properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl NetAppAccount {
-    pub fn new(location: String) -> Self {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
-            location,
-            id: None,
-            name: None,
+            tracked_resource,
             etag: None,
-            type_: None,
-            tags: None,
             properties: None,
-            system_data: None,
         }
     }
 }
@@ -2128,35 +2096,19 @@ impl SnapshotPoliciesList {
 #[doc = "Snapshot policy information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotPolicy {
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Tags are a list of key-value pairs that describe the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
     #[doc = "Snapshot policy properties"]
     pub properties: SnapshotPolicyProperties,
 }
 impl SnapshotPolicy {
-    pub fn new(location: String, properties: SnapshotPolicyProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: SnapshotPolicyProperties) -> Self {
         Self {
-            location,
-            id: None,
-            name: None,
+            tracked_resource,
             etag: None,
-            type_: None,
-            tags: None,
             properties,
         }
     }
@@ -2461,35 +2413,19 @@ impl VaultProperties {
 #[doc = "Volume resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Volume {
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Tags are a list of key-value pairs that describe the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
     #[doc = "Volume properties"]
     pub properties: VolumeProperties,
 }
 impl Volume {
-    pub fn new(location: String, properties: VolumeProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: VolumeProperties) -> Self {
         Self {
-            location,
-            id: None,
-            name: None,
+            tracked_resource,
             etag: None,
-            type_: None,
-            tags: None,
             properties,
         }
     }
@@ -2548,9 +2484,6 @@ pub struct VolumeGroup {
     #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "Tags are a list of key-value pairs that describe the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
     #[doc = "Volume group properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VolumeGroupListProperties>,

@@ -906,8 +906,6 @@ impl LongTermEnvironmentResource {
 pub struct LongTermEnvironmentResourceProperties {
     #[serde(flatten)]
     pub environment_resource_properties: EnvironmentResourceProperties,
-    #[serde(flatten)]
-    pub resource_properties: ResourceProperties,
     #[doc = "The list of event properties which will be used to define the environment's time series id."]
     #[serde(rename = "timeSeriesIdProperties")]
     pub time_series_id_properties: Vec<TimeSeriesIdProperty>,
@@ -922,7 +920,6 @@ impl LongTermEnvironmentResourceProperties {
     pub fn new(time_series_id_properties: Vec<TimeSeriesIdProperty>, storage_configuration: LongTermStorageConfigurationOutput) -> Self {
         Self {
             environment_resource_properties: EnvironmentResourceProperties::default(),
-            resource_properties: ResourceProperties::default(),
             time_series_id_properties,
             storage_configuration,
             warm_store_configuration: None,
@@ -1530,15 +1527,12 @@ pub struct StandardEnvironmentResourceProperties {
     pub standard_environment_creation_properties: StandardEnvironmentCreationProperties,
     #[serde(flatten)]
     pub environment_resource_properties: EnvironmentResourceProperties,
-    #[serde(flatten)]
-    pub resource_properties: ResourceProperties,
 }
 impl StandardEnvironmentResourceProperties {
     pub fn new(standard_environment_creation_properties: StandardEnvironmentCreationProperties) -> Self {
         Self {
             standard_environment_creation_properties,
             environment_resource_properties: EnvironmentResourceProperties::default(),
-            resource_properties: ResourceProperties::default(),
         }
     }
 }

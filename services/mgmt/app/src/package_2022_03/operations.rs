@@ -133,14 +133,14 @@ pub mod container_apps_auth_configs {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            auth_config_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                auth_config_name: auth_config_name.into(),
             }
         }
         #[doc = "Create or update the AuthConfig for a Container App."]
@@ -149,7 +149,7 @@ pub mod container_apps_auth_configs {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            auth_config_name: impl Into<String>,
             auth_config_envelope: impl Into<models::AuthConfig>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
@@ -157,7 +157,7 @@ pub mod container_apps_auth_configs {
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                auth_config_name: auth_config_name.into(),
                 auth_config_envelope: auth_config_envelope.into(),
             }
         }
@@ -167,14 +167,14 @@ pub mod container_apps_auth_configs {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            auth_config_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                auth_config_name: auth_config_name.into(),
             }
         }
     }
@@ -280,7 +280,7 @@ pub mod container_apps_auth_configs {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) auth_config_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -293,7 +293,7 @@ pub mod container_apps_auth_configs {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.auth_config_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -342,7 +342,7 @@ pub mod container_apps_auth_configs {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) auth_config_name: String,
             pub(crate) auth_config_envelope: models::AuthConfig,
         }
         impl Builder {
@@ -356,7 +356,7 @@ pub mod container_apps_auth_configs {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.auth_config_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -410,7 +410,7 @@ pub mod container_apps_auth_configs {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) auth_config_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -423,7 +423,7 @@ pub mod container_apps_auth_configs {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.auth_config_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -488,13 +488,13 @@ pub mod container_apps {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            container_app_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                container_app_name: container_app_name.into(),
             }
         }
         #[doc = "Create or update a Container App."]
@@ -502,14 +502,14 @@ pub mod container_apps {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            container_app_name: impl Into<String>,
             container_app_envelope: impl Into<models::ContainerApp>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                container_app_name: container_app_name.into(),
                 container_app_envelope: container_app_envelope.into(),
             }
         }
@@ -518,14 +518,14 @@ pub mod container_apps {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            container_app_name: impl Into<String>,
             container_app_envelope: impl Into<models::ContainerApp>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                container_app_name: container_app_name.into(),
                 container_app_envelope: container_app_envelope.into(),
             }
         }
@@ -534,13 +534,13 @@ pub mod container_apps {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            container_app_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                container_app_name: container_app_name.into(),
             }
         }
         #[doc = "Analyzes a custom hostname for a Container App"]
@@ -563,13 +563,13 @@ pub mod container_apps {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            container_app_name: impl Into<String>,
         ) -> list_secrets::Builder {
             list_secrets::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                container_app_name: container_app_name.into(),
             }
         }
     }
@@ -760,7 +760,7 @@ pub mod container_apps {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) container_app_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -772,7 +772,7 @@ pub mod container_apps {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.container_app_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -824,7 +824,7 @@ pub mod container_apps {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) container_app_name: String,
             pub(crate) container_app_envelope: models::ContainerApp,
         }
         impl Builder {
@@ -838,7 +838,7 @@ pub mod container_apps {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.container_app_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -892,7 +892,7 @@ pub mod container_apps {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) container_app_name: String,
             pub(crate) container_app_envelope: models::ContainerApp,
         }
         impl Builder {
@@ -906,7 +906,7 @@ pub mod container_apps {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.container_app_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -956,7 +956,7 @@ pub mod container_apps {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) container_app_name: String,
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
@@ -969,7 +969,7 @@ pub mod container_apps {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.container_app_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1084,7 +1084,7 @@ pub mod container_apps {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) container_app_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1096,7 +1096,7 @@ pub mod container_apps {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.container_app_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1162,14 +1162,14 @@ pub mod container_apps_revisions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            revision_name: impl Into<String>,
         ) -> get_revision::Builder {
             get_revision::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                revision_name: revision_name.into(),
             }
         }
         #[doc = "Activates a revision for a Container App"]
@@ -1178,14 +1178,14 @@ pub mod container_apps_revisions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            revision_name: impl Into<String>,
         ) -> activate_revision::Builder {
             activate_revision::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                revision_name: revision_name.into(),
             }
         }
         #[doc = "Deactivates a revision for a Container App"]
@@ -1194,14 +1194,14 @@ pub mod container_apps_revisions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            revision_name: impl Into<String>,
         ) -> deactivate_revision::Builder {
             deactivate_revision::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                revision_name: revision_name.into(),
             }
         }
         #[doc = "Restarts a revision for a Container App"]
@@ -1210,14 +1210,14 @@ pub mod container_apps_revisions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            revision_name: impl Into<String>,
         ) -> restart_revision::Builder {
             restart_revision::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                revision_name: revision_name.into(),
             }
         }
     }
@@ -1331,7 +1331,7 @@ pub mod container_apps_revisions {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) revision_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1344,7 +1344,7 @@ pub mod container_apps_revisions {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.revision_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1393,7 +1393,7 @@ pub mod container_apps_revisions {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) revision_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1406,7 +1406,7 @@ pub mod container_apps_revisions {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.revision_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1452,7 +1452,7 @@ pub mod container_apps_revisions {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) revision_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1465,7 +1465,7 @@ pub mod container_apps_revisions {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.revision_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1511,7 +1511,7 @@ pub mod container_apps_revisions {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) revision_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1524,7 +1524,7 @@ pub mod container_apps_revisions {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.revision_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1572,7 +1572,7 @@ pub mod container_apps_revision_replicas {
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
             revision_name: impl Into<String>,
-            name: impl Into<String>,
+            replica_name: impl Into<String>,
         ) -> get_replica::Builder {
             get_replica::Builder {
                 client: self.0.clone(),
@@ -1580,7 +1580,7 @@ pub mod container_apps_revision_replicas {
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
                 revision_name: revision_name.into(),
-                name: name.into(),
+                replica_name: replica_name.into(),
             }
         }
         #[doc = "List replicas for a Container App Revision."]
@@ -1611,7 +1611,7 @@ pub mod container_apps_revision_replicas {
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
             pub(crate) revision_name: String,
-            pub(crate) name: String,
+            pub(crate) replica_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1625,7 +1625,7 @@ pub mod container_apps_revision_replicas {
                             &this.resource_group_name,
                             &this.container_app_name,
                             &this.revision_name,
-                            &this.name
+                            &this.replica_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1751,14 +1751,14 @@ pub mod dapr_components {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             environment_name: impl Into<String>,
-            name: impl Into<String>,
+            component_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
-                name: name.into(),
+                component_name: component_name.into(),
             }
         }
         #[doc = "Creates or updates a Dapr Component."]
@@ -1767,7 +1767,7 @@ pub mod dapr_components {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             environment_name: impl Into<String>,
-            name: impl Into<String>,
+            component_name: impl Into<String>,
             dapr_component_envelope: impl Into<models::DaprComponent>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
@@ -1775,7 +1775,7 @@ pub mod dapr_components {
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
-                name: name.into(),
+                component_name: component_name.into(),
                 dapr_component_envelope: dapr_component_envelope.into(),
             }
         }
@@ -1785,14 +1785,14 @@ pub mod dapr_components {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             environment_name: impl Into<String>,
-            name: impl Into<String>,
+            component_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
-                name: name.into(),
+                component_name: component_name.into(),
             }
         }
         #[doc = "List secrets for a dapr component"]
@@ -1801,14 +1801,14 @@ pub mod dapr_components {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             environment_name: impl Into<String>,
-            name: impl Into<String>,
+            component_name: impl Into<String>,
         ) -> list_secrets::Builder {
             list_secrets::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
-                name: name.into(),
+                component_name: component_name.into(),
             }
         }
     }
@@ -1914,7 +1914,7 @@ pub mod dapr_components {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
-            pub(crate) name: String,
+            pub(crate) component_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -1927,7 +1927,7 @@ pub mod dapr_components {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.environment_name,
-                            &this.name
+                            &this.component_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -1976,7 +1976,7 @@ pub mod dapr_components {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
-            pub(crate) name: String,
+            pub(crate) component_name: String,
             pub(crate) dapr_component_envelope: models::DaprComponent,
         }
         impl Builder {
@@ -1990,7 +1990,7 @@ pub mod dapr_components {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.environment_name,
-                            &this.name
+                            &this.component_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2044,7 +2044,7 @@ pub mod dapr_components {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
-            pub(crate) name: String,
+            pub(crate) component_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -2057,7 +2057,7 @@ pub mod dapr_components {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.environment_name,
-                            &this.name
+                            &this.component_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2103,14 +2103,14 @@ pub mod dapr_components {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
-            pub(crate) name: String,
+            pub(crate) component_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.App/managedEnvironments/{}/daprComponents/{}/listSecrets" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . environment_name , & this . name) ;
+                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.App/managedEnvironments/{}/daprComponents/{}/listSecrets" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . environment_name , & this . component_name) ;
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
                         req_builder = req_builder.method(http::Method::POST);
@@ -2270,13 +2270,13 @@ pub mod managed_environments {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
             }
         }
         #[doc = "Creates or updates a Managed Environment."]
@@ -2284,14 +2284,14 @@ pub mod managed_environments {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
             environment_envelope: impl Into<models::ManagedEnvironment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
                 environment_envelope: environment_envelope.into(),
             }
         }
@@ -2300,14 +2300,14 @@ pub mod managed_environments {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
             environment_envelope: impl Into<models::ManagedEnvironment>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
                 environment_envelope: environment_envelope.into(),
             }
         }
@@ -2316,13 +2316,13 @@ pub mod managed_environments {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
             }
         }
     }
@@ -2513,7 +2513,7 @@ pub mod managed_environments {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -2525,7 +2525,7 @@ pub mod managed_environments {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2577,7 +2577,7 @@ pub mod managed_environments {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
             pub(crate) environment_envelope: models::ManagedEnvironment,
         }
         impl Builder {
@@ -2591,7 +2591,7 @@ pub mod managed_environments {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2645,7 +2645,7 @@ pub mod managed_environments {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
             pub(crate) environment_envelope: models::ManagedEnvironment,
         }
         impl Builder {
@@ -2659,7 +2659,7 @@ pub mod managed_environments {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2709,7 +2709,7 @@ pub mod managed_environments {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
@@ -2722,7 +2722,7 @@ pub mod managed_environments {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2769,13 +2769,13 @@ pub mod certificates {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            managed_environment_name: impl Into<String>,
+            environment_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                managed_environment_name: managed_environment_name.into(),
+                environment_name: environment_name.into(),
             }
         }
         #[doc = "Get the specified Certificate."]
@@ -2783,15 +2783,15 @@ pub mod certificates {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            managed_environment_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            certificate_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                managed_environment_name: managed_environment_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                certificate_name: certificate_name.into(),
             }
         }
         #[doc = "Create or Update a Certificate."]
@@ -2799,15 +2799,15 @@ pub mod certificates {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            managed_environment_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            certificate_name: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                managed_environment_name: managed_environment_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                certificate_name: certificate_name.into(),
                 certificate_envelope: None,
             }
         }
@@ -2816,16 +2816,16 @@ pub mod certificates {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            managed_environment_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            certificate_name: impl Into<String>,
             certificate_envelope: impl Into<models::CertificatePatch>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                managed_environment_name: managed_environment_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                certificate_name: certificate_name.into(),
                 certificate_envelope: certificate_envelope.into(),
             }
         }
@@ -2834,15 +2834,15 @@ pub mod certificates {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            managed_environment_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            certificate_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                managed_environment_name: managed_environment_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                certificate_name: certificate_name.into(),
             }
         }
     }
@@ -2855,7 +2855,7 @@ pub mod certificates {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) managed_environment_name: String,
+            pub(crate) environment_name: String,
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
@@ -2867,7 +2867,7 @@ pub mod certificates {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.managed_environment_name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
                         let mut req_builder = http::request::Builder::new();
@@ -2947,8 +2947,8 @@ pub mod certificates {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) managed_environment_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) certificate_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -2960,8 +2960,8 @@ pub mod certificates {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.managed_environment_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.certificate_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3009,8 +3009,8 @@ pub mod certificates {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) managed_environment_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) certificate_name: String,
             pub(crate) certificate_envelope: Option<models::Certificate>,
         }
         impl Builder {
@@ -3027,8 +3027,8 @@ pub mod certificates {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.managed_environment_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.certificate_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3081,8 +3081,8 @@ pub mod certificates {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) managed_environment_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) certificate_name: String,
             pub(crate) certificate_envelope: models::CertificatePatch,
         }
         impl Builder {
@@ -3095,8 +3095,8 @@ pub mod certificates {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.managed_environment_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.certificate_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3149,8 +3149,8 @@ pub mod certificates {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) managed_environment_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) certificate_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -3162,8 +3162,8 @@ pub mod certificates {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.managed_environment_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.certificate_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3209,14 +3209,14 @@ pub mod namespaces {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            managed_environment_name: impl Into<String>,
+            environment_name: impl Into<String>,
             check_name_availability_request: impl Into<models::CheckNameAvailabilityRequest>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                managed_environment_name: managed_environment_name.into(),
+                environment_name: environment_name.into(),
                 check_name_availability_request: check_name_availability_request.into(),
             }
         }
@@ -3230,7 +3230,7 @@ pub mod namespaces {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) managed_environment_name: String,
+            pub(crate) environment_name: String,
             pub(crate) check_name_availability_request: models::CheckNameAvailabilityRequest,
         }
         impl Builder {
@@ -3243,7 +3243,7 @@ pub mod namespaces {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.managed_environment_name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3293,13 +3293,13 @@ pub mod managed_environments_storages {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            env_name: impl Into<String>,
+            environment_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                env_name: env_name.into(),
+                environment_name: environment_name.into(),
             }
         }
         #[doc = "Get storage for a managedEnvironment."]
@@ -3307,15 +3307,15 @@ pub mod managed_environments_storages {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            env_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            storage_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                env_name: env_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                storage_name: storage_name.into(),
             }
         }
         #[doc = "Create or update storage for a managedEnvironment."]
@@ -3323,16 +3323,16 @@ pub mod managed_environments_storages {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            env_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            storage_name: impl Into<String>,
             storage_envelope: impl Into<models::ManagedEnvironmentStorage>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                env_name: env_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                storage_name: storage_name.into(),
                 storage_envelope: storage_envelope.into(),
             }
         }
@@ -3341,15 +3341,15 @@ pub mod managed_environments_storages {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            env_name: impl Into<String>,
-            name: impl Into<String>,
+            environment_name: impl Into<String>,
+            storage_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
-                env_name: env_name.into(),
-                name: name.into(),
+                environment_name: environment_name.into(),
+                storage_name: storage_name.into(),
             }
         }
     }
@@ -3362,7 +3362,7 @@ pub mod managed_environments_storages {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) env_name: String,
+            pub(crate) environment_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -3374,7 +3374,7 @@ pub mod managed_environments_storages {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.env_name
+                            &this.environment_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3422,8 +3422,8 @@ pub mod managed_environments_storages {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) env_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) storage_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -3435,8 +3435,8 @@ pub mod managed_environments_storages {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.env_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.storage_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3484,8 +3484,8 @@ pub mod managed_environments_storages {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) env_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) storage_name: String,
             pub(crate) storage_envelope: models::ManagedEnvironmentStorage,
         }
         impl Builder {
@@ -3498,8 +3498,8 @@ pub mod managed_environments_storages {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.env_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.storage_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3552,8 +3552,8 @@ pub mod managed_environments_storages {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) env_name: String,
-            pub(crate) name: String,
+            pub(crate) environment_name: String,
+            pub(crate) storage_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -3565,8 +3565,8 @@ pub mod managed_environments_storages {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
-                            &this.env_name,
-                            &this.name
+                            &this.environment_name,
+                            &this.storage_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3627,14 +3627,14 @@ pub mod container_apps_source_controls {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            source_control_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                source_control_name: source_control_name.into(),
             }
         }
         #[doc = "Create or update the SourceControl for a Container App."]
@@ -3643,7 +3643,7 @@ pub mod container_apps_source_controls {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            source_control_name: impl Into<String>,
             source_control_envelope: impl Into<models::SourceControl>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
@@ -3651,7 +3651,7 @@ pub mod container_apps_source_controls {
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                source_control_name: source_control_name.into(),
                 source_control_envelope: source_control_envelope.into(),
             }
         }
@@ -3661,14 +3661,14 @@ pub mod container_apps_source_controls {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             container_app_name: impl Into<String>,
-            name: impl Into<String>,
+            source_control_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 container_app_name: container_app_name.into(),
-                name: name.into(),
+                source_control_name: source_control_name.into(),
             }
         }
     }
@@ -3774,7 +3774,7 @@ pub mod container_apps_source_controls {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) source_control_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -3787,7 +3787,7 @@ pub mod container_apps_source_controls {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.source_control_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3840,7 +3840,7 @@ pub mod container_apps_source_controls {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) source_control_name: String,
             pub(crate) source_control_envelope: models::SourceControl,
         }
         impl Builder {
@@ -3855,7 +3855,7 @@ pub mod container_apps_source_controls {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.source_control_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();
@@ -3915,7 +3915,7 @@ pub mod container_apps_source_controls {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) container_app_name: String,
-            pub(crate) name: String,
+            pub(crate) source_control_name: String,
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
@@ -3929,7 +3929,7 @@ pub mod container_apps_source_controls {
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.container_app_name,
-                            &this.name
+                            &this.source_control_name
                         );
                         let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                         let mut req_builder = http::request::Builder::new();

@@ -6527,6 +6527,7 @@ pub mod resource_guard_proxy {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_guard_proxy_name: impl Into<String>,
+            parameters: impl Into<models::ResourceGuardProxyBaseResource>,
         ) -> put::Builder {
             put::Builder {
                 client: self.0.clone(),
@@ -6534,6 +6535,7 @@ pub mod resource_guard_proxy {
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_guard_proxy_name: resource_guard_proxy_name.into(),
+                parameters: parameters.into(),
             }
         }
         pub fn delete(
@@ -6635,6 +6637,7 @@ pub mod resource_guard_proxy {
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_guard_proxy_name: String,
+            pub(crate) parameters: models::ResourceGuardProxyBaseResource,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -6652,7 +6655,8 @@ pub mod resource_guard_proxy {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2022-02-01");
-                        let req_body = azure_core::EMPTY_BODY;
+                        req_builder = req_builder.header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)
