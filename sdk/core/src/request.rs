@@ -82,11 +82,6 @@ impl Request {
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }
-
-    /// Parse a `Uri` from a `str`
-    pub fn parse_uri(uri: &str) -> Result<Uri> {
-        Uri::from_str(uri).map_kind(ErrorKind::DataConversion)
-    }
 }
 
 /// Temporary hack to convert preexisting requests into the new format. It
