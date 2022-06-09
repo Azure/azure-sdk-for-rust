@@ -10,7 +10,7 @@ use once_cell::sync::Lazy;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use regex::Regex;
-use std::{collections::HashSet, convert::TryFrom, str::FromStr};
+use std::{collections::HashSet, convert::TryFrom};
 use syn::{
     punctuated::Punctuated,
     token::{Gt, Impl, Lt},
