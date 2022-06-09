@@ -27,7 +27,7 @@ pub enum Error {
     CodeBlockNotUtf8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Configuration {
     basic_info: BasicInformation,
     tags: Vec<Tag>,

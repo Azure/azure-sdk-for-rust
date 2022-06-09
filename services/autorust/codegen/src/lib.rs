@@ -37,8 +37,6 @@ pub enum Error {
     #[error(transparent)]
     CodeGen(#[from] codegen::Error),
     #[error(transparent)]
-    ConfigParser(#[from] config_parser::Error),
-    #[error(transparent)]
     CargoToml(#[from] cargo_toml::Error),
     #[error(transparent)]
     ReadmeMd(#[from] readme_md::Error),
@@ -215,7 +213,7 @@ impl SpecReadme {
         self.readme.as_path()
     }
     pub fn config(&self) -> Result<Configuration, Error> {
-        Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme)?)
+        Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme).unwrap_or_default())
     }
 }
 
