@@ -184,6 +184,7 @@ pub mod service {
                 where_: None,
                 marker: None,
                 maxresults: None,
+                include: Vec::new(),
             }
         }
     }
@@ -718,6 +719,7 @@ pub mod service {
             pub(crate) where_: Option<String>,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
+            pub(crate) include: Vec<String>,
         }
         impl Builder {
             pub fn timeout(mut self, timeout: i64) -> Self {
@@ -738,6 +740,10 @@ pub mod service {
             }
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn include(mut self, include: Vec<String>) -> Self {
+                self.include = include;
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -929,6 +935,7 @@ pub mod container {
                 where_: None,
                 marker: None,
                 maxresults: None,
+                include: Vec::new(),
             }
         }
         pub fn acquire_lease(
@@ -1858,6 +1865,7 @@ pub mod container {
             pub(crate) where_: Option<String>,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
+            pub(crate) include: Vec<String>,
         }
         impl Builder {
             pub fn timeout(mut self, timeout: i64) -> Self {
@@ -1878,6 +1886,10 @@ pub mod container {
             }
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn include(mut self, include: Vec<String>) -> Self {
+                self.include = include;
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {

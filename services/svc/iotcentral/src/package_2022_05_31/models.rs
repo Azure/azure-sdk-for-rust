@@ -4,6 +4,35 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "The active directory group user definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdGroupUser {
+    #[serde(flatten)]
+    pub user: User,
+    #[doc = "The AAD tenant ID of the AD Group."]
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+    #[doc = "The AAD object ID of the AD Group."]
+    #[serde(rename = "objectId")]
+    pub object_id: String,
+}
+impl AdGroupUser {
+    pub fn new(user: User, tenant_id: String, object_id: String) -> Self {
+        Self {
+            user,
+            tenant_id,
+            object_id,
+        }
+    }
+}
+#[doc = "Can be anything: string, number, array, object, etc. (except `null`)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AnyValue {}
+impl AnyValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The API access token definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiToken {
@@ -48,6 +77,7 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Attestation {
     #[doc = "Type of the attestation."]
@@ -97,6 +127,9 @@ pub struct Device {
     #[doc = "Whether the device is simulated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
+    #[doc = "List of organization IDs that the device is a part of, only one organization support today, multiple organizations will be supported soon."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub organizations: Vec<String>,
 }
 impl Device {
     pub fn new() -> Self {
@@ -134,10 +167,10 @@ pub struct DeviceCommand {
     #[doc = "Response timeout in seconds to wait for a command completion on a device. Defaults to 30 seconds."]
     #[serde(rename = "responseTimeout", default, skip_serializing_if = "Option::is_none")]
     pub response_timeout: Option<i64>,
-    #[doc = "The payload for the device command."]
+    #[doc = "The payload for the device command, support any primitive types or object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<serde_json::Value>,
-    #[doc = "The payload of the device command response."]
+    #[doc = "The payload of the device command response, support any primitive types or object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<serde_json::Value>,
     #[doc = "The status code of the device command response."]
@@ -192,6 +225,58 @@ impl DeviceCredentials {
             x509: None,
             tpm: None,
         }
+    }
+}
+#[doc = "The device group definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeviceGroup {
+    #[doc = "Unique ID of the device group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Display name of the device group."]
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[doc = "Query defining which devices should be in this group, [Query Language Reference](https://aka.ms/iotcquery)."]
+    pub filter: String,
+    #[doc = "Short summary of device group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "ETag used to prevent conflict in device group updates."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[doc = "List of organization IDs of the device group, only one organization support today, multiple organizations will be supported soon."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub organizations: Vec<String>,
+}
+impl DeviceGroup {
+    pub fn new(display_name: String, filter: String) -> Self {
+        Self {
+            id: None,
+            display_name,
+            filter,
+            description: None,
+            etag: None,
+            organizations: Vec::new(),
+        }
+    }
+}
+#[doc = "The paged results of device groups."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeviceGroupCollection {
+    #[doc = "The collection of device groups."]
+    pub value: Vec<DeviceGroup>,
+    #[doc = "URL to get the next page of device groups."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceGroupCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
+impl DeviceGroupCollection {
+    pub fn new(value: Vec<DeviceGroup>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Property values associated with the device."]
@@ -283,6 +368,132 @@ impl EmailUser {
         Self { user, email }
     }
 }
+#[doc = "The response error definition"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Error {
+    #[doc = "The detail information of the error."]
+    pub error: ErrorDetails,
+}
+impl azure_core::Continuable for Error {
+    fn continuation(&self) -> Option<String> {
+        None
+    }
+}
+impl Error {
+    pub fn new(error: ErrorDetails) -> Self {
+        Self { error }
+    }
+}
+#[doc = "The detail information of the error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    #[doc = "Error code."]
+    pub code: String,
+    #[doc = "Error message details."]
+    pub message: String,
+    #[doc = "Correlation Id for current request."]
+    #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
+    #[doc = "The time that error request failed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+}
+impl ErrorDetails {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            request_id: None,
+            time: None,
+        }
+    }
+}
+#[doc = "The file upload configuration definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileUpload {
+    #[doc = "The storage account name where to upload the file to"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account: Option<String>,
+    #[doc = "The connection string used to configure the storage account"]
+    #[serde(rename = "connectionString")]
+    pub connection_string: String,
+    #[doc = "The name of the container inside the storage account"]
+    pub container: String,
+    #[doc = "ISO 8601 duration standard, The amount of time the device’s request to upload a file is valid before it expires."]
+    #[serde(rename = "sasTtl", default, skip_serializing_if = "Option::is_none")]
+    pub sas_ttl: Option<String>,
+    #[doc = "The state of the file upload configuration"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<file_upload::State>,
+    #[doc = "ETag used to prevent conflict with multiple uploads"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+impl FileUpload {
+    pub fn new(connection_string: String, container: String) -> Self {
+        Self {
+            account: None,
+            connection_string,
+            container,
+            sas_ttl: None,
+            state: None,
+            etag: None,
+        }
+    }
+}
+pub mod file_upload {
+    use super::*;
+    #[doc = "The state of the file upload configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        #[serde(rename = "pending")]
+        Pending,
+        #[serde(rename = "updating")]
+        Updating,
+        #[serde(rename = "deleting")]
+        Deleting,
+        #[serde(rename = "succeeded")]
+        Succeeded,
+        #[serde(rename = "failed")]
+        Failed,
+    }
+}
+#[doc = "The organization definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Organization {
+    #[doc = "Unique ID of the organization."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Display name of the organization."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "ID of the parent of the organization."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<String>,
+}
+impl Organization {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationCollection {
+    #[doc = "The collection of organizations."]
+    pub value: Vec<Organization>,
+    #[doc = "URL to get the next page of organizations."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OrganizationCollection {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
+impl OrganizationCollection {
+    pub fn new(value: Vec<Organization>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[doc = "The permission definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Permission {
@@ -314,10 +525,13 @@ impl Role {
 pub struct RoleAssignment {
     #[doc = "ID of the role for this role assignment."]
     pub role: String,
+    #[doc = "ID of the organization for this role assignment."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub organization: Option<String>,
 }
 impl RoleAssignment {
     pub fn new(role: String) -> Self {
-        Self { role }
+        Self { role, organization: None }
     }
 }
 #[doc = "The paged results of roles."]

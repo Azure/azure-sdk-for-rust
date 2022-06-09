@@ -310,24 +310,24 @@ pub mod entity {
                 body: None,
             }
         }
-        pub fn add_or_update_business_attributes(
+        pub fn add_or_update_business_metadata_attributes(
             &self,
             bm_name: impl Into<String>,
             guid: impl Into<String>,
-        ) -> add_or_update_business_attributes::Builder {
-            add_or_update_business_attributes::Builder {
+        ) -> add_or_update_business_metadata_attributes::Builder {
+            add_or_update_business_metadata_attributes::Builder {
                 client: self.0.clone(),
                 bm_name: bm_name.into(),
                 guid: guid.into(),
                 body: None,
             }
         }
-        pub fn delete_business_attributes(
+        pub fn delete_business_metadata_attributes(
             &self,
             bm_name: impl Into<String>,
             guid: impl Into<String>,
-        ) -> delete_business_attributes::Builder {
-            delete_business_attributes::Builder {
+        ) -> delete_business_metadata_attributes::Builder {
+            delete_business_metadata_attributes::Builder {
                 client: self.0.clone(),
                 bm_name: bm_name.into(),
                 guid: guid.into(),
@@ -337,8 +337,8 @@ pub mod entity {
         pub fn get_sample_business_metadata_template(&self) -> get_sample_business_metadata_template::Builder {
             get_sample_business_metadata_template::Builder { client: self.0.clone() }
         }
-        pub fn import_business_attributes(&self) -> import_business_attributes::Builder {
-            import_business_attributes::Builder {
+        pub fn import_business_metadata(&self) -> import_business_metadata::Builder {
+            import_business_metadata::Builder {
                 client: self.0.clone(),
                 uploaded_input_stream: None,
             }
@@ -1807,7 +1807,7 @@ pub mod entity {
             }
         }
     }
-    pub mod add_or_update_business_attributes {
+    pub mod add_or_update_business_metadata_attributes {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = ();
@@ -1870,7 +1870,7 @@ pub mod entity {
             }
         }
     }
-    pub mod delete_business_attributes {
+    pub mod delete_business_metadata_attributes {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = ();
@@ -1983,7 +1983,7 @@ pub mod entity {
             }
         }
     }
-    pub mod import_business_attributes {
+    pub mod import_business_metadata {
         use super::models;
         use azure_core::error::ResultExt;
         type Response = models::BulkImportResponse;
@@ -2496,6 +2496,7 @@ pub mod glossary {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 include_term_hierarchy: None,
+                exclude_relationship_types: Vec::new(),
             }
         }
         pub fn update_glossary_term(
@@ -2507,6 +2508,7 @@ pub mod glossary {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
                 glossary_term: glossary_term.into(),
+                include_term_hierarchy: None,
             }
         }
         pub fn delete_glossary_term(&self, term_guid: impl Into<String>) -> delete_glossary_term::Builder {
@@ -3391,10 +3393,15 @@ pub mod glossary {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) include_term_hierarchy: Option<bool>,
+            pub(crate) exclude_relationship_types: Vec<String>,
         }
         impl Builder {
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
+                self
+            }
+            pub fn exclude_relationship_types(mut self, exclude_relationship_types: Vec<String>) -> Self {
+                self.exclude_relationship_types = exclude_relationship_types;
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -3414,6 +3421,10 @@ pub mod glossary {
                         if let Some(include_term_hierarchy) = &this.include_term_hierarchy {
                             url.query_pairs_mut()
                                 .append_pair("includeTermHierarchy", &include_term_hierarchy.to_string());
+                        }
+                        let exclude_relationship_types = &this.exclude_relationship_types;
+                        for value in &this.exclude_relationship_types {
+                            url.query_pairs_mut().append_pair("excludeRelationshipTypes", value);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
@@ -3451,8 +3462,13 @@ pub mod glossary {
             pub(crate) client: super::super::Client,
             pub(crate) term_guid: String,
             pub(crate) glossary_term: models::AtlasGlossaryTerm,
+            pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
+                self.include_term_hierarchy = Some(include_term_hierarchy);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3469,6 +3485,10 @@ pub mod glossary {
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.glossary_term)?;
+                        if let Some(include_term_hierarchy) = &this.include_term_hierarchy {
+                            url.query_pairs_mut()
+                                .append_pair("includeTermHierarchy", &include_term_hierarchy.to_string());
+                        }
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)

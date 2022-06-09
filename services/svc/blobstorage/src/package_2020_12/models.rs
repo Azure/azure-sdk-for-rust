@@ -39,6 +39,7 @@ pub enum AccessTier {
     Hot,
     Cool,
     Archive,
+    Premium,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -78,6 +79,7 @@ impl Serialize for AccessTier {
             Self::Hot => serializer.serialize_unit_variant("AccessTier", 11u32, "Hot"),
             Self::Cool => serializer.serialize_unit_variant("AccessTier", 12u32, "Cool"),
             Self::Archive => serializer.serialize_unit_variant("AccessTier", 13u32, "Archive"),
+            Self::Premium => serializer.serialize_unit_variant("AccessTier", 14u32, "Premium"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

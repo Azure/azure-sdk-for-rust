@@ -83,44 +83,38 @@ pub mod catalog {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn grant_acl(&self, parameters: impl Into<models::AclCreateOrUpdateParameters>, op: impl Into<String>) -> grant_acl::Builder {
+        pub fn grant_acl(&self, parameters: impl Into<models::AclCreateOrUpdateParameters>) -> grant_acl::Builder {
             grant_acl::Builder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
-                op: op.into(),
             }
         }
         pub fn grant_acl_to_database(
             &self,
             database_name: impl Into<String>,
             parameters: impl Into<models::AclCreateOrUpdateParameters>,
-            op: impl Into<String>,
         ) -> grant_acl_to_database::Builder {
             grant_acl_to_database::Builder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 parameters: parameters.into(),
-                op: op.into(),
             }
         }
-        pub fn revoke_acl(&self, parameters: impl Into<models::AclDeleteParameters>, op: impl Into<String>) -> revoke_acl::Builder {
+        pub fn revoke_acl(&self, parameters: impl Into<models::AclDeleteParameters>) -> revoke_acl::Builder {
             revoke_acl::Builder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
-                op: op.into(),
             }
         }
         pub fn revoke_acl_from_database(
             &self,
             database_name: impl Into<String>,
             parameters: impl Into<models::AclDeleteParameters>,
-            op: impl Into<String>,
         ) -> revoke_acl_from_database::Builder {
             revoke_acl_from_database::Builder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 parameters: parameters.into(),
-                op: op.into(),
             }
         }
         pub fn get_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> get_secret::Builder {
@@ -699,7 +693,6 @@ pub mod catalog {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
-            pub(crate) op: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -719,8 +712,6 @@ pub mod catalog {
                         url.query_pairs_mut().append_pair("api-version", "2016-11-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        let op = &this.op;
-                        url.query_pairs_mut().append_pair("op", op);
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)
@@ -752,7 +743,6 @@ pub mod catalog {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
-            pub(crate) op: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -776,8 +766,6 @@ pub mod catalog {
                         url.query_pairs_mut().append_pair("api-version", "2016-11-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        let op = &this.op;
-                        url.query_pairs_mut().append_pair("op", op);
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)
@@ -808,7 +796,6 @@ pub mod catalog {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclDeleteParameters,
-            pub(crate) op: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -828,8 +815,6 @@ pub mod catalog {
                         url.query_pairs_mut().append_pair("api-version", "2016-11-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        let op = &this.op;
-                        url.query_pairs_mut().append_pair("op", op);
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)
@@ -861,7 +846,6 @@ pub mod catalog {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) parameters: models::AclDeleteParameters,
-            pub(crate) op: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -885,8 +869,6 @@ pub mod catalog {
                         url.query_pairs_mut().append_pair("api-version", "2016-11-01");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        let op = &this.op;
-                        url.query_pairs_mut().append_pair("op", op);
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)
