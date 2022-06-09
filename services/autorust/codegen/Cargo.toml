@@ -26,3 +26,4 @@ syn = { version = "1.0", features = ["parsing"] }
 camino = "1.0"
 askama = "0.11"
 toml = "0.5"
+qstring = "0.7"
