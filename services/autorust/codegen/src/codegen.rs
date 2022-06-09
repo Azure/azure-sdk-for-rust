@@ -203,11 +203,11 @@ pub fn parse_path_params(path: &str) -> Vec<String> {
 }
 
 /// Get a set of parameter names in the URI query
-/// For example: "?restype=service&comp=userdelegationkey"
+/// For example: "/?restype=service&comp=userdelegationkey"
 /// Returns ["restype", "comp"]
 pub fn parse_query_params(uri: &str) -> Result<HashSet<String>, Error> {
-    let uri = http::Uri::from_str(uri)?;
-    if let Some(query) = uri.query(){
+    if let Some(n) = uri.find('?'){
+        let query = &uri[n..];
         let qs = qstring::QString::from(query);
         Ok(qs.into_iter().map(|(k,_)| k).collect())
     } else {
@@ -475,6 +475,14 @@ mod tests {
         assert_eq!(2, names.len());
         assert!(names.contains("restype"));
         assert!(names.contains("comp"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_query_params_no_slash() -> Result<(), Error> {
+        let names = parse_query_params("?overload=EventGridEvent")?;
+        assert_eq!(1, names.len());
+        assert!(names.contains("overload"));
         Ok(())
     }
 
