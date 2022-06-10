@@ -92,6 +92,8 @@ impl<'a> CodeGen<'a> {
 pub enum Error {
     #[error("SpecError: {0}")]
     Spec(#[from] spec::Error),
+    #[error(transparent)]
+    InvalidUri(#[from] http::uri::InvalidUri),
     #[error("creating function name: {0}")]
     FunctionName(#[source] crate::identifier::Error),
     #[error("creating type name for schema ref: {0}")]
@@ -115,7 +117,7 @@ pub enum Error {
         source: crate::identifier::Error,
         property: String,
     },
-    #[error("creating name for enum value {property}: {source}")]
+    #[error("creating name for enum value {property}")]
     EnumValueName {
         source: crate::identifier::Error,
         property: String,
@@ -192,9 +194,25 @@ pub fn create_mod() -> TokenStream {
 // any word character or `-` between curly braces
 pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{([\w-]+)\}").unwrap());
 
-pub fn parse_params(path: &str) -> Vec<String> {
+/// Get a list of parameter names in the URI path
+/// For example: "/storage/{storage-account-name}/sas/{sas-definition-name}"
+/// Returns ["storage-account-name", "sas-definition-name"]
+pub fn parse_path_params(path: &str) -> Vec<String> {
     // capture 0 is the whole match and 1 is the actual capture like other languages
     PARAM_RE.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
+}
+
+/// Get a set of parameter names in the URI query
+/// For example: "/?restype=service&comp=userdelegationkey"
+/// Returns ["restype", "comp"]
+pub fn parse_query_params(uri: &str) -> Result<HashSet<String>, Error> {
+    if let Some(n) = uri.find('?') {
+        let query = &uri[n..];
+        let qs = qstring::QString::from(query);
+        Ok(qs.into_iter().map(|(k, _)| k).collect())
+    } else {
+        Ok(HashSet::new())
+    }
 }
 
 #[derive(Clone)]
@@ -452,10 +470,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_params_keyvault() -> Result<(), Error> {
+    fn test_parse_query_params() -> Result<(), Error> {
+        let names = parse_query_params("/?restype=service&comp=userdelegationkey")?;
+        assert_eq!(2, names.len());
+        assert!(names.contains("restype"));
+        assert!(names.contains("comp"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_query_params_no_slash() -> Result<(), Error> {
+        let names = parse_query_params("?overload=EventGridEvent")?;
+        assert_eq!(1, names.len());
+        assert!(names.contains("overload"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_path_params_keyvault() -> Result<(), Error> {
         assert_eq!(
-            parse_params("/storage/{storage-account-name}/sas/{sas-definition-name}"),
-            vec!["storage-account-name".to_owned(), "sas-definition-name".to_owned()]
+            parse_path_params("/storage/{storage-account-name}/sas/{sas-definition-name}"),
+            vec!["storage-account-name".to_string(), "sas-definition-name".to_string()]
         );
         Ok(())
     }

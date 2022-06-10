@@ -89,30 +89,18 @@ pub mod deployments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn cancel_deployment(
-            &self,
-            instance_id: impl Into<String>,
-            deployment_id: impl Into<String>,
-            action: impl Into<String>,
-        ) -> cancel_deployment::Builder {
+        pub fn cancel_deployment(&self, instance_id: impl Into<String>, deployment_id: impl Into<String>) -> cancel_deployment::Builder {
             cancel_deployment::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 deployment_id: deployment_id.into(),
-                action: action.into(),
             }
         }
-        pub fn retry_deployment(
-            &self,
-            instance_id: impl Into<String>,
-            deployment_id: impl Into<String>,
-            action: impl Into<String>,
-        ) -> retry_deployment::Builder {
+        pub fn retry_deployment(&self, instance_id: impl Into<String>, deployment_id: impl Into<String>) -> retry_deployment::Builder {
             retry_deployment::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 deployment_id: deployment_id.into(),
-                action: action.into(),
             }
         }
         pub fn get_all_deployments(&self, instance_id: impl Into<String>) -> get_all_deployments::Builder {
@@ -182,7 +170,6 @@ pub mod deployments {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) deployment_id: String,
-            pub(crate) action: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -204,8 +191,6 @@ pub mod deployments {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -243,7 +228,6 @@ pub mod deployments {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) deployment_id: String,
-            pub(crate) action: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -265,8 +249,6 @@ pub mod deployments {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());

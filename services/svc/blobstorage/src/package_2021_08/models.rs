@@ -184,7 +184,7 @@ impl BlobHierarchyListSegment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: BlobName,
     #[serde(rename = "Deleted")]
     pub deleted: bool,
     #[serde(rename = "Snapshot")]
@@ -207,7 +207,7 @@ pub struct BlobItemInternal {
     pub has_versions_only: Option<bool>,
 }
 impl BlobItemInternal {
-    pub fn new(name: String, deleted: bool, snapshot: String, properties: BlobPropertiesInternal) -> Self {
+    pub fn new(name: BlobName, deleted: bool, snapshot: String, properties: BlobPropertiesInternal) -> Self {
         Self {
             name,
             deleted,
@@ -232,13 +232,27 @@ impl BlobMetadata {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BlobName {
+    #[doc = "Indicates if the blob name is encoded."]
+    #[serde(rename = "Encoded", default, skip_serializing_if = "Option::is_none")]
+    pub encoded: Option<bool>,
+    #[doc = "The name of the blob."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+}
+impl BlobName {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPrefix {
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: BlobName,
 }
 impl BlobPrefix {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: BlobName) -> Self {
         Self { name }
     }
 }
@@ -932,6 +946,10 @@ pub struct FilterBlobItem {
     #[doc = "Blob tags"]
     #[serde(rename = "Tags", default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
+    #[serde(rename = "VersionId", default, skip_serializing_if = "Option::is_none")]
+    pub version_id: Option<String>,
+    #[serde(rename = "IsCurrentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub is_current_version: Option<bool>,
 }
 impl FilterBlobItem {
     pub fn new(name: String, container_name: String) -> Self {
@@ -939,6 +957,8 @@ impl FilterBlobItem {
             name,
             container_name,
             tags: None,
+            version_id: None,
+            is_current_version: None,
         }
     }
 }
