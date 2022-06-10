@@ -190,7 +190,7 @@ impl DeviceUpdateClient {
                     return Err(Error::with_message(ErrorKind::Other, {
                         || {
                             format!(
-                                "import unsccessful with status failed. status: {:?}",
+                                "import unsuccessful with status failed. status: {:?}",
                                 update_operation.status
                             )
                         }
