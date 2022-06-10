@@ -82,9 +82,10 @@ impl DeviceUpdateClient {
         let body = resp.bytes().await.with_context(ErrorKind::Io, || {
             format!("failed to read response body text. uri: {uri}")
         })?;
-        serde_json::from_slice(&body).with_context(ErrorKind::DataConversion, || {
-            "failed to deserialze json response body".to_string()
-        })
+        serde_json::from_slice(&body).context(
+            ErrorKind::DataConversion,
+            "failed to deserialize json response body",
+        )
     }
 
     pub(crate) async fn post(&self, uri: String, json_body: Option<String>) -> Result<String> {
@@ -105,15 +106,14 @@ impl DeviceUpdateClient {
         if resp.status() == 202u16 {
             let headers = resp.headers();
             return match headers.get("operation-location") {
-                Some(location) => location.to_str().map(|x| x.to_string()).map_err(|_| {
-                    Error::with_message(ErrorKind::Other, || {
-                        "invalid characters in operation-location path".to_string()
-                    })
-                }),
-                None => Err(Error::with_message(ErrorKind::Other, || {
-                    "successful import (202 status) but no operation-location header found"
-                        .to_string()
-                })),
+                Some(location) => location.to_str().map(|x| x.to_string()).context(
+                    ErrorKind::Other,
+                    "invalid characters in operation-location path",
+                ),
+                None => Err(Error::message(
+                    ErrorKind::Other,
+                    "successful import (202 status) but no operation-location header found",
+                )),
             };
         }
 
@@ -149,54 +149,43 @@ fn extract_endpoint(url: &Url) -> Result<String> {
                 format!("could not get device update domain. url: {url}")
             })
         })?
-        .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
-        .last()
+        .split_once('.')
         .ok_or_else(|| {
             Error::with_message(ErrorKind::DataConversion, || {
                 format!("could not parse device update domain. url: {url}")
             })
-        })?;
+        })?
+        .1;
     Ok(format!("{}://{}", url.scheme(), endpoint))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::error::{Result, ResultExt};
+    use azure_core::error::Result;
 
     #[test]
     fn can_extract_endpoint() -> Result<()> {
         let url = "https://myadu.api.adu.microsoft.com";
-        let suffix = extract_endpoint(
-            &Url::parse(url).with_context(ErrorKind::DataConversion, || {
-                format!("failed to parse update url: {url}")
-            })?,
-        )?;
+        let suffix = extract_endpoint(&Url::parse(url)?)?;
         assert_eq!(suffix, "https://api.adu.microsoft.com");
 
-        let suffix = extract_endpoint(
-            &Url::parse("https://myadu.mycustom.api.adu.server.net")
-                .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse update url")
-                })?,
-        )?;
+        let suffix = extract_endpoint(&Url::parse("https://myadu.mycustom.api.adu.server.net")?)?;
         assert_eq!(suffix, "https://mycustom.api.adu.server.net");
 
-        let suffix = extract_endpoint(
-            &Url::parse("https://myadu.internal")
-                .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse update url")
-                })?,
-        )?;
+        let suffix = extract_endpoint(&Url::parse("https://myadu.internal")?)?;
         assert_eq!(suffix, "https://internal");
 
-        let suffix = extract_endpoint(
-            &Url::parse("some-scheme://myadu.api.adu.microsoft.com")
-                .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse update url")
-                })?,
-        )?;
+        let suffix = extract_endpoint(&Url::parse("some-scheme://myadu.api.adu.microsoft.com")?)?;
         assert_eq!(suffix, "some-scheme://api.adu.microsoft.com");
+        Ok(())
+    }
+
+    #[test]
+    fn can_not_extract_endpoint() -> Result<()> {
+        let url = "https://shouldfail";
+        let suffix = extract_endpoint(&Url::parse(url)?);
+        assert_eq!(suffix.unwrap_err().kind(), &ErrorKind::DataConversion);
         Ok(())
     }
 }
