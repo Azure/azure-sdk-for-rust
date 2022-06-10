@@ -1,3 +1,4 @@
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::headers::{self, Header, PROPERTIES};
 use http::HeaderMap;
 use std::borrow::Cow;
@@ -54,8 +55,9 @@ impl TryFrom<&HeaderMap> for Properties {
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         let header_value = headers
             .get(PROPERTIES)
-            .ok_or_else(|| crate::Error::HeaderNotFound(PROPERTIES.to_owned()))?
-            .to_str()?;
+            .ok_or_else(|| Error::message(ErrorKind::Other, PROPERTIES.to_owned()))?
+            .to_str()
+            .map_kind(ErrorKind::DataConversion)?;
 
         Properties::try_from(header_value)
     }
@@ -89,10 +91,10 @@ impl TryFrom<&str> for Properties {
                 // we must have a key and a value (so two entries)
                 let key = key_and_value
                     .next()
-                    .ok_or_else(|| crate::Error::GenericErrorWithText("missing key".to_owned()))?;
-                let value = key_and_value.next().ok_or_else(|| {
-                    crate::Error::GenericErrorWithText("missing value".to_owned())
-                })?;
+                    .ok_or_else(|| Error::message(ErrorKind::Other, "missing key"))?;
+                let value = key_and_value
+                    .next()
+                    .ok_or_else(|| Error::message(ErrorKind::Other, "missing value"))?;
 
                 // we do not check if there are more entries. We just ignore them.
                 Ok((key, value))
@@ -100,7 +102,10 @@ impl TryFrom<&str> for Properties {
             .collect::<crate::Result<Vec<(&str, &str)>>>()? // if we have an error, return error
             .into_iter()
             .map(|(key, value)| {
-                let value = std::str::from_utf8(&base64::decode(value)?)?.to_owned(); // the value is base64 encoded se we decode it
+                let value = std::str::from_utf8(
+                    &base64::decode(value).map_kind(ErrorKind::DataConversion)?,
+                )?
+                .to_owned(); // the value is base64 encoded se we decode it
                 Ok((key, value))
             })
             .collect::<crate::Result<Vec<(&str, String)>>>()? // if we have an error, return error

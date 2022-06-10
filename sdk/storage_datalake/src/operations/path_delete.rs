@@ -1,12 +1,12 @@
 use crate::clients::PathClient;
 use crate::request_options::*;
 use azure_core::prelude::*;
-use azure_core::{AppendToUrlQuery, Response as HttpResponse};
+use azure_core::{error::Result, AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type PutPath = futures::future::BoxFuture<'static, crate::Result<DeletePathResponse>>;
+type PutPath = futures::future::BoxFuture<'static, Result<DeletePathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct DeletePathBuilder<C>
@@ -86,7 +86,7 @@ pub struct DeletePathResponse {
 }
 
 impl DeletePathResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

@@ -1,8 +1,9 @@
 use crate::clients::FileSystemClient;
 use crate::util::*;
 use crate::Properties;
-use azure_core::prelude::*;
+use azure_core::prelude::{ClientRequestId, ContentLength, Timeout};
 use azure_core::{
+    error::Result,
     headers::{etag_from_headers, last_modified_from_headers},
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
@@ -11,8 +12,7 @@ use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
 /// A future of a create file system response
-type CreateFileSystem =
-    futures::future::BoxFuture<'static, crate::Result<CreateFileSystemResponse>>;
+type CreateFileSystem = futures::future::BoxFuture<'static, Result<CreateFileSystemResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct CreateFileSystemBuilder {
@@ -73,7 +73,7 @@ pub struct CreateFileSystemResponse {
 }
 
 impl CreateFileSystemResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

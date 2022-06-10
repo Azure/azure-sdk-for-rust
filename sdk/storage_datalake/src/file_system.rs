@@ -46,7 +46,7 @@ pub(crate) struct PathList {
 }
 
 impl TryFrom<Bytes> for PathList {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(response: Bytes) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice::<PathList>(response.as_ref())?)
