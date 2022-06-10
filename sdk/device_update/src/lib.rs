@@ -1,38 +1,10 @@
 mod client;
-pub mod device_update;
-
-use crate::device_update::UpdateOperation;
 pub use client::DeviceUpdateClient;
 
-#[non_exhaustive]
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error(transparent)]
-    Core(#[from] azure_core::Error),
+pub mod device_update;
 
-    #[error("Base64 Decode Error: {0}")]
-    Base64(#[from] base64::DecodeError),
-
-    #[error("Could not get device update domain")]
-    DomainParse,
-
-    #[error("Successful import (202 status) but no operation-location header found")]
-    NoOperationLocation,
-
-    #[error("Invalid characters in operation-location path")]
-    InvalidOperationPath,
-
-    #[error("Import unsuccessful, status: {0}")]
-    ImportError(reqwest::StatusCode),
-
-    #[error("Import unsuccessful with status Failed, error: {0:?}")]
-    ImportFailed(UpdateOperation),
-
-    #[error("Import unsuccessful with status Undefined, error: {0:?}")]
-    ImportUndefined(UpdateOperation),
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
+#[allow(unused_imports)]
+use crate::device_update::UpdateOperation;
 
 #[cfg(test)]
 mod tests {
