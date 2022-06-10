@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{create_generated_by_header, Error, TypeNameCode, parse_query_params},
+    codegen::{create_generated_by_header, parse_query_params, Error, TypeNameCode},
     codegen::{parse_path_params, type_name_gen, PARAM_RE},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},

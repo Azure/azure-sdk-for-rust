@@ -206,10 +206,10 @@ pub fn parse_path_params(path: &str) -> Vec<String> {
 /// For example: "/?restype=service&comp=userdelegationkey"
 /// Returns ["restype", "comp"]
 pub fn parse_query_params(uri: &str) -> Result<HashSet<String>, Error> {
-    if let Some(n) = uri.find('?'){
+    if let Some(n) = uri.find('?') {
         let query = &uri[n..];
         let qs = qstring::QString::from(query);
-        Ok(qs.into_iter().map(|(k,_)| k).collect())
+        Ok(qs.into_iter().map(|(k, _)| k).collect())
     } else {
         Ok(HashSet::new())
     }
