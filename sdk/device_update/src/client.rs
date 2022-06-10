@@ -83,7 +83,7 @@ impl DeviceUpdateClient {
             format!("failed to read response body text. uri: {uri}")
         })?;
         serde_json::from_slice(&body).with_context(ErrorKind::DataConversion, || {
-            format!("failed to deserialze json response body")
+            "failed to deserialze json response body".to_string()
         })
     }
 
@@ -107,13 +107,12 @@ impl DeviceUpdateClient {
             return match headers.get("operation-location") {
                 Some(location) => location.to_str().map(|x| x.to_string()).map_err(|_| {
                     Error::with_message(ErrorKind::Other, || {
-                        format!(
-                            "successful import (202 statu) but no operation-location header found"
-                        )
+                        "successful import (202 status) but no operation-location header found"
+                            .to_string()
                     })
                 }),
                 None => Err(Error::with_message(ErrorKind::Other, || {
-                    format!("invalid characters in operation-location path")
+                    "invalid characters in operation-location path".to_string()
                 })),
             };
         }
@@ -145,14 +144,18 @@ impl DeviceUpdateClient {
 fn extract_endpoint(url: &Url) -> Result<String> {
     let endpoint = url
         .host_str()
-        .ok_or(Error::with_message(ErrorKind::DataConversion, || {
-            format!("could not get device update domain. url: {url}")
-        }))?
+        .ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("could not get device update domain. url: {url}")
+            })
+        })?
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
         .last()
-        .ok_or(Error::with_message(ErrorKind::DataConversion, || {
-            format!("could not parse device update domain. url: {url}")
-        }))?;
+        .ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("could not parse device update domain. url: {url}")
+            })
+        })?;
     Ok(format!("{}://{}", url.scheme(), endpoint))
 }
 
