@@ -107,12 +107,12 @@ impl DeviceUpdateClient {
             return match headers.get("operation-location") {
                 Some(location) => location.to_str().map(|x| x.to_string()).map_err(|_| {
                     Error::with_message(ErrorKind::Other, || {
-                        "successful import (202 status) but no operation-location header found"
-                            .to_string()
+                        "invalid characters in operation-location path".to_string()
                     })
                 }),
                 None => Err(Error::with_message(ErrorKind::Other, || {
-                    "invalid characters in operation-location path".to_string()
+                    "successful import (202 status) but no operation-location header found"
+                        .to_string()
                 })),
             };
         }
