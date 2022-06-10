@@ -1,5 +1,8 @@
-use crate::{client::API_VERSION_PARAM, DeviceUpdateClient, Error, Result};
-use azure_core::{sleep, Error as CoreError, HttpError};
+use crate::{client::API_VERSION_PARAM, DeviceUpdateClient};
+use azure_core::{
+    error::{Error, ErrorKind, Result, ResultExt},
+    sleep,
+};
 use chrono::{DateTime, Utc};
 use getset::Getters;
 use log::debug;
@@ -183,11 +186,27 @@ impl DeviceUpdateClient {
             let update_operation: UpdateOperation = self.get(uri.to_string()).await?;
 
             match update_operation.status {
-                OperationStatus::Failed => return Err(Error::ImportFailed(update_operation)),
+                OperationStatus::Failed => {
+                    return Err(Error::with_message(ErrorKind::Other, {
+                        || {
+                            format!(
+                                "import unsuccessful with status failed. status: {:?}",
+                                update_operation.status
+                            )
+                        }
+                    }))
+                }
                 OperationStatus::Succeeded => return Ok(update_operation),
                 OperationStatus::NotStarted => continue,
                 OperationStatus::Running => continue,
-                OperationStatus::Undefined => return Err(Error::ImportUndefined(update_operation)),
+                OperationStatus::Undefined => {
+                    return Err(Error::with_message(ErrorKind::Other, || {
+                        format!(
+                            "import unsuccessful with status undefined. status: {:?}",
+                            update_operation.status
+                        )
+                    }))
+                }
             }
         }
     }
@@ -285,9 +304,9 @@ impl DeviceUpdateClient {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri
-                        .join(&url)
-                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
+                    uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
+                        format!("failed to parse url. url: {url}")
+                    })?
                 }
             }
         }
@@ -314,9 +333,9 @@ impl DeviceUpdateClient {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri
-                        .join(&url)
-                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
+                    uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
+                        format!("failed to parse url. url: {url}")
+                    })?
                 }
             }
         }
@@ -356,9 +375,9 @@ impl DeviceUpdateClient {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri
-                        .join(&url)
-                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
+                    uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
+                        format!("failed to parse url. url: {url}")
+                    })?
                 }
             }
         }
@@ -385,9 +404,9 @@ impl DeviceUpdateClient {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri
-                        .join(&url)
-                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
+                    uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
+                        format!("failed to parse url. url: {url}")
+                    })?
                 }
             }
         }
@@ -427,9 +446,9 @@ impl DeviceUpdateClient {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri
-                        .join(&url)
-                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
+                    uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
+                        format!("failed to parse url. url: {url}")
+                    })?
                 }
             }
         }
@@ -468,9 +487,9 @@ impl DeviceUpdateClient {
                     uri = self.device_update_url.clone();
                     uri.set_path("");
                     uri.set_query(None);
-                    uri = uri
-                        .join(&url)
-                        .map_err(|e| CoreError::Http(HttpError::Url(e)))?
+                    uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
+                        format!("failed to parse url. url: {url}")
+                    })?
                 }
             }
         }
@@ -484,7 +503,8 @@ mod tests {
     use mockito::{mock, Matcher};
     use serde_json::json;
 
-    use crate::{client::API_VERSION, tests::mock_client, Result};
+    use crate::{client::API_VERSION, tests::mock_client};
+    use azure_core::error::Result;
 
     #[tokio::test]
     async fn can_import_update() -> Result<()> {
