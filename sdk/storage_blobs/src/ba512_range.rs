@@ -1,4 +1,4 @@
-use crate::{Not512ByteAlignedError, Parse512AlignedError};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::{self, Header};
 use azure_core::prelude::Range;
 use std::convert::TryFrom;
@@ -19,12 +19,16 @@ impl BA512Range {
         self.end
     }
 
-    pub fn new(start: u64, end: u64) -> Result<Self, Not512ByteAlignedError> {
+    pub fn new(start: u64, end: u64) -> Result<Self> {
         if start % 512 != 0 {
-            return Err(Not512ByteAlignedError::StartRange(start));
+            return Err(Error::with_message(ErrorKind::Other, || {
+                format!("start range not 512-byte aligned: {}", start)
+            }));
         }
         if (end + 1) % 512 != 0 {
-            return Err(Not512ByteAlignedError::EndRange(end));
+            return Err(Error::with_message(ErrorKind::Other, || {
+                format!("end range not 512-byte aligned: {}", end)
+            }));
         }
 
         Ok(Self { start, end })
@@ -46,17 +50,17 @@ impl From<BA512Range> for Range {
 }
 
 impl TryFrom<Range> for BA512Range {
-    type Error = Not512ByteAlignedError;
+    type Error = Error;
 
-    fn try_from(r: Range) -> Result<Self, Self::Error> {
+    fn try_from(r: Range) -> Result<Self> {
         BA512Range::new(r.start, r.end)
     }
 }
 
 impl TryFrom<(u64, u64)> for BA512Range {
-    type Error = Not512ByteAlignedError;
+    type Error = Error;
 
-    fn try_from((start, end): (u64, u64)) -> Result<Self, Self::Error> {
+    fn try_from((start, end): (u64, u64)) -> Result<Self> {
         BA512Range::new(start, end)
     }
 }
@@ -72,17 +76,25 @@ impl Header for BA512Range {
 }
 
 impl FromStr for BA512Range {
-    type Err = Parse512AlignedError;
-    fn from_str(s: &str) -> Result<BA512Range, Self::Err> {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<BA512Range> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(Parse512AlignedError::SplitNotFound);
+            return Err(Error::message(ErrorKind::Other, "split not found"));
         }
 
-        let cp_start = v[0].parse::<u64>()?;
-        let cp_end = v[1].parse::<u64>()?;
+        let cp_start = v[0]
+            .parse::<u64>()
+            .with_context(ErrorKind::DataConversion, || {
+                format!("error parsing '{}' into u64", v[0])
+            })?;
+        let cp_end = v[1]
+            .parse::<u64>()
+            .with_context(ErrorKind::DataConversion, || {
+                format!("error parsing '{}' into u64", v[1])
+            })?;
 
-        Ok(BA512Range::new(cp_start, cp_end)?)
+        BA512Range::new(cp_start, cp_end)
     }
 }
 
@@ -104,7 +116,7 @@ impl<'a> From<&'a BA512Range> for Range {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::Not512ByteAlignedError::{EndRange, StartRange};
+    use azure_core::error::ErrorKind;
 
     #[test]
     fn test_512range_parse() {
@@ -117,31 +129,25 @@ mod test {
     #[test]
     fn test_512range_parse_panic_1() {
         let err = "abba/2000".parse::<BA512Range>().unwrap_err();
-        assert!(matches!(err, Parse512AlignedError::ParseIntError(_)));
+        assert!(matches!(err.kind(), ErrorKind::DataConversion));
     }
 
     #[test]
     fn test_512range_parse_panic_2() {
         let err = "1000-2000".parse::<BA512Range>().unwrap_err();
-        assert_eq!(err, Parse512AlignedError::SplitNotFound);
+        assert!(matches!(err.kind(), ErrorKind::Other));
     }
 
     #[test]
     fn test_512range_invalid_start_range() {
         let err = "7/511".parse::<BA512Range>().unwrap_err();
-        assert_eq!(
-            err,
-            Parse512AlignedError::Not512ByteAlignedError(StartRange(7))
-        );
+        assert!(matches!(err.kind(), ErrorKind::Other));
     }
 
     #[test]
     fn test_512range_invalid_end_range() {
         let err = "0/100".parse::<BA512Range>().unwrap_err();
-        assert_eq!(
-            err,
-            Parse512AlignedError::Not512ByteAlignedError(EndRange(100))
-        );
+        assert!(matches!(err.kind(), ErrorKind::Other));
     }
 
     #[test]
