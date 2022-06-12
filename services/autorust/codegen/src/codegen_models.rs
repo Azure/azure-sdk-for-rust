@@ -4,7 +4,7 @@ use crate::{
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
-use crate::{Error, ErrorKind, Result, };
+use crate::{Error, ErrorKind, Result};
 use autorust_openapi::{DataType, MsPageable, Reference, ReferenceOr, Schema};
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
