@@ -6,11 +6,11 @@ use crate::{
     },
 };
 use azure_core::{
+    error::Result,
     headers::{MS_DATE, VERSION},
-    ClientOptions, Pipeline,
+    ClientOptions, Context, Pipeline, Request, Response,
 };
 use chrono::Utc;
-use http::{request::Builder, HeaderValue, Method};
 use std::sync::Arc;
 
 const PORT: u16 = 10002;
@@ -38,7 +38,6 @@ fn pipeline_from_options(options: ClientOptions, token: AuthorizationToken) -> P
 }
 
 impl TableServiceClient {
-    /// Create a new `TableClient`
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         Self {
             cloud_location: CloudLocation::Public(account.into()),
@@ -53,21 +52,6 @@ impl TableServiceClient {
         }
     }
 
-    pub fn new_custom(
-        account: impl Into<String>,
-        auth_token: AuthorizationToken,
-        uri: impl Into<String>,
-    ) -> Self {
-        Self {
-            pipeline: pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Custom {
-                account: account.into(),
-                uri: uri.into(),
-            },
-        }
-    }
-
-    /// Create a new `TableClient` for Azure storage emulator
     pub fn emulator() -> Self {
         Self::new_custom(
             self::EMULATOR_ACCOUNT,
@@ -84,34 +68,67 @@ impl TableServiceClient {
         )
     }
 
-    /// The Query Tables operation returns a list of tables under the specified account.
-    pub fn delete_table(&self, table_name: impl Into<String>) -> DeleteTableBuilder {
-        DeleteTableBuilder::new(self, table_name.into())
+    pub fn new_custom(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        uri: impl Into<String>,
+    ) -> Self {
+        Self {
+            pipeline: pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::Custom {
+                account: account.into(),
+                uri: uri.into(),
+            },
+        }
     }
 
-    /// The Create Table operation creates a new table in a storage account.
-    pub fn create_table(&self, table_name: impl Into<String>) -> CreateTableBuilder {
-        CreateTableBuilder::new(self, table_name.into())
+    /// The name of the table account with which this client instance will interact.
+    pub fn account_name(&self) -> String {
+        self.cloud_location.account()
     }
 
-    /// The Query Tables operation returns a list of tables under the specified account.
+    /// Gets a list of tables from the storage account.
     pub fn query_tables(&self) -> QueryTablesBuilder {
-        QueryTablesBuilder::new(self)
+        QueryTablesBuilder::new(self.clone())
     }
 
-    pub(crate) fn pipeline_request(&self, method: Method, uri_path: &str) -> Builder {
-        let timestamp = Utc::now().format("%a, %d %h %Y %T GMT").to_string();
-        Builder::new()
-            .method(method)
-            .uri(format!("{}/{}", self.cloud_location.uri(), uri_path))
-            .header(VERSION, HeaderValue::from_static("2019-12-12"))
-            .header(MS_DATE, HeaderValue::from_str(&timestamp).unwrap())
-            .header("content-type", HeaderValue::from_static("application/json"))
+    /// Creates a table on the service.
+    pub fn create_table(&self, table_name: impl AsRef<str>) -> CreateTableBuilder {
+        CreateTableBuilder::new(self.clone(), table_name.as_ref().to_owned())
     }
 
-    /// Get a reference to the table client's pipeline.
-    pub fn pipeline(&self) -> &Pipeline {
+    /// Deletes a table on the service.
+    pub fn delete_table(&self, table_name: impl AsRef<str>) -> DeleteTableBuilder {
+        DeleteTableBuilder::new(self.clone(), table_name.as_ref().to_owned())
+    }
+
+    pub(crate) fn _pipeline(&self) -> &Pipeline {
         &self.pipeline
+    }
+
+    pub(crate) fn prepare_request_pipeline(
+        &self,
+        url_path: &str,
+        http_method: http::Method,
+    ) -> Request {
+        let uri = format!("{}/{}", self.cloud_location.url(), url_path);
+        let mut request = Request::new(uri.parse().unwrap(), http_method);
+
+        let headers = request.headers_mut();
+
+        let timestamp = Utc::now().format("%a, %d %h %Y %T GMT").to_string();
+        headers.insert(MS_DATE, timestamp);
+        headers.insert(VERSION, "2019-02-02");
+        headers.insert(http::header::CONTENT_TYPE, "application/json");
+        request
+    }
+
+    pub(crate) async fn send(
+        &self,
+        mut request: Request,
+        mut context: Context,
+    ) -> Result<Response> {
+        self.pipeline.send(&mut context, &mut request).await
     }
 }
 
@@ -128,7 +145,7 @@ pub enum CloudLocation {
 
 impl CloudLocation {
     /// the base URL for a given cloud location
-    fn uri(&self) -> String {
+    fn url(&self) -> String {
         match self {
             CloudLocation::China(account) => {
                 format!("https://{}.table.core.chinacloudapi.cn", account)
@@ -138,5 +155,14 @@ impl CloudLocation {
             }
             CloudLocation::Custom { uri, .. } => uri.clone(),
         }
+    }
+
+    fn account(&self) -> String {
+        match self {
+            CloudLocation::Public(account) => account,
+            CloudLocation::China(account) => account,
+            CloudLocation::Custom { account, .. } => account,
+        }
+        .to_owned()
     }
 }

@@ -1,8 +1,12 @@
 use super::AuthorizationToken;
-use azure_core::{Context, PipelineError, Policy, PolicyResult, Request, Response};
-use http::{HeaderMap, HeaderValue, Method, Uri};
+use azure_core::{
+    headers::{HeaderName, Headers},
+    Context, Policy, PolicyResult, Request,
+};
+use hmac::{Hmac, Mac};
+use http::Method;
 use log::trace;
-use ring::hmac;
+use sha2::Sha256;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,71 +29,61 @@ impl Policy for AuthorizationPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 
-        if next.is_empty() {
-            return Err(Box::new(PipelineError::InvalidTailPolicy(
-                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
-            )));
-        }
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
 
-        match &self.authorization_token {
+        let value = match &self.authorization_token {
             AuthorizationToken::SASToken {} => todo!(),
             AuthorizationToken::BearerToken {} => todo!(),
             AuthorizationToken::SharedKeyToken { account, key } => {
-                let token = shared_key_token(
-                    request.headers(),
-                    request.uri(),
+                let data = string_to_sign(
                     &request.method(),
+                    request.headers(),
                     account,
-                    key,
+                    request.uri().path(),
                 );
-                request
-                    .headers_mut()
-                    .append("authorization", HeaderValue::from_str(&token).unwrap());
+                let signature = sign_and_encode(&data, key.as_bytes());
+                format!("SharedKey {}:{}", account, signature)
             }
-        }
-
+        };
+        request.headers_mut().insert("authorization", value);
         next[0].send(ctx, request, &next[1..]).await
     }
 }
 
-/// An authorization shared key token.
-/// to create the token first create string to sign, the string should contain the following:
+fn sign_and_encode(data: &str, key: &[u8]) -> String {
+    let key = base64::decode(key).unwrap();
+    let mut hmac = Hmac::<Sha256>::new_from_slice(&key).unwrap();
+    hmac.update(data.as_bytes());
+    let signature = hmac.finalize().into_bytes();
+    base64::encode(&signature)
+}
+
+/// from the docs, to create the token first create string to sign, the string should contain the following:
 /// * http method
 /// * md5 content (if exists else empty string and new a line)
 /// * content type (if exists else empty string and new a line)
 /// * x-ms-date (utc new formatted as 'Wed, 18 Aug 2021 14:52:59 GMT')
 /// * canonicalized resource (for example, /devstoreaccount1/devstoreaccount1/Tables)
-/// log example:
-fn shared_key_token(
-    headers: &HeaderMap,
-    uri: &Uri,
-    method: &Method,
-    account: &str,
-    key: &str,
-) -> String {
-    let to_sign = format!(
+fn string_to_sign(method: &Method, headers: &Headers, account: &str, path: &str) -> String {
+    format!(
         "{}\n{}\n{}\n{}\n/{}{}",
         method.as_str(),
         headers
-            .get("Content-MD5")
-            .map_or("", |v| v.to_str().unwrap()),
+            .get(&HeaderName::from("content-md5"))
+            .map_or("", |v| v.as_str()),
         headers
-            .get("Content-Type")
-            .map_or("", |v| v.to_str().unwrap()),
-        headers.get("x-ms-date").map_or("", |v| v.to_str().unwrap()),
+            .get(&HeaderName::from("content-type"))
+            .map_or("", |v| v.as_str()),
+        headers
+            .get(&HeaderName::from("x-ms-date"))
+            .map_or("", |v| v.as_str()),
         account,
-        uri.path()
-    );
-    let signature = hmac::sign(
-        &hmac::Key::new(hmac::HMAC_SHA256, &base64::decode(key).unwrap()),
-        to_sign.as_bytes(),
-    );
-    format!(
-        "SharedKey {}:{}",
-        account,
-        base64::encode(signature.as_ref())
+        path
     )
 }

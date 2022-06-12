@@ -1,97 +1,123 @@
-use super::OdataMetadataLevel;
+use super::{TableItem, MINIMAL_METADATA};
 use crate::clients::table_service_client::TableServiceClient;
-use azure_core::{setters, Context, Response, EMPTY_BODY};
-use azure_storage::Result;
-use http::HeaderValue;
+use azure_core::error::Result;
+use azure_core::headers;
+use azure_core::{
+    collect_pinned_stream, headers::HeaderName, prelude::Continuation, setters, Context,
+    Continuable, Pageable, Response,
+};
+use http::HeaderMap;
 use serde::{Deserialize, Serialize};
-use url::Url;
 
-pub struct QueryTablesBuilder<'a, 'b> {
-    table_client: &'a TableServiceClient,
+#[derive(Debug, Clone)]
+pub struct QueryTablesBuilder {
     context: Context,
-
-    top: Option<i32>,
-    timeout: Option<i32>,
-    filter: Option<&'b str>,
-
-    odata_metadata_level: OdataMetadataLevel,
+    filter: Option<String>,
+    max_per_page: Option<i32>,
+    client: TableServiceClient,
 }
 
-impl<'a, 'b> QueryTablesBuilder<'a, 'b> {
-    pub(crate) fn new(table_client: &'a TableServiceClient) -> Self {
+pub type QueryTables = Pageable<QueryTablesResponse, azure_core::error::Error>;
+
+impl QueryTablesBuilder {
+    pub(crate) fn new(client: TableServiceClient) -> Self {
         Self {
-            table_client,
-            context: Context::new(),
-            odata_metadata_level: OdataMetadataLevel::NoMetadata,
-            top: None,
+            client,
             filter: None,
-            timeout: None,
+            max_per_page: None,
+            context: Context::new(),
         }
     }
 
     setters! {
-        top: i32 => Some(top),
         context: Context => context,
-        timeout: i32 => Some(timeout),
-        filter: &'b str => Some(filter),
-        odata_metadata_level: OdataMetadataLevel => odata_metadata_level,
+        filter: String => Some(filter),
+        max_per_page: i32 => Some(max_per_page),
     }
 
-    pub fn into_future(&self) -> ListTables {
-        let builder = self
-            .table_client
-            .pipeline_request(http::Method::GET, "Tables")
-            .header(
-                "accept",
-                HeaderValue::from_str(self.odata_metadata_level.as_ref()).unwrap(),
-            );
+    pub fn into_stream(self) -> QueryTables {
+        let make_request = move |continuation: Option<Continuation>| {
+            let this = self.clone();
+            let context = self.context.clone();
 
-        let uri = builder.uri_ref().unwrap().to_string();
-        let mut request = builder
-            .uri(self.path_and_query(&uri))
-            .body(EMPTY_BODY)
-            .unwrap()
-            .into();
+            let mut path_and_query = match (this.filter.as_ref(), this.max_per_page) {
+                (None, None) => format!("Tables"),
+                (None, Some(max_per_page)) => format!("Tables?$top={}", max_per_page),
+                (Some(filter), None) => format!("Tables?$filter={}", filter),
+                (Some(filter), Some(max_per_page)) => {
+                    format!("Tables?$filter={}&$top={}", filter, max_per_page)
+                }
+            };
 
-        let table_client = self.table_client.clone();
-        let mut context = self.context.clone();
+            async move {
+                if let Some(continuation) = continuation {
+                    path_and_query = match (this.filter.as_ref(), this.max_per_page) {
+                        (None, None) => format!(
+                            "{}?NextTableName={}",
+                            path_and_query,
+                            continuation.into_raw()
+                        ),
+                        _ => format!(
+                            "{}&NextTableName={}",
+                            path_and_query,
+                            continuation.into_raw()
+                        ),
+                    };
+                }
 
-        Box::pin(async move {
-            let response = table_client
-                .pipeline()
-                .send(&mut context, &mut request)
-                .await?;
-            QueryTablesResponse::try_from(response).await
-        })
-    }
+                let mut request = this
+                    .client
+                    .prepare_request_pipeline(&path_and_query, http::Method::GET);
 
-    fn path_and_query(&self, uri: &str) -> String {
-        let mut uri = Url::parse(uri).unwrap();
-        if let Some(top) = self.top {
-            uri.query_pairs_mut().append_pair("$top", &top.to_string());
-        }
-        if let Some(filter) = self.filter {
-            uri.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(timeout) = self.timeout {
-            uri.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        uri.to_string()
+                let headers = request.headers_mut();
+                headers.insert(HeaderName::from("accept"), MINIMAL_METADATA);
+
+                let response = this.client.send(request, context).await?;
+                QueryTablesResponse::try_from(response).await
+            }
+        };
+        Pageable::new(make_request)
     }
 }
 
-type ListTables = futures::future::BoxFuture<'static, Result<QueryTablesResponse>>;
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QueryTablesResponse {
+    pub next_table_name: Option<String>,
+    pub tables: Vec<TableItem>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub(crate) struct QueryTablesResponseBody {
     #[serde(rename = "value")]
-    pub tables: Vec<super::Table>,
+    pub tables: Vec<TableItem>,
 }
 
 impl QueryTablesResponse {
     pub async fn try_from(response: Response) -> Result<Self> {
-        let body = response.into_body_string().await;
-        Ok(serde_json::from_slice(body.as_bytes())?)
+        let (_status_code, headers, pinned_stream) = response.deconstruct();
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let body: QueryTablesResponseBody = serde_json::from_slice(&body)?;
+        Ok(Self {
+            tables: body.tables,
+            next_table_name: Self::next_table_name_from_headers(&headers)?,
+        })
+    }
+
+    fn next_table_name_from_headers(headers: &HeaderMap) -> Result<Option<String>> {
+        headers::get_option_from_headers(headers, "x-ms-continuation-NextTableName")
+    }
+}
+
+impl Continuable for QueryTablesResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_table_name.clone()
+    }
+}
+
+impl IntoIterator for QueryTablesResponse {
+    type Item = TableItem;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.tables.into_iter()
     }
 }

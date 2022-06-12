@@ -1,20 +1,30 @@
 use azure_data_tables::prelude::{table_service_client::TableServiceClient, AuthorizationToken};
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let table_service = create_service_table_client()?;
+    //let table_service = TableServiceClient::emulator();
 
-    let _ = table_service.create_table("table").into_future().await?;
+    for i in 1..=20 {
+        let response = table_service
+            .create_table(format!("table{:02}", i))
+            .into_future()
+            .await?;
+        println!("{} created", response.table_name);
+    }
 
-    let response = table_service
-        .query_tables()
-        .filter("TableName eq 'table'")
-        .into_future()
-        .await?;
-    println!("query response: {:#?}", response);
-
-    let _ = table_service.delete_table("table").into_future().await?;
+    let mut stream = table_service.query_tables().max_per_page(5).into_stream();
+    while let Some(Ok(response)) = stream.next().await {
+        for table in response.tables {
+            let _ = table_service
+                .delete_table(&table.name)
+                .into_future()
+                .await?;
+            println!("{} deleted", table.name);
+        }
+    }
 
     Ok(())
 }
