@@ -333,7 +333,7 @@ pub mod schema {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json; serialization=Avro");
                         let req_body = azure_core::to_json(&this.schema_content)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -389,7 +389,7 @@ pub mod schema {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-10");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json; serialization=Avro");
                         let req_body = azure_core::to_json(&this.schema_content)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder

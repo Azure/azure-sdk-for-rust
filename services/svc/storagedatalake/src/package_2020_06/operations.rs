@@ -1936,7 +1936,7 @@ pub mod path {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder

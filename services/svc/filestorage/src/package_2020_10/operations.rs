@@ -213,7 +213,7 @@ pub mod service {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1718,7 +1718,7 @@ pub mod share {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let req_body = if let Some(share_acl) = &this.share_acl {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/xml");
                             azure_core::to_json(share_acl)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -4192,7 +4192,7 @@ pub mod file {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let req_body = if let Some(optionalbody) = &this.optionalbody {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/octet-stream");
                             azure_core::to_json(optionalbody)?
                         } else {
                             azure_core::EMPTY_BODY

@@ -454,7 +454,7 @@ pub mod digital_twin_models {
                         if let Some(tracestate) = &this.tracestate {
                             req_builder = req_builder.header("tracestate", tracestate);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.update_model)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -1006,7 +1006,7 @@ pub mod digital_twins {
                         if let Some(tracestate) = &this.tracestate {
                             req_builder = req_builder.header("tracestate", tracestate);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.patch_document)?;
                         if let Some(if_match) = &this.if_match {
                             req_builder = req_builder.header("If-Match", if_match);
@@ -1317,7 +1317,7 @@ pub mod digital_twins {
                         if let Some(tracestate) = &this.tracestate {
                             req_builder = req_builder.header("tracestate", tracestate);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.patch_document)?;
                         if let Some(if_match) = &this.if_match {
                             req_builder = req_builder.header("If-Match", if_match);
@@ -1919,7 +1919,7 @@ pub mod digital_twins {
                         if let Some(tracestate) = &this.tracestate {
                             req_builder = req_builder.header("tracestate", tracestate);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.patch_document)?;
                         if let Some(if_match) = &this.if_match {
                             req_builder = req_builder.header("If-Match", if_match);

@@ -435,7 +435,7 @@ pub mod create_manifest {
                         .await
                         .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    req_builder = req_builder.header("content-type", "application/json");
+                    req_builder = req_builder.header("content-type", "application/vnd.docker.distribution.manifest.v2+json");
                     let req_body = azure_core::to_json(&this.payload)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder

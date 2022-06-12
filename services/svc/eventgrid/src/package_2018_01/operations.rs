@@ -176,7 +176,7 @@ pub mod publish_cloud_event_events {
                         .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2018-01-01");
-                    req_builder = req_builder.header("content-type", "application/json");
+                    req_builder = req_builder.header("content-type", "application/cloudevents-batch+json; charset=utf-8");
                     let req_body = azure_core::to_json(&this.events)?;
                     if let Some(aeg_channel_name) = &this.aeg_channel_name {
                         req_builder = req_builder.header("aeg-channel-name", aeg_channel_name);

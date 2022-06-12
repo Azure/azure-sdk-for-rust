@@ -209,7 +209,7 @@ pub mod app_component {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2022-06-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/merge-patch+json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -487,7 +487,7 @@ pub mod server_metrics {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2022-06-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/merge-patch+json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -902,7 +902,7 @@ pub mod test {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2022-06-01-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/merge-patch+json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -1474,7 +1474,7 @@ pub mod test_run {
                         if let Some(old_test_run_id) = &this.old_test_run_id {
                             url.query_pairs_mut().append_pair("oldTestRunId", old_test_run_id);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/merge-patch+json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
