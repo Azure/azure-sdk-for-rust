@@ -1,30 +1,7 @@
+use crate::{Error, ErrorKind, Result, ResultExt};
 use camino::{Utf8Path, Utf8PathBuf};
 use path_abs::PathMut;
 use std::path::PathBuf;
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Could not create output directory {directory}")]
-    CreateOutputDirectory { source: std::io::Error, directory: Utf8PathBuf },
-    #[error("Could not create file {file}")]
-    CreateFile { source: std::io::Error, file: Utf8PathBuf },
-    #[error("Could not read file {file}")]
-    ReadFile { source: std::io::Error, file: Utf8PathBuf },
-    #[error("Could not write file {file}")]
-    WriteFile { source: std::io::Error, file: Utf8PathBuf },
-    #[error("file name was not utf-8")]
-    FileNameNotUtf8,
-    #[error("Error popping path")]
-    PopUpPath,
-    #[error("Error appending path")]
-    AppendPath(#[source] path_abs::Error),
-    #[error("Error converting path to Utf8: {0}")]
-    FromPathBuf(PathBuf),
-    #[error(transparent)]
-    Other(#[from] std::io::Error),
-}
 
 /// Joins two files paths together
 ///
@@ -33,15 +10,24 @@ pub enum Error {
 pub fn join<P1: AsRef<Utf8Path>, P2: AsRef<Utf8Path>>(a: P1, b: P2) -> Result<Utf8PathBuf> {
     let mut c = a.as_ref();
     if c.extension().is_some() {
-        c = c.parent().ok_or(Error::PopUpPath)?; // to directory
+        c = c
+            .parent()
+            .ok_or(Error::with_message(ErrorKind::Io, || "unable to get parent path of {c}"))?;
+        // to directory
     }
     let mut c = PathBuf::from(c);
-    c.append(b.as_ref()).map_err(Error::AppendPath)?;
-    Utf8PathBuf::from_path_buf(c).map_err(Error::FromPathBuf)
+    let b = b.as_ref();
+    c.append(b).with_context(ErrorKind::Io, || format!("append path {b} to {c:?}"))?;
+    Utf8PathBuf::from_path_buf(c).map_err(|path| Error::with_message(ErrorKind::Io, || format!("converting path to UTF-8: {path:?}")))
 }
 
 pub fn join_several<P1: AsRef<Utf8Path>>(a: P1, b: &[Utf8PathBuf]) -> Result<Vec<Utf8PathBuf>> {
     b.iter().map(|b| join(&a, b)).collect()
+}
+
+pub fn read_file<P: AsRef<Utf8Path>>(path: P) -> Result<Vec<u8>> {
+    let path = path.as_ref();
+    std::fs::read(path).with_context(ErrorKind::Io, || format!("reading file {path}"))
 }
 
 #[cfg(test)]
@@ -49,7 +35,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_path_join() -> Result<(), Error> {
+    fn test_path_join() -> Result<()> {
         let a = "../../../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json";
         let b = "../../../../../common-types/resource-management/v1/types.json";
         let c = join(a, b)?;

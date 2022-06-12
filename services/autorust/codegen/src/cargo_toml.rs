@@ -1,21 +1,10 @@
 use crate::config_parser::Tag;
+use crate::Result;
 use camino::Utf8Path;
 use std::{
     fs::File,
     io::{prelude::*, LineWriter},
 };
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Io(crate::io::Error),
-}
-impl<T: Into<crate::io::Error>> From<T> for Error {
-    fn from(error: T) -> Self {
-        Self::Io(error.into())
-    }
-}
 
 pub fn create(crate_name: &str, tags: &[&Tag], default_tag: &Tag, path: &Utf8Path) -> Result<()> {
     let file = File::create(path)?;

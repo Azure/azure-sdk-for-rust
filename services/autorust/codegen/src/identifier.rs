@@ -1,25 +1,20 @@
+use crate::{ErrorKind, Result, ResultExt};
 use heck::{ToPascalCase, ToSnakeCase};
 use proc_macro2::Ident;
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Error parsing Ident {}", text)]
-    ParseIdent { source: syn::Error, text: String },
-}
-
 pub trait ToIdent: ToOwned {
-    fn to_ident(&self) -> Result<Ident, Error>;
+    fn to_ident(&self) -> Result<Ident>;
 }
 
 impl ToIdent for str {
-    fn to_ident(&self) -> Result<Ident, Error> {
+    fn to_ident(&self) -> Result<Ident> {
         parse_ident(self)
     }
 }
 
 pub trait CamelCaseIdent: ToOwned {
     fn to_camel_case_id(&self) -> String;
-    fn to_camel_case_ident(&self) -> Result<Ident, Error>;
+    fn to_camel_case_ident(&self) -> Result<Ident>;
 }
 
 impl CamelCaseIdent for str {
@@ -35,14 +30,14 @@ impl CamelCaseIdent for str {
         txt
     }
 
-    fn to_camel_case_ident(&self) -> Result<Ident, Error> {
+    fn to_camel_case_ident(&self) -> Result<Ident> {
         self.to_camel_case_id().to_ident()
     }
 }
 
 pub trait SnakeCaseIdent: ToOwned {
     fn to_snake_case_id(&self) -> String;
-    fn to_snake_case_ident(&self) -> Result<Ident, Error>;
+    fn to_snake_case_ident(&self) -> Result<Ident>;
 }
 
 impl SnakeCaseIdent for str {
@@ -53,7 +48,7 @@ impl SnakeCaseIdent for str {
         suffix_keyword(&txt)
     }
 
-    fn to_snake_case_ident(&self) -> Result<Ident, Error> {
+    fn to_snake_case_ident(&self) -> Result<Ident> {
         self.to_snake_case_id().to_ident()
     }
 }
@@ -66,11 +61,8 @@ pub fn id(text: &str) -> String {
     txt
 }
 
-pub fn parse_ident(text: &str) -> Result<Ident, Error> {
-    syn::parse_str::<Ident>(&id(text)).map_err(|source| Error::ParseIdent {
-        source,
-        text: text.to_owned(),
-    })
+pub fn parse_ident(text: &str) -> Result<Ident> {
+    syn::parse_str::<Ident>(&id(text)).with_context(ErrorKind::Parse, || format!("parse ident {text}"))
 }
 
 fn remove_spaces(text: &str) -> String {
@@ -196,13 +188,13 @@ mod tests {
     use heck::ToSnakeCase;
 
     #[test]
-    fn test_unicode() -> Result<(), Error> {
+    fn test_unicode() -> Result<()> {
         assert_eq!(unicode(',', false), "u2c");
         Ok(())
     }
 
     #[test]
-    fn test_replace_first() -> Result<(), Error> {
+    fn test_replace_first() -> Result<()> {
         assert_eq!(replace_first(".", false, false), "u2e");
         assert_eq!(replace_first("/", false, false), "u2f");
         assert_eq!(replace_first("", false, false), "u0");
@@ -210,7 +202,7 @@ mod tests {
     }
 
     #[test]
-    fn test_replace_special_chars() -> Result<(), Error> {
+    fn test_replace_special_chars() -> Result<()> {
         assert_eq!(replace_special_chars("."), "_");
         assert_eq!(replace_special_chars(","), "_");
         assert_eq!(replace_special_chars("-"), "_");
@@ -220,7 +212,7 @@ mod tests {
     }
 
     #[test]
-    fn test_odata_next_link() -> Result<(), Error> {
+    fn test_odata_next_link() -> Result<()> {
         let idt = "odata.nextLink".to_snake_case();
         let idt = id(&idt);
         assert_eq!(idt.to_string(), "odata_next_link");
@@ -228,32 +220,32 @@ mod tests {
     }
 
     #[test]
-    fn test_three_dot_two() -> Result<(), Error> {
+    fn test_three_dot_two() -> Result<()> {
         let idt = id("3.2");
         assert_eq!(idt.to_string(), "n3_2");
         Ok(())
     }
 
     #[test]
-    fn test_system_assigned_user_assigned() -> Result<(), Error> {
+    fn test_system_assigned_user_assigned() -> Result<()> {
         assert_eq!("SystemAssigned, UserAssigned".to_camel_case_id(), "SystemAssignedUserAssigned");
         Ok(())
     }
 
     #[test]
-    fn test_gcm_aes_128() -> Result<(), Error> {
+    fn test_gcm_aes_128() -> Result<()> {
         assert_eq!("gcm-aes-128".to_camel_case_id(), "GcmAes128");
         Ok(())
     }
 
     #[test]
-    fn test_5() -> Result<(), Error> {
+    fn test_5() -> Result<()> {
         assert_eq!("5".to_camel_case_id(), "N5");
         Ok(())
     }
 
     #[test]
-    fn test_app_configuration() -> Result<(), Error> {
+    fn test_app_configuration() -> Result<()> {
         assert_eq!(
             "Microsoft.AppConfiguration/configurationStores".to_camel_case_id(),
             "MicrosoftAppConfigurationConfigurationStores"
@@ -262,13 +254,13 @@ mod tests {
     }
 
     #[test]
-    fn test_microsoft_key_vault_vaults() -> Result<(), Error> {
+    fn test_microsoft_key_vault_vaults() -> Result<()> {
         assert_eq!("Microsoft.KeyVault/vaults".to_camel_case_id(), "MicrosoftKeyVaultVaults");
         Ok(())
     }
 
     #[test]
-    fn test_azure_virtual_machine_best_practices() -> Result<(), Error> {
+    fn test_azure_virtual_machine_best_practices() -> Result<()> {
         assert_eq!(
             "Azure virtual machine best practices - Dev/Test".to_camel_case_id(),
             "AzureVirtualMachineBestPracticesDevTest"
@@ -277,37 +269,37 @@ mod tests {
     }
 
     #[test]
-    fn test_1_0() -> Result<(), Error> {
+    fn test_1_0() -> Result<()> {
         assert_eq!("1.0".to_camel_case_id(), "N1_0");
         Ok(())
     }
 
     #[test]
-    fn test_async() -> Result<(), Error> {
+    fn test_async() -> Result<()> {
         assert_eq!("Async".to_snake_case_id(), "async_");
         Ok(())
     }
 
     #[test]
-    fn test_attr_qualified_name() -> Result<(), Error> {
+    fn test_attr_qualified_name() -> Result<()> {
         assert_eq!("attr:qualifiedName".to_snake_case_id(), "attr_qualified_name");
         Ok(())
     }
 
     #[test]
-    fn test_filter() -> Result<(), Error> {
+    fn test_filter() -> Result<()> {
         assert_eq!("$filter".to_snake_case_id(), "filter");
         Ok(())
     }
 
     #[test]
-    fn test_odata_type() -> Result<(), Error> {
+    fn test_odata_type() -> Result<()> {
         assert_eq!("@odata.type".to_camel_case_id(), "OdataType");
         Ok(())
     }
 
     #[test]
-    fn test_10minutely() -> Result<(), Error> {
+    fn test_10minutely() -> Result<()> {
         assert_eq!("_10minutely".to_camel_case_id(), "N10minutely");
         Ok(())
     }

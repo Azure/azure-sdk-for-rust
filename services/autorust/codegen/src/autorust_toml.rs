@@ -1,7 +1,8 @@
-use crate::config_parser::Tag;
-use camino::{Utf8Path, Utf8PathBuf};
+use crate::Result;
+use crate::{config_parser::Tag, io};
+use camino::Utf8Path;
 use serde::Deserialize;
-use std::{collections::HashSet, fs};
+use std::collections::HashSet;
 
 /// `autorust.toml` files are used to configure code generation for a crate
 #[derive(Deserialize, Debug, Default)]
@@ -137,23 +138,11 @@ impl<'a> PackageConfig {
     }
 }
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Failed to deserialize autorust.toml")]
-    Deserialize(#[from] toml::de::Error),
-    #[error(transparent)]
-    Io(#[from] crate::io::Error),
-}
-
 /// Deserializes the autorust.toml into a PackageConfig
 /// If the file does not exist, then returns a default instance
 pub fn read(path: &Utf8Path) -> Result<PackageConfig> {
     if path.exists() {
-        let bytes = fs::read(path).map_err(|source| crate::io::Error::ReadFile {
-            source,
-            file: Utf8PathBuf::from(path),
-        })?;
+        let bytes = io::read_file(path)?;
         Ok(toml::from_slice(&bytes)?)
     } else {
         Ok(PackageConfig::default())
@@ -180,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn empty_config() -> Result<(), Error> {
+    fn empty_config() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -196,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn allow() -> Result<(), Error> {
+    fn allow() -> Result<()> {
         let tags = readme_tags();
         let tags = tags.iter().collect();
 
@@ -212,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn deny() -> Result<(), Error> {
+    fn deny() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -229,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn deny_contains() -> Result<(), Error> {
+    fn deny_contains() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -246,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn deny_contains_only() -> Result<(), Error> {
+    fn deny_contains_only() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -263,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn deny_contains_preview() -> Result<(), Error> {
+    fn deny_contains_preview() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -280,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn limit() -> Result<(), Error> {
+    fn limit() -> Result<()> {
         let tags = readme_tags();
         let tags = tags.iter().collect();
 
@@ -296,7 +285,7 @@ mod tests {
     }
 
     #[test]
-    fn no_limit() -> Result<(), Error> {
+    fn no_limit() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -313,7 +302,7 @@ mod tests {
     }
 
     #[test]
-    fn sort() -> Result<(), Error> {
+    fn sort() -> Result<()> {
         let tags = readme_tags();
         let len = tags.len();
         let tags = tags.iter().collect();
@@ -331,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn default() -> Result<(), Error> {
+    fn default() -> Result<()> {
         let config: PackageConfig = toml::from_str(
             r#"
             [tags]
@@ -343,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn boxed() -> Result<(), Error> {
+    fn boxed() -> Result<()> {
         let config: PackageConfig = toml::from_str(
             r#"
             [properties]
