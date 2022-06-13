@@ -1,3 +1,4 @@
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::{
     date_from_headers, request_id_from_headers, request_server_encrypted_from_headers,
 };
@@ -19,7 +20,8 @@ impl PutBlockResponse {
     pub(crate) fn from_headers(headers: &HeaderMap) -> crate::Result<PutBlockResponse> {
         debug!("{:#?}", headers);
 
-        let (content_md5, content_crc64) = consistency_from_headers(headers)?;
+        let (content_md5, content_crc64) =
+            consistency_from_headers(headers).map_kind(ErrorKind::DataConversion)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let request_server_encrypted = request_server_encrypted_from_headers(headers)?;

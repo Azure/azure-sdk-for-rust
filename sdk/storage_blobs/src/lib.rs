@@ -5,7 +5,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub use azure_storage::{Error, Result};
+pub use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 
 mod access_tier;
 mod ba512_range;

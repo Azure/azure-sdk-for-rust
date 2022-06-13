@@ -15,6 +15,7 @@ pub use self::page_range_list::PageRangeList;
 pub mod requests;
 pub mod responses;
 use crate::AccessTier;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::{
     BLOB_ACCESS_TIER, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS,
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
@@ -67,7 +68,7 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
 use serde::{self, Deserialize, Deserializer};
-fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>, D::Error>
+fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>>
 where
     D: Deserializer<'de>,
 {
@@ -79,7 +80,7 @@ where
         .map_err(serde::de::Error::custom)
 }
 
-fn deserialize_md5_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyMD5>, D::Error>
+fn deserialize_md5_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyMD5>>
 where
     D: Deserializer<'de>,
 {
@@ -205,9 +206,11 @@ impl Blob {
         let creation_time = {
             let creation_time = h
                 .get(CREATION_TIME)
-                .ok_or_else(|| crate::Error::HeaderNotFound(CREATION_TIME.to_owned()))?
-                .to_str()?;
-            let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
+                .ok_or_else(|| Error::message(ErrorKind::DataConversion, CREATION_TIME))?
+                .to_str()
+                .map_kind(ErrorKind::DataConversion)?;
+            let creation_time =
+                DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
             let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
             trace!("creation_time == {:?}", creation_time);
             creation_time
@@ -224,22 +227,24 @@ impl Blob {
             .get(header::CONTENT_LENGTH)
             .ok_or_else(|| {
                 static CL: header::HeaderName = header::CONTENT_LENGTH;
-                crate::Error::HeaderNotFound(CL.as_str().to_owned())
+                Error::message(ErrorKind::DataConversion, CL.as_str())
             })?
-            .to_str()?
-            .parse::<u64>()?;
+            .to_str()
+            .map_kind(ErrorKind::DataConversion)?
+            .parse::<u64>()
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("content_length == {:?}", content_length);
 
         let last_modified = h.get_as_str(header::LAST_MODIFIED).ok_or_else(|| {
             static LM: header::HeaderName = header::LAST_MODIFIED;
-            crate::Error::HeaderNotFound(LM.as_str().to_owned())
+            Error::message(ErrorKind::DataConversion, LM.as_str())
         })?;
-        let last_modified = from_azure_time(last_modified)?;
+        let last_modified = from_azure_time(last_modified).map_kind(ErrorKind::DataConversion)?;
         trace!("last_modified == {:?}", last_modified);
 
         let etag = h.get_as_string(header::ETAG).ok_or_else(|| {
             static E: header::HeaderName = header::ETAG;
-            crate::Error::HeaderNotFound(E.as_str().to_owned())
+            Error::message(ErrorKind::DataConversion, E.as_str())
         })?;
         let etag = etag.into();
         trace!("etag == {:?}", etag);
@@ -249,17 +254,21 @@ impl Blob {
 
         let blob_type = h
             .get_as_str(BLOB_TYPE)
-            .ok_or_else(|| crate::Error::HeaderNotFound(BLOB_TYPE.to_owned()))?
-            .parse::<BlobType>()?;
+            .ok_or_else(|| Error::message(ErrorKind::DataConversion, BLOB_TYPE))?
+            .parse::<BlobType>()
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("blob_type == {:?}", blob_type);
 
         let blob_type = h
             .get_as_str(BLOB_TYPE)
-            .ok_or_else(|| crate::Error::HeaderNotFound(BLOB_TYPE.to_owned()))?
-            .parse::<BlobType>()?;
+            .ok_or_else(|| Error::message(ErrorKind::DataConversion, BLOB_TYPE))?
+            .parse::<BlobType>()
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("blob_type == {:?}", blob_type);
 
-        let access_tier = h.get_as_enum(BLOB_ACCESS_TIER)?;
+        let access_tier = h
+            .get_as_enum(BLOB_ACCESS_TIER)
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("blob_access_tier == {:?}", access_tier);
 
         let content_encoding = h.get_as_string(header::CONTENT_ENCODING);
@@ -271,13 +280,15 @@ impl Blob {
         let content_md5 = h
             .get_header(CONTENT_MD5)
             .map(|header| ConsistencyMD5::decode(header.as_bytes()))
-            .transpose()?;
+            .transpose()
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("content_md5 == {:?}", content_md5);
 
         let content_crc64 = h
             .get_header(CONTENT_CRC64)
             .map(|header| ConsistencyCRC64::decode(header.as_bytes()))
-            .transpose()?;
+            .transpose()
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("content_crc64 == {:?}", content_crc64);
 
         let cache_control = h.get_as_string(header::CACHE_CONTROL);
@@ -285,25 +296,32 @@ impl Blob {
         let content_disposition = h.get_as_string(header::CONTENT_DISPOSITION);
 
         let lease_status = h
-            .get_as_enum(LEASE_STATUS)?
-            .ok_or_else(|| crate::Error::HeaderNotFound(LEASE_STATUS.to_owned()))?;
+            .get_as_enum(LEASE_STATUS)
+            .map_kind(ErrorKind::DataConversion)?
+            .ok_or_else(|| Error::message(ErrorKind::DataConversion, LEASE_STATUS))?;
         trace!("lease_status == {:?}", lease_status);
 
         let lease_state = h
-            .get_as_enum(LEASE_STATE)?
-            .ok_or_else(|| crate::Error::HeaderNotFound(LEASE_STATE.to_owned()))?;
+            .get_as_enum(LEASE_STATE)
+            .map_kind(ErrorKind::DataConversion)?
+            .ok_or_else(|| Error::message(ErrorKind::DataConversion, LEASE_STATE))?;
         trace!("lease_state == {:?}", lease_state);
 
-        let lease_duration = h.get_as_enum(LEASE_DURATION)?;
+        let lease_duration = h
+            .get_as_enum(LEASE_DURATION)
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("lease_duration == {:?}", lease_duration);
 
         let copy_id = h
             .get_as_string(COPY_ID)
             .map(|c| (&c as &str).try_into())
-            .transpose()?;
+            .transpose()
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("copy_id == {:?}", copy_id);
 
-        let copy_status = h.get_as_enum(COPY_STATUS)?;
+        let copy_status = h
+            .get_as_enum(COPY_STATUS)
+            .map_kind(ErrorKind::DataConversion)?;
         trace!("copy_status == {:?}", copy_status);
 
         let copy_source = h.get_as_string(COPY_SOURCE);
@@ -328,8 +346,9 @@ impl Blob {
 
         let server_encrypted = h
             .get_as_str(SERVER_ENCRYPTED)
-            .ok_or_else(|| crate::Error::HeaderNotFound(SERVER_ENCRYPTED.to_owned()))?
-            .parse::<bool>()?;
+            .ok_or_else(|| Error::message(ErrorKind::DataConversion, SERVER_ENCRYPTED))?
+            .parse::<bool>()
+            .map_kind(ErrorKind::DataConversion)?;
 
         let mut metadata = HashMap::new();
         for (name, value) in h.iter() {
@@ -402,6 +421,6 @@ impl Blob {
 pub(crate) fn copy_status_from_headers(headers: &http::HeaderMap) -> crate::Result<CopyStatus> {
     let val = headers
         .get_as_str(azure_core::headers::COPY_STATUS)
-        .ok_or_else(|| crate::Error::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned()))?;
-    Ok(CopyStatus::from_str(val)?)
+        .ok_or_else(|| Error::message(ErrorKind::DataConversion, COPY_STATUS))?;
+    Ok(CopyStatus::from_str(val).map_kind(ErrorKind::DataConversion)?)
 }

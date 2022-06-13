@@ -1,3 +1,4 @@
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
     request_server_encrypted_from_headers,
@@ -24,7 +25,8 @@ impl PutBlockBlobResponse {
 
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
-        let (content_md5, content_crc64) = consistency_from_headers(headers)?;
+        let (content_md5, content_crc64) =
+            consistency_from_headers(headers).map_kind(ErrorKind::DataConversion)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let request_server_encrypted = request_server_encrypted_from_headers(headers)?;
