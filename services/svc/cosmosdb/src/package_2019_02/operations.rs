@@ -249,7 +249,7 @@ pub mod service {
                         url.query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
                         url.query_pairs_mut().append_pair("comp", comp);
-                        req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                        req_builder = req_builder.header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.table_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1092,7 +1092,7 @@ pub mod table {
                             url.query_pairs_mut().append_pair("$format", format);
                         }
                         let req_body = if let Some(table_entity_properties) = &this.table_entity_properties {
-                            req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                            req_builder = req_builder.header("content-type", "application/json");
                             azure_core::to_json(table_entity_properties)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -1193,7 +1193,7 @@ pub mod table {
                             url.query_pairs_mut().append_pair("$format", format);
                         }
                         let req_body = if let Some(table_entity_properties) = &this.table_entity_properties {
-                            req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                            req_builder = req_builder.header("content-type", "application/json");
                             azure_core::to_json(table_entity_properties)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -1524,7 +1524,7 @@ pub mod table {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let req_body = if let Some(table_acl) = &this.table_acl {
-                            req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
+                            req_builder = req_builder.header("content-type", "application/xml");
                             azure_core::to_json(table_acl)?
                         } else {
                             azure_core::EMPTY_BODY

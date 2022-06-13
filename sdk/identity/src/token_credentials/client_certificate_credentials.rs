@@ -1,5 +1,6 @@
 use super::{authority_hosts, TokenCredential};
 use azure_core::auth::TokenResponse;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use base64::{CharacterSet, Config};
 use chrono::Utc;
 use oauth2::AccessToken;
@@ -120,18 +121,6 @@ impl ClientCertificateCredential {
     }
 }
 
-#[allow(missing_docs)]
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum ClientCertificateCredentialError {
-    #[error("Failed to perform base64 decode {0}")]
-    DecodeError(base64::DecodeError),
-    #[error("Openssl operation failed {0}")]
-    OpensslError(ErrorStack),
-    #[error("HTTP operation failed {0}")]
-    ReqwestError(reqwest::Error),
-}
-
 #[derive(Deserialize, Debug, Default)]
 #[serde(default)]
 struct AadTokenResponse {
@@ -153,9 +142,7 @@ fn get_encoded_cert(cert: &X509) -> Result<String, ClientCertificateCredentialEr
 
 #[async_trait::async_trait]
 impl TokenCredential for ClientCertificateCredential {
-    type Error = ClientCertificateCredentialError;
-
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
         let options = self.options();
         let url = &format!(
             "{}/{}/oauth2/v2.0/token",
@@ -224,7 +211,7 @@ impl TokenCredential for ClientCertificateCredential {
             ("grant_type", "client_credentials".to_owned()),
         ];
 
-        let client = reqwest::Client::new();
+        let http_client = new_http_client();
         let response: AadTokenResponse = client
             .post(url)
             .form(&form_data)
@@ -240,17 +227,5 @@ impl TokenCredential for ClientCertificateCredential {
             Utc::now()
                 + chrono::Duration::from_std(Duration::from_secs(response.expires_in)).unwrap(),
         ))
-    }
-}
-
-#[async_trait::async_trait]
-impl azure_core::auth::TokenCredential for ClientCertificateCredential {
-    async fn get_token(
-        &self,
-        resource: &str,
-    ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
-        TokenCredential::get_token(self, resource)
-            .await
-            .map_err(|error| azure_core::Error::GetToken(Box::new(error)))
     }
 }

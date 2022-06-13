@@ -36,7 +36,7 @@ impl ReplaceUserBuilder {
             let body = ReplaceUserBody {
                 id: &self.user_name,
             };
-            request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+            request.set_body(serde_json::to_vec(&body)?);
             let response = self
                 .client
                 .pipeline()

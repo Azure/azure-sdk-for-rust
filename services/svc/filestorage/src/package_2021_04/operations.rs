@@ -92,40 +92,28 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn get_properties(
-            &self,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
+        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
             }
         }
         pub fn set_properties(
             &self,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
                 client: self.0.clone(),
-                restype: restype.into(),
-                comp: comp.into(),
                 storage_service_properties: storage_service_properties.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
             }
         }
-        pub fn list_shares_segment(&self, comp: impl Into<String>, x_ms_version: impl Into<String>) -> list_shares_segment::Builder {
+        pub fn list_shares_segment(&self, x_ms_version: impl Into<String>) -> list_shares_segment::Builder {
             list_shares_segment::Builder {
                 client: self.0.clone(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
                 marker: None,
@@ -142,8 +130,6 @@ pub mod service {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
         }
@@ -166,10 +152,6 @@ pub mod service {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -208,8 +190,6 @@ pub mod service {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -233,11 +213,7 @@ pub mod service {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -272,7 +248,6 @@ pub mod service {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) marker: Option<String>,
@@ -341,8 +316,6 @@ pub mod service {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                let comp = &this.comp;
-                                url.query_pairs_mut().append_pair("comp", comp);
                                 if let Some(prefix) = &this.prefix {
                                     url.query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -390,32 +363,20 @@ pub mod share {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn get_properties(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
+        pub fn get_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 sharesnapshot: None,
                 timeout: None,
                 x_ms_lease_id: None,
             }
         }
-        pub fn create(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> create::Builder {
+        pub fn create(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
@@ -425,16 +386,10 @@ pub mod share {
                 x_ms_root_squash: None,
             }
         }
-        pub fn delete(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> delete::Builder {
+        pub fn delete(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 sharesnapshot: None,
                 timeout: None,
@@ -445,17 +400,13 @@ pub mod share {
         pub fn acquire_lease(
             &self,
             share_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> acquire_lease::Builder {
             acquire_lease::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_duration: None,
@@ -467,18 +418,14 @@ pub mod share {
         pub fn release_lease(
             &self,
             share_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> release_lease::Builder {
             release_lease::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                restype: restype.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -489,18 +436,14 @@ pub mod share {
         pub fn change_lease(
             &self,
             share_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> change_lease::Builder {
             change_lease::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                restype: restype.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -512,18 +455,14 @@ pub mod share {
         pub fn renew_lease(
             &self,
             share_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> renew_lease::Builder {
             renew_lease::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                restype: restype.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -534,17 +473,13 @@ pub mod share {
         pub fn break_lease(
             &self,
             share_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> break_lease::Builder {
             break_lease::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_break_period: None,
@@ -553,18 +488,10 @@ pub mod share {
                 sharesnapshot: None,
             }
         }
-        pub fn create_snapshot(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> create_snapshot::Builder {
+        pub fn create_snapshot(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create_snapshot::Builder {
             create_snapshot::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
@@ -573,16 +500,12 @@ pub mod share {
         pub fn get_permission(
             &self,
             share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_file_permission_key: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> get_permission::Builder {
             get_permission::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_file_permission_key: x_ms_file_permission_key.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -591,33 +514,21 @@ pub mod share {
         pub fn create_permission(
             &self,
             share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
             share_permission: impl Into<models::SharePermission>,
         ) -> create_permission::Builder {
             create_permission::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 share_permission: share_permission.into(),
                 timeout: None,
             }
         }
-        pub fn set_properties(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_properties::Builder {
+        pub fn set_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_properties::Builder {
             set_properties::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_share_quota: None,
@@ -626,88 +537,48 @@ pub mod share {
                 x_ms_root_squash: None,
             }
         }
-        pub fn set_metadata(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_metadata::Builder {
+        pub fn set_metadata(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
             set_metadata::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_lease_id: None,
             }
         }
-        pub fn get_access_policy(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_access_policy::Builder {
+        pub fn get_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
             get_access_policy::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
             }
         }
-        pub fn set_access_policy(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_access_policy::Builder {
+        pub fn set_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
             set_access_policy::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 share_acl: None,
                 timeout: None,
                 x_ms_lease_id: None,
             }
         }
-        pub fn get_statistics(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_statistics::Builder {
+        pub fn get_statistics(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
             }
         }
-        pub fn restore(
-            &self,
-            share_name: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> restore::Builder {
+        pub fn restore(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::Builder {
             restore::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -724,7 +595,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -757,8 +627,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(sharesnapshot) = &this.sharesnapshot {
                             url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
                         }
@@ -800,7 +668,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
@@ -848,8 +715,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -900,7 +765,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -938,8 +802,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(sharesnapshot) = &this.sharesnapshot {
                             url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
                         }
@@ -984,9 +846,7 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_duration: Option<i64>,
@@ -1029,11 +889,7 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1081,9 +937,7 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -1117,11 +971,7 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1164,9 +1014,7 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -1205,11 +1053,7 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1255,9 +1099,7 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -1291,11 +1133,7 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1338,9 +1176,7 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_break_period: Option<i64>,
@@ -1383,11 +1219,7 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1435,8 +1267,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
@@ -1464,10 +1294,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1506,8 +1332,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_file_permission_key: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -1531,10 +1355,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-file-permission-key", &this.x_ms_file_permission_key);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1575,8 +1395,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) share_permission: models::SharePermission,
             pub(crate) timeout: Option<i64>,
@@ -1600,10 +1418,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1640,8 +1454,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_share_quota: Option<i64>,
@@ -1684,10 +1496,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1735,8 +1543,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
@@ -1769,10 +1575,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1814,8 +1616,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -1843,10 +1643,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1889,8 +1685,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) share_acl: Option<models::SignedIdentifiers>,
             pub(crate) timeout: Option<i64>,
@@ -1923,12 +1717,8 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         let req_body = if let Some(share_acl) = &this.share_acl {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/xml");
                             azure_core::to_json(share_acl)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -1970,8 +1760,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -1999,10 +1787,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2045,8 +1829,6 @@ pub mod share {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -2084,10 +1866,6 @@ pub mod share {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2133,14 +1911,12 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 sharesnapshot: None,
                 timeout: None,
@@ -2150,7 +1926,6 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
             x_ms_file_creation_time: impl Into<String>,
@@ -2160,7 +1935,6 @@ pub mod directory {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 x_ms_file_attributes: x_ms_file_attributes.into(),
                 x_ms_file_creation_time: x_ms_file_creation_time.into(),
@@ -2175,14 +1949,12 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
             }
@@ -2191,8 +1963,6 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
             x_ms_file_creation_time: impl Into<String>,
@@ -2202,8 +1972,6 @@ pub mod directory {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 x_ms_file_attributes: x_ms_file_attributes.into(),
                 x_ms_file_creation_time: x_ms_file_creation_time.into(),
@@ -2217,16 +1985,12 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
@@ -2236,16 +2000,12 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> list_files_and_directories_segment::Builder {
             list_files_and_directories_segment::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
                 sharesnapshot: None,
@@ -2260,14 +2020,12 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> list_handles::Builder {
             list_handles::Builder {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 marker: None,
                 maxresults: None,
@@ -2280,7 +2038,6 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_handle_id: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> force_close_handles::Builder {
@@ -2288,7 +2045,6 @@ pub mod directory {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                comp: comp.into(),
                 x_ms_handle_id: x_ms_handle_id.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -2301,8 +2057,6 @@ pub mod directory {
             &self,
             share_name: impl Into<String>,
             directory: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_rename_source: impl Into<String>,
         ) -> rename::Builder {
@@ -2310,8 +2064,6 @@ pub mod directory {
                 client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 x_ms_file_rename_source: x_ms_file_rename_source.into(),
                 timeout: None,
@@ -2337,7 +2089,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -2370,8 +2121,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(sharesnapshot) = &this.sharesnapshot {
                             url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
                         }
@@ -2411,7 +2160,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_attributes: String,
             pub(crate) x_ms_file_creation_time: String,
@@ -2457,8 +2205,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2507,7 +2253,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
         }
@@ -2535,8 +2280,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2573,8 +2316,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_attributes: String,
             pub(crate) x_ms_file_creation_time: String,
@@ -2615,10 +2356,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2664,8 +2401,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
@@ -2698,10 +2433,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2741,8 +2472,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) sharesnapshot: Option<String>,
@@ -2826,10 +2555,6 @@ pub mod directory {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                let restype = &this.restype;
-                                url.query_pairs_mut().append_pair("restype", restype);
-                                let comp = &this.comp;
-                                url.query_pairs_mut().append_pair("comp", comp);
                                 if let Some(prefix) = &this.prefix {
                                     url.query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -2887,7 +2612,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
@@ -2935,8 +2659,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(marker) = &this.marker {
                             url.query_pairs_mut().append_pair("marker", marker);
                         }
@@ -2989,7 +2711,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_handle_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -3033,8 +2754,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -3081,8 +2800,6 @@ pub mod directory {
             pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_rename_source: String,
             pub(crate) timeout: Option<i64>,
@@ -3161,10 +2878,6 @@ pub mod directory {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let restype = &this.restype;
-                        url.query_pairs_mut().append_pair("restype", restype);
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -3327,7 +3040,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
             x_ms_file_creation_time: impl Into<String>,
@@ -3338,7 +3050,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 x_ms_file_attributes: x_ms_file_attributes.into(),
                 x_ms_file_creation_time: x_ms_file_creation_time.into(),
@@ -3361,7 +3072,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
@@ -3369,7 +3079,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
@@ -3381,7 +3090,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> acquire_lease::Builder {
@@ -3390,7 +3098,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -3404,7 +3111,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
@@ -3414,7 +3120,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_version: x_ms_version.into(),
@@ -3427,7 +3132,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_version: impl Into<String>,
@@ -3437,7 +3141,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_version: x_ms_version.into(),
@@ -3451,7 +3154,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> break_lease::Builder {
@@ -3460,7 +3162,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -3473,7 +3174,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_range: impl Into<String>,
             x_ms_write: impl Into<String>,
             content_length: i64,
@@ -3484,7 +3184,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_range: x_ms_range.into(),
                 x_ms_write: x_ms_write.into(),
                 content_length,
@@ -3500,7 +3199,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_range: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
             x_ms_write: impl Into<String>,
@@ -3512,7 +3210,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_range: x_ms_range.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
                 x_ms_write: x_ms_write.into(),
@@ -3532,7 +3229,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> get_range_list::Builder {
             get_range_list::Builder {
@@ -3540,7 +3236,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 sharesnapshot: None,
                 prevsharesnapshot: None,
@@ -3582,8 +3277,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
-            copyid: impl Into<String>,
             x_ms_copy_action: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> abort_copy::Builder {
@@ -3592,8 +3285,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
-                copyid: copyid.into(),
                 x_ms_copy_action: x_ms_copy_action.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -3605,7 +3296,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> list_handles::Builder {
             list_handles::Builder {
@@ -3613,7 +3303,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 marker: None,
                 maxresults: None,
@@ -3626,7 +3315,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_handle_id: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> force_close_handles::Builder {
@@ -3635,7 +3323,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_handle_id: x_ms_handle_id.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -3648,7 +3335,6 @@ pub mod file {
             share_name: impl Into<String>,
             directory: impl Into<String>,
             file_name: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_rename_source: impl Into<String>,
         ) -> rename::Builder {
@@ -3657,7 +3343,6 @@ pub mod file {
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 x_ms_file_rename_source: x_ms_file_rename_source.into(),
                 timeout: None,
@@ -4096,7 +3781,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_attributes: String,
             pub(crate) x_ms_file_creation_time: String,
@@ -4178,8 +3862,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -4250,7 +3932,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
@@ -4289,8 +3970,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -4334,7 +4013,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -4379,8 +4057,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4428,7 +4104,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
@@ -4464,8 +4139,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4508,7 +4181,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
@@ -4549,8 +4221,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4596,7 +4266,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -4636,8 +4305,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         req_builder = req_builder.header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4682,7 +4349,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_range: String,
             pub(crate) x_ms_write: String,
             pub(crate) content_length: i64,
@@ -4729,10 +4395,8 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         let req_body = if let Some(optionalbody) = &this.optionalbody {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/octet-stream");
                             azure_core::to_json(optionalbody)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -4782,7 +4446,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_range: String,
             pub(crate) x_ms_copy_source: String,
             pub(crate) x_ms_write: String,
@@ -4845,8 +4508,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -4906,7 +4567,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) sharesnapshot: Option<String>,
             pub(crate) prevsharesnapshot: Option<String>,
@@ -4955,8 +4615,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(sharesnapshot) = &this.sharesnapshot {
                             url.query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
                         }
@@ -5157,8 +4815,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
-            pub(crate) copyid: String,
             pub(crate) x_ms_copy_action: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -5193,10 +4849,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
-                        let copyid = &this.copyid;
-                        url.query_pairs_mut().append_pair("copyid", copyid);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -5238,7 +4890,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
@@ -5282,8 +4933,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(marker) = &this.marker {
                             url.query_pairs_mut().append_pair("marker", marker);
                         }
@@ -5334,7 +4983,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_handle_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -5374,8 +5022,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -5420,7 +5066,6 @@ pub mod file {
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_rename_source: String,
             pub(crate) timeout: Option<i64>,
@@ -5505,8 +5150,6 @@ pub mod file {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }

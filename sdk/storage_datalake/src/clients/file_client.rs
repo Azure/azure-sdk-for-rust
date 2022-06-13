@@ -1,5 +1,6 @@
 use super::{DataLakeClient, FileSystemClient, PathClient};
-use crate::{operations::*, request_options::*, Properties, Result};
+use crate::{operations::*, request_options::*, Properties};
+use azure_core::error::Result;
 use azure_core::prelude::IfMatchCondition;
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;

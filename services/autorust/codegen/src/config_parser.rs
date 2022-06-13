@@ -1,33 +1,8 @@
+use crate::{Error, ErrorKind, Result, ResultExt};
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 
-pub type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Received AutoRest configuration file did not contain an expected extension (e.g. '.md'): '{0}'")]
-    ExpectedMd(Utf8PathBuf),
-    #[error("Error reading the received CommonMark configuration file")]
-    ReadingConfig,
-    #[error("Configuration heading did not contain a tag.")]
-    NoTagInHeading,
-    #[error("Expected configuration tag to contain a YAML code block.")]
-    ExpectedYamlCodeBlock,
-    #[error("Error reading configuration block yaml")]
-    ConfigurationBlockYaml,
-    #[error("Error reading basic information block yaml")]
-    BasicInformationBlockYaml,
-    #[error("No `## Configuration` heading in the AutoRest literate configuration file")]
-    NoConfigurationHeading,
-    #[error("Received AutoRest configuration extension not supported: '{extension}' (in configuration file '{config_file}')")]
-    NotSupportedExtension { extension: String, config_file: Utf8PathBuf },
-    #[error("Markdown ended unexpectedly after configuration tag heading")]
-    MarkdownEnded,
-    #[error("Code block info did not contain UTF-8 characters.")]
-    CodeBlockNotUtf8,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Configuration {
     basic_info: BasicInformation,
     tags: Vec<Tag>,
@@ -105,17 +80,17 @@ impl Tag {
 pub fn parse_configurations_from_autorest_config_file(config_file: &Utf8Path) -> Result<Configuration> {
     let extension = config_file
         .extension()
-        .ok_or_else(|| Error::ExpectedMd(config_file.to_path_buf()))?;
+        .ok_or_else(|| Error::with_message(ErrorKind::Parse, || format!("expected md extension {config_file}")))?;
     match extension.to_lowercase().as_str() {
         "md" => {
             use literate_config::*;
-            let cmark_content = std::fs::read_to_string(config_file).map_err(|_| Error::ReadingConfig)?;
+            let cmark_content =
+                std::fs::read_to_string(config_file).with_context(ErrorKind::Io, || format!("reading the md file {config_file}"))?;
             Ok(parse_configuration(&cmark_content)?)
         }
-        _ => Err(Error::NotSupportedExtension {
-            extension: extension.to_owned(),
-            config_file: config_file.to_path_buf(),
-        }),
+        _ => Err(Error::with_message(ErrorKind::Io, || {
+            format!("AutoRest configuration file did not contain an expected extension '.md': '{config_file}'")
+        })),
     }
 }
 
@@ -143,7 +118,12 @@ mod literate_config {
         let root = parse_document(&arena, cmark_content, &ComrakOptions::default());
 
         // Get the AST node corresponding with "## Configuration".
-        let configuration_heading_node = get_configuration_section_heading_node(root).ok_or(Error::NoConfigurationHeading)?;
+        let configuration_heading_node = get_configuration_section_heading_node(root).ok_or_else(|| {
+            Error::message(
+                ErrorKind::Parse,
+                "no `## Configuration` heading in the AutoRest literate configuration file",
+            )
+        })?;
 
         let mut tags = Vec::new();
         let mut basic_info = BasicInformation::default();
@@ -153,13 +133,15 @@ mod literate_config {
         let mut current_node = configuration_heading_node.next_sibling();
         while let Some(node) = current_node {
             if is_basic_information(node) {
-                let yaml = extract_yaml(node)?.ok_or(Error::ExpectedYamlCodeBlock)?;
-                basic_info = serde_yaml::from_str(&yaml).map_err(|_| Error::BasicInformationBlockYaml)?;
+                let yaml = extract_yaml(node)?
+                    .ok_or_else(|| Error::message(ErrorKind::Parse, "expected configuration tag to contain a YAML code block"))?;
+                basic_info = serde_yaml::from_str(&yaml).context(ErrorKind::DataConversion, "reading basic information block yaml")?;
             } else if let Some(tag_name) = get_tag_name(node) {
                 // Extract the configuration from the first node inside the tag heading ("Tag: ..."),
                 // by looking at the first YAML code block.
-                let yaml = extract_yaml(node)?.ok_or(Error::ExpectedYamlCodeBlock)?;
-                let mut tag: Tag = serde_yaml::from_str(&yaml).map_err(|_| Error::ConfigurationBlockYaml)?;
+                let yaml = extract_yaml(node)?
+                    .ok_or_else(|| Error::message(ErrorKind::Parse, "Expected configuration tag to contain a YAML code block."))?;
+                let mut tag: Tag = serde_yaml::from_str(&yaml).context(ErrorKind::Parse, "reading configuration block yaml")?;
                 tag.tag = tag_name;
                 tags.push(tag);
             } else if is_header_at_level(node, 2) {
@@ -245,19 +227,23 @@ mod literate_config {
 
     /// Extracts the yaml from the received node.
     fn extract_yaml<'a>(configuration_tag_heading_node: &'a AstNode<'a>) -> Result<Option<String>> {
-        let mut current_node = configuration_tag_heading_node.next_sibling().ok_or(Error::MarkdownEnded)?;
+        let mut current_node = configuration_tag_heading_node
+            .next_sibling()
+            .ok_or_else(|| Error::message(ErrorKind::Parse, "markdown ended unexpectedly after configuration tag heading"))?;
         loop {
             if let NodeValue::CodeBlock(NodeCodeBlock { info, literal, fenced, .. }) = &current_node.data.borrow().value {
                 if !fenced {
                     continue;
                 }
-                let info = std::str::from_utf8(info).map_err(|_| Error::CodeBlockNotUtf8)?;
+                let info = std::str::from_utf8(info)?;
                 if info.trim_start().to_lowercase().starts_with("yaml") {
-                    let literal = std::str::from_utf8(literal).map_err(|_| Error::CodeBlockNotUtf8)?;
+                    let literal = std::str::from_utf8(literal)?;
                     return Ok(Some(literal.to_owned()));
                 }
             }
-            current_node = current_node.next_sibling().ok_or(Error::MarkdownEnded)?;
+            current_node = current_node
+                .next_sibling()
+                .ok_or_else(|| Error::message(ErrorKind::Parse, "markdown ended unexpectedly after configuration tag heading"))?;
         }
     }
 }
@@ -402,7 +388,7 @@ input-file:
 - Microsoft.Storage/stable/2019-06-01/storage.json
 ```
 ";
-        assert!(matches!(parse_configuration(invalid_input), Err(Error::NoConfigurationHeading)));
+        assert!(parse_configuration(invalid_input).is_err());
         Ok(())
     }
 

@@ -685,6 +685,7 @@ pub mod event_properties {
         PendingExpiredCredit,
         UnKnown,
         NewCredit,
+        CreditExpired,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -717,6 +718,7 @@ pub mod event_properties {
                 Self::PendingExpiredCredit => serializer.serialize_unit_variant("EventType", 4u32, "PendingExpiredCredit"),
                 Self::UnKnown => serializer.serialize_unit_variant("EventType", 5u32, "UnKnown"),
                 Self::NewCredit => serializer.serialize_unit_variant("EventType", 6u32, "NewCredit"),
+                Self::CreditExpired => serializer.serialize_unit_variant("EventType", 7u32, "CreditExpired"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

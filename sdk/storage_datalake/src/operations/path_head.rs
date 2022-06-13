@@ -1,15 +1,19 @@
 use crate::{clients::PathClient, request_options::*, Properties};
+use azure_core::error::ResultExt;
 use azure_core::headers::{
     etag_from_headers, get_option_str_from_headers, last_modified_from_headers,
 };
 use azure_core::prelude::*;
-use azure_core::{AppendToUrlQuery, Response as HttpResponse};
+use azure_core::{
+    error::{ErrorKind, Result},
+    AppendToUrlQuery, Response as HttpResponse,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type HeadPath = futures::future::BoxFuture<'static, crate::Result<HeadPathResponse>>;
+type HeadPath = futures::future::BoxFuture<'static, Result<HeadPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct HeadPathBuilder<C>
@@ -94,7 +98,7 @@ pub struct HeadPathResponse {
 }
 
 impl HeadPathResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self> {
         let headers = response.headers();
 
         Ok(Self {
@@ -103,7 +107,8 @@ impl HeadPathResponse {
             last_modified: last_modified_from_headers(headers)?,
             properties: get_option_str_from_headers(headers, azure_core::headers::PROPERTIES)?
                 .map(Properties::try_from)
-                .transpose()?,
+                .transpose()
+                .map_kind(ErrorKind::DataConversion)?,
             acl: get_option_str_from_headers(headers, azure_core::headers::ACL)?
                 .map(|s| s.to_owned()),
         })

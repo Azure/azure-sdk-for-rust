@@ -152,7 +152,7 @@ pub mod policy {
                         url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                         let tee = &this.tee;
                         url.query_pairs_mut().append_pair("tee", tee);
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "text/plain");
                         let req_body = azure_core::to_json(&this.policy_jws)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -262,7 +262,7 @@ pub mod policy {
                         url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                         let tee = &this.tee;
                         url.query_pairs_mut().append_pair("tee", tee);
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "text/plain");
                         let req_body = azure_core::to_json(&this.policy_jws)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -318,7 +318,7 @@ pub mod policy {
                         url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                         let tee = &this.tee;
                         url.query_pairs_mut().append_pair("tee", tee);
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "text/plain");
                         let req_body = azure_core::to_json(&this.new_attestation_policy)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder

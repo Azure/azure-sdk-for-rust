@@ -91,14 +91,12 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-            action: impl Into<String>,
         ) -> stop_deployment::Builder {
             stop_deployment::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
                 deployment_id: deployment_id.into(),
-                action: action.into(),
             }
         }
         pub fn retry_deployment(
@@ -106,14 +104,12 @@ pub mod device_management {
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             deployment_id: impl Into<String>,
-            action: impl Into<String>,
         ) -> retry_deployment::Builder {
             retry_deployment::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
                 deployment_id: deployment_id.into(),
-                action: action.into(),
             }
         }
         pub fn list_device_classes(&self, instance_id: impl Into<String>) -> list_device_classes::Builder {
@@ -403,7 +399,6 @@ pub mod device_management {
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
-            pub(crate) action: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -427,8 +422,6 @@ pub mod device_management {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());
@@ -467,7 +460,6 @@ pub mod device_management {
             pub(crate) instance_id: String,
             pub(crate) group_id: String,
             pub(crate) deployment_id: String,
-            pub(crate) action: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -491,8 +483,6 @@ pub mod device_management {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                         req_builder = req_builder.uri(url.as_str());

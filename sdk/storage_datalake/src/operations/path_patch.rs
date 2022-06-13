@@ -3,7 +3,7 @@ use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
-use azure_core::{AppendToUrlQuery, Response as HttpResponse};
+use azure_core::{error::Result, AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -11,7 +11,7 @@ use futures::future::BoxFuture;
 use std::convert::TryInto;
 
 /// A future of a patch file response
-type PatchPath = BoxFuture<'static, crate::Result<PatchPathResponse>>;
+type PatchPath = BoxFuture<'static, Result<PatchPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct PatchPathBuilder<C>
@@ -95,7 +95,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             if let Some(bytes) = this.bytes {
                 request.insert_headers(&ContentLength::new(bytes.len() as i32));
                 request.insert_headers(&ContentType::new("application/octet-stream"));
-                request.set_body(bytes.into())
+                request.set_body(bytes)
             } else {
                 request.insert_headers(&ContentLength::new(0));
             }
@@ -120,7 +120,7 @@ pub struct PatchPathResponse {
 }
 
 impl PatchPathResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         let etag = match etag_from_headers(&headers) {

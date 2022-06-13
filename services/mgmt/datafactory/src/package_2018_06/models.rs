@@ -6282,6 +6282,9 @@ pub struct DataFlowSink {
     #[doc = "Linked service reference type."]
     #[serde(rename = "schemaLinkedService", default, skip_serializing_if = "Option::is_none")]
     pub schema_linked_service: Option<LinkedServiceReference>,
+    #[doc = "Linked service reference type."]
+    #[serde(rename = "rejectedDataLinkedService", default, skip_serializing_if = "Option::is_none")]
+    pub rejected_data_linked_service: Option<LinkedServiceReference>,
     #[doc = "Data flow reference type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flowlet: Option<DataFlowReference>,
@@ -6293,6 +6296,7 @@ impl DataFlowSink {
             dataset: None,
             linked_service: None,
             schema_linked_service: None,
+            rejected_data_linked_service: None,
             flowlet: None,
         }
     }
@@ -8201,6 +8205,9 @@ pub struct ExecuteDataFlowActivityTypeProperties {
     #[doc = "Concurrent run setting used for data flow execution. Allows sinks with the same save order to be processed concurrently. Type: boolean (or Expression with resultType boolean)"]
     #[serde(rename = "runConcurrently", default, skip_serializing_if = "Option::is_none")]
     pub run_concurrently: Option<serde_json::Value>,
+    #[doc = "Specify number of parallel staging for sources applicable to the sink. Type: integer (or Expression with resultType integer)"]
+    #[serde(rename = "sourceStagingConcurrency", default, skip_serializing_if = "Option::is_none")]
+    pub source_staging_concurrency: Option<serde_json::Value>,
 }
 impl ExecuteDataFlowActivityTypeProperties {
     pub fn new(data_flow: DataFlowReference) -> Self {
@@ -8212,6 +8219,7 @@ impl ExecuteDataFlowActivityTypeProperties {
             trace_level: None,
             continue_on_error: None,
             run_concurrently: None,
+            source_staging_concurrency: None,
         }
     }
 }
@@ -8537,7 +8545,7 @@ impl Factory {
 pub struct FactoryGitHubConfiguration {
     #[serde(flatten)]
     pub factory_repo_configuration: FactoryRepoConfiguration,
-    #[doc = "GitHub Enterprise host name. For example: https://github.mydomain.com"]
+    #[doc = "GitHub Enterprise host name. For example: `https://github.mydomain.com`"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     #[doc = "GitHub bring your own app client id."]
@@ -8657,6 +8665,9 @@ pub struct FactoryProperties {
     #[doc = "Version of the factory."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Purview configuration."]
+    #[serde(rename = "purviewConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub purview_configuration: Option<PurviewConfiguration>,
     #[doc = "Factory's git repo information."]
     #[serde(rename = "repoConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub repo_configuration: Option<FactoryRepoConfiguration>,
@@ -9513,12 +9524,55 @@ impl GitHubClientSecret {
         Self::default()
     }
 }
+#[doc = "Global parameters associated with the Azure Data Factory"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GlobalParameter {}
+impl GlobalParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Definition of all parameters for an entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalParameterDefinitionSpecification {}
 impl GlobalParameterDefinitionSpecification {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "A list of Global parameters."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalParameterListResponse {
+    #[doc = "List of global parameters."]
+    pub value: Vec<GlobalParameterResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GlobalParameterListResponse {
+    fn continuation(&self) -> Option<String> {
+        self.next_link.clone()
+    }
+}
+impl GlobalParameterListResponse {
+    pub fn new(value: Vec<GlobalParameterResource>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Global parameters resource type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalParameterResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[doc = "Global parameters associated with the Azure Data Factory"]
+    pub properties: GlobalParameter,
+}
+impl GlobalParameterResource {
+    pub fn new(properties: GlobalParameter) -> Self {
+        Self {
+            sub_resource: SubResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Definition of a single parameter for an entity."]
@@ -17135,6 +17189,18 @@ impl PrivateLinkResourcesWrapper {
         Self { value }
     }
 }
+#[doc = "Purview configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PurviewConfiguration {
+    #[doc = "Purview resource id."]
+    #[serde(rename = "purviewResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub purview_resource_id: Option<String>,
+}
+impl PurviewConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A list of active debug sessions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryDataFlowDebugSessionsResponse {
@@ -17731,6 +17797,21 @@ pub struct RestServiceLinkedServiceTypeProperties {
     #[doc = "Credential reference type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<CredentialReference>,
+    #[doc = "The client ID associated with your application. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<SecretBase>,
+    #[doc = "The token endpoint of the authorization server to acquire access token. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "tokenEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub token_endpoint: Option<serde_json::Value>,
+    #[doc = "The target service or resource to which the access will be requested. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<serde_json::Value>,
+    #[doc = "The scope of the access required. It describes what kind of access will be requested. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<serde_json::Value>,
 }
 impl RestServiceLinkedServiceTypeProperties {
     pub fn new(url: serde_json::Value, authentication_type: rest_service_linked_service_type_properties::AuthenticationType) -> Self {
@@ -17748,6 +17829,11 @@ impl RestServiceLinkedServiceTypeProperties {
             aad_resource_id: None,
             encrypted_credential: None,
             credential: None,
+            client_id: None,
+            client_secret: None,
+            token_endpoint: None,
+            resource: None,
+            scope: None,
         }
     }
 }
@@ -17761,6 +17847,7 @@ pub mod rest_service_linked_service_type_properties {
         Basic,
         AadServicePrincipal,
         ManagedServiceIdentity,
+        OAuth2ClientCredential,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -17790,6 +17877,7 @@ pub mod rest_service_linked_service_type_properties {
                 Self::Basic => serializer.serialize_unit_variant("AuthenticationType", 1u32, "Basic"),
                 Self::AadServicePrincipal => serializer.serialize_unit_variant("AuthenticationType", 2u32, "AadServicePrincipal"),
                 Self::ManagedServiceIdentity => serializer.serialize_unit_variant("AuthenticationType", 3u32, "ManagedServiceIdentity"),
+                Self::OAuth2ClientCredential => serializer.serialize_unit_variant("AuthenticationType", 4u32, "OAuth2ClientCredential"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

@@ -317,7 +317,6 @@ pub mod api_export {
             service_name: impl Into<String>,
             api_id: impl Into<String>,
             format: impl Into<String>,
-            export: impl Into<String>,
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
@@ -326,7 +325,6 @@ pub mod api_export {
                 service_name: service_name.into(),
                 api_id: api_id.into(),
                 format: format.into(),
-                export: export.into(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -342,7 +340,6 @@ pub mod api_export {
             pub(crate) service_name: String,
             pub(crate) api_id: String,
             pub(crate) format: String,
-            pub(crate) export: String,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -370,8 +367,6 @@ pub mod api_export {
                         url.query_pairs_mut().append_pair("api-version", "2021-12-01-preview");
                         let format = &this.format;
                         url.query_pairs_mut().append_pair("format", format);
-                        let export = &this.export;
-                        url.query_pairs_mut().append_pair("export", export);
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder

@@ -262,6 +262,9 @@ impl CustomLocationFindTargetResourceGroupProperties {
 #[doc = "The Find Target Resource Group operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomLocationFindTargetResourceGroupResult {
+    #[doc = "The matching resource sync rule is the particular resource sync rule that matched the match expressions and labels and had lowest priority. This is the rule responsible for mapping the target resource to the target resource group."]
+    #[serde(rename = "matchedResourceSyncRule", default, skip_serializing_if = "Option::is_none")]
+    pub matched_resource_sync_rule: Option<String>,
     #[doc = "The target resource group of matching resource sync rule. The labels from the request will be used to find out matching resource sync rule against the selector property of the resource sync rule. The one with highest priority will be returned if there are multiple matching rules."]
     #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group: Option<String>,

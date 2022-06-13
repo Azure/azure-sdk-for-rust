@@ -1,11 +1,12 @@
 use crate::io;
+use crate::{Error, ErrorKind, Result};
 use autorust_openapi::{
     AdditionalProperties, CollectionFormat, DataType, MsExamples, MsPageable, OpenAPI, Operation, Parameter, ParameterType, PathItem,
     Reference, ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
 };
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::{IndexMap, IndexSet};
-use std::{collections::BTreeSet, fs};
+use std::collections::BTreeSet;
 
 /// An API specification
 #[derive(Clone, Debug)]
@@ -79,7 +80,9 @@ impl Spec {
     }
 
     pub fn doc(&self, doc_file: &Utf8Path) -> Result<&OpenAPI> {
-        self.docs.get(doc_file).ok_or_else(|| Error::KeyNotFound(doc_file.to_path_buf()))
+        self.docs
+            .get(doc_file)
+            .ok_or_else(|| Error::with_message(ErrorKind::Parse, || format!("key not found {doc_file}")))
     }
 
     pub fn title(&self) -> Option<&str> {
@@ -102,15 +105,20 @@ impl Spec {
         }
     }
 
-    pub fn consumes(&self) -> Vec<&String> {
+    pub fn consumes(&self) -> Vec<&str> {
         let mut versions: Vec<_> = self
             .docs()
             .values()
             .filter(|doc| !doc.paths().is_empty())
             .flat_map(|api| &api.consumes)
+            .map(String::as_str)
             .collect();
         versions.sort_unstable();
         versions
+    }
+
+    pub fn pick_consumes(&self) -> Option<&str> {
+        crate::content_type::pick_consumes(self.consumes())
     }
 
     /// get a list of `api-version`s used
@@ -138,7 +146,10 @@ impl Spec {
             None => doc_file.to_owned(),
             Some(file) => io::join(doc_file, &file)?,
         };
-        let name = reference.name.clone().ok_or(Error::NoNameInReference)?;
+        let name = reference
+            .name
+            .clone()
+            .ok_or_else(|| Error::message(ErrorKind::Parse, "parameter not found"))?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
@@ -152,7 +163,7 @@ impl Spec {
         let schema = self
             .schemas
             .get(&ref_key)
-            .ok_or_else(|| Error::SchemaNotFound { ref_key: ref_key.clone() })?
+            .ok_or_else(|| Error::with_message(ErrorKind::Parse, || format!("parameter not found {ref_key:?}")))?
             .clone();
         Ok(ResolvedSchema {
             ref_key: Some(ref_key),
@@ -167,12 +178,16 @@ impl Spec {
             None => doc_file.to_owned(),
             Some(file) => io::join(doc_file, &file)?,
         };
-        let name = reference.name.ok_or(Error::NoNameInReference)?;
+        let name = reference.name.ok_or_else(|| Error::message(ErrorKind::Parse, "no name in ref"))?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
         };
-        Ok(self.parameters.get(&ref_key).ok_or(Error::ParameterNotFound { ref_key })?.clone())
+        Ok(self
+            .parameters
+            .get(&ref_key)
+            .ok_or_else(|| Error::with_message(ErrorKind::Parse, || format!("parameter not found {ref_key:?}")))?
+            .clone())
     }
 
     /// Resolve a reference or schema to a resolved schema
@@ -203,7 +218,7 @@ impl Spec {
     pub fn resolve_path(&self, _doc_file: impl AsRef<Utf8Path>, path: &ReferenceOr<PathItem>) -> Result<PathItem> {
         match path {
             ReferenceOr::Item(path) => Ok(path.clone()),
-            ReferenceOr::Reference { .. } => Err(Error::NotImplemented),
+            ReferenceOr::Reference { .. } => Err(Error::message(ErrorKind::Parse, "not implemented")),
         }
     }
 
@@ -265,45 +280,13 @@ impl Spec {
                         api_version: self.doc(&op.doc_file)?.version()?.to_owned(),
                         pageable: op.pageable,
                         long_running_operation: op.long_running_operation,
+                        consumes: op.consumes,
+                        produces: op.produces,
                     })
                 }
             })
             .collect()
     }
-}
-
-type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Io(#[from] crate::io::Error),
-    #[error(transparent)]
-    OpenApi(#[from] autorust_openapi::Error),
-    #[error("SchemaNotFound {} {}", ref_key.file_path, ref_key.name)]
-    SchemaNotFound { ref_key: RefKey },
-    #[error("no name in reference")]
-    NoNameInReference,
-    #[error("parameter not found {} {}", ref_key.file_path, ref_key.name)]
-    ParameterNotFound { ref_key: RefKey },
-    #[error("not implemented")]
-    NotImplemented,
-    #[error("unable to read file {:?} {}", path, source)]
-    ReadFile { source: std::io::Error, path: Utf8PathBuf },
-    #[error("unable to deserialize yaml {:?} {}", path, source)]
-    DeserializeYaml { source: serde_yaml::Error, path: Utf8PathBuf },
-    #[error("unable to deserialize json {:?} {}", path, source)]
-    DeserializeJson { source: serde_json::Error, path: Utf8PathBuf },
-    #[error("TypeName {0}")]
-    TypeName(#[source] Box<crate::codegen::Error>),
-    #[error("creating function name: {0}")]
-    FunctionName(#[source] crate::identifier::Error),
-    #[error("array expected to have items")]
-    ArrayExpectedToHaveItems,
-    #[error("no name in ref")]
-    NoNameForRef,
-    #[error("key not found {0:?}")]
-    KeyNotFound(Utf8PathBuf),
 }
 
 /// a qualified reference
@@ -321,27 +304,17 @@ pub struct ResolvedSchema {
 
 /// Functionality related to Open API definitions
 pub mod openapi {
-    use camino::{Utf8Path, Utf8PathBuf};
-
     use super::*;
+    use camino::Utf8Path;
 
     /// Parse an OpenAPI object from a file located at `path`
     pub fn parse(path: impl AsRef<Utf8Path>) -> Result<OpenAPI> {
         let path = path.as_ref();
-        let bytes = fs::read(path).map_err(|source| Error::ReadFile {
-            source,
-            path: Utf8PathBuf::from(path),
-        })?;
+        let bytes = io::read_file(path)?;
         let api = if path.extension() == Some("yaml") || path.extension() == Some("yml") {
-            serde_yaml::from_slice(&bytes).map_err(|source| Error::DeserializeYaml {
-                source,
-                path: Utf8PathBuf::from(path),
-            })?
+            serde_yaml::from_slice(&bytes)?
         } else {
-            serde_json::from_slice(&bytes).map_err(|source| Error::DeserializeJson {
-                source,
-                path: Utf8PathBuf::from(path),
-            })?
+            serde_json::from_slice(&bytes)?
         };
 
         Ok(api)
@@ -438,6 +411,8 @@ struct WebOperationUnresolved {
     pub summary: Option<String>,
     pub pageable: Option<MsPageable>,
     pub long_running_operation: bool,
+    pub consumes: Vec<String>,
+    pub produces: Vec<String>,
 }
 
 // contains resolved parameters
@@ -452,6 +427,8 @@ pub struct WebOperation {
     pub api_version: String,
     pub pageable: Option<MsPageable>,
     pub long_running_operation: bool,
+    pub consumes: Vec<String>,
+    pub produces: Vec<String>,
 }
 
 impl Default for WebOperation {
@@ -467,6 +444,8 @@ impl Default for WebOperation {
             api_version: Default::default(),
             pageable: Default::default(),
             long_running_operation: Default::default(),
+            consumes: Default::default(),
+            produces: Default::default(),
         }
     }
 }
@@ -624,6 +603,8 @@ fn path_operations_unresolved(doc_file: impl AsRef<Utf8Path>, path: &str, item: 
                 summary: op.summary.clone(),
                 pageable: op.x_ms_pageable.clone(),
                 long_running_operation: op.x_ms_long_running_operation.unwrap_or(false),
+                consumes: op.consumes.clone(),
+                produces: op.produces.clone(),
             })
         }
         None => None,
@@ -747,7 +728,10 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName> {
 pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<TypeName> {
     Ok(match schema {
         ReferenceOr::Reference { reference, .. } => {
-            let name = reference.name.as_ref().ok_or(Error::NoNameForRef)?;
+            let name = reference
+                .name
+                .as_ref()
+                .ok_or_else(|| Error::message(ErrorKind::Parse, "no name in ref"))?;
             TypeName::Reference(name.to_owned())
         }
         ReferenceOr::Item(schema) => get_type_name_for_schema(&schema.common)?,
@@ -755,5 +739,9 @@ pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<Type
 }
 
 pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Schema>> {
-    schema.items.as_ref().as_ref().ok_or(Error::ArrayExpectedToHaveItems)
+    schema
+        .items
+        .as_ref()
+        .as_ref()
+        .ok_or_else(|| Error::message(ErrorKind::Parse, "array expected to have items"))
 }

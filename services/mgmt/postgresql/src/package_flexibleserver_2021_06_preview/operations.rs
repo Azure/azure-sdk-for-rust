@@ -1985,7 +1985,7 @@ pub mod databases {
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases/{}",
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
@@ -2001,7 +2001,7 @@ pub mod databases {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-11-05-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -2054,7 +2054,7 @@ pub mod databases {
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases/{}",
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
@@ -2070,7 +2070,7 @@ pub mod databases {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-11-05-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
                         req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req_builder = req_builder.uri(url.as_str());
@@ -2129,7 +2129,7 @@ pub mod databases {
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases/{}",
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
@@ -2145,7 +2145,7 @@ pub mod databases {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-11-05-preview");
+                        url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -2188,7 +2188,7 @@ pub mod databases {
                     let this = self.clone();
                     async move {
                         let url_str = &format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases",
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
@@ -2204,7 +2204,7 @@ pub mod databases {
                                     .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
                                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
                                 if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2020-11-05-preview");
+                                    url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
                                 }
                                 req_builder = req_builder.uri(url.as_str());
                                 req_builder = req_builder.method(http::Method::GET);
@@ -2233,7 +2233,7 @@ pub mod databases {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2020-11-05-preview");
+                                url.query_pairs_mut().append_pair("api-version", "2021-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req_builder = req_builder.uri(url.as_str());
                                 let req = req_builder

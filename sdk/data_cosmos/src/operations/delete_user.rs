@@ -31,7 +31,7 @@ impl DeleteUserBuilder {
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            request.set_body(bytes::Bytes::from_static(&[]).into());
+            request.set_body(bytes::Bytes::new());
             let response = self
                 .client
                 .pipeline()

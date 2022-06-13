@@ -1,12 +1,13 @@
 use crate::{
-    codegen::{create_generated_by_header, Error, TypeNameCode},
-    codegen::{parse_params, type_name_gen, PARAM_RE},
+    codegen::{create_generated_by_header, parse_query_params, TypeNameCode},
+    codegen::{parse_path_params, type_name_gen, PARAM_RE},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
     status_codes::get_success_responses,
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
+use crate::{content_type, Result};
 use autorust_openapi::{CollectionFormat, ParameterType, Response};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
@@ -15,30 +16,30 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use std::collections::{BTreeSet, HashSet};
 
-fn error_variant(operation: &WebOperationGen) -> Result<Ident, Error> {
+fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
         let module = module.to_pascal_case();
-        parse_ident(&format!("{}_{}", module, function)).map_err(Error::EnumVariantName)
+        parse_ident(&format!("{}_{}", module, function))
     } else {
-        parse_ident(&function).map_err(Error::ModuleName)
+        parse_ident(&function)
     }
 }
 
-fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream, Error> {
-    let function = parse_ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
+fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream> {
+    let function = parse_ident(&operation.rust_function_name())?;
     if let Some(module) = operation.rust_module_name() {
-        let module = parse_ident(&module).map_err(Error::ModuleName)?;
+        let module = parse_ident(&module)?;
         Ok(quote! { #module::#function::Error })
     } else {
         Ok(quote! { #function::Error })
     }
 }
 
-pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream, Error> {
+pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream> {
     let mut clients = TokenStream::new();
     for md in modules {
-        let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
+        let md = md.to_snake_case_ident()?;
         clients.extend(quote! {
             pub fn #md(&self) -> #md::Client {
                 #md::Client(self.clone())
@@ -145,7 +146,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
     Ok(code)
 }
 
-pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
+pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
     file.extend(quote! {
@@ -180,10 +181,10 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         match operations_code.get_mut(&module_name) {
             Some(operation_code) => {
                 let OperationCode {
-                    builder_instance_code,
+                    mut builder_instances,
                     module_code,
                 } = code;
-                operation_code.builder_instance_code.extend(builder_instance_code);
+                operation_code.builder_instances.append(&mut builder_instances);
                 operation_code.module_code.extend(module_code);
             }
             None => {
@@ -194,18 +195,22 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
 
     for (module_name, operation_code) in operations_code {
         let OperationCode {
-            builder_instance_code,
+            builder_instances,
             module_code,
         } = operation_code;
+        let mut builders = TokenStream::new();
+        for builder in builder_instances {
+            builders.extend(builder.into_token_stream());
+        }
         match module_name {
             Some(module_name) => {
-                let name = parse_ident(&module_name).map_err(Error::ModuleName)?;
+                let name = parse_ident(&module_name)?;
                 file.extend(quote! {
                     pub mod #name {
                         use super::models;
                         pub struct Client(pub(crate) super::Client);
                         impl Client {
-                            #builder_instance_code
+                            #builders
                         }
                         #module_code
                     }
@@ -214,7 +219,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
             None => {
                 file.extend(quote! {
                     impl Client {
-                        #builder_instance_code
+                        #builders
                     }
                     #module_code
                 });
@@ -225,7 +230,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
 }
 
 struct OperationCode {
-    builder_instance_code: TokenStream,
+    builder_instances: Vec<BuilderInstanceCode>,
     module_code: TokenStream,
 }
 
@@ -259,12 +264,25 @@ impl WebOperationGen {
         }
     }
 
-    pub fn function_name(&self) -> Result<Ident, Error> {
-        parse_ident(&self.rust_function_name()).map_err(Error::FunctionName)
+    fn function_name(&self) -> Result<Ident> {
+        parse_ident(&self.rust_function_name())
     }
 
     fn api_version(&self) -> &str {
         self.0.api_version.as_str()
+    }
+
+    fn consumes(&self) -> Vec<&str> {
+        self.0.consumes.iter().map(String::as_str).collect()
+    }
+
+    fn pick_consumes(&self) -> Option<&str> {
+        crate::content_type::pick_consumes(self.consumes())
+    }
+
+    #[allow(dead_code)]
+    fn produces(&self) -> Vec<&str> {
+        self.0.produces.iter().map(String::as_str).collect()
     }
 }
 
@@ -319,13 +337,154 @@ fn verb_to_tokens(verb: &WebVerb) -> TokenStream {
     }
 }
 
+struct BuildRequestParamsCode {
+    content_type: String,
+    params: FunctionParams,
+}
+
+impl ToTokens for BuildRequestParamsCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        for param in self.params.params() {
+            let FunctionParam {
+                name: param_name,
+                variable_name: param_name_var,
+                kind,
+                collection_format,
+                ..
+            } = param;
+            let is_vec = param.is_vec();
+            match kind {
+                ParamKind::Path => {} // handled above
+                ParamKind::Query => {
+                    let query_body = if is_vec {
+                        match collection_format {
+                            CollectionFormat::Multi => Some(
+                                if param.is_string(){
+                                    quote! {
+                                        for value in &this.#param_name_var {
+                                            url.query_pairs_mut().append_pair(#param_name, value);
+                                        }
+                                    }
+                                } else {
+                                    quote! {
+                                        for value in &this.#param_name_var {
+                                            url.query_pairs_mut().append_pair(#param_name, &value.to_string());
+                                        }
+                                    }
+                                }
+                            ),
+                            CollectionFormat::Csv | // TODO #71
+                            CollectionFormat::Ssv |
+                            CollectionFormat::Tsv |
+                            CollectionFormat::Pipes => None,
+                        }
+                    } else {
+                        Some(if param.is_string() {
+                            quote! {
+                                url.query_pairs_mut().append_pair(#param_name, #param_name_var);
+                            }
+                        } else {
+                            quote! {
+                                url.query_pairs_mut().append_pair(#param_name, &#param_name_var.to_string());
+                            }
+                        })
+                    };
+                    if let Some(query_body) = query_body {
+                        if !param.optional() || is_vec {
+                            tokens.extend(quote! {
+                                let #param_name_var = &this.#param_name_var;
+                                #query_body
+                            });
+                        } else {
+                            tokens.extend(quote! {
+                                if let Some(#param_name_var) = &this.#param_name_var {
+                                    #query_body
+                                }
+                            });
+                        }
+                    }
+                }
+                ParamKind::Header => {
+                    if !param.optional() || is_vec {
+                        if param.is_string() {
+                            tokens.extend(quote! {
+                                req_builder = req_builder.header(#param_name, &this.#param_name_var);
+                            });
+                        } else {
+                            tokens.extend(quote! {
+                                req_builder = req_builder.header(#param_name, &this.#param_name_var.to_string());
+                            });
+                        }
+                    } else if param.is_string() {
+                        tokens.extend(quote! {
+                            if let Some(#param_name_var) = &this.#param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var);
+                            }
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            if let Some(#param_name_var) = &this.#param_name_var {
+                                req_builder = req_builder.header(#param_name, &#param_name_var.to_string());
+                            }
+                        });
+                    }
+                }
+                ParamKind::Body => {
+                    let set_content_type = if !self.params.has_content_type_header() {
+                        let content_type = &self.content_type;
+                        quote! {
+                            req_builder = req_builder.header("content-type", #content_type);
+                        }
+                    } else {
+                        quote! {}
+                    };
+
+                    if !param.optional() || is_vec {
+                        tokens.extend(quote! {
+                            #set_content_type
+                            let req_body = azure_core::to_json(&this.#param_name_var)?;
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            let req_body =
+                                if let Some(#param_name_var) = &this.#param_name_var {
+                                    #set_content_type
+                                    azure_core::to_json(#param_name_var)?
+                                } else {
+                                    azure_core::EMPTY_BODY
+                                };
+                        });
+                    }
+                }
+                ParamKind::FormData => {
+                    tokens.extend(quote! {
+                        unimplemented!("form data not yet supported");
+                    });
+                    // https://github.com/Azure/azure-sdk-for-rust/issues/500
+                    // if required {
+                    //     cargo run --example gen_svc --release
+                    //         req_builder = req_builder.form(&self.#param_name_var);
+                    //     });
+                    // } else {
+                    //     ts_request_builder.extend(quote! {
+                    //         if let Some(#param_name_var) = &self.#param_name_var {
+                    //             req_builder = req_builder.form(#param_name_var);
+                    //         }
+                    //     });
+                    // }
+                }
+            }
+        }
+    }
+}
+
 // Create code for the web operation
-fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode, Error> {
-    let params = parse_params(&operation.0.path);
-    let params: Result<Vec<_>, Error> = params
+fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode> {
+    let params = parse_path_params(&operation.0.path);
+    let params: Result<Vec<_>> = params
         .iter()
         .map(|s| {
-            let param = s.to_snake_case_ident().map_err(Error::ParamName)?;
+            let param = s.to_snake_case_ident()?;
             Ok(quote! { &this.#param })
         })
         .collect();
@@ -337,8 +496,8 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let parameters = operation.0.parameters();
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name()).collect();
     let has_param_api_version = param_names.contains("api-version");
-    let mut skip = HashSet::new();
-    skip.insert("api-version");
+    let mut skip = parse_query_params(&operation.0.path)?;
+    skip.insert("api-version".to_string());
     let parameters: Vec<&WebParameter> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
     let parameters = create_function_params_code(&parameters)?;
 
@@ -358,143 +517,17 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         });
     }
 
-    let has_content_type_header = parameters
-        .params()
-        .iter()
-        .any(|p| p.name.eq_ignore_ascii_case("content-type") && p.kind == ParamKind::Header);
+    // get the consumes content-type from the operation, else the spec, else default to json
+    let consumes = operation
+        .pick_consumes()
+        .unwrap_or_else(|| cg.spec.pick_consumes().unwrap_or(content_type::APPLICATION_JSON));
 
     // params
-    for param in parameters.params() {
-        let FunctionParam {
-            name: param_name,
-            variable_name: param_name_var,
-            kind,
-            collection_format,
-            ..
-        } = param;
-        let is_vec = param.is_vec();
-        match kind {
-            ParamKind::Path => {} // handled above
-            ParamKind::Query => {
-                let query_body = if is_vec {
-                    match collection_format {
-                        CollectionFormat::Multi => Some(
-                            if param.is_string(){
-                                quote! {
-                                    for value in &this.#param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, value);
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    for value in &this.#param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, &value.to_string());
-                                    }
-                                }
-                            }
-                        ),
-                        CollectionFormat::Csv | // TODO #71
-                        CollectionFormat::Ssv |
-                        CollectionFormat::Tsv |
-                        CollectionFormat::Pipes => None,
-                    }
-                } else {
-                    Some(if param.is_string() {
-                        quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var);
-                        }
-                    } else {
-                        quote! {
-                            url.query_pairs_mut().append_pair(#param_name, &#param_name_var.to_string());
-                        }
-                    })
-                };
-                if let Some(query_body) = query_body {
-                    if !param.optional() || is_vec {
-                        ts_request_builder.extend(quote! {
-                            let #param_name_var = &this.#param_name_var;
-                            #query_body
-                        });
-                    } else {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = &this.#param_name_var {
-                                #query_body
-                            }
-                        });
-                    }
-                }
-            }
-            ParamKind::Header => {
-                if !param.optional() || is_vec {
-                    if param.is_string() {
-                        ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, &this.#param_name_var);
-                        });
-                    } else {
-                        ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, &this.#param_name_var.to_string());
-                        });
-                    }
-                } else if param.is_string() {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = &this.#param_name_var {
-                            req_builder = req_builder.header(#param_name, #param_name_var);
-                        }
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = &this.#param_name_var {
-                            req_builder = req_builder.header(#param_name, &#param_name_var.to_string());
-                        }
-                    });
-                }
-            }
-            ParamKind::Body => {
-                let set_content_type = if !has_content_type_header {
-                    let json_content_type = cg.get_request_content_type_json();
-                    quote! {
-                        req_builder = req_builder.header("content-type", #json_content_type);
-                    }
-                } else {
-                    quote! {}
-                };
-
-                if !param.optional() || is_vec {
-                    ts_request_builder.extend(quote! {
-                        #set_content_type
-                        let req_body = azure_core::to_json(&this.#param_name_var)?;
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        let req_body =
-                            if let Some(#param_name_var) = &this.#param_name_var {
-                                #set_content_type
-                                azure_core::to_json(#param_name_var)?
-                            } else {
-                                azure_core::EMPTY_BODY
-                            };
-                    });
-                }
-            }
-            ParamKind::FormData => {
-                ts_request_builder.extend(quote! {
-                    unimplemented!("form data not yet supported");
-                });
-                // https://github.com/Azure/azure-sdk-for-rust/issues/500
-                // if required {
-                //     cargo run --example gen_svc --release
-                //         req_builder = req_builder.form(&self.#param_name_var);
-                //     });
-                // } else {
-                //     ts_request_builder.extend(quote! {
-                //         if let Some(#param_name_var) = &self.#param_name_var {
-                //             req_builder = req_builder.form(#param_name_var);
-                //         }
-                //     });
-                // }
-            }
-        }
-    }
+    let build_request_params = BuildRequestParamsCode {
+        content_type: consumes.to_string(),
+        params: parameters.clone(),
+    };
+    ts_request_builder.extend(build_request_params.into_token_stream());
 
     let has_body_parameter = operation.0.has_body_parameter();
     if !has_body_parameter {
@@ -517,9 +550,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     /*
     let fresponse = if is_single_response {
         let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
-        quote! { std::result::Result<#tp, Error> }
+        quote! { std::result::Result<#tp> }
     } else {
-        quote! { std::result::Result<Response, Error> }
+        quote! { std::result::Result<Response> }
     };
      */
 
@@ -632,9 +665,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     });
 
     let in_group = operation.0.in_group();
-    let builder_instance_code = create_builder_instance_code(operation, &parameters, in_group)?;
-    let builder_struct_code = create_builder_struct_code(&parameters, in_group)?;
-    let builder_setters_code = create_builder_setters_code(&parameters)?;
+    let builder_instance_code = BuilderInstanceCode::new(operation, &parameters, in_group)?;
+    let builder_struct_code = BuilderStructCode::new(&parameters, in_group);
+    let builder_setters_code = BuilderSettersCode::new(&parameters);
 
     let basic_future = quote! {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
@@ -766,7 +799,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     };
 
     Ok(OperationCode {
-        builder_instance_code,
+        builder_instances: vec![builder_instance_code],
         module_code,
     })
 }
@@ -787,7 +820,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 enum ParamKind {
     Path,
     Query,
@@ -808,6 +841,7 @@ impl From<&ParameterType> for ParamKind {
     }
 }
 
+#[derive(Clone)]
 struct FunctionParam {
     name: String,
     variable_name: Ident,
@@ -827,10 +861,11 @@ impl FunctionParam {
     }
 }
 
-struct FunctionParamsCode {
+#[derive(Clone)]
+struct FunctionParams {
     params: Vec<FunctionParam>,
 }
-impl FunctionParamsCode {
+impl FunctionParams {
     fn params(&self) -> Vec<&FunctionParam> {
         self.params.iter().collect()
     }
@@ -844,14 +879,23 @@ impl FunctionParamsCode {
     fn params_of_kind(&self, kind: &ParamKind) -> Vec<&FunctionParam> {
         self.params.iter().filter(|p| &p.kind == kind).collect()
     }
+
+    fn has_content_type_header(&self) -> bool {
+        self.params()
+            .iter()
+            .any(|p| p.name.eq_ignore_ascii_case("content-type") && p.kind == ParamKind::Header)
+    }
 }
 
-impl ToTokens for FunctionParamsCode {
+#[derive(Clone)]
+struct FunctionCallParamsCode(FunctionParams);
+
+impl ToTokens for FunctionCallParamsCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut params: Vec<TokenStream> = Vec::new();
         for FunctionParam {
             variable_name, type_name, ..
-        } in self.required_params()
+        } in self.0.required_params()
         {
             let mut type_name = type_name.clone();
             let is_vec = type_name.is_vec();
@@ -864,11 +908,11 @@ impl ToTokens for FunctionParamsCode {
     }
 }
 
-fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionParamsCode, Error> {
+fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionParams> {
     let mut params = Vec::new();
     for param in parameters.iter() {
         let name = param.name().to_owned();
-        let variable_name = name.to_snake_case_ident().map_err(Error::ParamName)?;
+        let variable_name = name.to_snake_case_ident()?;
         let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
         let kind = ParamKind::from(param.type_());
         let collection_format = param.collection_format().clone();
@@ -880,121 +924,171 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionP
             collection_format,
         });
     }
-    Ok(FunctionParamsCode { params })
+    Ok(FunctionParams { params })
 }
 
-fn create_builder_instance_code(
-    operation: &WebOperationGen,
-    parameters: &FunctionParamsCode,
+#[derive(Clone)]
+struct BuilderInstanceCode {
+    summary: Option<String>,
+    fname: Ident,
+    parameters: FunctionParams,
     in_group: bool,
-) -> Result<TokenStream, Error> {
-    let mut params: Vec<TokenStream> = Vec::new();
-    if in_group {
-        params.push(quote! { client: self.0.clone() });
-    } else {
-        params.push(quote! { client: self.clone() });
+}
+
+impl BuilderInstanceCode {
+    fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_group: bool) -> Result<Self> {
+        let fname = operation.function_name()?;
+        let summary = operation.0.summary.clone();
+        Ok(Self {
+            summary,
+            fname,
+            parameters: parameters.clone(),
+            in_group,
+        })
     }
-    for param in parameters.required_params() {
-        let FunctionParam {
-            variable_name, type_name, ..
-        } = param;
-        let mut type_name = type_name.clone();
-        let is_vec = type_name.is_vec();
-        type_name = type_name.impl_into(!is_vec);
-        if type_name.has_impl_into() {
-            params.push(quote! { #variable_name: #variable_name.into() });
+}
+
+impl ToTokens for BuilderInstanceCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let mut params: Vec<TokenStream> = Vec::new();
+        if self.in_group {
+            params.push(quote! { client: self.0.clone() });
         } else {
-            params.push(quote! { #variable_name });
+            params.push(quote! { client: self.clone() });
         }
-    }
-    for param in parameters.optional_params() {
-        let FunctionParam {
-            variable_name, type_name, ..
-        } = param;
-        if type_name.is_vec() {
-            params.push(quote! { #variable_name: Vec::new() });
-        } else {
-            params.push(quote! { #variable_name: None });
-        }
-    }
-    let summary = if let Some(summary) = &operation.0.summary {
-        quote! {
-            #[doc = #summary]
-        }
-    } else {
-        quote! {}
-    };
-    let fname = operation.function_name()?;
-    Ok(quote! {
-        #summary
-        pub fn #fname(#parameters) -> #fname::Builder {
-            #fname::Builder {
-                #(#params),*
+        for param in self.parameters.required_params() {
+            let FunctionParam {
+                variable_name, type_name, ..
+            } = param;
+            let mut type_name = type_name.clone();
+            let is_vec = type_name.is_vec();
+            type_name = type_name.impl_into(!is_vec);
+            if type_name.has_impl_into() {
+                params.push(quote! { #variable_name: #variable_name.into() });
+            } else {
+                params.push(quote! { #variable_name });
             }
         }
-    })
-}
-
-fn create_builder_struct_code(parameters: &FunctionParamsCode, in_group: bool) -> Result<TokenStream, Error> {
-    let mut params: Vec<TokenStream> = Vec::new();
-    if in_group {
-        params.push(quote! { pub(crate) client: super::super::Client });
-    } else {
-        params.push(quote! { pub(crate) client: super::Client });
-    }
-    for param in parameters.required_params() {
-        let FunctionParam {
-            variable_name, type_name, ..
-        } = param;
-        params.push(quote! { pub(crate) #variable_name: #type_name });
-    }
-    for param in parameters.optional_params() {
-        let FunctionParam {
-            variable_name, type_name, ..
-        } = param;
-        let mut type_name = type_name.clone();
-        if type_name.is_vec() {
-            type_name = type_name.optional(false);
+        for param in self.parameters.optional_params() {
+            let FunctionParam {
+                variable_name, type_name, ..
+            } = param;
+            if type_name.is_vec() {
+                params.push(quote! { #variable_name: Vec::new() });
+            } else {
+                params.push(quote! { #variable_name: None });
+            }
         }
-        params.push(quote! { pub(crate) #variable_name: #type_name });
-    }
-    Ok(quote! {
-        #[derive(Clone)]
-        pub struct Builder {
-            #(#params),*
-        }
-    })
-}
-
-fn create_builder_setters_code(parameters: &FunctionParamsCode) -> Result<TokenStream, Error> {
-    let mut setters = TokenStream::new();
-    for param in parameters.optional_params() {
-        let FunctionParam {
-            variable_name, type_name, ..
-        } = param;
-        let is_vec = type_name.is_vec();
-        let mut type_name = type_name.clone();
-        type_name = type_name.optional(false);
-        type_name = type_name.impl_into(!is_vec);
-        let mut value = if type_name.has_impl_into() {
-            quote! { #variable_name.into() }
+        let summary = if let Some(summary) = &self.summary {
+            quote! {
+                #[doc = #summary]
+            }
         } else {
-            quote! { #variable_name }
+            quote! {}
         };
-        if !is_vec {
-            value = quote! { Some(#value) };
-        }
-        setters.extend(quote! {
-            pub fn #variable_name(mut self, #variable_name: #type_name) -> Self {
-                self.#variable_name = #value;
-                self
+        let fname = &self.fname;
+        let parameters = FunctionCallParamsCode(self.parameters.clone());
+        tokens.extend(quote! {
+            #summary
+            pub fn #fname(#parameters) -> #fname::Builder {
+                #fname::Builder {
+                    #(#params),*
+                }
             }
         });
     }
-    Ok(setters)
 }
 
-pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>, Error> {
+#[derive(Clone)]
+struct BuilderStructCode {
+    parameters: FunctionParams,
+    in_group: bool,
+}
+
+impl BuilderStructCode {
+    fn new(parameters: &FunctionParams, in_group: bool) -> Self {
+        Self {
+            parameters: parameters.clone(),
+            in_group,
+        }
+    }
+}
+
+impl ToTokens for BuilderStructCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let mut params: Vec<TokenStream> = Vec::new();
+        if self.in_group {
+            params.push(quote! { pub(crate) client: super::super::Client });
+        } else {
+            params.push(quote! { pub(crate) client: super::Client });
+        }
+        for param in self.parameters.required_params() {
+            let FunctionParam {
+                variable_name, type_name, ..
+            } = param;
+            params.push(quote! { pub(crate) #variable_name: #type_name });
+        }
+        for param in self.parameters.optional_params() {
+            let FunctionParam {
+                variable_name, type_name, ..
+            } = param;
+            let mut type_name = type_name.clone();
+            if type_name.is_vec() {
+                type_name = type_name.optional(false);
+            }
+            params.push(quote! { pub(crate) #variable_name: #type_name });
+        }
+        tokens.extend(quote! {
+            #[derive(Clone)]
+            pub struct Builder {
+                #(#params),*
+            }
+        });
+    }
+}
+
+#[derive(Clone)]
+struct BuilderSettersCode {
+    parameters: FunctionParams,
+}
+
+impl BuilderSettersCode {
+    fn new(parameters: &FunctionParams) -> Self {
+        Self {
+            parameters: parameters.clone(),
+        }
+    }
+}
+
+impl ToTokens for BuilderSettersCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        for param in self.parameters.optional_params() {
+            let FunctionParam {
+                variable_name, type_name, ..
+            } = param;
+            let is_vec = type_name.is_vec();
+            let mut type_name = type_name.clone();
+            type_name = type_name.optional(false);
+            type_name = type_name.impl_into(!is_vec);
+            let mut value = if type_name.has_impl_into() {
+                quote! { #variable_name.into() }
+            } else {
+                quote! { #variable_name }
+            };
+            if !is_vec {
+                value = quote! { Some(#value) };
+            }
+            tokens.extend(quote! {
+                pub fn #variable_name(mut self, #variable_name: #type_name) -> Self {
+                    self.#variable_name = #value;
+                    self
+                }
+            });
+        }
+    }
+}
+
+pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>> {
     if let Some(schema) = &rsp.schema {
         Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true)))
     } else {

@@ -1915,10 +1915,10 @@ pub struct DataTransferJobProperties {
     pub status: Option<String>,
     #[doc = "Processed Count."]
     #[serde(rename = "processedCount", default, skip_serializing_if = "Option::is_none")]
-    pub processed_count: Option<f64>,
+    pub processed_count: Option<i64>,
     #[doc = "Total Count."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
-    pub total_count: Option<f64>,
+    pub total_count: Option<i64>,
     #[doc = "Last Updated Time (ISO-8601 format)."]
     #[serde(rename = "lastUpdatedUtcTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_utc_time: Option<String>,
@@ -4726,6 +4726,18 @@ impl PhysicalPartitionStorageInfoCollection {
         Self::default()
     }
 }
+#[doc = "The properties of an Azure Cosmos DB PhysicalPartitionThroughputInfoProperties object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PhysicalPartitionThroughputInfoProperties {
+    #[doc = "Array of physical partition throughput info objects"]
+    #[serde(rename = "physicalPartitionThroughputInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub physical_partition_throughput_info: Vec<PhysicalPartitionThroughputInfoResource>,
+}
+impl PhysicalPartitionThroughputInfoProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "PhysicalPartitionThroughputInfo object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PhysicalPartitionThroughputInfoResource {
@@ -4738,6 +4750,32 @@ pub struct PhysicalPartitionThroughputInfoResource {
 impl PhysicalPartitionThroughputInfoResource {
     pub fn new(id: String) -> Self {
         Self { id, throughput: None }
+    }
+}
+#[doc = "An Azure Cosmos DB PhysicalPartitionThroughputInfoResult object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PhysicalPartitionThroughputInfoResult {
+    #[serde(flatten)]
+    pub arm_resource_properties: ArmResourceProperties,
+    #[doc = "The properties of an Azure Cosmos DB PhysicalPartitionThroughputInfoResult object"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PhysicalPartitionThroughputInfoResultProperties>,
+}
+impl PhysicalPartitionThroughputInfoResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of an Azure Cosmos DB PhysicalPartitionThroughputInfoResult object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PhysicalPartitionThroughputInfoResultProperties {
+    #[doc = "properties of physical partition throughput info"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<serde_json::Value>,
+}
+impl PhysicalPartitionThroughputInfoResultProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A private endpoint connection"]

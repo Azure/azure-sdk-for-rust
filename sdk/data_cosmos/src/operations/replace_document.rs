@@ -77,7 +77,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
             request.insert_headers(&self.allow_tentative_writes);
 
             let serialized = azure_core::to_json(&self.document)?;
-            request.set_body(serialized.into());
+            request.set_body(serialized);
 
             let response = self
                 .client

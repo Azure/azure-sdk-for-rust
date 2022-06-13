@@ -682,6 +682,7 @@ pub mod deployment_scale_settings {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ScaleType")]
     pub enum ScaleType {
+        Standard,
         Manual,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -708,7 +709,8 @@ pub mod deployment_scale_settings {
             S: Serializer,
         {
             match self {
-                Self::Manual => serializer.serialize_unit_variant("ScaleType", 0u32, "Manual"),
+                Self::Standard => serializer.serialize_unit_variant("ScaleType", 0u32, "Standard"),
+                Self::Manual => serializer.serialize_unit_variant("ScaleType", 1u32, "Manual"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

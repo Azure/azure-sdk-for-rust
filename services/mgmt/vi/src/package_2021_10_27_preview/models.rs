@@ -206,7 +206,7 @@ pub struct AccountPropertiesForPutRequest {
     #[doc = "The account's tenant id"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[doc = "The account's data-plane ID"]
+    #[doc = "The account's data-plane ID. This can be set only when connecting an existing classic account"]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
     #[doc = "The account's name"]

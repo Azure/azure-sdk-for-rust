@@ -618,7 +618,7 @@ pub mod blob {
                         let digest = &this.digest;
                         url.query_pairs_mut().append_pair("digest", digest);
                         let req_body = if let Some(value) = &this.value {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/octet-stream");
                             azure_core::to_json(value)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -670,7 +670,7 @@ pub mod blob {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.value)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -940,7 +940,7 @@ pub mod manifests {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/vnd.docker.distribution.manifest.v2+json");
                         let req_body = azure_core::to_json(&this.payload)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder

@@ -47,7 +47,7 @@ impl CreateStoredProcedureBuilder {
                 id: self.client.stored_procedure_name(),
             };
 
-            req.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+            req.set_body(serde_json::to_vec(&body)?);
 
             let response = self
                 .client

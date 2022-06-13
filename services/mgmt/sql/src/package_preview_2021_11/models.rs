@@ -1354,9 +1354,6 @@ pub struct DatabaseIdentity {
     #[doc = "The resource ids of the user assigned identities to use"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
-    #[doc = "Resources delegated to the database - Internal Use Only"]
-    #[serde(rename = "delegatedResources", default, skip_serializing_if = "Option::is_none")]
-    pub delegated_resources: Option<serde_json::Value>,
 }
 impl DatabaseIdentity {
     pub fn new() -> Self {
@@ -1673,9 +1670,6 @@ pub struct DatabaseProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
-    #[doc = "The Primary Delegated Identity Client id used for per database CMK - for internal use only"]
-    #[serde(rename = "primaryDelegatedIdentityClientId", default, skip_serializing_if = "Option::is_none")]
-    pub primary_delegated_identity_client_id: Option<String>,
     #[doc = "The resource identifier of the source associated with the create operation of this database.\r\n\r\nThis property is only supported for DataWarehouse edition and allows to restore across subscriptions.\r\n\r\nWhen sourceResourceId is specified, sourceDatabaseId, recoverableDatabaseId, restorableDroppedDatabaseId and sourceDatabaseDeletionDate must not be specified and CreateMode must be PointInTimeRestore, Restore or Recover.\r\n\r\nWhen createMode is PointInTimeRestore, sourceResourceId must be the resource ID of the existing database or existing sql pool, and restorePointInTime must be specified.\r\n\r\nWhen createMode is Restore, sourceResourceId must be the resource ID of restorable dropped database or restorable dropped sql pool.\r\n\r\nWhen createMode is Recover, sourceResourceId must be the resource ID of recoverable database or recoverable sql pool.\r\n\r\nWhen source subscription belongs to a different tenant than target subscription, “x-ms-authorization-auxiliary” header must contain authentication token for the source tenant. For more details about “x-ms-authorization-auxiliary” header see https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/authenticate-multi-tenant "]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
@@ -2403,9 +2397,6 @@ pub struct DatabaseUpdateProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
-    #[doc = "The Primary Delegated Identity Client id used for per database CMK - for internal use only"]
-    #[serde(rename = "primaryDelegatedIdentityClientId", default, skip_serializing_if = "Option::is_none")]
-    pub primary_delegated_identity_client_id: Option<String>,
 }
 impl DatabaseUpdateProperties {
     pub fn new() -> Self {
@@ -3015,21 +3006,6 @@ pub struct DatabaseVulnerabilityAssessmentScansExport {
     pub properties: Option<DatabaseVulnerabilityAssessmentScanExportProperties>,
 }
 impl DatabaseVulnerabilityAssessmentScansExport {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Delegated Resource Properties - Internal Use Only"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Delegation {
-    #[doc = "The resource id of the source resource - Internal Use Only"]
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[doc = "AAD tenant guid of the source resource identity - Internal Use Only."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-impl Delegation {
     pub fn new() -> Self {
         Self::default()
     }
@@ -9116,6 +9092,9 @@ pub struct ManagedServerDnsAliasProperties {
     #[doc = "The fully qualified DNS record for managed server alias"]
     #[serde(rename = "azureDnsRecord", default, skip_serializing_if = "Option::is_none")]
     pub azure_dns_record: Option<String>,
+    #[doc = "The fully qualified public DNS record for managed server alias"]
+    #[serde(rename = "publicAzureDnsRecord", default, skip_serializing_if = "Option::is_none")]
+    pub public_azure_dns_record: Option<String>,
 }
 impl ManagedServerDnsAliasProperties {
     pub fn new() -> Self {

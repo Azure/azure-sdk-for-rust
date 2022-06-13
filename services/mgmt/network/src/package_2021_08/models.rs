@@ -2039,11 +2039,13 @@ impl ApplicationGatewayRoutingRule {
     }
 }
 #[doc = "Properties of routing rule of the application gateway."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGatewayRoutingRulePropertiesFormat {
     #[doc = "Rule type."]
     #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<application_gateway_routing_rule_properties_format::RuleType>,
+    #[doc = "Priority of the routing rule."]
+    pub priority: i32,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub backend_address_pool: Option<SubResource>,
@@ -2058,8 +2060,15 @@ pub struct ApplicationGatewayRoutingRulePropertiesFormat {
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayRoutingRulePropertiesFormat {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(priority: i32) -> Self {
+        Self {
+            rule_type: None,
+            priority,
+            backend_address_pool: None,
+            backend_settings: None,
+            listener: None,
+            provisioning_state: None,
+        }
     }
 }
 pub mod application_gateway_routing_rule_properties_format {

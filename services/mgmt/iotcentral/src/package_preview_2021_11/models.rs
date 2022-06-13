@@ -382,6 +382,9 @@ impl Serialize for NetworkAction {
 #[doc = "An object for an IP range that will be allowed access."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSetIpRule {
+    #[doc = "The network action for the IP mask."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<network_rule_set_ip_rule::Action>,
     #[doc = "The readable name of the IP rule."]
     #[serde(rename = "filterName", default, skip_serializing_if = "Option::is_none")]
     pub filter_name: Option<String>,
@@ -392,6 +395,44 @@ pub struct NetworkRuleSetIpRule {
 impl NetworkRuleSetIpRule {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod network_rule_set_ip_rule {
+    use super::*;
+    #[doc = "The network action for the IP mask."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Action")]
+    pub enum Action {
+        Allow,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Action {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Action {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Action {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "Allow"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Network Rule Set Properties of this IoT Central application."]

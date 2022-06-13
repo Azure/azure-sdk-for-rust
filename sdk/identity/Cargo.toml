@@ -13,7 +13,6 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-reqwest = { version = "0.11", features = ["json"], default-features = false }
 azure_core = { path = "../core", version = "0.2", default-features = false }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
@@ -28,8 +27,10 @@ async-trait = "0.1"
 openssl = { version = "0.10",  optional=true }
 base64 = "0.13.0"
 uuid = { version = "1.0",  features = ["v4"] }
+http = "0.2"
 
 [dev-dependencies]
+reqwest = { version = "0.11", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 serde_test = "1"
@@ -38,12 +39,10 @@ azure_security_keyvault = { path = "../security_keyvault" }
 [features]
 default = ["development", "enable_reqwest"]
 enable_reqwest = [
-  "reqwest/default-tls",
   "oauth2/native-tls",
   "azure_core/enable_reqwest",
 ]
 enable_reqwest_rustls = [
-  "reqwest/rustls-tls",
   "oauth2/rustls-tls",
   "azure_core/enable_reqwest_rustls",
 ]

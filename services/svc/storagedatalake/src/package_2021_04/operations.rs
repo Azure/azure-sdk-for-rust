@@ -275,17 +275,10 @@ pub mod file_system {
             }
         }
         #[doc = "List Paths"]
-        pub fn list_paths(
-            &self,
-            filesystem: impl Into<String>,
-            resource: impl Into<String>,
-            x_ms_version: impl Into<String>,
-            recursive: bool,
-        ) -> list_paths::Builder {
+        pub fn list_paths(&self, filesystem: impl Into<String>, x_ms_version: impl Into<String>, recursive: bool) -> list_paths::Builder {
             list_paths::Builder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
-                resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
                 recursive,
                 x_ms_client_request_id: None,
@@ -299,15 +292,11 @@ pub mod file_system {
         pub fn list_blob_hierarchy_segment(
             &self,
             filesystem: impl Into<String>,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> list_blob_hierarchy_segment::Builder {
             list_blob_hierarchy_segment::Builder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
-                restype: restype.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
                 delimiter: None,
@@ -648,7 +637,6 @@ pub mod file_system {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
-            pub(crate) resource: String,
             pub(crate) x_ms_version: String,
             pub(crate) recursive: bool,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -698,8 +686,6 @@ pub mod file_system {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let resource = &this.resource;
-                        url.query_pairs_mut().append_pair("resource", resource);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -756,8 +742,6 @@ pub mod file_system {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
-            pub(crate) restype: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) delimiter: Option<String>,
@@ -845,10 +829,6 @@ pub mod file_system {
                                     .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                                 req_builder =
                                     req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                let restype = &this.restype;
-                                url.query_pairs_mut().append_pair("restype", restype);
-                                let comp = &this.comp;
-                                url.query_pairs_mut().append_pair("comp", comp);
                                 if let Some(prefix) = &this.prefix {
                                     url.query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -1078,14 +1058,12 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            action: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> set_access_control::Builder {
             set_access_control::Builder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                action: action.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
@@ -1104,7 +1082,6 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            action: impl Into<String>,
             mode: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> set_access_control_recursive::Builder {
@@ -1112,7 +1089,6 @@ pub mod path {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                action: action.into(),
                 mode: mode.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -1127,14 +1103,12 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            action: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> flush_data::Builder {
             flush_data::Builder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                action: action.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 position: None,
@@ -1162,7 +1136,6 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            action: impl Into<String>,
             body: impl Into<serde_json::Value>,
             x_ms_version: impl Into<String>,
         ) -> append_data::Builder {
@@ -1170,7 +1143,6 @@ pub mod path {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                action: action.into(),
                 body: body.into(),
                 x_ms_version: x_ms_version.into(),
                 position: None,
@@ -1189,7 +1161,6 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_expiry_option: impl Into<String>,
         ) -> set_expiry::Builder {
@@ -1197,7 +1168,6 @@ pub mod path {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 x_ms_expiry_option: x_ms_expiry_option.into(),
                 timeout: None,
@@ -1209,14 +1179,12 @@ pub mod path {
             &self,
             filesystem: impl Into<String>,
             path: impl Into<String>,
-            comp: impl Into<String>,
             x_ms_version: impl Into<String>,
         ) -> undelete::Builder {
             undelete::Builder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
-                comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_undelete_source: None,
@@ -2028,7 +1996,7 @@ pub mod path {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -2310,7 +2278,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) action: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -2388,8 +2355,6 @@ pub mod path {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2456,7 +2421,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) action: String,
             pub(crate) mode: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -2510,8 +2474,6 @@ pub mod path {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2569,7 +2531,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) action: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) position: Option<i64>,
@@ -2687,8 +2648,6 @@ pub mod path {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2783,7 +2742,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) action: String,
             pub(crate) body: serde_json::Value,
             pub(crate) x_ms_version: String,
             pub(crate) position: Option<i64>,
@@ -2852,8 +2810,6 @@ pub mod path {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let action = &this.action;
-                        url.query_pairs_mut().append_pair("action", action);
                         if let Some(position) = &this.position {
                             url.query_pairs_mut().append_pair("position", &position.to_string());
                         }
@@ -2918,7 +2874,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_expiry_option: String,
             pub(crate) timeout: Option<i64>,
@@ -2952,8 +2907,6 @@ pub mod path {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2997,7 +2950,6 @@ pub mod path {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
-            pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_undelete_source: Option<String>,
@@ -3030,8 +2982,6 @@ pub mod path {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        let comp = &this.comp;
-                        url.query_pairs_mut().append_pair("comp", comp);
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }

@@ -2,6 +2,7 @@ use crate::clients::FileSystemClient;
 use crate::Properties;
 use azure_core::prelude::*;
 use azure_core::{
+    error::Result,
     headers::{etag_from_headers, last_modified_from_headers},
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
@@ -11,7 +12,7 @@ use std::convert::TryInto;
 
 /// A future of a file system set properties response
 type SetFileSystemProperties =
-    futures::future::BoxFuture<'static, crate::Result<SetFileSystemPropertiesResponse>>;
+    futures::future::BoxFuture<'static, Result<SetFileSystemPropertiesResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct SetFileSystemPropertiesBuilder {
@@ -77,7 +78,7 @@ pub struct SetFileSystemPropertiesResponse {
 }
 
 impl SetFileSystemPropertiesResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(SetFileSystemPropertiesResponse {

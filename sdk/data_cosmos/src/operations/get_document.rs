@@ -57,7 +57,7 @@ impl GetDocumentBuilder {
                 &mut request,
             );
 
-            request.set_body(azure_core::EMPTY_BODY.into());
+            request.set_body(azure_core::EMPTY_BODY);
 
             let response = self
                 .client

@@ -1773,19 +1773,22 @@ impl NumberNotInRangeAdvancedFilter {
         }
     }
 }
-#[doc = "Represents an operation returned by the GetOperations request"]
+#[doc = "Represents an operation returned by the GetOperations request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
-    #[doc = "Name of the operation"]
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Information about an operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationInfo>,
-    #[doc = "Origin of the operation"]
+    #[doc = "Origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
-    #[doc = "Properties of the operation"]
+    #[doc = "This Boolean is used to determine if the operation is a data plane action or not."]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[doc = "Properties of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }

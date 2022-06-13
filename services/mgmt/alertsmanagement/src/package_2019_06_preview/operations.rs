@@ -922,6 +922,7 @@ pub mod alerts {
                 subscription_id: subscription_id.into(),
                 alert_id: alert_id.into(),
                 new_state: new_state.into(),
+                comment: None,
             }
         }
         pub fn get_history(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_history::Builder {
@@ -1297,8 +1298,13 @@ pub mod alerts {
             pub(crate) subscription_id: String,
             pub(crate) alert_id: String,
             pub(crate) new_state: String,
+            pub(crate) comment: Option<String>,
         }
         impl Builder {
+            pub fn comment(mut self, comment: impl Into<String>) -> Self {
+                self.comment = Some(comment.into());
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1321,8 +1327,12 @@ pub mod alerts {
                         url.query_pairs_mut().append_pair("api-version", "2019-05-05-preview");
                         let new_state = &this.new_state;
                         url.query_pairs_mut().append_pair("newState", new_state);
-                        let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                        let req_body = if let Some(comment) = &this.comment {
+                            req_builder = req_builder.header("content-type", "application/json");
+                            azure_core::to_json(comment)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
                             .body(req_body)

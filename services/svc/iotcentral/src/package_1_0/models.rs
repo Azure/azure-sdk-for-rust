@@ -4,6 +4,7 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "The API access token definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiToken {
     #[serde(flatten)]
@@ -28,6 +29,7 @@ impl ApiToken {
         }
     }
 }
+#[doc = "The paged results of API tokens."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiTokenCollection {
     #[doc = "The collection of API tokens."]
@@ -57,6 +59,7 @@ impl Attestation {
         Self { type_ }
     }
 }
+#[doc = "The paged results of entities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Collection {
     #[doc = "The collection of entities."]
@@ -70,6 +73,7 @@ impl Collection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The device definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
     #[doc = "Unique ID of the device."]
@@ -99,6 +103,7 @@ impl Device {
         Self::default()
     }
 }
+#[doc = "The paged results of devices."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCollection {
     #[doc = "The collection of devices."]
@@ -117,6 +122,7 @@ impl DeviceCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The device command definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceCommand {
     #[doc = "The request ID of the device command execution."]
@@ -143,6 +149,7 @@ impl DeviceCommand {
         Self::default()
     }
 }
+#[doc = "The paged results of device command executions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCommandCollection {
     #[doc = "The collection of device command executions."]
@@ -161,15 +168,19 @@ impl DeviceCommandCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The device credentials definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCredentials {
     #[doc = "ID scope for connecting to the IoT Central application."]
     #[serde(rename = "idScope")]
     pub id_scope: String,
+    #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey", default, skip_serializing_if = "Option::is_none")]
     pub symmetric_key: Option<SymmetricKey>,
+    #[doc = "The X509 definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x509: Option<X509>,
+    #[doc = "The trusted platform module definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tpm: Option<Tpm>,
 }
@@ -191,6 +202,7 @@ impl DeviceProperties {
         Self::default()
     }
 }
+#[doc = "The device telemetry definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTelemetry {
     #[doc = "The last known value of this device telemetry."]
@@ -205,6 +217,7 @@ impl DeviceTelemetry {
         Self::default()
     }
 }
+#[doc = "The device template definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplate {
     #[doc = "Unique ID of the device template."]
@@ -238,6 +251,7 @@ impl DeviceTemplate {
         }
     }
 }
+#[doc = "The paged results of device templates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplateCollection {
     #[doc = "The collection of device templates."]
@@ -256,6 +270,7 @@ impl DeviceTemplateCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The email user definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailUser {
     #[serde(flatten)]
@@ -268,6 +283,7 @@ impl EmailUser {
         Self { user, email }
     }
 }
+#[doc = "The permission definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Permission {
     #[doc = "List of role assignments that specify the permissions to access the application."]
@@ -278,6 +294,7 @@ impl Permission {
         Self { roles }
     }
 }
+#[doc = "The role definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Role {
     #[doc = "Unique ID of the role."]
@@ -292,6 +309,7 @@ impl Role {
         Self::default()
     }
 }
+#[doc = "The role assignment definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignment {
     #[doc = "ID of the role for this role assignment."]
@@ -302,6 +320,7 @@ impl RoleAssignment {
         Self { role }
     }
 }
+#[doc = "The paged results of roles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleCollection {
     #[doc = "The collection of roles."]
@@ -320,6 +339,7 @@ impl RoleCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The service principal user definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalUser {
     #[serde(flatten)]
@@ -340,6 +360,7 @@ impl ServicePrincipalUser {
         }
     }
 }
+#[doc = "The symmetric key definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKey {
     #[doc = "The primary key for this credential."]
@@ -357,10 +378,12 @@ impl SymmetricKey {
         }
     }
 }
+#[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
     #[serde(flatten)]
     pub attestation: Attestation,
+    #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
@@ -372,6 +395,7 @@ impl SymmetricKeyAttestation {
         }
     }
 }
+#[doc = "The trusted platform module definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tpm {
     #[doc = "The TPM endorsement key for this credential."]
@@ -383,10 +407,12 @@ impl Tpm {
         Self { endorsement_key }
     }
 }
+#[doc = "The attestation of TPM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
     #[serde(flatten)]
     pub attestation: Attestation,
+    #[doc = "The trusted platform module definition."]
     pub tpm: Tpm,
 }
 impl TpmAttestation {
@@ -394,6 +420,7 @@ impl TpmAttestation {
         Self { attestation, tpm }
     }
 }
+#[doc = "The user definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct User {
     #[serde(flatten)]
@@ -414,6 +441,7 @@ impl User {
         }
     }
 }
+#[doc = "The paged results of users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
@@ -432,8 +460,10 @@ impl UserCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "The X509 definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509 {
+    #[doc = "The X509 certificates definition."]
     #[serde(rename = "clientCertificates", default, skip_serializing_if = "Option::is_none")]
     pub client_certificates: Option<X509Certificates>,
 }
@@ -442,10 +472,12 @@ impl X509 {
         Self::default()
     }
 }
+#[doc = "The X509 attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
     #[serde(flatten)]
     pub attestation: Attestation,
+    #[doc = "The X509 definition."]
     pub x509: X509,
 }
 impl X509Attestation {
@@ -453,11 +485,13 @@ impl X509Attestation {
         Self { attestation, x509 }
     }
 }
+#[doc = "The X509 certificate definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509Certificate {
     #[doc = "The string representation of this certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
+    #[doc = "The X509 certificate info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<X509CertificateInfo>,
 }
@@ -466,6 +500,7 @@ impl X509Certificate {
         Self::default()
     }
 }
+#[doc = "The X509 certificate info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509CertificateInfo {
     #[doc = "The SHA-1 hash value of the certificate."]
@@ -477,9 +512,12 @@ impl X509CertificateInfo {
         Self { sha1_thumbprint }
     }
 }
+#[doc = "The X509 certificates definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Certificates {
+    #[doc = "The X509 certificate definition."]
     pub primary: X509Certificate,
+    #[doc = "The X509 certificate definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<X509Certificate>,
 }

@@ -55,7 +55,7 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
                 body: &self.body,
                 id: self.client.user_defined_function_name(),
             };
-            request.set_body(bytes::Bytes::from(serde_json::to_string(&request_body)?).into());
+            request.set_body(serde_json::to_vec(&request_body)?);
             let response = self
                 .client
                 .pipeline()

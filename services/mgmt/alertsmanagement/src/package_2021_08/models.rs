@@ -1157,6 +1157,9 @@ pub struct Operation {
     #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "Origin of the operation"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
 }
 impl Operation {
     pub fn new() -> Self {

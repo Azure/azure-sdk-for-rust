@@ -500,7 +500,7 @@ pub mod linker {
         use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::ValidateResult),
+            Ok200(models::ValidateOperationResult),
             Accepted202,
         }
         #[derive(Clone)]
@@ -546,7 +546,7 @@ pub mod linker {
                         match rsp_status {
                             http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ValidateResult = serde_json::from_slice(&rsp_body)?;
+                                let rsp_value: models::ValidateOperationResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             http::StatusCode::ACCEPTED => Ok(Response::Accepted202),

@@ -1,20 +1,11 @@
 use crate::{codegen::create_generated_by_header, config_parser::Tag, identifier::parse_ident, write_file};
+use crate::{ErrorKind, Result, ResultExt};
 use camino::Utf8Path;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Io(#[from] crate::io::Error),
-    #[error("creating module name for feature {feature}: {source}")]
-    ModName { source: crate::identifier::Error, feature: String },
-}
-
 pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool) -> Result<()> {
-    Ok(write_file(path, &create_body(tags)?.into_token_stream(), print_writing_file)?)
+    write_file(path, &create_body(tags)?.into_token_stream(), print_writing_file)
 }
 
 struct Feature {
@@ -31,10 +22,7 @@ fn create_body(tags: &[&Tag]) -> Result<BodyCode> {
         .iter()
         .map(|tag| {
             let feature_name = tag.rust_feature_name();
-            let mod_name = parse_ident(&tag.rust_mod_name()).map_err(|source| Error::ModName {
-                source,
-                feature: feature_name.to_owned(),
-            })?;
+            let mod_name = parse_ident(&tag.rust_mod_name()).context(ErrorKind::Parse, "mod name")?;
             Ok(Feature { feature_name, mod_name })
         })
         .collect::<Result<_>>()?;
