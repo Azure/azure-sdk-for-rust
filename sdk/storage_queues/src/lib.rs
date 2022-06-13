@@ -5,8 +5,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-//pub use azure_core::{Error, Result};
-
 mod clients;
 mod message_ttl;
 mod number_of_messages;
