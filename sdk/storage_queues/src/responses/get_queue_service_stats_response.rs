@@ -1,3 +1,4 @@
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
 use bytes::Bytes;
@@ -34,15 +35,16 @@ struct GeoReplication {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         let headers = response.headers();
         let body = response.body();
 
         debug!("headers == {:?}", headers);
         debug!("body == {:#?}", body);
-        let response: GetQueueServiceStatsResponseInternal = read_xml(body)?;
+        let response: GetQueueServiceStatsResponseInternal =
+            read_xml(body).map_kind(ErrorKind::DataConversion)?;
         debug!("deserde == {:#?}", response);
 
         Ok(GetQueueServiceStatsResponse {
@@ -52,7 +54,8 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
                 .geo_replication
                 .last_sync_time
                 .map(|t| DateTime::parse_from_rfc2822(&t))
-                .transpose()?
+                .transpose()
+                .context(ErrorKind::DataConversion, "failed to parse last sync time")?
                 .map(|t| DateTime::from_utc(t.naive_utc(), Utc)),
         })
     }

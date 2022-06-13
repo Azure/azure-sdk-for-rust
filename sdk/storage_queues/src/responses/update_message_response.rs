@@ -1,3 +1,4 @@
+use azure_core::error::{Error, Result};
 use azure_core::headers::{get_str_from_headers, rfc2822_from_headers_mandatory};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
@@ -13,9 +14,9 @@ pub struct UpdateMessageResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for UpdateMessageResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         debug!("response == {:?}", response);
 
         Ok(UpdateMessageResponse {
