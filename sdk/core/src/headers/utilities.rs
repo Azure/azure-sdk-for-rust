@@ -207,7 +207,7 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str> {
     get_str_from_headers(headers, http::header::CONTENT_TYPE.as_str())
 }
 
-pub fn content_length_from_headers(headers: &HeaderMap) -> Result<usize> {
+pub fn content_length_from_headers(headers: &HeaderMap) -> Result<i64> {
     get_from_headers(headers, CONTENT_LENGTH)
 }
 

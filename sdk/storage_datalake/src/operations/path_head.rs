@@ -94,7 +94,7 @@ pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
     pub content_type: String,
-    pub content_length: usize,
+    pub content_length: i64,
     pub last_modified: DateTime<Utc>,
     pub properties: Option<Properties>,
     pub acl: Option<String>,
