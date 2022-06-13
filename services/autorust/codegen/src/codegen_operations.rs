@@ -520,7 +520,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     // get the consumes content-type from the operation, else the spec, else default to json
     let consumes = operation
         .pick_consumes()
-        .unwrap_or(cg.spec.pick_consumes().unwrap_or(content_type::APPLICATION_JSON));
+        .unwrap_or_else(|| cg.spec.pick_consumes().unwrap_or(content_type::APPLICATION_JSON));
 
     // params
     let build_request_params = BuildRequestParamsCode {

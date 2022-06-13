@@ -12,7 +12,7 @@ pub fn join<P1: AsRef<Utf8Path>, P2: AsRef<Utf8Path>>(a: P1, b: P2) -> Result<Ut
     if c.extension().is_some() {
         c = c
             .parent()
-            .ok_or(Error::with_message(ErrorKind::Io, || "unable to get parent path of {c}"))?;
+            .ok_or_else(|| Error::with_message(ErrorKind::Io, || "unable to get parent path of {c}"))?;
         // to directory
     }
     let mut c = PathBuf::from(c);

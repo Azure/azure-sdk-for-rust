@@ -5,7 +5,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
 pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool) -> Result<()> {
-    Ok(write_file(path, &create_body(tags)?.into_token_stream(), print_writing_file)?)
+    write_file(path, &create_body(tags)?.into_token_stream(), print_writing_file)
 }
 
 struct Feature {

@@ -149,7 +149,7 @@ impl Spec {
         let name = reference
             .name
             .clone()
-            .ok_or(Error::message(ErrorKind::Parse, "parameter not found"))?;
+            .ok_or_else(|| Error::message(ErrorKind::Parse, "parameter not found"))?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
@@ -178,7 +178,7 @@ impl Spec {
             None => doc_file.to_owned(),
             Some(file) => io::join(doc_file, &file)?,
         };
-        let name = reference.name.ok_or(Error::message(ErrorKind::Parse, "no name in ref"))?;
+        let name = reference.name.ok_or_else(|| Error::message(ErrorKind::Parse, "no name in ref"))?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
@@ -728,7 +728,10 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName> {
 pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<TypeName> {
     Ok(match schema {
         ReferenceOr::Reference { reference, .. } => {
-            let name = reference.name.as_ref().ok_or(Error::message(ErrorKind::Parse, "no name in ref"))?;
+            let name = reference
+                .name
+                .as_ref()
+                .ok_or_else(|| Error::message(ErrorKind::Parse, "no name in ref"))?;
             TypeName::Reference(name.to_owned())
         }
         ReferenceOr::Item(schema) => get_type_name_for_schema(&schema.common)?,
@@ -740,5 +743,5 @@ pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Sche
         .items
         .as_ref()
         .as_ref()
-        .ok_or(Error::message(ErrorKind::Parse, "array expected to have items"))
+        .ok_or_else(|| Error::message(ErrorKind::Parse, "array expected to have items"))
 }

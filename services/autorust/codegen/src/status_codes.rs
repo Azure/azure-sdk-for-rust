@@ -43,7 +43,7 @@ pub fn get_status_code_ident_camel_case(status_code: &StatusCode) -> Result<Iden
 }
 
 fn response_name(status_code: &HttpStatusCode) -> Result<String> {
-    let reason = get_canonical_reason(&status_code)?;
+    let reason = get_canonical_reason(status_code)?;
     let reason = reason.to_pascal_case();
     let status_code = status_code.as_u16();
     Ok(format!("{reason}{status_code}"))

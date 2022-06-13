@@ -118,10 +118,12 @@ mod literate_config {
         let root = parse_document(&arena, cmark_content, &ComrakOptions::default());
 
         // Get the AST node corresponding with "## Configuration".
-        let configuration_heading_node = get_configuration_section_heading_node(root).ok_or(Error::message(
-            ErrorKind::Parse,
-            "no `## Configuration` heading in the AutoRest literate configuration file",
-        ))?;
+        let configuration_heading_node = get_configuration_section_heading_node(root).ok_or_else(|| {
+            Error::message(
+                ErrorKind::Parse,
+                "no `## Configuration` heading in the AutoRest literate configuration file",
+            )
+        })?;
 
         let mut tags = Vec::new();
         let mut basic_info = BasicInformation::default();
@@ -131,18 +133,14 @@ mod literate_config {
         let mut current_node = configuration_heading_node.next_sibling();
         while let Some(node) = current_node {
             if is_basic_information(node) {
-                let yaml = extract_yaml(node)?.ok_or(Error::message(
-                    ErrorKind::Parse,
-                    "expected configuration tag to contain a YAML code block",
-                ))?;
+                let yaml = extract_yaml(node)?
+                    .ok_or_else(|| Error::message(ErrorKind::Parse, "expected configuration tag to contain a YAML code block"))?;
                 basic_info = serde_yaml::from_str(&yaml).context(ErrorKind::DataConversion, "reading basic information block yaml")?;
             } else if let Some(tag_name) = get_tag_name(node) {
                 // Extract the configuration from the first node inside the tag heading ("Tag: ..."),
                 // by looking at the first YAML code block.
-                let yaml = extract_yaml(node)?.ok_or(Error::message(
-                    ErrorKind::Parse,
-                    "Expected configuration tag to contain a YAML code block.",
-                ))?;
+                let yaml = extract_yaml(node)?
+                    .ok_or_else(|| Error::message(ErrorKind::Parse, "Expected configuration tag to contain a YAML code block."))?;
                 let mut tag: Tag = serde_yaml::from_str(&yaml).context(ErrorKind::Parse, "reading configuration block yaml")?;
                 tag.tag = tag_name;
                 tags.push(tag);
@@ -229,10 +227,9 @@ mod literate_config {
 
     /// Extracts the yaml from the received node.
     fn extract_yaml<'a>(configuration_tag_heading_node: &'a AstNode<'a>) -> Result<Option<String>> {
-        let mut current_node = configuration_tag_heading_node.next_sibling().ok_or(Error::message(
-            ErrorKind::Parse,
-            "markdown ended unexpectedly after configuration tag heading",
-        ))?;
+        let mut current_node = configuration_tag_heading_node
+            .next_sibling()
+            .ok_or_else(|| Error::message(ErrorKind::Parse, "markdown ended unexpectedly after configuration tag heading"))?;
         loop {
             if let NodeValue::CodeBlock(NodeCodeBlock { info, literal, fenced, .. }) = &current_node.data.borrow().value {
                 if !fenced {
@@ -244,10 +241,9 @@ mod literate_config {
                     return Ok(Some(literal.to_owned()));
                 }
             }
-            current_node = current_node.next_sibling().ok_or(Error::message(
-                ErrorKind::Parse,
-                "markdown ended unexpectedly after configuration tag heading",
-            ))?;
+            current_node = current_node
+                .next_sibling()
+                .ok_or_else(|| Error::message(ErrorKind::Parse, "markdown ended unexpectedly after configuration tag heading"))?;
         }
     }
 }

@@ -51,7 +51,11 @@ impl SchemaGen {
     }
 
     fn name(&self) -> Result<&str> {
-        Ok(&self.ref_key.as_ref().ok_or(Error::message(ErrorKind::CodeGen, "no ref key"))?.name)
+        Ok(&self
+            .ref_key
+            .as_ref()
+            .ok_or_else(|| Error::message(ErrorKind::CodeGen, "no ref key"))?
+            .name)
     }
 
     fn is_array(&self) -> bool {
