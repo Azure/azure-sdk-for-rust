@@ -93,7 +93,6 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
-    pub content_type: String,
     pub content_length: i64,
     pub last_modified: DateTime<Utc>,
     pub properties: Option<Properties>,
@@ -108,7 +107,6 @@ impl HeadPathResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,
-            content_type: content_type_from_headers(headers)?.to_owned(),
             content_length: content_length_from_headers(headers)?,
             properties: get_option_str_from_headers(headers, azure_core::headers::PROPERTIES)?
                 .map(Properties::try_from)
