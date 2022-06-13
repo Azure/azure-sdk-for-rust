@@ -1,8 +1,8 @@
 use crate::{clients::PathClient, request_options::*, Properties};
 use azure_core::error::ResultExt;
 use azure_core::headers::{
-    content_length_from_headers, content_type_from_headers, etag_from_headers,
-    get_option_str_from_headers, last_modified_from_headers,
+    content_length_from_headers, etag_from_headers, get_option_str_from_headers,
+    last_modified_from_headers,
 };
 use azure_core::prelude::*;
 use azure_core::{
