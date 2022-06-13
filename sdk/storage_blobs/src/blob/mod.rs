@@ -15,7 +15,7 @@ pub use self::page_range_list::PageRangeList;
 pub mod requests;
 pub mod responses;
 use crate::AccessTier;
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::headers::{
     BLOB_ACCESS_TIER, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS,
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
@@ -68,7 +68,7 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
 use serde::{self, Deserialize, Deserializer};
-fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>>
+fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -80,7 +80,7 @@ where
         .map_err(serde::de::Error::custom)
 }
 
-fn deserialize_md5_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyMD5>>
+fn deserialize_md5_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyMD5>, D::Error>
 where
     D: Deserializer<'de>,
 {

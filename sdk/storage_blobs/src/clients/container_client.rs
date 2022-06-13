@@ -1,5 +1,6 @@
 use crate::container::requests::*;
 use crate::prelude::PublicAccess;
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_storage::core::clients::{
@@ -118,6 +119,7 @@ impl ContainerClient {
     ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
+            .map_kind(ErrorKind::DataConversion)
     }
 
     pub fn shared_access_signature(
@@ -134,9 +136,8 @@ impl ContainerClient {
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Container),
             ),
-            _ => Err(crate::Error::OperationNotSupported(
-                "Shared access signature generation".to_owned(),
-                "SAS can be generated only from key and account clients".to_owned(),
+            _ => Err(Error::message(ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated only from key and account clients",
             )),
         }
     }

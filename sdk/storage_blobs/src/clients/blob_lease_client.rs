@@ -1,5 +1,6 @@
 use crate::blob::requests::*;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_storage::core::prelude::*;
@@ -55,10 +56,7 @@ impl BlobLeaseClient {
         self.blob_client.as_ref()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(
-        &'a self,
-        segments: I,
-    ) -> Result<url::Url, url::ParseError>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
