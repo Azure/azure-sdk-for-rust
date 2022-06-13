@@ -422,5 +422,5 @@ pub(crate) fn copy_status_from_headers(headers: &http::HeaderMap) -> crate::Resu
     let val = headers
         .get_as_str(azure_core::headers::COPY_STATUS)
         .ok_or_else(|| Error::message(ErrorKind::DataConversion, COPY_STATUS))?;
-    Ok(CopyStatus::from_str(val).map_kind(ErrorKind::DataConversion)?)
+    CopyStatus::from_str(val).map_kind(ErrorKind::DataConversion)
 }
