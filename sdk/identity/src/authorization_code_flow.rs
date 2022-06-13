@@ -2,6 +2,7 @@
 //!
 //! You can learn more about the OAuth2 authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{ClientId, ClientSecret};
@@ -79,19 +80,16 @@ impl AuthorizationCodeFlow {
         code: oauth2::AuthorizationCode,
     ) -> Result<
         oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
-        oauth2::RequestTokenError<
-            oauth2::reqwest::Error<reqwest::Error>,
-            oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
-        >,
     > {
-        let token = self
-            .client
+        self.client
             .exchange_code(code)
             // Send the PKCE code verifier in the token request
             .set_pkce_verifier(self.pkce_code_verifier)
             .request_async(async_http_client)
-            .await?;
-
-        Ok(token)
+            .await
+            .context(
+                ErrorKind::Credential,
+                "exchanging an authorization code for a token failed",
+            )
     }
 }
