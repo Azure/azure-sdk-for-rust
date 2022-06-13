@@ -4,7 +4,9 @@ mod codegen;
 mod codegen_models;
 mod codegen_operations;
 pub mod config_parser;
+pub mod content_type;
 pub mod crates;
+mod error;
 pub mod gen;
 pub mod identifier;
 pub mod io;
@@ -16,6 +18,7 @@ mod status_codes;
 use autorust_toml::PackageConfig;
 use camino::{Utf8Path, Utf8PathBuf};
 use config_parser::Configuration;
+pub use error::{Error, ErrorKind, Result, ResultExt};
 use proc_macro2::TokenStream;
 use std::io::Write;
 use std::{
@@ -27,31 +30,6 @@ pub use self::{
     codegen::{create_mod, CodeGen},
     spec::{ResolvedSchema, Spec, WebOperation},
 };
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Io(io::Error),
-    #[error(transparent)]
-    CodeGen(#[from] codegen::Error),
-    #[error(transparent)]
-    CargoToml(#[from] cargo_toml::Error),
-    #[error(transparent)]
-    ReadmeMd(#[from] readme_md::Error),
-    #[error(transparent)]
-    LibRs(#[from] lib_rs::Error),
-    #[error(transparent)]
-    Spec(#[from] spec::Error),
-    #[error(transparent)]
-    AutorustToml(#[from] autorust_toml::Error),
-}
-impl<T: Into<io::Error>> From<T> for Error {
-    fn from(error: T) -> Self {
-        Self::Io(error.into())
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PropertyName {
@@ -111,12 +89,9 @@ fn to_property_name(triple: &Vec<String>) -> PropertyName {
     }
 }
 
-pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig) -> Result<CodeGen<'a>, Error> {
+pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig) -> Result<CodeGen<'a>> {
     let directory = &crate_config.output_folder;
-    fs::create_dir_all(directory).map_err(|source| io::Error::CreateOutputDirectory {
-        source,
-        directory: directory.into(),
-    })?;
+    fs::create_dir_all(directory).with_context(ErrorKind::Io, || format!("create directory {directory}"))?;
 
     let box_properties: HashSet<PropertyName> = package_config.properties.boxed.iter().map(to_property_name).collect();
     let optional_properties: HashSet<PropertyName> = package_config.properties.optional.iter().map(to_property_name).collect();
@@ -152,30 +127,32 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
     Ok(cg)
 }
 
-fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<(), io::Error> {
+fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<()> {
     let file = file.as_ref();
     if print_writing_file {
         println!("writing file {}", &file);
     }
     let code = tokens.to_string();
-    let mut buffer = File::create(&file).map_err(|source| io::Error::CreateFile { source, file: file.into() })?;
+    let mut buffer = File::create(&file).with_context(ErrorKind::Io, || format!("create file {file}"))?;
     buffer
         .write_all(code.as_bytes())
-        .map_err(|source| io::Error::WriteFile { source, file: file.into() })?;
+        .with_context(ErrorKind::Io, || format!("write file {file}"))?;
     Ok(())
 }
 
 const SPEC_FOLDER: &str = "../../../azure-rest-api-specs/specification";
 
 // gets a sorted list of folders in azure-rest-api-specs/specification
-fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, io::Error> {
+fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>> {
     let paths = fs::read_dir(spec_folder)?;
     let mut spec_folders = Vec::new();
     for path in paths {
         let path = path?;
         if path.file_type()?.is_dir() {
             let file_name = path.file_name();
-            let spec_folder = file_name.to_str().ok_or(io::Error::FileNameNotUtf8)?;
+            let spec_folder = file_name
+                .to_str()
+                .ok_or_else(|| Error::with_message(ErrorKind::Io, || format!("file name not UTF-8 {file_name:?}")))?;
             spec_folders.push(spec_folder.to_owned());
         }
     }
@@ -212,12 +189,12 @@ impl SpecReadme {
     pub fn readme(&self) -> &Utf8Path {
         self.readme.as_path()
     }
-    pub fn config(&self) -> Result<Configuration, Error> {
+    pub fn config(&self) -> Result<Configuration> {
         Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme).unwrap_or_default())
     }
 }
 
-fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Utf8Path>) -> Result<Vec<SpecReadme>, io::Error> {
+fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Utf8Path>) -> Result<Vec<SpecReadme>> {
     Ok(spec_folders
         .into_iter()
         .filter_map(|spec| match io::join(SPEC_FOLDER, &spec) {
@@ -227,11 +204,11 @@ fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Utf8Path>) -> 
         .collect())
 }
 
-pub fn get_mgmt_readmes() -> Result<Vec<SpecReadme>, io::Error> {
+pub fn get_mgmt_readmes() -> Result<Vec<SpecReadme>> {
     get_spec_readmes(get_spec_folders(SPEC_FOLDER)?, "resource-manager/readme.md")
 }
 
-pub fn get_svc_readmes() -> Result<Vec<SpecReadme>, io::Error> {
+pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
     let mut readmes = get_spec_readmes(get_spec_folders(SPEC_FOLDER)?, "data-plane/readme.md")?;
     // the storage data-plane specs do not follow the pattern
     readmes.push(SpecReadme {

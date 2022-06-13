@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{create_generated_by_header, parse_query_params, Error, TypeNameCode},
+    codegen::{create_generated_by_header, parse_query_params, TypeNameCode},
     codegen::{parse_path_params, type_name_gen, PARAM_RE},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
@@ -7,6 +7,7 @@ use crate::{
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
+use crate::{content_type, Result};
 use autorust_openapi::{CollectionFormat, ParameterType, Response};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
@@ -15,30 +16,30 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use std::collections::{BTreeSet, HashSet};
 
-fn error_variant(operation: &WebOperationGen) -> Result<Ident, Error> {
+fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
         let module = module.to_pascal_case();
-        parse_ident(&format!("{}_{}", module, function)).map_err(Error::EnumVariantName)
+        parse_ident(&format!("{}_{}", module, function))
     } else {
-        parse_ident(&function).map_err(Error::ModuleName)
+        parse_ident(&function)
     }
 }
 
-fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream, Error> {
-    let function = parse_ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
+fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream> {
+    let function = parse_ident(&operation.rust_function_name())?;
     if let Some(module) = operation.rust_module_name() {
-        let module = parse_ident(&module).map_err(Error::ModuleName)?;
+        let module = parse_ident(&module)?;
         Ok(quote! { #module::#function::Error })
     } else {
         Ok(quote! { #function::Error })
     }
 }
 
-pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream, Error> {
+pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream> {
     let mut clients = TokenStream::new();
     for md in modules {
-        let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
+        let md = md.to_snake_case_ident()?;
         clients.extend(quote! {
             pub fn #md(&self) -> #md::Client {
                 #md::Client(self.clone())
@@ -145,7 +146,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
     Ok(code)
 }
 
-pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
+pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
     file.extend(quote! {
@@ -203,7 +204,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         }
         match module_name {
             Some(module_name) => {
-                let name = parse_ident(&module_name).map_err(Error::ModuleName)?;
+                let name = parse_ident(&module_name)?;
                 file.extend(quote! {
                     pub mod #name {
                         use super::models;
@@ -263,12 +264,25 @@ impl WebOperationGen {
         }
     }
 
-    pub fn function_name(&self) -> Result<Ident, Error> {
-        parse_ident(&self.rust_function_name()).map_err(Error::FunctionName)
+    fn function_name(&self) -> Result<Ident> {
+        parse_ident(&self.rust_function_name())
     }
 
     fn api_version(&self) -> &str {
         self.0.api_version.as_str()
+    }
+
+    fn consumes(&self) -> Vec<&str> {
+        self.0.consumes.iter().map(String::as_str).collect()
+    }
+
+    fn pick_consumes(&self) -> Option<&str> {
+        crate::content_type::pick_consumes(self.consumes())
+    }
+
+    #[allow(dead_code)]
+    fn produces(&self) -> Vec<&str> {
+        self.0.produces.iter().map(String::as_str).collect()
     }
 }
 
@@ -465,12 +479,12 @@ impl ToTokens for BuildRequestParamsCode {
 }
 
 // Create code for the web operation
-fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode, Error> {
+fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode> {
     let params = parse_path_params(&operation.0.path);
-    let params: Result<Vec<_>, Error> = params
+    let params: Result<Vec<_>> = params
         .iter()
         .map(|s| {
-            let param = s.to_snake_case_ident().map_err(Error::ParamName)?;
+            let param = s.to_snake_case_ident()?;
             Ok(quote! { &this.#param })
         })
         .collect();
@@ -503,9 +517,14 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         });
     }
 
+    // get the consumes content-type from the operation, else the spec, else default to json
+    let consumes = operation
+        .pick_consumes()
+        .unwrap_or_else(|| cg.spec.pick_consumes().unwrap_or(content_type::APPLICATION_JSON));
+
     // params
     let build_request_params = BuildRequestParamsCode {
-        content_type: cg.get_request_content_type_json(),
+        content_type: consumes.to_string(),
         params: parameters.clone(),
     };
     ts_request_builder.extend(build_request_params.into_token_stream());
@@ -531,9 +550,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     /*
     let fresponse = if is_single_response {
         let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
-        quote! { std::result::Result<#tp, Error> }
+        quote! { std::result::Result<#tp> }
     } else {
-        quote! { std::result::Result<Response, Error> }
+        quote! { std::result::Result<Response> }
     };
      */
 
@@ -889,11 +908,11 @@ impl ToTokens for FunctionCallParamsCode {
     }
 }
 
-fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionParams, Error> {
+fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionParams> {
     let mut params = Vec::new();
     for param in parameters.iter() {
         let name = param.name().to_owned();
-        let variable_name = name.to_snake_case_ident().map_err(Error::ParamName)?;
+        let variable_name = name.to_snake_case_ident()?;
         let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
         let kind = ParamKind::from(param.type_());
         let collection_format = param.collection_format().clone();
@@ -917,7 +936,7 @@ struct BuilderInstanceCode {
 }
 
 impl BuilderInstanceCode {
-    fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_group: bool) -> Result<Self, Error> {
+    fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_group: bool) -> Result<Self> {
         let fname = operation.function_name()?;
         let summary = operation.0.summary.clone();
         Ok(Self {
@@ -1069,7 +1088,7 @@ impl ToTokens for BuilderSettersCode {
     }
 }
 
-pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>, Error> {
+pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>> {
     if let Some(schema) = &rsp.schema {
         Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true)))
     } else {

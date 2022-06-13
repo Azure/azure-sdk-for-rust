@@ -1,9 +1,10 @@
 use crate::{
-    codegen::{create_generated_by_header, type_name_gen, Error, TypeNameCode},
+    codegen::{create_generated_by_header, type_name_gen, TypeNameCode},
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
+use crate::{Error, ErrorKind, Result};
 use autorust_openapi::{DataType, MsPageable, Reference, ReferenceOr, Schema};
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
@@ -49,8 +50,12 @@ impl SchemaGen {
         }
     }
 
-    fn name(&self) -> Result<&str, Error> {
-        Ok(&self.ref_key.as_ref().ok_or(Error::NoRefKey)?.name)
+    fn name(&self) -> Result<&str> {
+        Ok(&self
+            .ref_key
+            .as_ref()
+            .ok_or_else(|| Error::message(ErrorKind::CodeGen, "no ref key"))?
+            .name)
     }
 
     fn is_array(&self) -> bool {
@@ -79,8 +84,8 @@ impl SchemaGen {
         )
     }
 
-    fn type_name(&self) -> Result<TypeName, Error> {
-        get_type_name_for_schema(&self.schema.common).map_err(Error::TypeNameForSchema)
+    fn type_name(&self) -> Result<TypeName> {
+        get_type_name_for_schema(&self.schema.common)
     }
 
     fn required(&self) -> HashSet<&str> {
@@ -95,8 +100,8 @@ impl SchemaGen {
         self.all_of.iter().collect()
     }
 
-    fn array_items(&self) -> Result<&ReferenceOr<Schema>, Error> {
-        get_schema_array_items(&self.schema.common).map_err(Error::ArrayItems)
+    fn array_items(&self) -> Result<&ReferenceOr<Schema>> {
+        get_schema_array_items(&self.schema.common)
     }
 
     fn enum_values(&self) -> Vec<EnumValue> {
@@ -142,7 +147,7 @@ fn resolve_schema_properties(
     spec: &Spec,
     doc_file: &Utf8Path,
     schema: &SchemaGen,
-) -> Result<SchemaGen, Error> {
+) -> Result<SchemaGen> {
     let mut properties: IndexMap<String, _> = IndexMap::new();
     // add any allOf properties not in schemas, not references
     schema.schema.all_of.iter().for_each(|ref_or_schema| match ref_or_schema {
@@ -161,7 +166,7 @@ fn resolve_schema_properties(
     schema.properties = properties
         .into_iter()
         .map(|(property_name, property)| resolve_schema_property(resolved, all_schemas, spec, doc_file, property_name, &property))
-        .collect::<Result<_, Error>>()?;
+        .collect::<Result<_>>()?;
     Ok(schema)
 }
 
@@ -172,14 +177,14 @@ fn resolve_schema_property(
     doc_file: &Utf8Path,
     property_name: String,
     property: &ResolvedSchema,
-) -> Result<PropertyGen, Error> {
+) -> Result<PropertyGen> {
     let schema = if let Some(ref_key) = &property.ref_key {
         if let Some(schema) = resolved.get(ref_key) {
             schema.clone()
         } else {
             let schema = all_schemas
                 .get(ref_key)
-                .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?;
+                .ok_or_else(|| Error::with_message(ErrorKind::CodeGen, || format!("ref key not found {ref_key:?}")))?;
             // prevent overflow for recursive call
             resolved.insert(ref_key.clone(), schema.clone()); // unresolved properties
             let schema = resolve_schema_properties(resolved, all_schemas, spec, &ref_key.file_path, schema)?;
@@ -196,7 +201,7 @@ fn resolve_schema_property(
     })
 }
 
-fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen, spec: &Spec) -> Result<SchemaGen, Error> {
+fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen, spec: &Spec) -> Result<SchemaGen> {
     // recursively apply to all properties
     let properties: Vec<_> = schema
         .properties
@@ -208,7 +213,7 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
                 schema,
             })
         })
-        .collect::<Result<_, Error>>()?;
+        .collect::<Result<_>>()?;
     let all_of: Vec<_> = schema
         .schema
         .all_of
@@ -219,25 +224,25 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
                 let ref_key = spec.ref_key(&schema.doc_file, reference)?;
                 let schema = all_schemas
                     .get(&ref_key)
-                    .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?
+                    .ok_or_else(|| Error::with_message(ErrorKind::CodeGen, || format!("ref key not found {ref_key:?}")))?
                     .clone();
                 let schema = resolve_all_of(all_schemas, &schema, spec)?;
                 Ok(Some(schema))
             }
         })
-        .collect::<Result<_, Error>>()?;
+        .collect::<Result<_>>()?;
     let mut schema = schema.clone();
     schema.properties = properties;
     schema.all_of = all_of.into_iter().flatten().collect();
     Ok(schema)
 }
 
-fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
+fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut all_schemas: IndexMap<RefKey, SchemaGen> = IndexMap::new();
 
     // all definitions from input_files
     for (doc_file, doc) in spec.input_docs() {
-        let schemas = spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::Spec)?;
+        let schemas = spec.resolve_schema_map(doc_file, &doc.definitions)?;
         for (name, resolved_schema) in schemas {
             let ref_key = RefKey {
                 file_path: doc_file.clone(),
@@ -260,7 +265,7 @@ fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
     Ok(all_schemas)
 }
 
-fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
+fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
         resolved.insert(ref_key.clone(), schema.clone()); // order properties after
@@ -270,7 +275,7 @@ fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &S
     Ok(resolved)
 }
 
-fn resolve_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
+fn resolve_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
         let schema = resolve_all_of(schemas, schema, spec)?;
@@ -290,7 +295,7 @@ fn add_schema_gen(all_schemas: &mut IndexMap<RefKey, SchemaGen>, resolved_schema
     }
 }
 
-pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
+pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
 
@@ -367,26 +372,21 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
             file.extend(quote! { pub type #id = #value;});
         } else {
-            let pageable_name = format!("{}", schema_name.to_camel_case_ident().map_err(Error::StructName)?);
+            let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
             file.extend(create_struct(cg, schema, schema_name, pageable_response_names.get(&pageable_name))?);
         }
     }
     Ok(file)
 }
 
-fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode), Error> {
-    let id = property_name.to_camel_case_ident().map_err(Error::StructName)?;
+fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode)> {
+    let id = property_name.to_camel_case_ident()?;
     let value = type_name_gen(&property.type_name()?)?;
     Ok((id, value))
 }
 
 // For create_models. Recursively adds schema refs.
-fn add_schema_refs(
-    resolved: &mut IndexMap<RefKey, SchemaGen>,
-    spec: &Spec,
-    doc_file: &Utf8Path,
-    schema_ref: &Reference,
-) -> Result<(), Error> {
+fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_file: &Utf8Path, schema_ref: &Reference) -> Result<()> {
     let resolved_schema = spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = &resolved_schema.ref_key {
         if !resolved.contains_key(ref_key) && !spec.is_input_file(&ref_key.file_path) {
@@ -404,20 +404,14 @@ fn create_enum(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<StructFieldCode, Error> {
+) -> Result<StructFieldCode> {
     let enum_values = property.enum_values();
-    let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
-        source,
-        property: property_name.to_owned(),
-    })?;
+    let id = &property_name.to_camel_case_ident()?;
 
     let mut values = TokenStream::new();
     for enum_value in &enum_values {
         let value = &enum_value.value;
-        let nm = value.to_camel_case_ident().map_err(|source| Error::EnumName {
-            source,
-            property: property_name.to_owned(),
-        })?;
+        let nm = value.to_camel_case_ident()?;
         let doc_comment = match &enum_value.description {
             Some(description) => {
                 quote! { #[doc = #description] }
@@ -483,10 +477,7 @@ fn create_enum(
         let mut serialize_fields = TokenStream::new();
         for (index, enum_value) in enum_values.iter().enumerate() {
             let value = &enum_value.value;
-            let nm = value.to_camel_case_ident().map_err(|source| Error::EnumName {
-                source,
-                property: property_name.to_owned(),
-            })?;
+            let nm = value.to_camel_case_ident()?;
             let variant_index = index as u32;
             serialize_fields.extend(quote! {
                 Self::#nm => serializer.serialize_unit_variant(#id_str, #variant_index, #value),
@@ -530,15 +521,9 @@ fn create_enum(
         quote! {}
     };
 
-    let nm = property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
-        source,
-        property: property_name.to_owned(),
-    })?;
+    let nm = property_name.to_camel_case_ident()?;
     let default_code = if let Some(default_name) = property.default() {
-        let default_name = default_name.to_camel_case_ident().map_err(|source| Error::EnumName {
-            source,
-            property: default_name.to_owned(),
-        })?;
+        let default_name = default_name.to_camel_case_ident()?;
         quote! {
             impl Default for #id {
                 fn default() -> Self {
@@ -575,29 +560,29 @@ fn create_enum(
     })
 }
 
-fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
+fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
     let items = schema.array_items()?;
-    let typ = schema.name()?.to_camel_case_ident().map_err(Error::VecAliasName)?;
+    let typ = schema.name()?.to_camel_case_ident()?;
     let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: Option<&MsPageable>) -> Result<TokenStream, Error> {
+fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: Option<&MsPageable>) -> Result<TokenStream> {
     let mut code = TokenStream::new();
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
     let mut new_fn_params: Vec<TokenStream> = Vec::new();
     let mut new_fn_body = TokenStream::new();
-    let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
-    let struct_name_code = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
+    let ns = struct_name.to_snake_case_ident()?;
+    let struct_name_code = struct_name.to_camel_case_ident()?;
     let required = schema.required();
 
     // println!("struct: {} {:?}", struct_name_code, pageable);
 
     for schema in schema.all_of() {
         let schema_name = schema.name()?;
-        let type_name = schema_name.to_camel_case_ident().map_err(Error::StructFieldName)?;
-        let field_name = schema_name.to_snake_case_ident().map_err(Error::StructFieldName)?;
+        let type_name = schema_name.to_camel_case_ident()?;
+        let field_name = schema_name.to_snake_case_ident()?;
         props.extend(quote! {
             #[serde(flatten)]
             pub #field_name: #type_name,
@@ -614,7 +599,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
     for property in schema.properties() {
         let property_name = property.name.as_str();
-        let field_name = property_name.to_snake_case_ident().map_err(Error::StructName)?;
+        let field_name = property_name.to_snake_case_ident()?;
         let prop_nm = &PropertyName {
             file_path: schema.doc_file.clone(),
             schema_name: struct_name.to_owned(),
@@ -712,7 +697,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let mut continuable = quote! {};
     if let Some(pageable) = pageable {
         if let Some(name) = &pageable.next_link_name {
-            let field_name = name.to_snake_case_ident().map_err(Error::StructName)?;
+            let field_name = name.to_snake_case_ident()?;
             // when there are multiple responses, we only add the Continuable
             // for the cases that have the field we care about.
             // println!("checking {} {} {}", struct_name_code, field_name, field_names.contains(&format!("{}", field_name)));
@@ -845,10 +830,10 @@ fn create_struct_field_code(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<StructFieldCode, Error> {
+) -> Result<StructFieldCode> {
     match &property.ref_key {
         Some(ref_key) => {
-            let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
+            let tp = ref_key.name.to_camel_case_ident()?;
             Ok(StructFieldCode {
                 type_name: tp.into(),
                 code: None,
@@ -858,7 +843,7 @@ fn create_struct_field_code(
             if property.is_local_enum() {
                 create_enum(Some(namespace), property, property_name, lowercase_workaround)
             } else if property.is_local_struct() {
-                let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
+                let id = property_name.to_camel_case_ident()?;
                 let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
                 let code = create_struct(cg, property, property_name, None)?;
                 Ok(StructFieldCode {

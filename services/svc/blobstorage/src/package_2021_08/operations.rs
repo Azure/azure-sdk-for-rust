@@ -291,7 +291,7 @@ pub mod service {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -550,7 +550,7 @@ pub mod service {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.key_info)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1571,7 +1571,7 @@ pub mod container {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let req_body = if let Some(container_acl) = &this.container_acl {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/xml");
                             azure_core::to_json(container_acl)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -6024,7 +6024,7 @@ pub mod blob {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         let req_body = if let Some(query_request) = &this.query_request {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/xml");
                             azure_core::to_json(query_request)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -6288,7 +6288,7 @@ pub mod blob {
                             req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
                         }
                         let req_body = if let Some(tags) = &this.tags {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req_builder = req_builder.header("content-type", "application/xml");
                             azure_core::to_json(tags)?
                         } else {
                             azure_core::EMPTY_BODY
@@ -6986,7 +6986,7 @@ pub mod page_blob {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         req_builder = req_builder.header("x-ms-page-write", &this.x_ms_page_write);
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         req_builder = req_builder.header("Content-Length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
@@ -8747,7 +8747,7 @@ pub mod append_blob {
                             .await
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -9556,7 +9556,7 @@ pub mod block_blob {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         req_builder = req_builder.header("x-ms-blob-type", &this.x_ms_blob_type);
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -10050,7 +10050,7 @@ pub mod block_blob {
                         if let Some(x_ms_content_crc64) = &this.x_ms_content_crc64 {
                             req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         if let Some(timeout) = &this.timeout {
                             url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -10595,7 +10595,7 @@ pub mod block_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.blocks)?;
                         req_builder = req_builder.header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {

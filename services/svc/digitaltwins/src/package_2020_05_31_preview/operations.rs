@@ -380,7 +380,7 @@ pub mod digital_twin_models {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2020-05-31-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.update_model)?;
                         req_builder = req_builder.uri(url.as_str());
                         let req = req_builder
@@ -798,7 +798,7 @@ pub mod digital_twins {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2020-05-31-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.patch_document)?;
                         if let Some(if_match) = &this.if_match {
                             req_builder = req_builder.header("If-Match", if_match);
@@ -1057,7 +1057,7 @@ pub mod digital_twins {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2020-05-31-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.patch_document)?;
                         if let Some(if_match) = &this.if_match {
                             req_builder = req_builder.header("If-Match", if_match);
@@ -1551,7 +1551,7 @@ pub mod digital_twins {
                             .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
                         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                         url.query_pairs_mut().append_pair("api-version", "2020-05-31-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req_builder = req_builder.header("content-type", "application/json-patch+json");
                         let req_body = azure_core::to_json(&this.patch_document)?;
                         if let Some(if_match) = &this.if_match {
                             req_builder = req_builder.header("If-Match", if_match);
