@@ -1,7 +1,7 @@
 use super::{DataLakeClient, DirectoryClient, FileClient};
 use crate::operations::*;
-use crate::{Properties, Result};
-use azure_core::{ClientOptions, Context, Pipeline};
+use crate::Properties;
+use azure_core::{error::Result, ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use url::Url;
 

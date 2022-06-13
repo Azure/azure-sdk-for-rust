@@ -3,12 +3,17 @@ use crate::{
     file_system::{Path, PathList},
     request_options::*,
 };
-use azure_core::{collect_pinned_stream, prelude::*, AppendToUrlQuery, Pageable, Response};
+use azure_core::{
+    collect_pinned_stream,
+    error::{Error, ErrorKind, Result},
+    prelude::*,
+    AppendToUrlQuery, Pageable, Response,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type ListPaths = Pageable<ListPathsResponse, azure_core::Error>;
+type ListPaths = Pageable<ListPathsResponse, Error>;
 
 #[derive(Debug, Clone)]
 pub struct ListPathsBuilder {
@@ -82,7 +87,7 @@ impl ListPathsBuilder {
 
                 match ListPathsResponse::try_from(response).await {
                     Ok(r) => Ok(r),
-                    Err(e) => Err(azure_core::Error::Other(Box::new(e))),
+                    Err(e) => Err(Error::new(ErrorKind::DataConversion, e)),
                 }
             }
         };
@@ -99,7 +104,7 @@ pub struct ListPathsResponse {
 }
 
 impl ListPathsResponse {
-    pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
+    pub(crate) async fn try_from(response: Response) -> Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         let path_list: PathList = body.try_into()?;

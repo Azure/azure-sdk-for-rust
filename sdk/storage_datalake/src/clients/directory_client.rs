@@ -3,10 +3,10 @@ use crate::request_options::*;
 use crate::{
     clients::{DataLakeClient, FileSystemClient},
     prelude::PathClient,
-    Properties, Result,
+    Properties,
 };
 use azure_core::prelude::IfMatchCondition;
-use azure_core::{ClientOptions, Context, Pipeline};
+use azure_core::{error::Result, ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use url::Url;
 
