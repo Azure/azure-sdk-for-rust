@@ -24,7 +24,7 @@
 //!     let http_client = azure_core::new_http_client();
 //!     // This will give you the final token to use in authorization.
 //!     let token = client_credentials_flow::perform(
-//!         http_client.as_ref(),
+//!         http_client.clone(),
 //!         &client_id,
 //!         &client_secret,
 //!         &["https://management.azure.com/"],
@@ -46,11 +46,12 @@ use azure_core::{
 };
 use http::Method;
 use login_response::LoginResponse;
+use std::sync::Arc;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow
 pub async fn perform(
-    http_client: &dyn HttpClient,
+    http_client: Arc<dyn HttpClient>,
     client_id: &oauth2::ClientId,
     client_secret: &oauth2::ClientSecret,
     scopes: &[&str],

@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let http_client = azure_core::new_http_client();
     // This will give you the final token to use in authorization.
     let token = client_credentials_flow::perform(
-        http_client.as_ref(),
+        http_client.clone(),
         &client_id,
         &client_secret,
         &["https://management.azure.com/"],

@@ -5,24 +5,24 @@
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
 
-use azure_core::error::{Error, ErrorKind, Result};
-use azure_core::{content_type, headers, HttpClient, Request, Response};
-pub use device_code_responses::*;
-use http::Method;
-
 use async_timer::timer::new_timer;
+use azure_core::{
+    content_type,
+    error::{Error, ErrorKind, Result},
+    headers, HttpClient, Request, Response,
+};
+pub use device_code_responses::*;
 use futures::stream::unfold;
+use http::Method;
 use oauth2::ClientId;
 use serde::Deserialize;
+use std::{borrow::Cow, sync::Arc, time::Duration};
 use url::form_urlencoded;
-
-use std::borrow::Cow;
-use std::time::Duration;
 
 /// Start the device authorization grant flow.
 /// The user has only 15 minutes to sign in (the usual value for expires_in).
 pub async fn start<'a, 'b, T>(
-    http_client: &'a dyn HttpClient,
+    http_client: Arc<dyn HttpClient>,
     tenant_id: T,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
@@ -41,7 +41,7 @@ where
     let encoded = encoded.append_pair("scope", &scopes.join(" "));
     let encoded = encoded.finish();
 
-    let rsp = post_form(http_client, url, encoded).await?;
+    let rsp = post_form(http_client.clone(), url, encoded).await?;
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {
@@ -78,7 +78,7 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     // The skipped fields below do not come from the Azure answer.
     // They will be added manually after deserialization
     #[serde(skip)]
-    http_client: Option<&'a dyn HttpClient>,
+    http_client: Option<Arc<dyn HttpClient>>,
     #[serde(skip)]
     tenant_id: Cow<'a, str>,
     // We store the ClientId as string instead of the original type, because it
@@ -122,9 +122,9 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     let encoded = encoded.append_pair("device_code", &self.device_code);
                     let encoded = encoded.finish();
 
-                    let http_client = self.http_client.unwrap();
+                    let http_client = self.http_client.clone().unwrap();
 
-                    match post_form(http_client, url, encoded).await {
+                    match post_form(http_client.clone(), url, encoded).await {
                         Ok(rsp) => {
                             let rsp_status = rsp.status();
                             let rsp_body = rsp.into_body().await;
@@ -166,7 +166,11 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
     }
 }
 
-async fn post_form(http_client: &dyn HttpClient, url: &str, form_body: String) -> Result<Response> {
+async fn post_form(
+    http_client: Arc<dyn HttpClient>,
+    url: &str,
+    form_body: String,
+) -> Result<Response> {
     let url = Request::parse_uri(url)?;
     let mut req = Request::new(url, Method::POST);
     req.headers_mut().insert(
