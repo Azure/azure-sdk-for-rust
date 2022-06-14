@@ -1,4 +1,5 @@
 use crate::xml::read_xml;
+use azure_core::error::{Error, Result};
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::NextMarker;
 use azure_core::RequestId;
@@ -43,9 +44,9 @@ pub struct Blob {
 }
 
 impl TryFrom<&http::Response<Bytes>> for ListBlobsByTagsResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &http::Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &http::Response<Bytes>) -> Result<Self> {
         let body = response.body();
 
         trace!("body == {:?}", body);

@@ -1,3 +1,5 @@
+use azure_core::error::{Error, ErrorKind, Result};
+
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";
 pub const ACCOUNT_NAME_KEY_NAME: &str = "AccountName";
@@ -14,18 +16,6 @@ pub const QUEUE_ENDPOINT_KEY_NAME: &str = "QueueEndpoint";
 pub const QUEUE_SECONDARY_ENDPOINT_KEY_NAME: &str = "QueueSecondaryEndpoint";
 pub const FILE_ENDPOINT_KEY_NAME: &str = "FileEndpoint";
 pub const FILE_SECONDARY_ENDPOINT_KEY_NAME: &str = "FileSecondaryEndpoint";
-
-#[derive(Debug, thiserror::Error)]
-pub enum ConnectionStringError {
-    #[error("Missing value for key '{}'", key)]
-    MissingValue { key: String },
-    #[error("Unexpected key '{}'", key)]
-    UnexpectedKey { key: String },
-    #[error("Parse error: {}", msg)]
-    ParseError { msg: String },
-    #[error("Unsupported protocol {}", protocol)]
-    UnsupportedProtocol { protocol: String },
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum EndpointProtocol {
@@ -82,7 +72,7 @@ pub struct ConnectionString<'a> {
 }
 
 impl<'a> ConnectionString<'a> {
-    pub fn new(connection_string: &'a str) -> Result<Self, ConnectionStringError> {
+    pub fn new(connection_string: &'a str) -> Result<Self> {
         let mut account_name = None;
         let mut account_key = None;
         let mut sas = None;
@@ -108,20 +98,20 @@ impl<'a> ConnectionString<'a> {
 
             let (k, v) = match kv {
                 Some((k, _)) if (k.chars().all(char::is_whitespace) || k.trim() == "") => {
-                    return Err(ConnectionStringError::ParseError {
-                        msg: "No key found".to_owned(),
-                    })
+                    return Err(Error::with_message(ErrorKind::Other, || {
+                        format!("no key found in connection string: {connection_string}")
+                    }))
                 }
                 Some((k, v)) if (v.chars().all(char::is_whitespace) || v.trim() == "") => {
-                    return Err(ConnectionStringError::MissingValue {
-                        key: k.trim().to_owned(),
-                    })
+                    return Err(Error::with_message(ErrorKind::Other, || {
+                        format!("missing value in connection string: {connection_string} key: {k}")
+                    }))
                 }
                 Some((k, v)) => (k.trim(), v.trim()),
                 None => {
-                    return Err(ConnectionStringError::ParseError {
-                        msg: "No key/value found".to_owned(),
-                    })
+                    return Err(Error::with_message(ErrorKind::Other, || {
+                        format!("no key/value found in connection string: {connection_string}")
+                    }))
                 }
             };
 
@@ -135,9 +125,9 @@ impl<'a> ConnectionString<'a> {
                         "http" => EndpointProtocol::Http,
                         "https" => EndpointProtocol::Https,
                         _ => {
-                            return Err(ConnectionStringError::UnsupportedProtocol {
-                                protocol: v.to_owned(),
-                            })
+                            return Err(Error::with_message(ErrorKind::Other, || {
+                                format!("connection string unsupported protocol: {v}")
+                            }));
                         }
                     };
                     default_endpoints_protocol = Some(protocol);
@@ -146,11 +136,9 @@ impl<'a> ConnectionString<'a> {
                     "true" => use_development_storage = Some(true),
                     "false" => use_development_storage = Some(false),
                     _ => {
-                        return Err(ConnectionStringError::ParseError {
-                            msg: format!(
-                        "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
-                        USE_DEVELOPMENT_STORAGE_KEY_NAME, v),
-                        })
+                        return Err(Error::with_message(ErrorKind::Other, || {
+                            format!("connection string unexpected value. {}: {}. Please specify true or false.", USE_DEVELOPMENT_STORAGE_KEY_NAME, v)
+                        }));
                     }
                 },
                 DEVELOPMENT_STORAGE_PROXY_URI_KEY_NAME => development_storage_proxy_uri = Some(v),
@@ -162,7 +150,11 @@ impl<'a> ConnectionString<'a> {
                 QUEUE_SECONDARY_ENDPOINT_KEY_NAME => queue_secondary_endpoint = Some(v),
                 FILE_ENDPOINT_KEY_NAME => file_endpoint = Some(v),
                 FILE_SECONDARY_ENDPOINT_KEY_NAME => file_secondary_endpoint = Some(v),
-                k => return Err(ConnectionStringError::UnexpectedKey { key: k.to_owned() }),
+                k => {
+                    return Err(Error::with_message(ErrorKind::Other, || {
+                        format!("connection string unexpected key: {k}")
+                    }))
+                }
             }
         }
 
@@ -193,26 +185,11 @@ mod tests {
 
     #[test]
     fn it_returns_expected_errors() {
-        assert!(matches!(
-            ConnectionString::new("AccountName="),
-            Err(ConnectionStringError::MissingValue { key }) if key == "AccountName"
-        ));
-        assert!(matches!(
-            ConnectionString::new("AccountName    ="),
-            Err(ConnectionStringError::MissingValue { key }) if key == "AccountName"
-        ));
-        assert!(matches!(
-            ConnectionString::new("MissingEquals"),
-            Err(ConnectionStringError::ParseError { msg: _ })
-        ));
-        assert!(matches!(
-            ConnectionString::new("="),
-            Err(ConnectionStringError::ParseError { msg: _ })
-        ));
-        assert!(matches!(
-            ConnectionString::new("x=123;"),
-            Err(ConnectionStringError::UnexpectedKey { key }) if key == "x"
-        ));
+        assert!(ConnectionString::new("AccountName=").is_err());
+        assert!(ConnectionString::new("AccountName    =").is_err());
+        assert!(ConnectionString::new("MissingEquals").is_err());
+        assert!(ConnectionString::new("=").is_err());
+        assert!(ConnectionString::new("x=123;").is_err());
     }
 
     #[test]

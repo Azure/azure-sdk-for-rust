@@ -1,4 +1,5 @@
 use crate::xml::read_xml;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
 
@@ -40,20 +41,38 @@ impl StoredAccessPolicyList {
         StoredAccessPolicyList::default()
     }
 
-    pub fn from_xml(xml: &Bytes) -> crate::Result<StoredAccessPolicyList> {
+    pub fn from_xml(xml: &Bytes) -> Result<StoredAccessPolicyList> {
         debug!("{:?}", xml);
 
         let mut sal = StoredAccessPolicyList::default();
-        let sis: SignedIdentifiers = read_xml(xml)?;
+        let sis: SignedIdentifiers = read_xml(xml).context(
+            ErrorKind::DataConversion,
+            "failed to read SignedIdentifiers xml",
+        )?;
 
         if let Some(sis) = sis.signed_identifiers {
             for si in sis {
-                let sa = StoredAccessPolicy {
-                    id: si.id,
-                    start: DateTime::parse_from_rfc3339(&si.access_policy.start)?,
-                    expiry: DateTime::parse_from_rfc3339(&si.access_policy.expiry)?,
-                    permission: si.access_policy.permission,
-                };
+                let sa =
+                    StoredAccessPolicy {
+                        id: si.id,
+                        start: DateTime::parse_from_rfc3339(&si.access_policy.start).with_context(
+                            ErrorKind::DataConversion,
+                            || {
+                                format!(
+                                    "failed to parse DateTime from access_policy.start: {}",
+                                    &si.access_policy.start
+                                )
+                            },
+                        )?,
+                        expiry: DateTime::parse_from_rfc3339(&si.access_policy.expiry)
+                            .with_context(ErrorKind::DataConversion, || {
+                                format!(
+                                    "failed to parse DateTime from access_policy.expiry: {}",
+                                    &si.access_policy.expiry
+                                )
+                            })?,
+                        permission: si.access_policy.permission,
+                    };
 
                 sal.stored_access.push(sa);
             }

@@ -11,8 +11,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub use self::core::{Error, Result};
-
 #[cfg(feature = "account")]
 pub mod account;
 pub mod core;
