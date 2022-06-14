@@ -1,6 +1,6 @@
 use crate::container::requests::*;
 use crate::prelude::PublicAccess;
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_storage::core::clients::{
@@ -61,10 +61,7 @@ impl ContainerClient {
         self.storage_client.storage_account_client()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(
-        &'a self,
-        segments: I,
-    ) -> Result<url::Url, url::ParseError>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -124,7 +121,7 @@ impl ContainerClient {
 
     pub fn shared_access_signature(
         &self,
-    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>, crate::Error> {
+    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}",
             self.storage_account_client().account(),
@@ -142,10 +139,7 @@ impl ContainerClient {
         }
     }
 
-    pub fn generate_signed_container_url<T>(
-        &self,
-        signature: &T,
-    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>>
+    pub fn generate_signed_container_url<T>(&self, signature: &T) -> Result<url::Url>
     where
         T: SasToken,
     {
