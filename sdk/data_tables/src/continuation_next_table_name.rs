@@ -1,3 +1,4 @@
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_core::AppendToUrlQuery;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -12,11 +13,15 @@ impl ContinuationNextTableName {
         &self.0
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> crate::Result<Option<Self>> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>> {
         let header_as_str = headers
             .get("x-ms-continuation-NextTableName")
             .map(|item| item.to_str())
-            .transpose()?;
+            .transpose()
+            .context(
+                ErrorKind::DataConversion,
+                "failed to convert x-ms-continuation-NextTableName header value to string",
+            )?;
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

@@ -1,3 +1,4 @@
+use azure_core::error::{Error, ErrorKind, Result};
 use azure_core::Etag;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
@@ -20,9 +21,9 @@ pub struct SubmitTransactionResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         let body = std::str::from_utf8(response.body())?;
         debug!("{}", body);
         debug!("headers == {:#?}", response.headers());
@@ -44,9 +45,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                         .split_whitespace()
                         .nth(1)
                         .ok_or_else(|| {
-                            crate::Error::TransactionResponseParseError(
-                                "missing HTTP status code".to_owned(),
-                            )
+                            Error::message(ErrorKind::Other, "missing HTTP status code")
                         })?
                         .parse()?;
                 } else if line.starts_with("Location:") {
@@ -54,9 +53,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                         line.split_whitespace()
                             .nth(1)
                             .ok_or_else(|| {
-                                crate::Error::TransactionResponseParseError(
-                                    "invalid Location header".to_owned(),
-                                )
+                                Error::message(ErrorKind::Other, "invalid Location header")
                             })?
                             .parse()?,
                     );
@@ -67,8 +64,9 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                             .ok_or_else(|| {
                                 {
                                     {
-                                        crate::Error::TransactionResponseParseError(
-                                            "invalid DataServiceId header".to_owned(),
+                                        Error::message(
+                                            ErrorKind::Other,
+                                            "invalid DataServiceId header",
                                         )
                                     }
                                 }
@@ -79,15 +77,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                     operation_response.etag = Some(
                         line.split_whitespace()
                             .nth(1)
-                            .ok_or_else(|| {
-                                {
-                                    {
-                                        crate::Error::TransactionResponseParseError(
-                                            "invalid ETag header".to_owned(),
-                                        )
-                                    }
-                                }
-                            })?
+                            .ok_or_else(|| Error::message(ErrorKind::Other, "invalid ETag header"))?
                             .into(),
                     );
                 }
