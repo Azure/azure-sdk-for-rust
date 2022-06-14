@@ -50,6 +50,7 @@ use std::sync::Arc;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow
+#[fix_hidden_lifetime_bug::fix_hidden_lifetime_bug]
 pub async fn perform(
     http_client: Arc<dyn HttpClient>,
     client_id: &oauth2::ClientId,
