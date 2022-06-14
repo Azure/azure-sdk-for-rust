@@ -1,17 +1,16 @@
-use std::convert::{TryFrom, TryInto};
-
+use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::{Error, Result};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
-
-use crate::service::{ServiceClient, API_VERSION};
+use std::convert::{TryFrom, TryInto};
 
 /// Execute the request to get the configuration of a given identifier.
 pub(crate) async fn get_configuration<T>(
     service_client: &ServiceClient,
     configuration_id: Option<String>,
-) -> crate::Result<T>
+) -> Result<T>
 where
-    T: TryFrom<Response<Bytes>, Error = crate::Error>,
+    T: TryFrom<Response<Bytes>, Error = Error>,
 {
     let uri = match configuration_id {
         Some(val) => format!(

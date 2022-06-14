@@ -1,8 +1,7 @@
+use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::Result;
 use http::{Method, StatusCode};
 use serde::Serialize;
-
-use crate::service::{ServiceClient, API_VERSION};
-
 /// The ApplyOnEdgeDeviceBuilder is used to construct a new device identity
 /// or the update an existing one.
 pub struct ApplyOnEdgeDeviceBuilder<'a> {
@@ -91,7 +90,7 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// iot_hub.apply_on_edge_device("some-device").execute();
     /// ```
-    pub async fn execute(self) -> crate::Result<()> {
+    pub async fn execute(self) -> Result<()> {
         let uri = format!(
             "https://{}.azure-devices.net/devices/{}/applyConfigurationContent?api-version={}",
             self.service_client.iot_hub_name, self.device_id, API_VERSION

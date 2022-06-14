@@ -1,10 +1,9 @@
-use std::convert::TryInto;
-
-use http::{Method, StatusCode};
-use serde::Serialize;
-
 use crate::service::responses::InvokeMethodResponse;
 use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::Result;
+use http::{Method, StatusCode};
+use serde::Serialize;
+use std::convert::TryInto;
 
 /// The InvokeMethodBuilder is used for constructing the request to
 /// invoke a module or device method.
@@ -61,7 +60,7 @@ impl<'a> InvokeMethodBuilder<'a> {
     ///
     /// great_method.execute(serde_json::json!({"hello": "world"}));
     /// ```
-    pub async fn execute(&self, payload: serde_json::Value) -> crate::Result<InvokeMethodResponse> {
+    pub async fn execute(&self, payload: serde_json::Value) -> Result<InvokeMethodResponse> {
         let uri = match &self.module_id {
             Some(module_id_value) => format!(
                 "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",
