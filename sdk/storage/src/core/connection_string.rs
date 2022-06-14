@@ -17,18 +17,6 @@ pub const QUEUE_SECONDARY_ENDPOINT_KEY_NAME: &str = "QueueSecondaryEndpoint";
 pub const FILE_ENDPOINT_KEY_NAME: &str = "FileEndpoint";
 pub const FILE_SECONDARY_ENDPOINT_KEY_NAME: &str = "FileSecondaryEndpoint";
 
-// #[derive(Debug, thiserror::Error)]
-// pub enum ConnectionStringError {
-//     #[error("Missing value for key '{}'", key)]
-//     MissingValue { key: String },
-//     #[error("Unexpected key '{}'", key)]
-//     UnexpectedKey { key: String },
-//     #[error("Parse error: {}", msg)]
-//     ParseError { msg: String },
-//     #[error("Unsupported protocol {}", protocol)]
-//     UnsupportedProtocol { protocol: String },
-// }
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum EndpointProtocol {
     Http,

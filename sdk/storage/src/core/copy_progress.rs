@@ -9,16 +9,6 @@ pub struct CopyProgress {
     pub bytes_total: u64,
 }
 
-// use thiserror::Error;
-
-// #[derive(Error, Debug)]
-// pub enum CopyProgressParseError {
-//     #[error("number parse error")]
-//     Disconnect(#[from] std::num::ParseIntError),
-//     #[error("isufficient tokens error")]
-//     InsufficientTokens(),
-// }
-
 impl fmt::Display for CopyProgress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}/{}", self.bytes_copied, self.bytes_total)
