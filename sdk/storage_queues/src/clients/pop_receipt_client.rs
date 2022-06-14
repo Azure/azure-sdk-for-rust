@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::requests::*;
+use azure_core::error::Result;
 use azure_core::HttpClient;
 use azure_storage::core::clients::StorageClient;
 use std::sync::Arc;
@@ -51,7 +52,7 @@ impl PopReceiptClient {
             .http_client()
     }
 
-    pub(crate) fn pop_receipt_url(&self) -> Result<url::Url, url::ParseError> {
+    pub(crate) fn pop_receipt_url(&self) -> Result<url::Url> {
         let mut url = self.queue_client.url_with_segments(
             ["messages", self.pop_receipt.message_id()]
                 .iter()

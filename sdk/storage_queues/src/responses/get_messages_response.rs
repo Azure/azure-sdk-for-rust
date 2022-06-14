@@ -1,4 +1,5 @@
 use crate::PopReceipt;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::utc_date_from_rfc2822;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
@@ -54,15 +55,15 @@ struct MessagesInternal {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetMessagesResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         let headers = response.headers();
         let body = response.body();
 
         debug!("headers == {:?}", headers);
         debug!("body == {:#?}", body);
-        let response: MessagesInternal = read_xml(body)?;
+        let response: MessagesInternal = read_xml(body).map_kind(ErrorKind::DataConversion)?;
         debug!("response == {:?}", response);
 
         let mut messages = Vec::new();

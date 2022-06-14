@@ -1,3 +1,4 @@
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::utc_date_from_rfc2822;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::xml::read_xml;
@@ -42,14 +43,15 @@ struct QueueMessageInternal {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for PutMessageResponse {
-    type Error = crate::Error;
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    type Error = Error;
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         let headers = response.headers();
         let body = response.body();
 
         debug!("headers == {:?}", headers);
         debug!("body == {:#?}", body);
-        let response: PutMessageResponseInternal = read_xml(body)?;
+        let response: PutMessageResponseInternal =
+            read_xml(body).map_kind(ErrorKind::DataConversion)?;
         let queue_message = response.queue_message;
 
         let queue_message = QueueMessage {

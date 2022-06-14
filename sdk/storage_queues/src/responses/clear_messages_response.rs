@@ -1,3 +1,4 @@
+use azure_core::error::{Error, Result};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::response::Response;
@@ -9,9 +10,9 @@ pub struct ClearMessagesResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for ClearMessagesResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         debug!("response == {:?}", response);
 
         Ok(ClearMessagesResponse {
