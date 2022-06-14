@@ -1,8 +1,6 @@
-use crate::clients::table_service_client::TableServiceClient;
-use azure_core::{headers::HeaderName, setters, Context, Response};
-use azure_storage::Result;
-
 use super::MINIMAL_METADATA;
+use crate::clients::table_service_client::TableServiceClient;
+use azure_core::{error::Result, headers::HeaderName, setters, Context, Response};
 
 #[derive(Debug, Clone)]
 pub struct DeleteTableBuilder {

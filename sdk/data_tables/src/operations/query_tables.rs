@@ -1,10 +1,8 @@
 use super::{TableItem, MINIMAL_METADATA};
 use crate::clients::table_service_client::TableServiceClient;
-use azure_core::error::Result;
-use azure_core::headers;
 use azure_core::{
-    collect_pinned_stream, headers::HeaderName, prelude::Continuation, setters, Context,
-    Continuable, Pageable, Response,
+    collect_pinned_stream, error::Error, error::Result, headers, headers::HeaderName,
+    prelude::Continuation, setters, Context, Continuable, Pageable, Response,
 };
 use http::HeaderMap;
 use serde::{Deserialize, Serialize};
@@ -17,7 +15,7 @@ pub struct QueryTablesBuilder {
     client: TableServiceClient,
 }
 
-pub type QueryTables = Pageable<QueryTablesResponse, azure_core::error::Error>;
+pub type QueryTables = Pageable<QueryTablesResponse, Error>;
 
 impl QueryTablesBuilder {
     pub(crate) fn new(client: TableServiceClient) -> Self {

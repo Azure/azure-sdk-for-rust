@@ -1,6 +1,7 @@
+use super::RETURN_NO_CONTENT;
 use crate::{clients::table_service_client::TableServiceClient, operations::MINIMAL_METADATA};
-use azure_core::{headers::HeaderName, setters, Context, Response};
-use azure_storage::Result;
+use azure_core::{error::Result, headers::HeaderName, setters, Context, Response};
+use bytes::Bytes;
 
 #[derive(Debug, Clone)]
 pub struct CreateTableBuilder {
@@ -33,14 +34,13 @@ impl CreateTableBuilder {
             let body = CreateTableRequest {
                 table_name: self.table_name.as_str(),
             };
-            let body = serde_json::to_string(&body).unwrap(); // todo - use ? instate of unwrap
-            let body = bytes::Bytes::from(body);
+            let body = Bytes::from(serde_json::to_string(&body)?);
 
             let headers = request.headers_mut();
             let body_hash = base64::encode(md5::compute(&body).as_ref());
             headers.insert(HeaderName::from("content-md5"), body_hash);
             headers.insert(HeaderName::from("content-length"), body.len().to_string());
-            headers.insert(HeaderName::from("prefer"), "return-content");
+            headers.insert(HeaderName::from("prefer"), RETURN_NO_CONTENT);
             headers.insert(HeaderName::from("accept"), MINIMAL_METADATA);
             request.set_body(body);
 
@@ -66,7 +66,7 @@ pub struct CreateTableResponse {
 }
 
 impl CreateTableResponse {
-    pub async fn try_from(response: Response) -> azure_storage::Result<Self> {
+    pub async fn try_from(response: Response) -> Result<Self> {
         let body = response.into_body_string().await;
         Ok(serde_json::from_slice(body.as_bytes())?)
     }

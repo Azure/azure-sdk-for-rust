@@ -16,8 +16,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut stream = table_service.query_tables().max_per_page(5).into_stream();
-    while let Some(Ok(response)) = stream.next().await {
-        for table in response.tables {
+    while let Some(Ok(tables)) = stream.next().await {
+        for table in tables {
             let _ = table_service
                 .delete_table(&table.name)
                 .into_future()
