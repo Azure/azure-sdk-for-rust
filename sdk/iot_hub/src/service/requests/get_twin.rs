@@ -1,5 +1,5 @@
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, Result};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 use std::convert::TryFrom;
@@ -26,9 +26,7 @@ where
     };
 
     let request = service_client.prepare_request(&uri, Method::GET);
-    let request = request
-        .body(azure_core::EMPTY_BODY)
-        .map_kind(ErrorKind::Io)?;
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
     service_client
         .http_client()
