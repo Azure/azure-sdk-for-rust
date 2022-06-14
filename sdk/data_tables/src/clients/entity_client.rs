@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::requests::*;
+use azure_core::error::{Error, ErrorKind, Result};
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -7,11 +8,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub trait AsEntityClient<RK: Into<String>> {
-    fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>, url::ParseError>;
+    fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>>;
 }
 
 impl<RK: Into<String>> AsEntityClient<RK> for Arc<PartitionKeyClient> {
-    fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>, url::ParseError> {
+    fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>> {
         EntityClient::new(self.clone(), row_key)
     }
 }
@@ -27,14 +28,19 @@ impl EntityClient {
     pub(crate) fn new<RK: Into<String>>(
         partition_key_client: Arc<PartitionKeyClient>,
         row_key: RK,
-    ) -> Result<Arc<Self>, url::ParseError> {
+    ) -> Result<Arc<Self>> {
         let row_key = row_key.into();
         let mut url = partition_key_client
             .storage_account_client()
             .table_storage_url()
             .to_owned();
         url.path_segments_mut()
-            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .map_err(|_e| {
+                Error::message(
+                    ErrorKind::DataConversion,
+                    "failed to get path segments from EntityClient url",
+                )
+            })?
             .push(&format!(
                 "{}(PartitionKey='{}',RowKey='{}')",
                 partition_key_client.table_client().table_name(),
@@ -97,7 +103,7 @@ impl EntityClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> Result<(Request<Bytes>, url::Url)> {
         self.partition_key_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

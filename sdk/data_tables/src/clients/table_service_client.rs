@@ -1,4 +1,5 @@
 use crate::requests::ListTablesBuilder;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_storage::core::clients::{StorageAccountClient, StorageClient};
 use bytes::Bytes;
 use http::method::Method;
@@ -7,11 +8,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub trait AsTableServiceClient {
-    fn as_table_service_client(&self) -> Result<Arc<TableServiceClient>, url::ParseError>;
+    fn as_table_service_client(&self) -> Result<Arc<TableServiceClient>>;
 }
 
 impl AsTableServiceClient for Arc<StorageClient> {
-    fn as_table_service_client(&self) -> Result<Arc<TableServiceClient>, url::ParseError> {
+    fn as_table_service_client(&self) -> Result<Arc<TableServiceClient>> {
         TableServiceClient::new(self.clone())
     }
 }
@@ -23,7 +24,7 @@ pub struct TableServiceClient {
 }
 
 impl TableServiceClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>) -> Result<Arc<Self>, url::ParseError> {
+    pub(crate) fn new(storage_client: Arc<StorageClient>) -> Result<Arc<Self>> {
         let mut url = storage_client
             .storage_account_client()
             .table_storage_url()
@@ -60,7 +61,7 @@ impl TableServiceClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> Result<(Request<Bytes>, url::Url)> {
         self.storage_client
             .storage_account_client()
             .prepare_request(
@@ -70,6 +71,7 @@ impl TableServiceClient {
                 azure_storage::core::clients::ServiceType::Table,
                 request_body,
             )
+            .context(ErrorKind::Other, "failed to prepare request")
     }
 }
 

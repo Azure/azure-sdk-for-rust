@@ -5,8 +5,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub use azure_storage::{Error, Result};
-
 pub mod clients;
 mod continuation_next_partition_and_row_key;
 mod continuation_next_table_name;

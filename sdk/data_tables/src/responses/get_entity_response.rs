@@ -1,3 +1,4 @@
+use azure_core::error::{Error, Result};
 use azure_core::{headers::etag_from_headers, Etag};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
@@ -28,9 +29,9 @@ impl<E> TryFrom<&Response<Bytes>> for GetEntityResponse<E>
 where
     E: DeserializeOwned,
 {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         debug!("{}", std::str::from_utf8(response.body())?);
         debug!("headers == {:#?}", response.headers());
 

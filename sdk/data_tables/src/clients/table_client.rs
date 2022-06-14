@@ -1,5 +1,6 @@
 use crate::clients::TableServiceClient;
 use crate::requests::*;
+use azure_core::error::Result;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use http::method::Method;
@@ -71,7 +72,7 @@ impl TableClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> Result<(Request<Bytes>, url::Url)> {
         self.table_service_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

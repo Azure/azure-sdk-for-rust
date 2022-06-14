@@ -1,4 +1,5 @@
 use crate::EntityWithMetadata;
+use azure_core::error::{Error, ErrorKind, Result};
 use azure_core::{
     headers::{etag_from_headers, get_str_from_headers},
     Etag,
@@ -26,9 +27,9 @@ impl<E> TryFrom<&Response<Bytes>> for InsertEntityResponse<E>
 where
     E: DeserializeOwned,
 {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         debug!("{}", std::str::from_utf8(response.body())?);
         debug!("headers == {:#?}", response.headers());
 
@@ -37,8 +38,9 @@ where
                 "return-no-content" => None,
                 "return-content" => Some(response.try_into()?),
                 _ => {
-                    return Err(crate::Error::GenericErrorWithText(
-                        "Unexpected value for preference-applied header".to_owned(),
+                    return Err(Error::message(
+                        ErrorKind::Other,
+                        "Unexpected value for preference-applied header",
                     ))
                 }
             };

@@ -1,3 +1,4 @@
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_core::AppendToUrlQuery;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -15,16 +16,24 @@ impl ContinuationNextPartitionAndRowKey {
         &self.0
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> crate::Result<Option<Self>> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>> {
         let partition_header_as_str = headers
             .get("x-ms-continuation-NextPartitionKey")
             .map(|item| item.to_str())
-            .transpose()?;
+            .transpose()
+            .context(
+                ErrorKind::DataConversion,
+                "failed to convert x-ms-continuation-NextPartitionKey header value to string",
+            )?;
 
         let row_header_as_str = headers
             .get("x-ms-continuation-NextRowKey")
             .map(|item| item.to_str())
-            .transpose()?;
+            .transpose()
+            .context(
+                ErrorKind::DataConversion,
+                "failed to convert x-ms-continuation-NextRowKey header value to string",
+            )?;
 
         Ok(partition_header_as_str.filter(|h| !h.is_empty()).map(|h| {
             ContinuationNextPartitionAndRowKey::new(
