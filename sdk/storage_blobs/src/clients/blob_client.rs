@@ -1,6 +1,7 @@
 use crate::blob::requests::*;
 use crate::prelude::*;
 use crate::BA512Range;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::prelude::*;
 use azure_core::{HttpClient, HttpError};
 use azure_storage::core::clients::StorageCredentials;
@@ -63,16 +64,14 @@ impl BlobClient {
         self.container_client.as_ref()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(
-        &'a self,
-        segments: I,
-    ) -> Result<url::Url, url::ParseError>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
         let blob_name_with_segments = self.blob_name.split('/').into_iter().chain(segments);
         self.container_client
             .url_with_segments(blob_name_with_segments)
+            .map_kind(ErrorKind::DataConversion)
     }
 
     pub fn get(&self) -> GetBlobBuilder {
@@ -176,7 +175,7 @@ impl BlobClient {
 
     pub fn shared_access_signature(
         &self,
-    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>, crate::Error> {
+    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
             self.container_client.storage_account_client().account(),
@@ -189,17 +188,13 @@ impl BlobClient {
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Blob),
             ),
-            _ => Err(crate::Error::OperationNotSupported(
-                "Shared access signature generation".to_owned(),
-                "SAS can be generated only from key and account clients".to_owned(),
+            _ => Err(Error::message(ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated only from key and account clients",
             )),
         }
     }
 
-    pub fn generate_signed_blob_url<T>(
-        &self,
-        signature: &T,
-    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>>
+    pub fn generate_signed_blob_url<T>(&self, signature: &T) -> Result<url::Url>
     where
         T: SasToken,
     {
@@ -219,7 +214,7 @@ impl BlobClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    pub async fn exists(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn exists(&self) -> Result<bool> {
         let result = self.get_properties().execute().await.map(|_| true);
 
         if let Err(err) = &result {

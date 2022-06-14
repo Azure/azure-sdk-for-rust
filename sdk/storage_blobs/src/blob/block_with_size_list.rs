@@ -1,5 +1,7 @@
 use crate::blob::BlobBlockType;
 use crate::blob::BlobBlockWithSize;
+use azure_core::error::{ErrorKind, ResultExt};
+
 #[derive(Debug, Deserialize)]
 struct Name {
     #[serde(rename = "$value")]
@@ -41,7 +43,8 @@ pub struct BlockWithSizeList {
 
 impl BlockWithSizeList {
     pub fn try_from_xml(xml: &str) -> crate::Result<Self> {
-        let bl: BlockList = serde_xml_rs::de::from_reader(xml.as_bytes())?;
+        let bl: BlockList =
+            serde_xml_rs::de::from_reader(xml.as_bytes()).map_kind(ErrorKind::DataConversion)?;
         debug!("bl == {:?}", bl);
 
         let mut lbs = BlockWithSizeList { blocks: Vec::new() };
@@ -50,7 +53,9 @@ impl BlockWithSizeList {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Committed(
-                        base64::decode(&b_val.name.value)?.into(),
+                        base64::decode(&b_val.name.value)
+                            .map_kind(ErrorKind::DataConversion)?
+                            .into(),
                     ),
                     size_in_bytes: b_val.size.value,
                 });
@@ -61,7 +66,9 @@ impl BlockWithSizeList {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Uncommitted(
-                        base64::decode(&b_val.name.value)?.into(),
+                        base64::decode(&b_val.name.value)
+                            .map_kind(ErrorKind::DataConversion)?
+                            .into(),
                     ),
                     size_in_bytes: b_val.size.value,
                 });
