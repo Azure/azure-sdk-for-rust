@@ -1,13 +1,12 @@
 #![allow(missing_docs)]
 
-use std::convert::TryInto;
-
+use crate::service::{responses::QueryResponse, ServiceClient, API_VERSION};
+use azure_core::error::Result;
 use azure_core::prelude::*;
 use azure_core::setters;
 use http::{Method, StatusCode};
 use serde::Serialize;
-
-use crate::service::{responses::QueryResponse, ServiceClient, API_VERSION};
+use std::convert::TryInto;
 
 /// Body for the Query request
 #[derive(Serialize, Debug)]

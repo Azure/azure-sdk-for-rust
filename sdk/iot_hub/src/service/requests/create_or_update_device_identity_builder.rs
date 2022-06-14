@@ -4,7 +4,7 @@ use crate::service::resources::{
 };
 use crate::service::responses::DeviceIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::{Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, Result};
 use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
@@ -64,7 +64,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
                 Some(etag) => {
                     request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
                 }
-                None => return Err(Error::EtagNotSet),
+                None => return Err(Error::message(ErrorKind::Other, "etag is not set")),
             }
         }
 

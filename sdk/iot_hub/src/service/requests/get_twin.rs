@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
-use std::convert::TryInto;
-
+use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
-
-use crate::service::{ServiceClient, API_VERSION};
+use std::convert::TryFrom;
+use std::convert::TryInto;
 
 /// Execute the request to get the twin of a module or device.
 pub(crate) async fn get_twin<T>(
@@ -27,7 +26,9 @@ where
     };
 
     let request = service_client.prepare_request(&uri, Method::GET);
-    let request = request.body(azure_core::EMPTY_BODY)?;
+    let request = request
+        .body(azure_core::EMPTY_BODY)
+        .map_kind(ErrorKind::Io)?;
 
     service_client
         .http_client()

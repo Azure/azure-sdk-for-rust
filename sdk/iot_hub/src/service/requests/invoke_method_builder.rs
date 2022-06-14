@@ -1,10 +1,9 @@
-use std::convert::TryInto;
-
-use http::{Method, StatusCode};
-use serde::Serialize;
-
 use crate::service::responses::InvokeMethodResponse;
 use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::Result;
+use http::{Method, StatusCode};
+use serde::Serialize;
+use std::convert::TryInto;
 
 /// The InvokeMethodBuilder is used for constructing the request to
 /// invoke a module or device method.

@@ -1,6 +1,6 @@
-use http::{Method, StatusCode};
-
 use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::Result;
+use http::{Method, StatusCode};
 
 /// The DeleteConfigurationBuilder is used to construct a request to delete a configuration.
 pub struct DeleteConfigurationBuilder<'a> {

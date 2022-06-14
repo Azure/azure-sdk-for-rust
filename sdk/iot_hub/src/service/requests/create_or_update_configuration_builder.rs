@@ -1,4 +1,4 @@
-use azure_core::error::{Result, ResultExt};
+use azure_core::error::Result;
 use http::Method;
 use serde::Serialize;
 use std::collections::HashMap;

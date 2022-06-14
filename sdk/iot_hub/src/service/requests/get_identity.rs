@@ -1,9 +1,8 @@
-use std::convert::{TryFrom, TryInto};
-
+use crate::service::{ServiceClient, API_VERSION};
+use azure_core::error::{Error, Result};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
-
-use crate::service::{ServiceClient, API_VERSION};
+use std::convert::{TryFrom, TryInto};
 
 /// Execute the request to get the identity of a device or module.
 pub(crate) async fn get_identity<T>(

@@ -1,4 +1,4 @@
-use azure_core::error::{Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::HttpClient;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
@@ -90,10 +90,14 @@ impl ServiceClient {
             iot_hub_name, &expiry_date_seconds
         );
 
-        let key = decode(private_key).map_err(GenerateSasTokenError::DecodePrivateKeyError)?;
+        let key = decode(private_key).with_context(ErrorKind::Other, || {
+            format!("failed to decode the given private key: {private_key}")
+        })?;
 
         let mut hmac = HmacSHA256::new_from_slice(key.as_ref())
-            .map_err(GenerateSasTokenError::HashingFailed)?;
+            .with_context(ErrorKind::Other, || {
+                format!("failed to use the given private key for the hashing algorithm: {key:?}")
+            })?;
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
@@ -132,7 +136,7 @@ impl ServiceClient {
         key_name: T,
         private_key: U,
         expires_in_seconds: i64,
-    ) -> Result<Self, Box<dyn std::error::Error>>
+    ) -> Result<Self>
     where
         S: Into<String>,
         T: AsRef<str>,
@@ -172,7 +176,7 @@ impl ServiceClient {
         http_client: Arc<dyn HttpClient>,
         connection_string: S,
         expires_in_seconds: i64,
-    ) -> Result<Self, FromConnectionStringError>
+    ) -> Result<Self>
     where
         S: AsRef<str>,
     {
@@ -182,7 +186,10 @@ impl ServiceClient {
         let mut primary_key: Option<&str> = None;
 
         if parts.len() != 3 {
-            return Err(FromConnectionStringError::InvalidError);
+            return Err(Error::message(
+                ErrorKind::Other,
+                "given connection string is invalid",
+            ));
         }
 
         for val in parts.iter() {
@@ -208,15 +215,30 @@ impl ServiceClient {
             }
         }
 
-        let iot_hub_name = iot_hub_name.ok_or(FromConnectionStringError::FailedToGetHostname)?;
+        let iot_hub_name = iot_hub_name.ok_or_else(|| {
+            Error::message(
+                ErrorKind::Other,
+                "failed to get the hostname from the given connection string",
+            )
+        })?;
 
-        let key_name = key_name.ok_or(FromConnectionStringError::FailedToGetSharedAccessKey)?;
+        let key_name = key_name.ok_or_else(|| {
+            Error::message(
+                ErrorKind::Other,
+                "failed to get the shared access key name from the given connection string",
+            )
+        })?;
 
-        let primary_key = primary_key.ok_or(FromConnectionStringError::FailedToGetPrimaryKey)?;
+        let primary_key = primary_key.ok_or_else(|| {
+            Error::message(
+                ErrorKind::Other,
+                "failed to get the primary key from the given connection string",
+            )
+        })?;
 
         let sas_token =
             Self::generate_sas_token(iot_hub_name, key_name, primary_key, expires_in_seconds)
-                .map_err(FromConnectionStringError::GenerateSasTokenError)?;
+                .context(ErrorKind::Other, "generate SAS token error")?;
 
         Ok(Self {
             http_client,

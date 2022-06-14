@@ -1,4 +1,4 @@
-use azure_core::error::{Error, Result, ResultExt};
+use azure_core::error::{Error, Result};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 use serde::Serialize;

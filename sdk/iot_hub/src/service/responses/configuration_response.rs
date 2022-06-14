@@ -1,5 +1,5 @@
 use crate::service::resources::Configuration;
-use azure_core::error::{Error, Result, ResultExt};
+use azure_core::error::Error;
 use http::Response;
 use serde::{Deserialize, Serialize};
 
