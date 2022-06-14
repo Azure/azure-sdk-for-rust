@@ -1,7 +1,7 @@
 use crate::service::resources::{
     AuthenticationType, ConnectionState, DeviceCapabilities, Status, TwinProperties, X509ThumbPrint,
 };
-use azure_core::error::Error;
+use azure_core::error::{Error, Result};
 use http::Response;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -49,7 +49,7 @@ pub struct DeviceTwinResponse {
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeviceTwinResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
         let body = response.body();
 
         let device_twin_response: DeviceTwinResponse = serde_json::from_slice(body)?;

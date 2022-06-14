@@ -1,5 +1,5 @@
 use crate::service::resources::{AuthenticationMechanism, ConnectionState};
-use azure_core::error::Error;
+use azure_core::error::{Error, Result};
 use http::Response;
 use serde::Deserialize;
 
@@ -33,7 +33,7 @@ pub struct ModuleIdentityResponse {
 impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleIdentityResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
         let body = response.body();
 
         let module_identity_response: ModuleIdentityResponse = serde_json::from_slice(body)?;
