@@ -1,6 +1,6 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 #[allow(unused_imports)]
-use crate::error::{ErrorKind, ResultExt};
+use crate::error::{Error, ErrorKind, ResultExt};
 #[allow(unused_imports)]
 use crate::Body;
 use async_trait::async_trait;
