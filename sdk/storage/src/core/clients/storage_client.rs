@@ -1,4 +1,5 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
+use crate::operations::*;
 use azure_core::error::{Error, ErrorKind, Result};
 use bytes::Bytes;
 use http::method::Method;
@@ -76,10 +77,8 @@ impl StorageClient {
     }
 
     #[cfg(feature = "account")]
-    pub fn get_account_information(
-        &self,
-    ) -> crate::account::requests::GetAccountInformationBuilder {
-        crate::account::requests::GetAccountInformationBuilder::new(self)
+    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
+        GetAccountInformationBuilder::new(self.clone())
     }
 
     pub fn find_blobs_by_tags(&self) -> crate::account::requests::FindBlobsByTagsBuilder {

@@ -57,6 +57,10 @@ impl Request {
         &self.uri
     }
 
+    pub fn uri_mut(&mut self) -> &mut Uri {
+        &mut self.uri
+    }
+
     pub fn method(&self) -> Method {
         self.method.clone()
     }
