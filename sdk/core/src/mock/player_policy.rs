@@ -1,5 +1,6 @@
 use super::mock_response::MockResponse;
 use super::mock_transaction::MockTransaction;
+use crate::error::{Error, ErrorKind};
 use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request, TransportOptions};
 use std::sync::Arc;
@@ -57,9 +58,12 @@ impl Policy for MockTransportPlayerPolicy {
             .map(|p| p.to_string())
             .unwrap_or_else(String::new);
         if expected_uri != actual_uri {
-            return Err(
-                super::MockFrameworkError::MismatchedRequestUri(actual_uri, expected_uri).into(),
-            );
+            return Err(Error::with_message(ErrorKind::MockFramework, || {
+                format!(
+                    "mismatched request uri. Actual '{0}', Expected: '{1}'",
+                    actual_uri, expected_uri
+                )
+            }));
         }
 
         // check if the passed request matches the one read from disk
@@ -83,37 +87,44 @@ impl Policy for MockTransportPlayerPolicy {
         // 1. There are no extra headers (in both the received and read request).
         // 2. Each header has the same value.
         if actual_headers.len() != expected_headers.len() {
-            return Err(super::MockFrameworkError::MismatchedRequestHeadersCount(
-                actual_headers.len(),
-                expected_headers.len(),
-            )
-            .into());
+            return Err(Error::with_message(ErrorKind::MockFramework, || {
+                format!(
+                    "different number of headers in request. Actual: {0}, Expected: {1}",
+                    actual_headers.len(),
+                    expected_headers.len(),
+                )
+            }));
         }
 
         for (actual_header_key, actual_header_value) in actual_headers.iter() {
             let (_, expected_header_value) = expected_headers
                 .iter()
                 .find(|(h, _)| actual_header_key.as_str() == h.as_str())
-                .ok_or(super::MockFrameworkError::MissingRequestHeader(
-                    actual_header_key.as_str().to_owned(),
-                ))?;
+                .ok_or_else(|| Error::with_message(ErrorKind::MockFramework, ||
+                    format!("received request have header {0} but it was not present in the read request",
+                    actual_header_key.as_str(),
+                )))?;
 
             if actual_header_value != expected_header_value {
-                return Err(super::MockFrameworkError::MismatchedRequestHeader(
-                    actual_header_key.as_str().to_owned(),
-                    actual_header_value.as_str().to_owned(),
-                    expected_header_value.as_str().to_owned(),
-                )
-                .into());
+                return Err(Error::with_message(ErrorKind::MockFramework, || {
+                    format!(
+                        "request header {0} value is different. Actual: {1}, Expected: {2}",
+                        actual_header_key.as_str().to_owned(),
+                        actual_header_value.as_str().to_owned(),
+                        expected_header_value.as_str().to_owned(),
+                    )
+                }));
             }
         }
 
         if expected_request.method() != request.method() {
-            return Err(super::MockFrameworkError::MismatchedRequestHTTPMethod(
-                expected_request.method(),
-                request.method(),
-            )
-            .into());
+            return Err(Error::with_message(ErrorKind::MockFramework, || {
+                format!(
+                    "mismatched HTTP request method. Actual: {0}, Expected: {1}",
+                    expected_request.method(),
+                    request.method(),
+                )
+            }));
         }
 
         let actual_body = match request.body() {
@@ -127,11 +138,13 @@ impl Policy for MockTransportPlayerPolicy {
         };
 
         if actual_body != expected_body {
-            return Err(super::MockFrameworkError::MismatchedRequestBody(
-                actual_body.to_vec(),
-                expected_body.to_vec(),
-            )
-            .into());
+            return Err(Error::with_message(ErrorKind::MockFramework, || {
+                format!(
+                    "mismatched request body. Actual: {0:?}, Expected: {1:?}",
+                    actual_body.to_vec(),
+                    expected_body.to_vec(),
+                )
+            }));
         }
 
         self.transaction.increment_number();
