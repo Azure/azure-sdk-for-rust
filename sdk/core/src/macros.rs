@@ -93,10 +93,10 @@ macro_rules! create_enum {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::error::Error::with_message($crate::error::ErrorKind::DataConversion, || "unknown variant of {} found: \"{}\"",
+                    _ => Err($crate::error::Error::with_message($crate::error::ErrorKind::DataConversion, || format!("unknown variant of {} found: \"{}\"",
                         stringify!($name),
                          s
-                    ))
+                    )))
                 }
             }
         }
