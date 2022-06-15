@@ -21,49 +21,6 @@ pub struct CosmosClient {
     cloud_location: CloudLocation,
 }
 
-/// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone, Default)]
-pub struct CosmosOptions {
-    options: ClientOptions,
-}
-
-impl CosmosOptions {
-    /// Create new options
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    #[cfg(feature = "mock_transport_framework")]
-    /// Create new options with a given transaction name
-    pub fn new_with_transaction_name(name: String) -> Self {
-        Self {
-            options: ClientOptions::new_with_transaction_name(name.into()),
-        }
-    }
-}
-
-/// Create a Pipeline from CosmosOptions
-fn new_pipeline_from_options(
-    options: CosmosOptions,
-    authorization_token: AuthorizationToken,
-) -> Pipeline {
-    let auth_policy: Arc<dyn azure_core::Policy> =
-        Arc::new(crate::AuthorizationPolicy::new(authorization_token));
-
-    // take care of adding the AuthorizationPolicy as **last** retry policy.
-    // Policies can change the url and/or the headers and the AuthorizationPolicy
-    // must be able to inspect them or the resulting token will be invalid.
-    let per_retry_policies = vec![auth_policy];
-
-    Pipeline::new(
-        option_env!("CARGO_PKG_NAME"),
-        option_env!("CARGO_PKG_VERSION"),
-        options.options,
-        Vec::new(),
-        per_retry_policies,
-    )
-}
-
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
     pub fn new(account: String, auth_token: AuthorizationToken, options: CosmosOptions) -> Self {
@@ -186,6 +143,49 @@ impl CosmosClient {
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
+    }
+}
+
+/// Create a Pipeline from CosmosOptions
+fn new_pipeline_from_options(
+    options: CosmosOptions,
+    authorization_token: AuthorizationToken,
+) -> Pipeline {
+    let auth_policy: Arc<dyn azure_core::Policy> =
+        Arc::new(crate::AuthorizationPolicy::new(authorization_token));
+
+    // The `AuthorizationPolicy` must be the **last** retry policy.
+    // Policies can change the url and/or the headers, and the `AuthorizationPolicy`
+    // must be able to inspect them or the resulting token will be invalid.
+    let per_retry_policies = vec![auth_policy];
+
+    Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        options.options,
+        Vec::new(),
+        per_retry_policies,
+    )
+}
+
+/// Options for specifying how a Cosmos client will behave
+#[derive(Debug, Clone, Default)]
+pub struct CosmosOptions {
+    options: ClientOptions,
+}
+
+impl CosmosOptions {
+    /// Create new options
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction_name(name: String) -> Self {
+        Self {
+            options: ClientOptions::new_with_transaction_name(name.into()),
+        }
     }
 }
 
