@@ -80,23 +80,23 @@ macro_rules! create_enum {
         }
 
         impl $crate::parsing::FromStringOptional<$name> for $name {
-            fn from_str_optional(s : &str) -> ::std::result::Result<$name, $crate::TraversingError> {
-                s.parse::<$name>().map_err(|e| { $crate::TraversingError::Parse(e) })
+            fn from_str_optional(s : &str) -> $crate::error::Result<$name> {
+                s.parse::<$name>()
             }
         }
 
         impl ::std::str::FromStr for $name {
-            type Err = $crate::ParseError;
+            type Err = $crate::error::Error;
 
-            fn from_str(s: &str) -> ::std::result::Result<$name, $crate::ParseError> {
+            fn from_str(s: &str) -> $crate::error::Result<$name> {
                 match s {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::ParseError::UnknownVariant {
-                        item: stringify!($name),
-                        variant: s.to_owned()
-                    })
+                    _ => Err($crate::error::Error::with_message($crate::error::ErrorKind::DataConversion, || "unknown variant of {} found: \"{}\"",
+                        stringify!($name),
+                         s
+                    ))
                 }
             }
         }
@@ -148,7 +148,6 @@ macro_rules! create_enum {
 
 #[cfg(test)]
 mod test {
-    use crate::ParseError;
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
@@ -185,14 +184,7 @@ mod test {
 
     #[test]
     fn test_color_parse_err_1() {
-        let err = "Red".parse::<ColorsMonochrome>().unwrap_err();
-        assert_eq!(
-            err,
-            ParseError::UnknownVariant {
-                item: "ColorsMonochrome",
-                variant: "Red".to_string()
-            }
-        );
+        "Red".parse::<ColorsMonochrome>().unwrap_err();
     }
 
     #[test]

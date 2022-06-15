@@ -1,8 +1,8 @@
+use crate::error::{Error, Result};
 #[allow(unused_imports)]
 use crate::error::{ErrorKind, ResultExt};
 #[allow(unused_imports)]
 use crate::Body;
-use crate::{error::Error, HttpError};
 use async_trait::async_trait;
 use bytes::Bytes;
 #[allow(unused_imports)]
@@ -24,7 +24,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// Send out a request using `hyperium/http`'s types.
     ///
     /// This method is considered deprecated and should not be used in new code.
-    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError>;
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>>;
 
     /// Send out a request using `azure_core`'s types.
     ///
@@ -34,7 +34,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// responsibility of another policy (not the transport one). It does not consume the request.
     /// Implementors are expected to clone the necessary parts of the request and pass them to the
     /// underlying transport.
-    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response, Error>;
+    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response>;
 
     /// Send out a request and validate it was in the `2xx` range, using
     /// `hyperium/http`'s types.
@@ -46,14 +46,14 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
         _expected_status: StatusCode,
-    ) -> Result<Response<Bytes>, HttpError> {
+    ) -> Result<Response<Bytes>> {
         let response = self.execute_request(request).await?;
         let status = response.status();
         if (200..400).contains(&status.as_u16()) {
             Ok(response)
         } else {
             let body = response.into_body();
-            Err(crate::HttpError::StatusCode { status, body })
+            Err(ErrorKind::http_response_from_body(status.into(), &body).into())
         }
     }
 }
@@ -62,7 +62,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 #[cfg(not(target_arch = "wasm32"))]
 #[async_trait]
 impl HttpClient for reqwest::Client {
-    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method().clone(), url);
         for (header, value) in request.headers() {
@@ -72,12 +72,12 @@ impl HttpClient for reqwest::Client {
         let reqwest_request = reqwest_request
             .body(request.into_body())
             .build()
-            .map_err(|error| HttpError::BuildClientRequest(error.into()))?;
+            .context(ErrorKind::DataConversion, "failed to build request")?;
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(|error| HttpError::ExecuteRequest(error.into()))?;
+            .context(ErrorKind::Io, "failed to execute request")?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -90,14 +90,14 @@ impl HttpClient for reqwest::Client {
                 reqwest_response
                     .bytes()
                     .await
-                    .map_err(|error| HttpError::ReadBytes(error.into()))?,
+                    .context(ErrorKind::Io, "failed to read response bytes")?,
             )
-            .map_err(HttpError::BuildResponse)?;
+            .context(ErrorKind::DataConversion, "failed to build response")?;
 
         Ok(response)
     }
 
-    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response, Error> {
+    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method(), url);
         for (name, value) in request.headers().iter() {
@@ -146,7 +146,7 @@ impl HttpClient for reqwest::Client {
 }
 
 /// Serialize a type to json.
-pub fn to_json<T>(value: &T) -> Result<Bytes, serde_json::Error>
+pub fn to_json<T>(value: &T) -> Result<Bytes>
 where
     T: ?Sized + Serialize,
 {
