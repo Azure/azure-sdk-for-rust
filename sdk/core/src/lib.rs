@@ -15,7 +15,6 @@ mod bytes_stream;
 mod constants;
 mod context;
 pub mod error;
-mod errors;
 mod http_client;
 mod models;
 mod options;
@@ -41,7 +40,6 @@ use uuid::Uuid;
 pub use bytes_stream::*;
 pub use constants::*;
 pub use context::Context;
-pub use errors::*;
 #[doc(inline)]
 pub use headers::Header;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]

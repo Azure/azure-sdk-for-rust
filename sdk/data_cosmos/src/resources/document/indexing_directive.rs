@@ -1,5 +1,5 @@
+use azure_core::error::{Error, ErrorKind};
 use azure_core::headers::{self, AsHeaders};
-use azure_core::ParseError;
 use std::fmt;
 
 /// Whether the resource should be included in the index.
@@ -24,17 +24,19 @@ impl<'a> From<&'a IndexingDirective> for &'a str {
 }
 
 impl std::str::FromStr for IndexingDirective {
-    type Err = ParseError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "Default" => Ok(IndexingDirective::Default),
             "Exclude" => Ok(IndexingDirective::Exclude),
             "Include" => Ok(IndexingDirective::Include),
-            _ => Err(ParseError::UnknownVariant {
-                item: "IndexingDirective",
-                variant: s.to_owned(),
-            }),
+            _ => Err(Error::with_message(ErrorKind::DataConversion, || {
+                format!(
+                    "unknown variant of {} found: \"{}\"",
+                    "IndexingDirective", s
+                )
+            })),
         }
     }
 }

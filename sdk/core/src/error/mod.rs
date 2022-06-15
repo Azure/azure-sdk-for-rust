@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
-mod azure_core_errors;
 mod http_error;
 mod hyperium_http;
 mod macros;
