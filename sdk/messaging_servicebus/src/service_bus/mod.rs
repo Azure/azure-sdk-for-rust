@@ -130,9 +130,9 @@ async fn receive_and_delete_message(
 
     let req = prepare_request(&url, Method::DELETE, None, policy_name, signing_key)?;
 
-    Ok(http_client
+    http_client
         .execute_request_check_status(req, http::StatusCode::OK)
-        .await?)
+        .await
 }
 
 /// Non-destructively read a message
@@ -161,9 +161,9 @@ async fn peek_lock_message(
         signing_key,
     )?;
 
-    Ok(http_client
+    http_client
         .execute_request_check_status(req, http::StatusCode::CREATED)
-        .await?)
+        .await
 }
 
 /// Non-destructively read a message but track it
@@ -244,10 +244,9 @@ impl PeekLockResponse {
             &self.signing_key,
         )?;
 
-        Ok(self
-            .http_client
+        self.http_client
             .execute_request_check_status(req, http::StatusCode::OK)
-            .await?)
+            .await
     }
 
     /// Unlock a message in the lock

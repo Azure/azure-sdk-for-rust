@@ -1,8 +1,7 @@
-use azure_core::PermissionError;
+use azure_core::error::{Error, ErrorKind, Result};
+use azure_storage::StoredAccessPolicy;
 use chrono::{DateTime, FixedOffset};
 use std::convert::TryFrom;
-
-use azure_storage::StoredAccessPolicy;
 
 #[derive(Debug, Clone)]
 pub struct QueueStoredAccessPolicy {
@@ -91,9 +90,9 @@ impl QueueStoredAccessPolicy {
 }
 
 impl TryFrom<StoredAccessPolicy> for QueueStoredAccessPolicy {
-    type Error = PermissionError;
+    type Error = Error;
 
-    fn try_from(sap: StoredAccessPolicy) -> Result<Self, Self::Error> {
+    fn try_from(sap: StoredAccessPolicy) -> Result<Self> {
         let mut queue_sap = Self::new(sap.id, sap.start, sap.expiry);
 
         for token in sap.permission.chars() {
@@ -111,11 +110,14 @@ impl TryFrom<StoredAccessPolicy> for QueueStoredAccessPolicy {
                     queue_sap = queue_sap.enable_process();
                 }
                 c => {
-                    return Err(PermissionError::NonSupportedToken {
-                        service: "queue".to_owned(),
-                        received_token: c,
-                        supported_tokens: vec!['r', 'a', 'u', 'p'],
-                    })
+                    return Err(Error::with_message(ErrorKind::Credential, || {
+                        format!(
+                        "Permission token not supported in this service ({}). Received token {}, supported tokens {:?}",
+                        "queue",
+                        c,
+                        vec!['r', 'a', 'u', 'p'],
+                        )
+                    }))
                 }
             }
         }
