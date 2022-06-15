@@ -21,6 +21,8 @@ pub enum ResourceQuota {
     ClientEncryptionKeys(u64),
     InteropUsers(u64),
     AuthPolicyElements(u64),
+    RoleDefinitions(u64),
+    RoleAssignments(u64),
 }
 
 const DATABASES: &str = "databases=";
@@ -37,6 +39,8 @@ const FUNCTIONS: &str = "functions=";
 const CLIENT_ENCRYPTION_KEYS: &str = "clientEncryptionKeys=";
 const INTEROP_USERS: &str = "interopUsers=";
 const AUTH_POLICY_ELEMENTS: &str = "authPolicyElements=";
+const ROLE_DEFINITIONS: &str = "roleDefinitions=";
+const ROLE_ASSIGNMENTS: &str = "roleAssignments=";
 
 /// Parse a collection of [`ResourceQuota`] from a string
 pub(crate) fn resource_quotas_from_str(full_string: &str) -> Result<Vec<ResourceQuota>> {
@@ -78,6 +82,10 @@ pub(crate) fn resource_quotas_from_str(full_string: &str) -> Result<Vec<Resource
             v.push(ResourceQuota::InteropUsers(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
             v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(ROLE_DEFINITIONS) {
+            v.push(ResourceQuota::RoleDefinitions(parseu64(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(ROLE_ASSIGNMENTS) {
+            v.push(ResourceQuota::RoleAssignments(parseu64(stripped)?));
         } else {
             return Err(Error::with_message(ErrorKind::DataConversion, || {
                 format!(
@@ -125,7 +133,7 @@ mod tests {
                 ResourceQuota::Collections(5000),
                 ResourceQuota::Users(500000),
                 ResourceQuota::Permissions(2000000),
-                ResourceQuota::ClientEncryptionKeys(13)
+                ResourceQuota::ClientEncryptionKeys(13),
             ]
         );
 
@@ -140,7 +148,7 @@ mod tests {
             vec![
                 ResourceQuota::DocumentSize(0),
                 ResourceQuota::DocumentsSize(2),
-                ResourceQuota::CollectionSize(3)
+                ResourceQuota::CollectionSize(3),
             ]
         );
 
@@ -160,6 +168,17 @@ mod tests {
         assert_eq!(
             resource_quota,
             vec![ResourceQuota::ClientEncryptionKeys(13)]
+        );
+
+        let resource_quota =
+            resource_quotas_from_str("roleDefinitions=100;roleAssignments=2000;").unwrap();
+
+        assert_eq!(
+            resource_quota,
+            vec![
+                ResourceQuota::RoleDefinitions(100),
+                ResourceQuota::RoleAssignments(2000),
+            ]
         );
     }
 }

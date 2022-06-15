@@ -19,7 +19,7 @@
     "x-ms-number-of-read-regions": "0",
     "x-ms-request-charge": "2",
     "x-ms-request-duration-ms": "0.465",
-    "x-ms-resource-quota": "databases=1000;collections=5000;users=500000;permissions=2000000;clientEncryptionKeys=20;interopUsers=2000;authPolicyElements=200000;",
+    "x-ms-resource-quota": "databases=1000;collections=5000;users=500000;permissions=2000000;clientEncryptionKeys=20;interopUsers=2000;authPolicyElements=200000;roleDefinitions=100;roleAssignments=2000;",
     "x-ms-resource-usage": "databases=1;collections=1;users=0;permissions=0;clientEncryptionKeys=0;interopUsers=0;authPolicyElements=0;",
     "x-ms-schemaversion": "1.13",
     "x-ms-serviceversion": "version=2.14.0.0",
