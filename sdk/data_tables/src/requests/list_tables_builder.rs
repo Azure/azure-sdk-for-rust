@@ -1,10 +1,7 @@
-use crate::responses::*;
-use crate::{prelude::*, ContinuationNextTableName};
-use azure_core::prelude::*;
-use azure_core::{headers::add_optional_header, AppendToUrlQuery};
+use crate::{prelude::*, responses::*, ContinuationNextTableName};
+use azure_core::{error::Result, headers::add_optional_header, prelude::*, AppendToUrlQuery};
 use futures::stream::{unfold, Stream};
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
 
 #[cfg(test)]
@@ -40,9 +37,7 @@ impl<'a> ListTablesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ListTablesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ListTablesResponse> {
         let mut url = self.table_service_client.url().to_owned();
 
         self.filter.append_to_url_query(&mut url);
@@ -72,13 +67,10 @@ impl<'a> ListTablesBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
-    pub fn stream(
-        self,
-    ) -> impl Stream<Item = Result<ListTablesResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
-    {
+    pub fn stream(self) -> impl Stream<Item = Result<ListTablesResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

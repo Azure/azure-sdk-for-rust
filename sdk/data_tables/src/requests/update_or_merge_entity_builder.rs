@@ -1,9 +1,9 @@
-use crate::prelude::*;
-use crate::responses::*;
-use crate::IfMatchCondition;
-use crate::TransactionOperation;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
-use azure_core::prelude::*;
+use crate::{prelude::*, responses::*, IfMatchCondition, TransactionOperation};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header},
+    prelude::*,
+};
 use http::{method::Method, StatusCode};
 use serde::Serialize;
 use std::convert::TryInto;
@@ -42,7 +42,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         &self,
         entity: &E,
         if_match_condition: &IfMatchCondition,
-    ) -> Result<OperationOnEntityResponse, Box<dyn std::error::Error + Sync + Send>>
+    ) -> Result<OperationOnEntityResponse>
     where
         E: Serialize,
     {
@@ -75,14 +75,14 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
     pub fn to_transaction_operation<E>(
         &self,
         entity: &E,
         if_match_condition: &IfMatchCondition,
-    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>>
+    ) -> Result<TransactionOperation>
     where
         E: Serialize,
     {

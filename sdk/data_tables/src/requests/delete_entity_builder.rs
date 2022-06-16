@@ -1,9 +1,13 @@
-use crate::prelude::IfMatchCondition;
-use crate::prelude::*;
-use crate::responses::*;
-use crate::TransactionOperation;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
-use azure_core::prelude::*;
+use crate::{
+    prelude::{IfMatchCondition, *},
+    responses::*,
+    TransactionOperation,
+};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header},
+    prelude::*,
+};
 use http::{method::Method, StatusCode};
 use std::convert::TryInto;
 
@@ -31,9 +35,7 @@ impl<'a> DeleteEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<DeleteEntityResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<DeleteEntityResponse> {
         let mut url = self.entity_client.url().clone();
 
         self.timeout.append_to_url_query(&mut url);
@@ -58,12 +60,10 @@ impl<'a> DeleteEntityBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
-    pub fn to_transaction_operation(
-        &self,
-    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn to_transaction_operation(&self) -> Result<TransactionOperation> {
         let url = self.entity_client.url();
 
         let request = http::Request::builder()

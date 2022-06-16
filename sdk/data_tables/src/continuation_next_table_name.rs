@@ -1,5 +1,7 @@
-use azure_core::error::{ErrorKind, Result, ResultExt};
-use azure_core::AppendToUrlQuery;
+use azure_core::{
+    error::{ErrorKind, Result, ResultExt},
+    AppendToUrlQuery,
+};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContinuationNextTableName(String);

@@ -1,10 +1,11 @@
-use crate::prelude::*;
-use crate::requests::*;
+use crate::{prelude::*, requests::*};
 use azure_core::error::Result;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+use http::{
+    method::Method,
+    request::{Builder, Request},
+};
 use std::sync::Arc;
 
 pub trait AsPartitionKeyClient<PK: Into<String>> {

@@ -2,8 +2,10 @@ use crate::requests::ListTablesBuilder;
 use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_storage::core::clients::{StorageAccountClient, StorageClient};
 use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+use http::{
+    method::Method,
+    request::{Builder, Request},
+};
 use std::sync::Arc;
 use url::Url;
 

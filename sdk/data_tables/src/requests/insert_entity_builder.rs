@@ -1,8 +1,9 @@
-use crate::prelude::*;
-use crate::responses::*;
-use crate::TransactionOperation;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
-use azure_core::prelude::*;
+use crate::{prelude::*, responses::*, TransactionOperation};
+use azure_core::{
+    error::{Error, ErrorKind, Result},
+    headers::{add_mandatory_header, add_optional_header},
+    prelude::*,
+};
 use http::method::Method;
 use serde::{de::DeserializeOwned, Serialize};
 use std::convert::TryInto;
@@ -31,16 +32,13 @@ impl<'a> InsertEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute<E>(
-        &self,
-        entity: &E,
-    ) -> Result<InsertEntityResponse<E>, Box<dyn std::error::Error + Sync + Send>>
+    pub async fn execute<E>(&self, entity: &E) -> Result<InsertEntityResponse<E>>
     where
         E: Serialize + DeserializeOwned,
     {
         let mut url = self.table_client.url().to_owned();
         url.path_segments_mut()
-            .map_err(|_| "Invalid table URL")?
+            .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
             .pop()
             .push(self.table_client.table_name());
 
@@ -71,19 +69,16 @@ impl<'a> InsertEntityBuilder<'a> {
             .execute_request_check_status(request.0, self.return_entity.expected_return_code())
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
-    pub fn to_transaction_operation<E>(
-        &self,
-        entity: &E,
-    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>>
+    pub fn to_transaction_operation<E>(&self, entity: &E) -> Result<TransactionOperation>
     where
         E: Serialize,
     {
         let mut url = self.table_client.url().to_owned();
         url.path_segments_mut()
-            .map_err(|_| "Invalid table URL")?
+            .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
             .pop()
             .push(self.table_client.table_name());
 
