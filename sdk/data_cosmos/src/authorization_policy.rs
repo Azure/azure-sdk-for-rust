@@ -14,15 +14,18 @@ use url::form_urlencoded;
 const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 
-/// The `AuthorizationPolicy` takes care to authenticate your calls to Azure CosmosDB. Currently it
-/// supports two type of authorization: one at service level and another at resource level (see
-/// [AuthorizationToken] for more info). The policy must be added just before the transport policy
+/// The `AuthorizationPolicy` takes care to authenticate your calls to Azure CosmosDB.
+///
+/// Currently it supports two type of authorization: one at service level and another at resource level (see
+/// [`AuthorizationToken`] for more info). The policy must be added just before the transport policy
 /// because it needs to inspect the values that are about to be sent to the transport and inject
 /// the proper authorization token.
-/// The `AuthorizationPolicy` is the only owner of the passed credentials so if you want to
-/// authenticate the same operation with different credentials all you have to do is to swap the
+///
+/// The `AuthorizationPolicy` is the only owner of the passed credentials, so if you want to
+/// authenticate the same operation with different credentials, all you have to do is to swap the
 /// `AuthorizationPolicy`.
-/// This struct is `Debug` but secrets are encrypted by `AuthorizationToken` so there is no risk of
+///
+/// This struct implements `Debug` but secrets are encrypted by `AuthorizationToken` so there is no risk of
 /// leaks in debug logs (secrets are stored in cleartext in memory: dumps are still leaky).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthorizationPolicy {
@@ -100,9 +103,7 @@ impl Policy for AuthorizationPolicy {
 /// 2. Find if the uri **is** the ending string (without the leading slash). If so return an empty
 ///    string. This covers the exception of the rule above.
 /// 3. Return the received uri unchanged.
-// TODO: will become private as soon as client will be migrated
-// to pipeline arch.
-pub(crate) fn generate_resource_link(uri: &str) -> &str {
+fn generate_resource_link(uri: &str) -> &str {
     static ENDING_STRINGS: &[&str] = &[
         "/dbs",
         "/colls",
@@ -139,12 +140,11 @@ pub(crate) fn generate_resource_link(uri: &str) -> &str {
     }
 }
 
-/// The CosmosDB authorization can either be "primary" (ie one of the two service-level tokens) or
-/// "resource" (ie a single database). In the first case the signature must be constructed by
+/// The CosmosDB authorization can either be "primary" (i.e., one of the two service-level tokens) or
+/// "resource" (i.e., a single database). In the first case the signature must be constructed by
 /// signing the HTTP method, resource type, resource link (the relative URI) and the current time.
 /// In the second case, the signature is just the resource key.
-// TODO: make it private after pipeline migration
-pub(crate) fn generate_authorization(
+fn generate_authorization(
     auth_token: &AuthorizationToken,
     http_method: &http::Method,
     resource_type: &ResourceType,

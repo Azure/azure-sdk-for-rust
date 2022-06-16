@@ -1,6 +1,7 @@
+use crate::authorization_policy::AuthorizationPolicy;
 use crate::headers::CONTENT_MD5;
 use crate::{
-    core::{ConnectionString, No},
+    core::No,
     hmac::sign,
     shared_access_signature::account_sas::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
@@ -533,13 +534,7 @@ fn generate_authorization(
     service_type: ServiceType,
 ) -> String {
     let str_to_sign = string_to_sign(h, u, method, account, service_type);
-
-    // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
-    // debug!("str_to_sign == {}", str_to_sign);
-
     let auth = sign(&str_to_sign, key).unwrap();
-    // debug!("auth == {:?}", auth);
-
     format!("SharedKey {}:{}", account, auth)
 }
 
@@ -720,7 +715,7 @@ fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> Re
 
 /// Create a Pipeline from CosmosOptions
 fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
-    let auth_policy: Arc<dyn azure_core::Policy> = todo!();
+    let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 
     // The `AuthorizationPolicy` must be the **last** retry policy.
     // Policies can change the url and/or the headers, and the `AuthorizationPolicy`
