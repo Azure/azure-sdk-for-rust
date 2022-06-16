@@ -1,14 +1,14 @@
+use azure_core::error::Result;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use chrono::{Duration, Utc};
-use std::error::Error;
 
 fn main() {
     env_logger::init();
     code().unwrap();
 }
 
-fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
+fn code() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");

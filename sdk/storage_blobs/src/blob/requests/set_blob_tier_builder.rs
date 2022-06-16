@@ -1,8 +1,9 @@
-use crate::blob::responses::SetBlobTierResponse;
-use crate::prelude::*;
-use azure_core::error::{Error, ErrorKind, Result};
-use azure_core::headers::{add_mandatory_header, add_optional_header};
-use azure_core::prelude::*;
+use crate::{blob::responses::SetBlobTierResponse, prelude::*};
+use azure_core::{
+    error::{Error, ErrorKind, Result},
+    headers::{add_mandatory_header, add_optional_header},
+    prelude::*,
+};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

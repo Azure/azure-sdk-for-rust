@@ -1,13 +1,14 @@
 use crate::blob::Blob;
-use azure_core::error::{ErrorKind, Result, ResultExt};
-use azure_core::headers::{date_from_headers, request_id_from_headers};
-use azure_core::prelude::ContentRange;
-use azure_core::RequestId;
+use azure_core::{
+    error::{ErrorKind, Result, ResultExt},
+    headers::{date_from_headers, request_id_from_headers},
+    prelude::ContentRange,
+    RequestId,
+};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::Response;
-use std::convert::TryFrom;
-use std::str::FromStr;
+use std::{convert::TryFrom, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct GetBlobResponse {

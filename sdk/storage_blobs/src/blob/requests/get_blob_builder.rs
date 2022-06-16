@@ -1,10 +1,9 @@
-use crate::blob::responses::GetBlobResponse;
-use crate::prelude::*;
-use crate::Header;
-use azure_core::error::Result;
-use azure_core::headers::AsHeaders;
-use azure_core::headers::{add_optional_header, add_optional_header_ref, CLIENT_REQUEST_ID};
-use azure_core::prelude::*;
+use crate::{blob::responses::GetBlobResponse, prelude::*, Header};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref, AsHeaders, CLIENT_REQUEST_ID},
+    prelude::*,
+};
 use futures::stream::Stream;
 use std::convert::TryInto;
 

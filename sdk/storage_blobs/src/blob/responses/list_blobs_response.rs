@@ -1,8 +1,10 @@
 use crate::blob::Blob;
-use azure_core::error::{ErrorKind, Result, ResultExt};
-use azure_core::headers::{date_from_headers, request_id_from_headers};
-use azure_core::prelude::NextMarker;
-use azure_core::RequestId;
+use azure_core::{
+    error::{ErrorKind, Result, ResultExt},
+    headers::{date_from_headers, request_id_from_headers},
+    prelude::NextMarker,
+    RequestId,
+};
 use azure_storage::xml::read_xml;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};

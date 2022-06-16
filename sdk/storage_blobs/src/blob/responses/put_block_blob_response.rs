@@ -1,9 +1,11 @@
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::headers::{
-    date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-    request_server_encrypted_from_headers,
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    headers::{
+        date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
+        request_server_encrypted_from_headers,
+    },
+    RequestId,
 };
-use azure_core::RequestId;
 use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
 use chrono::{DateTime, Utc};
 use http::HeaderMap;

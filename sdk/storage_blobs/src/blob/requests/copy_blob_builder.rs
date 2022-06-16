@@ -1,10 +1,9 @@
-use crate::blob::responses::CopyBlobResponse;
-use crate::prelude::*;
-use crate::RehydratePriority;
-use azure_core::error::Result;
-use azure_core::headers::COPY_SOURCE;
-use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
-use azure_core::prelude::*;
+use crate::{blob::responses::CopyBlobResponse, prelude::*, RehydratePriority};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, COPY_SOURCE},
+    prelude::*,
+};
 use std::convert::TryInto;
 use url::Url;
 

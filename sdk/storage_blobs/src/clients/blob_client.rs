@@ -1,18 +1,22 @@
-use crate::blob::requests::*;
-use crate::prelude::*;
-use crate::BA512Range;
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::prelude::*;
-use azure_core::HttpClient;
-use azure_storage::core::clients::StorageCredentials;
-use azure_storage::core::prelude::*;
-use azure_storage::core::shared_access_signature::{
-    service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
-    SasToken,
+use crate::{blob::requests::*, prelude::*, BA512Range};
+use azure_core::{
+    error::{Error, ErrorKind, Result, ResultExt},
+    prelude::*,
+    HttpClient,
+};
+use azure_storage::core::{
+    clients::StorageCredentials,
+    prelude::*,
+    shared_access_signature::{
+        service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
+        SasToken,
+    },
 };
 use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+use http::{
+    method::Method,
+    request::{Builder, Request},
+};
 use std::sync::Arc;
 use url::Url;
 

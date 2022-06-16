@@ -1,9 +1,9 @@
-use crate::blob::responses::PutBlockBlobResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_mandatory_header, BLOB_TYPE};
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
-use azure_core::prelude::*;
+use crate::{blob::responses::PutBlockBlobResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE},
+    prelude::*,
+};
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]

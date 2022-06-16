@@ -1,13 +1,14 @@
-use crate::container::incomplete_vector_from_container_response;
-use crate::container::responses::ListContainersResponse;
-use azure_core::error::Result;
-use azure_core::headers::add_optional_header;
-use azure_core::headers::request_id_from_headers;
-use azure_core::prelude::*;
+use crate::container::{
+    incomplete_vector_from_container_response, responses::ListContainersResponse,
+};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, request_id_from_headers},
+    prelude::*,
+};
 use azure_storage::core::prelude::*;
 use futures::stream::{unfold, Stream};
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct ListContainersBuilder<'a> {

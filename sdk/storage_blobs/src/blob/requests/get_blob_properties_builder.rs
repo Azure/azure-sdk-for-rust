@@ -1,8 +1,9 @@
-use crate::blob::responses::GetBlobPropertiesResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
-use azure_core::prelude::*;
+use crate::{blob::responses::GetBlobPropertiesResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref},
+    prelude::*,
+};
 
 #[derive(Debug, Clone)]
 pub struct GetBlobPropertiesBuilder<'a> {

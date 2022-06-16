@@ -1,11 +1,12 @@
-use crate::blob::responses::PutBlobResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{
-    add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_CONTENT_LENGTH,
-    BLOB_TYPE,
+use crate::{blob::responses::PutBlobResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{
+        add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_CONTENT_LENGTH,
+        BLOB_TYPE,
+    },
+    prelude::*,
 };
-use azure_core::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct PutPageBlobBuilder<'a> {

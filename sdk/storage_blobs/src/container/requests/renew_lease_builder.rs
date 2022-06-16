@@ -1,10 +1,10 @@
-use crate::container::responses::RenewLeaseResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_mandatory_header, add_optional_header, LEASE_ACTION};
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{container::responses::RenewLeaseResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header, LEASE_ACTION},
+    prelude::*,
+};
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder<'a> {

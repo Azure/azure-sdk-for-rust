@@ -1,12 +1,13 @@
 use crate::container::{public_access_from_header, PublicAccess};
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::headers::REQUEST_ID;
-use azure_core::RequestId;
+use azure_core::{
+    error::{Error, ErrorKind, Result, ResultExt},
+    headers::REQUEST_ID,
+    RequestId,
+};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
-use http::header;
-use http::HeaderMap;
+use http::{header, HeaderMap};
 use std::convert::TryFrom;
 use uuid::Uuid;
 

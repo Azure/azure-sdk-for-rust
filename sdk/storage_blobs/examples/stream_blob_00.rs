@@ -1,8 +1,8 @@
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
 // ask it back using streaming features of the future crate. In this simple example we just
@@ -11,7 +11,7 @@ use std::rc::Rc;
 // We do not use leases here but you definitely want to do so otherwise the returned stream
 // is not guaranteed to be consistent.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.
@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let returned_string = {
         let rlock = result.borrow();
-        String::from_utf8(rlock.to_vec())?
+        String::from_utf8(rlock.to_vec()).map_kind(ErrorKind::DataConversion)?
     };
 
     // You can of course conctenate all the

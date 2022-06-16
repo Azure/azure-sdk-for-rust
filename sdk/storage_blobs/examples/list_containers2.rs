@@ -1,7 +1,7 @@
+use azure_core::error::Result;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use serde::Serialize;
-use std::error::Error;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -10,7 +10,7 @@ struct SampleEntity {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");

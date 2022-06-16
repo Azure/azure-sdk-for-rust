@@ -1,8 +1,9 @@
-use crate::blob::responses::GetBlobMetadataResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
-use azure_core::prelude::*;
+use crate::{blob::responses::GetBlobMetadataResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref},
+    prelude::*,
+};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

@@ -4,8 +4,7 @@ extern crate log;
 
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
-use azure_storage_blobs::container::PublicAccess;
-use azure_storage_blobs::prelude::*;
+use azure_storage_blobs::{container::PublicAccess, prelude::*};
 use bytes::Bytes;
 
 #[tokio::test]

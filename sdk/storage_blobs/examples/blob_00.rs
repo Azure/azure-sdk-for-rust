@@ -1,13 +1,15 @@
 #[macro_use]
 extern crate log;
-use azure_core::prelude::*;
+use azure_core::{
+    error::{ErrorKind, Result, ResultExt},
+    prelude::*,
+};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -57,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         complete_response.extend(&data as &[u8]);
     }
 
-    let s_content = String::from_utf8(complete_response)?;
+    let s_content = String::from_utf8(complete_response).map_kind(ErrorKind::DataConversion)?;
     println!("s_content == {}", s_content);
 
     Ok(())

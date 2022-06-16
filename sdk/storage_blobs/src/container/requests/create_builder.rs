@@ -1,6 +1,6 @@
 use crate::{container::PublicAccess, prelude::*};
-use azure_core::error::Result;
 use azure_core::{
+    error::Result,
     headers::{add_mandatory_header, add_optional_header, AsHeaders},
     prelude::*,
 };

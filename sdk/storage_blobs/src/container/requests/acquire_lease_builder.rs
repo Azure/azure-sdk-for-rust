@@ -1,12 +1,10 @@
-use crate::container::responses::AcquireLeaseResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{
-    add_mandatory_header, add_optional_header, add_optional_header_ref, LEASE_ACTION,
+use crate::{container::responses::AcquireLeaseResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, LEASE_ACTION},
+    prelude::*,
 };
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct AcquireLeaseBuilder<'a> {

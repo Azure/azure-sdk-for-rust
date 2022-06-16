@@ -1,10 +1,10 @@
-use crate::container::responses::GetPropertiesResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{container::responses::GetPropertiesResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref},
+    prelude::*,
+};
+use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

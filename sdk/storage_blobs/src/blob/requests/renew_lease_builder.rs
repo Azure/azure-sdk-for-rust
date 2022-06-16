@@ -1,8 +1,9 @@
-use crate::blob::responses::RenewBlobLeaseResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_mandatory_header, add_optional_header, LEASE_ACTION};
-use azure_core::prelude::*;
+use crate::{blob::responses::RenewBlobLeaseResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header, LEASE_ACTION},
+    prelude::*,
+};
 
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder<'a> {

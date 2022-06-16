@@ -1,11 +1,7 @@
-use crate::blob::responses::ListBlobsResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::add_optional_header;
-use azure_core::prelude::*;
+use crate::{blob::responses::ListBlobsResponse, prelude::*};
+use azure_core::{error::Result, headers::add_optional_header, prelude::*};
 use futures::stream::{unfold, Stream};
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

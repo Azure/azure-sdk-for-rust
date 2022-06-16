@@ -1,11 +1,11 @@
-use crate::blob::responses::ClearPageResponse;
-use crate::prelude::*;
-use crate::BA512Range;
-use azure_core::error::Result;
-use azure_core::headers::{
-    add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
+use crate::{blob::responses::ClearPageResponse, prelude::*, BA512Range};
+use azure_core::{
+    error::Result,
+    headers::{
+        add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
+    },
+    prelude::*,
 };
-use azure_core::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct ClearPageBuilder<'a> {

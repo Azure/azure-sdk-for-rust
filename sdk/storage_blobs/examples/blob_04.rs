@@ -1,10 +1,10 @@
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::{BufMut, Bytes};
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     env_logger::init();
 
     // First we retrieve the account name and master key from environment variables.
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let retrieved_blob = blob_client.get().execute().await?;
     println!("retrieved_blob == {:?}", retrieved_blob);
 
-    let s = String::from_utf8(retrieved_blob.data.to_vec())?;
+    let s = String::from_utf8(retrieved_blob.data.to_vec()).map_kind(ErrorKind::DataConversion)?;
     println!("retrieved contents == {}", s);
 
     Ok(())

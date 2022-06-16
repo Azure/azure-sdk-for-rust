@@ -1,12 +1,12 @@
-use crate::container::public_access_from_header;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_optional_header, add_optional_header_ref, AsHeaders};
-use azure_core::prelude::*;
+use crate::{container::public_access_from_header, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref, AsHeaders},
+    prelude::*,
+};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct SetACLBuilder<'a> {

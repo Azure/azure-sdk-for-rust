@@ -1,8 +1,10 @@
-use azure_core::headers::{
-    date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-    request_server_encrypted_from_headers,
+use azure_core::{
+    headers::{
+        date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
+        request_server_encrypted_from_headers,
+    },
+    RequestId,
 };
-use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 

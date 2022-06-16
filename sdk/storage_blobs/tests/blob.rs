@@ -11,10 +11,11 @@ use azure_storage_blobs::{
 };
 use bytes::Bytes;
 use chrono::{FixedOffset, Utc};
-use std::ops::Add;
-use std::ops::Deref;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    ops::{Add, Deref},
+    sync::Arc,
+    time::Duration,
+};
 use url::Url;
 use uuid::Uuid;
 

@@ -1,10 +1,10 @@
-use crate::container::responses::BreakLeaseResponse;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::headers::{add_optional_header, add_optional_header_ref, LEASE_ACTION};
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{container::responses::BreakLeaseResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref, LEASE_ACTION},
+    prelude::*,
+};
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct BreakLeaseBuilder<'a> {

@@ -1,6 +1,4 @@
-use azure_core::headers::*;
-use azure_core::prelude::*;
-use azure_core::RequestId;
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
 azure_storage::response_from_headers!(ChangeBlobLeaseResponse ,

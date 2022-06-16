@@ -1,14 +1,13 @@
-use azure_identity::device_code_flow;
-use azure_identity::refresh_token;
+use azure_core::error::Result;
+use azure_identity::{device_code_flow, refresh_token};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let client_id =
         ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");

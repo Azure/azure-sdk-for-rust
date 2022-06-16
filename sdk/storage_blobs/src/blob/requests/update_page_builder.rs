@@ -1,10 +1,11 @@
-use crate::blob::responses::UpdatePageResponse;
-use crate::prelude::*;
-use crate::BA512Range;
-use azure_core::error::Result;
-use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
-use azure_core::headers::{BLOB_TYPE, PAGE_WRITE};
-use azure_core::prelude::*;
+use crate::{blob::responses::UpdatePageResponse, prelude::*, BA512Range};
+use azure_core::{
+    error::Result,
+    headers::{
+        add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
+    },
+    prelude::*,
+};
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]

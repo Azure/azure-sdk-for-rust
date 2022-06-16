@@ -1,5 +1,7 @@
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::prelude::Range;
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    prelude::Range,
+};
 
 #[derive(Debug, Deserialize)]
 struct Start {
