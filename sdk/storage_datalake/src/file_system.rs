@@ -77,7 +77,7 @@ where
     }
 }
 
-pub fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
+fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: Deserializer<'de>,
 {
