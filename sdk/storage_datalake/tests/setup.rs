@@ -1,12 +1,10 @@
 #![cfg(feature = "mock_transport_framework")]
+use azure_core::error::Result;
 use azure_core::ClientOptions;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
-use std::error::Error;
 
-pub async fn create_data_lake_client(
-    transaction_name: &str,
-) -> Result<DataLakeClient, Box<dyn Error + Send + Sync>> {
+pub async fn create_data_lake_client(transaction_name: &str) -> Result<DataLakeClient> {
     let account_name = (std::env::var(azure_core::mock::TESTING_MODE_KEY).as_deref()
         == Ok(azure_core::mock::TESTING_MODE_RECORD))
     .then(get_account)
