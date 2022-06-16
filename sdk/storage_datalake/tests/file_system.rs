@@ -81,3 +81,63 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
 
     Ok(())
 }
+
+#[tokio::test]
+async fn file_system_list_paths() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let data_lake_client = setup::create_data_lake_client("datalake_file_system_list_paths")
+        .await
+        .unwrap();
+
+    let file_system_name = "azurerustsdk-datalake-file-system-list-paths";
+    let file_system_client = data_lake_client
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
+
+    file_system_client.create().into_future().await?;
+
+    let file_path = "some/path/file1.txt";
+    let file_client = file_system_client.get_file_client(file_path);
+    file_client.create().into_future().await?;
+
+    let file_path = "some/path/file2.txt";
+    let file_client = file_system_client.get_file_client(file_path);
+    file_client.create().into_future().await?;
+
+    let file_path = "some/other_path/file3.txt";
+    let file_client = file_system_client.get_file_client(file_path);
+    file_client.create().into_future().await?;
+
+    // by default all paths are listed
+    let paths = file_system_client
+        .list_paths()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
+    assert_eq!(paths.paths.len(), 6);
+
+    // test only paths within directory
+    let paths = file_system_client
+        .list_paths()
+        .directory("some/path")
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
+    assert_eq!(paths.paths.len(), 2);
+
+    // test non recursive paths
+    let paths = file_system_client
+        .list_paths()
+        .directory("some")
+        .recursive(false)
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
+    assert_eq!(paths.paths.len(), 2);
+
+    file_system_client.delete().into_future().await?;
+
+    Ok(())
+}

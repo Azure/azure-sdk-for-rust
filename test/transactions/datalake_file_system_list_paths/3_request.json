@@ -1,0 +1,12 @@
+{
+  "uri": "/azurerustsdk-datalake-file-system-list-paths/some/other_path/file3.txt?resource=file",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-length": "0",
+    "user-agent": "azsdk-rust-storage_datalake/0.3.0 (1.61.0; linux; x86_64)",
+    "x-ms-date": "Thu, 16 Jun 2022 10:22:57 GMT",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

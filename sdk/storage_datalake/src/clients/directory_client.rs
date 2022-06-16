@@ -69,6 +69,7 @@ impl DirectoryClient {
         let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
         ListPathsBuilder::new(self.file_system_client.clone(), self.context().clone())
             .directory(dir_path)
+            .recursive(true)
     }
 
     pub fn create(&self) -> PutPathBuilder<Self> {
