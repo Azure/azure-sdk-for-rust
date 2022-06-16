@@ -34,8 +34,14 @@ impl GetAccountInformationBuilder {
                 .blob_storage_request("", http::Method::GET);
 
             // TODO: add the query pairs
-            // request.uri_mut().query_pairs_mut().append_pair("restype", "account");
-            // request.uri_mut().query_pairs_mut().append_pair("comp", "properties");
+            request
+                .url_mut()
+                .query_pairs_mut()
+                .append_pair("restype", "account");
+            request
+                .url_mut()
+                .query_pairs_mut()
+                .append_pair("comp", "properties");
 
             let response = self
                 .storage_client

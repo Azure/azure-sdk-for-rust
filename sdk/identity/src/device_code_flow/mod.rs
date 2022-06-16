@@ -8,7 +8,7 @@ mod device_code_responses;
 use async_timer::timer::new_timer;
 use azure_core::{
     content_type,
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind, Result, ResultExt},
     headers, HttpClient, Request, Response,
 };
 pub use device_code_responses::*;
@@ -17,7 +17,7 @@ use http::Method;
 use oauth2::ClientId;
 use serde::Deserialize;
 use std::{borrow::Cow, sync::Arc, time::Duration};
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.
 /// The user has only 15 minutes to sign in (the usual value for expires_in).
@@ -171,7 +171,7 @@ async fn post_form(
     url: &str,
     form_body: String,
 ) -> Result<Response> {
-    let url = Request::parse_uri(url)?;
+    let url = Url::parse(url).map_kind(ErrorKind::DataConversion)?;
     let mut req = Request::new(url, Method::POST);
     req.headers_mut().insert(
         headers::CONTENT_TYPE,

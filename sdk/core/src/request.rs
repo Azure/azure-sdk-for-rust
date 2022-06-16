@@ -1,10 +1,9 @@
-use crate::error::{ErrorKind, Result, ResultExt};
 use crate::headers::{AsHeaders, Headers};
 use crate::SeekableStream;
 use bytes::Bytes;
-use http::{Method, Uri};
+use http::Method;
 use std::fmt::Debug;
-use std::str::FromStr;
+use url::Url;
 
 /// An HTTP Body.
 #[derive(Debug, Clone)]
@@ -36,7 +35,7 @@ impl From<Box<dyn SeekableStream>> for Body {
 /// body. Policies are expected to enrich the request by mutating it.
 #[derive(Debug, Clone)]
 pub struct Request {
-    pub(crate) uri: Uri,
+    pub(crate) url: Url,
     pub(crate) method: Method,
     pub(crate) headers: Headers,
     pub(crate) body: Body,
@@ -44,21 +43,21 @@ pub struct Request {
 
 impl Request {
     /// Create a new request with an empty body and no headers
-    pub fn new(uri: Uri, method: Method) -> Self {
+    pub fn new(url: Url, method: Method) -> Self {
         Self {
-            uri,
+            url,
             method,
             headers: Headers::new(),
             body: Body::Bytes(bytes::Bytes::new()),
         }
     }
 
-    pub fn uri(&self) -> &Uri {
-        &self.uri
+    pub fn url(&self) -> &Url {
+        &self.url
     }
 
-    pub fn uri_mut(&mut self) -> &mut Uri {
-        &mut self.uri
+    pub fn url_mut(&mut self) -> &mut Url {
+        &mut self.url
     }
 
     pub fn method(&self) -> Method {
@@ -86,11 +85,6 @@ impl Request {
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }
-
-    /// Parse a `Uri` from a `str`
-    pub fn parse_uri(uri: &str) -> Result<Uri> {
-        Uri::from_str(uri).map_kind(ErrorKind::DataConversion)
-    }
 }
 
 /// Temporary hack to convert preexisting requests into the new format. It
@@ -99,7 +93,7 @@ impl From<http::Request<bytes::Bytes>> for Request {
     fn from(request: http::Request<bytes::Bytes>) -> Self {
         let (parts, body) = request.into_parts();
         Self {
-            uri: parts.uri,
+            url: Url::parse(&parts.uri.to_string()).unwrap(),
             method: parts.method,
             headers: parts.headers.into(),
             body: Body::Bytes(body),

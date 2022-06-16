@@ -112,7 +112,6 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             "error parsing url for MSI endpoint",
         )?;
 
-        let url = Request::parse_uri(url.as_str())?;
         let mut req = Request::new(url, Method::GET);
 
         req.headers_mut().insert("Metadata", "true");

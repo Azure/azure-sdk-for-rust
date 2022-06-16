@@ -1,8 +1,10 @@
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::{headers::*, Context, Policy, PolicyResult, Request};
 use http::header::AUTHORIZATION;
-use http::{Method, Uri};
+use http::Method;
+use std::borrow::Cow;
 use std::sync::Arc;
+use url::Url;
 
 use crate::clients::{ServiceType, StorageCredentials};
 
@@ -35,16 +37,10 @@ impl Policy for AuthorizationPolicy {
         );
         let request = match &self.credentials {
             StorageCredentials::Key(account, key) => {
-                if !request
-                    .uri()
-                    .query()
-                    .unwrap_or_default()
-                    .split('&')
-                    .any(|pair| matches!(pair.trim().split_once('='), Some(("sig", _))))
-                {
+                if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
                     let auth = generate_authorization(
                         request.headers(),
-                        request.uri(),
+                        request.url(),
                         &request.method(),
                         account,
                         key,
@@ -56,23 +52,11 @@ impl Policy for AuthorizationPolicy {
                 request
             }
             StorageCredentials::SASToken(query_pairs) => {
-                // TODO: switch to `url` crate.
-                // This is already very complex and we're not even url encoding
-                let query = request.uri().query();
-                let new = query_pairs
-                    .iter()
-                    .map(|(k, v)| format!("{k}={v}"))
-                    .collect::<Vec<String>>()
-                    .join("&");
-                let new = match query {
-                    Some(existing) => format!("{existing}&{new}"),
-                    None => format!("?{new}"),
-                };
-                let new = format!("{}{}", request.uri().path(), new);
-                let mut parts = request.uri().clone().into_parts();
-                parts.path_and_query =
-                    Some(http::uri::PathAndQuery::from_maybe_shared(new).unwrap());
-                *request.uri_mut() = Uri::from_parts(parts).unwrap();
+                request
+                    .url_mut()
+                    .query_pairs_mut()
+                    .extend_pairs(query_pairs);
+
                 request
             }
             StorageCredentials::BearerToken(token) => {
@@ -100,7 +84,7 @@ impl Policy for AuthorizationPolicy {
 
 fn generate_authorization(
     h: &Headers,
-    u: &Uri,
+    u: &Url,
     method: &Method,
     account: &str,
     key: &str,
@@ -118,7 +102,7 @@ fn add_if_exists<'a>(h: &'a Headers, key: &'static str) -> &'a str {
 #[allow(unknown_lints)]
 fn string_to_sign(
     h: &Headers,
-    u: &Uri,
+    u: &Url,
     method: &Method,
     account: &str,
     service_type: &ServiceType,
@@ -135,7 +119,7 @@ fn string_to_sign(
             )
         }
         _ => {
-            // content lenght must only be specified if != 0
+            // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let content_length = h
                 .get(CONTENT_LENGTH)
@@ -160,33 +144,13 @@ fn string_to_sign(
             )
         }
     }
-
-    // expected
-    // GET\n /*HTTP Verb*/
-    // \n    /*Content-Encoding*/
-    // \n    /*Content-Language*/
-    // \n    /*Content-Length (include value when zero)*/
-    // \n    /*Content-MD5*/
-    // \n    /*Content-Type*/
-    // \n    /*Date*/
-    // \n    /*If-Modified-Since */
-    // \n    /*If-Match*/
-    // \n    /*If-None-Match*/
-    // \n    /*If-Unmodified-Since*/
-    // \n    /*Range*/
-    // x-ms-date:Sun, 11 Oct 2009 21:49:13 GMT\nx-ms-version:2009-09-19\n
-    //                                  /*CanonicalizedHeaders*/
-    // /myaccount /mycontainer\ncomp:metadata\nrestype:container\ntimeout:20
-    //                                  /*CanonicalizedResource*/
-    //
-    //
 }
 
 fn canonicalize_header(h: &Headers) -> String {
     let mut v_headers = h
         .iter()
         .filter(|(k, _)| k.as_str().starts_with("x-ms"))
-        .map(|(k, _)| k.as_str().to_owned())
+        .map(|(k, _)| k)
         .collect::<Vec<_>>();
     v_headers.sort_unstable();
 
@@ -194,39 +158,34 @@ fn canonicalize_header(h: &Headers) -> String {
 
     for header_name in v_headers {
         let s = h.get(header_name.clone()).unwrap().as_str();
+        let header_name = header_name.as_str();
         can = format!("{can}{header_name}:{s}\n");
     }
     can
 }
 
-fn canonicalized_resource_table(account: &str, u: &Uri) -> String {
+fn canonicalized_resource_table(account: &str, u: &Url) -> String {
     format!("/{}{}", account, u.path())
 }
 
-fn canonicalized_resource(account: &str, uri: &Uri) -> String {
+fn canonicalized_resource(account: &str, uri: &Url) -> String {
     let mut can_res: String = String::new();
     can_res += "/";
     can_res += account;
 
-    let path = uri.path();
-
-    for p in path.split('/') {
+    for p in uri.path_segments().into_iter().flatten() {
         can_res.push('/');
-        can_res.push_str(&*p);
+        can_res.push_str(p);
     }
     can_res += "\n";
 
     // query parameters
-    let query_pairs = uri
-        .query()
-        .unwrap_or_default()
-        .split('&')
-        .filter_map(|p| p.split_once('='));
+    let query_pairs = uri.query_pairs();
     {
-        let mut qps = Vec::new();
-        for (q, _p) in query_pairs.clone() {
-            if !(qps.iter().any(|x| x == q)) {
-                qps.push(q.to_owned());
+        let mut qps: Vec<String> = Vec::new();
+        for (q, _) in query_pairs {
+            if !(qps.iter().any(|x| x == &*q)) {
+                qps.push(q.into_owned());
             }
         }
 
@@ -234,7 +193,7 @@ fn canonicalized_resource(account: &str, uri: &Uri) -> String {
 
         for qparam in qps {
             // find correct parameter
-            let ret = lexy_sort(query_pairs.clone(), &qparam);
+            let ret = lexy_sort(query_pairs, &qparam);
 
             can_res = can_res + &qparam.to_lowercase() + ":";
 
@@ -253,9 +212,9 @@ fn canonicalized_resource(account: &str, uri: &Uri) -> String {
 }
 
 fn lexy_sort<'a>(
-    vec: impl Iterator<Item = (&'a str, &'a str)> + 'a,
+    vec: impl Iterator<Item = (Cow<'a, str>, Cow<'a, str>)> + 'a,
     query_param: &str,
-) -> Vec<&'a str> {
+) -> Vec<Cow<'a, str>> {
     let mut values = vec
         .filter(|(k, _)| *k == query_param)
         .map(|(_, v)| v)
