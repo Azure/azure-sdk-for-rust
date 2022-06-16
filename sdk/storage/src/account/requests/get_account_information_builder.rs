@@ -1,5 +1,6 @@
 use crate::account::responses::GetAccountInformationResponse;
 use crate::core::prelude::*;
+use azure_core::error::Result;
 
 #[derive(Debug, Clone)]
 pub struct GetAccountInformationBuilder<'a> {
@@ -13,9 +14,7 @@ impl<'a> GetAccountInformationBuilder<'a> {
 }
 
 impl<'a> GetAccountInformationBuilder<'a> {
-    pub async fn execute(
-        self,
-    ) -> Result<GetAccountInformationResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(self) -> Result<GetAccountInformationResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -40,8 +39,6 @@ impl<'a> GetAccountInformationBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
-        Ok(GetAccountInformationResponse::from_headers(
-            response.headers(),
-        )?)
+        GetAccountInformationResponse::from_headers(response.headers())
     }
 }

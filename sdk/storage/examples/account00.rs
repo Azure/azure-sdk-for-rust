@@ -1,8 +1,8 @@
+use azure_core::error::Result;
 use azure_storage::core::prelude::*;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
