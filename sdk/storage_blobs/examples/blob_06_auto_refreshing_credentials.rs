@@ -5,6 +5,7 @@ use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_identity::{AutoRefreshingTokenCredential, DefaultAzureCredential};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,8 +22,8 @@ async fn main() -> Result<()> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let creds = std::sync::Arc::new(DefaultAzureCredential::default());
-    let auto_creds = Box::new(AutoRefreshingTokenCredential::new(creds));
+    let creds = Arc::new(DefaultAzureCredential::default());
+    let auto_creds = Arc::new(AutoRefreshingTokenCredential::new(creds));
 
     let http_client = azure_core::new_http_client();
     let blob_client =

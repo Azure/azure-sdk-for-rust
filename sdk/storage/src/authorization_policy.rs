@@ -55,8 +55,24 @@ impl Policy for AuthorizationPolicy {
                 }
                 request
             }
-            StorageCredentials::SASToken(_query_pairs) => {
-                // no headers to add here, the authentication is in the URL
+            StorageCredentials::SASToken(query_pairs) => {
+                // TODO: switch to `url` crate.
+                // This is already very complex and we're not even url encoding
+                let query = request.uri().query();
+                let new = query_pairs
+                    .iter()
+                    .map(|(k, v)| format!("{k}={v}"))
+                    .collect::<Vec<String>>()
+                    .join("&");
+                let new = match query {
+                    Some(existing) => format!("{existing}&{new}"),
+                    None => format!("?{new}"),
+                };
+                let new = format!("{}{}", request.uri().path(), new);
+                let mut parts = request.uri().clone().into_parts();
+                parts.path_and_query =
+                    Some(http::uri::PathAndQuery::from_maybe_shared(new).unwrap());
+                *request.uri_mut() = Uri::from_parts(parts).unwrap();
                 request
             }
             StorageCredentials::BearerToken(token) => {
@@ -240,29 +256,10 @@ fn lexy_sort<'a>(
     vec: impl Iterator<Item = (&'a str, &'a str)> + 'a,
     query_param: &str,
 ) -> Vec<&'a str> {
-    let mut v_values = Vec::new();
-
-    for (_, v) in vec.filter(|(k, _)| *k == query_param) {
-        v_values.push(v);
-    }
-    v_values.sort();
-
-    v_values
+    let mut values = vec
+        .filter(|(k, _)| *k == query_param)
+        .map(|(_, v)| v)
+        .collect::<Vec<_>>();
+    values.sort();
+    values
 }
-
-// TODO: handle Sas token
-// fn get_sas_token_parms(sas_token: &str) -> azure_core::error::Result<Vec<(String, String)>> {
-//     let url = if sas_token.starts_with('?') {
-//         Uri::parse(sas_token)
-//     } else {
-//         Uri::parse(&format!("?{}", sas_token))
-//     }
-//     .with_context(ErrorKind::DataConversion, || {
-//         format!("failed to parse SAS token: {sas_token}")
-//     })?;
-
-//     Ok(url
-//         .query_pairs()
-//         .map(|(k, v)| (String::from(k), String::from(v)))
-//         .collect())
-// }

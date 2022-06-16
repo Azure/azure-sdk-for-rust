@@ -1,5 +1,6 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::headers::CONTENT_MD5;
+use crate::ConnectionString;
 use crate::{
     core::No,
     hmac::sign,
@@ -303,78 +304,94 @@ impl StorageAccountClient {
         })
     }
 
-    // pub fn new_connection_string( http_client: Arc<dyn HttpClient>,
-    //     connection_string: &str,
-    // ) -> Result<Arc<Self>> {
-    //     match ConnectionString::new(connection_string)? {
-    //         ConnectionString {
-    //             account_name: Some(account),
-    //             account_key: Some(_),
-    //             sas: Some(sas_token),
-    //             blob_endpoint,
-    //             table_endpoint,
-    //             queue_endpoint,
-    //             file_endpoint,
-    //             ..
-    //         } => {
-    //             log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+    pub fn new_connection_string(
+        http_client: Arc<dyn HttpClient>,
+        connection_string: &str,
+    ) -> Result<Arc<Self>> {
+        match ConnectionString::new(connection_string)? {
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(_),
+                sas: Some(sas_token),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
+                ..
+            } => {
+                log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
 
-    //             Ok(Arc::new(Self {
-    //                 storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
-    //                     sas_token,
-    //                 )?),
-    //                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
-    //                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
-    //                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
-    //                 queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
-    //                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-    //                 http_client,
-    //                 account: account.to_string(),
-    //             }))
-    //         }
-    //         ConnectionString {
-    //             account_name: Some(account),
-    //             sas: Some(sas_token),
-    //             blob_endpoint,
-    //             table_endpoint,
-    //             queue_endpoint,
-    //             file_endpoint,
-    //             ..
-    //         } => Ok(Arc::new(Self {
-    //             storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)?),
-    //             blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
-    //             table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
-    //             queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
-    //             queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
-    //             filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-    //             http_client,
-    //                 account: account.to_string(),
-    //         })),
-    //         ConnectionString {
-    //             account_name: Some(account),
-    //             account_key: Some(key),
-    //             blob_endpoint,
-    //             table_endpoint,
-    //             queue_endpoint,
-    //             file_endpoint,
-    //             ..
-    //         } => Ok(Arc::new(Self {
-    //             storage_credentials: StorageCredentials::Key(account.to_owned(), key.to_owned()),
-    //             blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
-    //             table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
-    //             queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
-    //             queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
-    //             filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-    //             http_client,
-    //             account: account.to_string(),
-    //         })),
-    //        _ => {
-    //             Err(Error::message(ErrorKind::Other,
-    //                 "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
-    //             ))
-    //         }
-    //     }
-    // }
+                let storage_credentials =  StorageCredentials::SASToken(get_sas_token_parms(
+                    sas_token,
+                )?);
+                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+
+                Ok(Arc::new(Self {
+                    storage_credentials,
+                    blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                    table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                    queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
+                    filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                    http_client,
+                    account: account.to_string(),
+                    pipeline
+                }))
+            }
+            ConnectionString {
+                account_name: Some(account),
+                sas: Some(sas_token),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
+                ..
+            } => {
+                let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
+                let pipeline =
+                new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                Ok(Arc::new(Self {
+                    storage_credentials,
+                    blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                    table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                    queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
+                    filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                    http_client,
+                    account: account.to_string(),
+                    pipeline
+            }))},
+            ConnectionString {
+                account_name: Some(account),
+                account_key: Some(key),
+                blob_endpoint,
+                table_endpoint,
+                queue_endpoint,
+                file_endpoint,
+                ..
+            } => {
+
+                let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
+                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                Ok(Arc::new(Self {
+                storage_credentials,
+                blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
+                filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                http_client,
+                account: account.to_string(),
+                pipeline
+            }))
+        },
+           _ => {
+                Err(Error::message(ErrorKind::Other,
+                    "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
+                ))
+            }
+        }
+    }
 
     pub fn http_client(&self) -> &dyn HttpClient {
         self.http_client.as_ref()

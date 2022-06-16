@@ -16,7 +16,7 @@ async fn get_account_information() {
 
     storage_client
         .get_account_information()
-        .execute()
+        .into_future()
         .await
         .unwrap();
 }

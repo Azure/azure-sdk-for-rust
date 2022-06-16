@@ -15,7 +15,10 @@ async fn main() -> Result<()> {
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
 
-    let response = storage_client.get_account_information().into_future().await?;
+    let response = storage_client
+        .get_account_information()
+        .into_future()
+        .await?;
     println!("{:?}", response);
 
     Ok(())
