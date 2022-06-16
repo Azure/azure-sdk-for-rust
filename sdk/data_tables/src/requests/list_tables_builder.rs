@@ -67,7 +67,7 @@ impl<'a> ListTablesBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
     pub fn stream(self) -> impl Stream<Item = Result<ListTablesResponse>> + 'a {

@@ -57,6 +57,6 @@ impl<'a> CreateTableBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::CREATED)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

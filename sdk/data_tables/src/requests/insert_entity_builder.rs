@@ -69,7 +69,7 @@ impl<'a> InsertEntityBuilder<'a> {
             .execute_request_check_status(request.0, self.return_entity.expected_return_code())
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
     pub fn to_transaction_operation<E>(&self, entity: &E) -> Result<TransactionOperation>

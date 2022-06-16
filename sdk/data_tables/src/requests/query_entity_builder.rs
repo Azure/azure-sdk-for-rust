@@ -77,7 +77,7 @@ impl<'a> QueryEntityBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
     pub fn stream<E>(self) -> impl Stream<Item = Result<QueryEntityResponse<E>>> + 'a

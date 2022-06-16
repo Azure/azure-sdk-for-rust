@@ -60,7 +60,7 @@ impl<'a> DeleteEntityBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
     pub fn to_transaction_operation(&self) -> Result<TransactionOperation> {
