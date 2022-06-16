@@ -39,8 +39,8 @@ impl Policy for AuthorizationPolicy {
                     .uri()
                     .query()
                     .unwrap_or_default()
-                    .split("&")
-                    .any(|pair| matches!(pair.trim().split_once("="), Some(("sig", _))))
+                    .split('&')
+                    .any(|pair| matches!(pair.trim().split_once('='), Some(("sig", _))))
                 {
                     let auth = generate_authorization(
                         request.headers(),
@@ -106,7 +106,7 @@ fn generate_authorization(
     key: &str,
     service_type: &ServiceType,
 ) -> String {
-    let str_to_sign = string_to_sign(h, u, method, account, &service_type);
+    let str_to_sign = string_to_sign(h, u, method, account, service_type);
     let auth = crate::hmac::sign(&str_to_sign, key).unwrap();
     format!("SharedKey {}:{}", account, auth)
 }
@@ -210,7 +210,7 @@ fn canonicalized_resource(account: &str, uri: &Uri) -> String {
 
     let path = uri.path();
 
-    for p in path.split("/") {
+    for p in path.split('/') {
         can_res.push('/');
         can_res.push_str(&*p);
     }
@@ -220,8 +220,8 @@ fn canonicalized_resource(account: &str, uri: &Uri) -> String {
     let query_pairs = uri
         .query()
         .unwrap_or_default()
-        .split("&")
-        .filter_map(|p| p.split_once("="));
+        .split('&')
+        .filter_map(|p| p.split_once('='));
     {
         let mut qps = Vec::new();
         for (q, _p) in query_pairs.clone() {
@@ -260,6 +260,6 @@ fn lexy_sort<'a>(
         .filter(|(k, _)| *k == query_param)
         .map(|(_, v)| v)
         .collect::<Vec<_>>();
-    values.sort();
+    values.sort_unstable();
     values
 }

@@ -44,7 +44,7 @@ impl GetAccountInformationBuilder {
                 .send(&mut self.context, &mut request)
                 .await?;
 
-            Ok(GetAccountInformationResponse::try_from(response.headers())?)
+            GetAccountInformationResponse::try_from(response.headers())
         })
     }
 }

@@ -111,7 +111,7 @@ impl StorageAccountClient {
     {
         let account = account.into();
         let key = key.into();
-        let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
+        let storage_credentials = StorageCredentials::Key(account.clone(), key);
         let pipeline =
             new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
@@ -200,7 +200,7 @@ impl StorageAccountClient {
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
+            storage_credentials: StorageCredentials::Key(account.clone(), key),
             http_client,
             account,
             pipeline,
