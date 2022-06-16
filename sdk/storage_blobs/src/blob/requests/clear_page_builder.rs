@@ -1,6 +1,7 @@
 use crate::blob::responses::ClearPageResponse;
 use crate::prelude::*;
 use crate::BA512Range;
+use azure_core::error::Result;
 use azure_core::headers::{
     add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
 };
@@ -41,9 +42,7 @@ impl<'a> ClearPageBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ClearPageResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<ClearPageResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

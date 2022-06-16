@@ -1,5 +1,6 @@
 use crate::blob::responses::PutBlockListResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use bytes::Bytes;
@@ -52,9 +53,7 @@ impl<'a> PutBlockListBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<PutBlockListResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<PutBlockListResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "blocklist");
