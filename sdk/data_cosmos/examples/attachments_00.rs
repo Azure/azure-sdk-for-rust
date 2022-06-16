@@ -1,7 +1,7 @@
+use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 // Now we create a sample struct.
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -23,7 +23,7 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 // This example expects you to have created a collection
 // with partitionKey on "id".
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");

@@ -1,6 +1,6 @@
+use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
-use std::error::Error;
 
 const FN_BODY: &str = r#"
 function tax(income) {
@@ -15,7 +15,7 @@ function tax(income) {
 }"#;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let database = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");

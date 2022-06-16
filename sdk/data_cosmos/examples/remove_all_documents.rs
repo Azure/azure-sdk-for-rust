@@ -1,12 +1,12 @@
+use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
-use std::error::Error;
 
 // This example expects you to have created a collection
 // with partitionKey on "id".
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify the database name as first command line parameter");

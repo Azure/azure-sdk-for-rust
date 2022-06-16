@@ -1,11 +1,11 @@
+use azure_core::error::Result;
 use azure_core::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::prelude::*;
 use azure_core::CustomHeaders;
 use azure_data_cosmos::prelude::*;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =

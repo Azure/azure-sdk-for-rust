@@ -1,10 +1,10 @@
+use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =

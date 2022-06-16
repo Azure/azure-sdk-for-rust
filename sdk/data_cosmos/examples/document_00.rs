@@ -2,9 +2,9 @@ use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
+use azure_core::error::Result;
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
-use std::error::Error;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct MySampleStruct {
@@ -32,7 +32,7 @@ const COLLECTION: &str = "azuresdktc";
 // 3. Store an entry in collection *COLLECTION* of database *DATABASE*.
 // 4. Delete everything.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
     let master_key =
