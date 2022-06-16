@@ -77,6 +77,6 @@ impl<'a> ClearPageBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(ClearPageResponse::from_headers(response.headers())?)
+        ClearPageResponse::from_headers(response.headers())
     }
 }

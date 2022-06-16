@@ -93,6 +93,6 @@ impl<'a> SetBlobTierBuilder<'a> {
             .execute_request_check_status(request, expected_status)
             .await?;
 
-        Ok(response.headers().try_into()?)
+        response.headers().try_into()
     }
 }

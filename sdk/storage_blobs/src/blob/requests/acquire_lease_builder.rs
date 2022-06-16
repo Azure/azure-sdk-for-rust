@@ -62,6 +62,6 @@ impl<'a> AcquireLeaseBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::CREATED)
             .await?;
 
-        Ok(AcquireBlobLeaseResponse::from_headers(response.headers())?)
+        AcquireBlobLeaseResponse::from_headers(response.headers())
     }
 }

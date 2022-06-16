@@ -92,6 +92,6 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok((response.headers()).try_into()?)
+        (response.headers()).try_into()
     }
 }

@@ -103,6 +103,6 @@ impl<'a> PutBlockListBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(PutBlockListResponse::from_headers(response.headers())?)
+        PutBlockListResponse::from_headers(response.headers())
     }
 }

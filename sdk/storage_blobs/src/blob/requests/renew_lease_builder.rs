@@ -51,6 +51,6 @@ impl<'a> RenewLeaseBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
-        Ok(RenewBlobLeaseResponse::from_headers(response.headers())?)
+        RenewBlobLeaseResponse::from_headers(response.headers())
     }
 }

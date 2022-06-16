@@ -64,6 +64,6 @@ impl<'a> SetBlobMetadataBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
-        Ok(response.headers().try_into()?)
+        response.headers().try_into()
     }
 }

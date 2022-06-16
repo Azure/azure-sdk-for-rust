@@ -58,6 +58,6 @@ impl<'a> ChangeLeaseBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
-        Ok(ChangeBlobLeaseResponse::from_headers(response.headers())?)
+        ChangeBlobLeaseResponse::from_headers(response.headers())
     }
 }

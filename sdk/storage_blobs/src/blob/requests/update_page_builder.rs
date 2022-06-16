@@ -87,6 +87,6 @@ impl<'a> UpdatePageBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(UpdatePageResponse::from_headers(response.headers())?)
+        UpdatePageResponse::from_headers(response.headers())
     }
 }

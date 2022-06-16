@@ -63,9 +63,6 @@ impl<'a> GetBlockListBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(GetBlockListResponse::from_response(
-            response.headers(),
-            response.body(),
-        )?)
+        GetBlockListResponse::from_response(response.headers(), response.body())
     }
 }
