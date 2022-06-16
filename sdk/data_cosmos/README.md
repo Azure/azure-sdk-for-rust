@@ -12,8 +12,8 @@ should also be possible with this crate.
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_data_cosmos::prelude::*;
 use azure_core::Context;
+use azure_core::error::Result;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "a_number" for this example to
@@ -37,7 +37,7 @@ impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct {
 // This code will perform these tasks:
 // 1. Create 10 documents in the collection.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // Let's get Cosmos account and master key from env variables.
     let master_key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");

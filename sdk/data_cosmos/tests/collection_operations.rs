@@ -1,14 +1,13 @@
 #![cfg(feature = "mock_transport_framework")]
 
+use azure_core::error::Result;
 use azure_data_cosmos::resources::collection::*;
 use futures::StreamExt;
 
 mod setup;
 
-type BoxedError = Box<dyn std::error::Error + Send + Sync>;
-
 #[tokio::test]
-async fn collection_operations() -> Result<(), BoxedError> {
+async fn collection_operations() -> Result<()> {
     env_logger::init();
 
     let client = setup::initialize("collection_operations")?;

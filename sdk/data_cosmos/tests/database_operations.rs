@@ -2,12 +2,11 @@
 
 mod setup;
 
+use azure_core::error::Result;
 use futures::StreamExt;
 
-pub type BoxedError = Box<dyn std::error::Error + Send + Sync>;
-
 #[tokio::test]
-async fn database_operations() -> Result<(), BoxedError> {
+async fn database_operations() -> Result<()> {
     const DATABASE_NAME: &str = "cosmos-test-db-create-and-delete-database";
 
     let client = setup::initialize("database_operations")?;

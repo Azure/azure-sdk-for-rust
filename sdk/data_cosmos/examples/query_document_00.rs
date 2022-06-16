@@ -1,7 +1,7 @@
+use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStructOwned {
@@ -20,7 +20,7 @@ struct MySecondSampleStructOwned {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");
