@@ -1,5 +1,6 @@
 use crate::container::responses::GetPropertiesResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use http::method::Method;
@@ -30,9 +31,7 @@ impl<'a> GetPropertiesBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<GetPropertiesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<GetPropertiesResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
@@ -58,6 +57,6 @@ impl<'a> GetPropertiesBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok((self.container_client.container_name(), response.headers()).try_into()?)
+        (self.container_client.container_name(), response.headers()).try_into()
     }
 }

@@ -1,5 +1,6 @@
 use crate::container::responses::AcquireLeaseResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{
     add_mandatory_header, add_optional_header, add_optional_header_ref, LEASE_ACTION,
 };
@@ -39,9 +40,7 @@ impl<'a> AcquireLeaseBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<AcquireLeaseResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<AcquireLeaseResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
@@ -71,6 +70,6 @@ impl<'a> AcquireLeaseBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::CREATED)
             .await?;
 
-        Ok(AcquireLeaseResponse::from_headers(response.headers())?)
+        AcquireLeaseResponse::from_headers(response.headers())
     }
 }

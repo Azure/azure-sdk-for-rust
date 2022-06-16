@@ -1,5 +1,6 @@
 use crate::blob::responses::ListBlobsResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
@@ -61,9 +62,7 @@ impl<'a> ListBlobsBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ListBlobsResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ListBlobsResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
@@ -126,13 +125,10 @@ impl<'a> ListBlobsBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 
-    pub fn stream(
-        self,
-    ) -> impl Stream<Item = Result<ListBlobsResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
-    {
+    pub fn stream(self) -> impl Stream<Item = Result<ListBlobsResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

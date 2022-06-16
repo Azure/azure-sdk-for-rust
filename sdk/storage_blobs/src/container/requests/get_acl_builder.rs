@@ -1,5 +1,6 @@
 use crate::container::responses::GetACLResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use http::method::Method;
@@ -30,7 +31,7 @@ impl<'a> GetACLBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(self) -> Result<GetACLResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(self) -> Result<GetACLResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
@@ -58,6 +59,6 @@ impl<'a> GetACLBuilder<'a> {
             .await?;
 
         // todo: parse SAS policies
-        Ok((response.body(), response.headers()).try_into()?)
+        (response.body(), response.headers()).try_into()
     }
 }

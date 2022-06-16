@@ -1,6 +1,7 @@
 use crate::blob::responses::CopyBlobResponse;
 use crate::prelude::*;
 use crate::RehydratePriority;
+use azure_core::error::Result;
 use azure_core::headers::COPY_SOURCE;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
@@ -60,9 +61,7 @@ impl<'a> CopyBlobBuilder<'a> {
         rehydrate_priority: RehydratePriority => rehydrate_priority,
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<CopyBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<CopyBlobResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
@@ -102,6 +101,6 @@ impl<'a> CopyBlobBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok((response.headers()).try_into()?)
+        (response.headers()).try_into()
     }
 }

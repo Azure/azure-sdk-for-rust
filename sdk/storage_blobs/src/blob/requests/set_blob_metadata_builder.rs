@@ -1,5 +1,6 @@
 use crate::blob::responses::SetBlobMetadataResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -31,9 +32,7 @@ impl<'a> SetBlobMetadataBuilder<'a> {
         metadata: &'a Metadata => Some(metadata),
     }
 
-    pub async fn execute(
-        self,
-    ) -> Result<SetBlobMetadataResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(self) -> Result<SetBlobMetadataResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");
@@ -65,6 +64,6 @@ impl<'a> SetBlobMetadataBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
-        Ok(response.headers().try_into()?)
+        response.headers().try_into()
     }
 }
