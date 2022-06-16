@@ -1,7 +1,9 @@
-use crate::blob::responses::SetBlobTierResponse;
-use crate::prelude::*;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
-use azure_core::prelude::*;
+use crate::{blob::responses::SetBlobTierResponse, prelude::*};
+use azure_core::{
+    error::{Error, ErrorKind, Result},
+    headers::{add_mandatory_header, add_optional_header},
+    prelude::*,
+};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -37,16 +39,15 @@ impl<'a> SetBlobTierBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        self,
-    ) -> Result<SetBlobTierResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(self) -> Result<SetBlobTierResponse> {
         // Get the blob properties first. Need this to determine what HTTP status code to expect later.
         let blob_properties = self.blob_client.get_properties().execute().await?;
         let blob_tier = blob_properties.blob.properties.access_tier;
         let blob_tier = match blob_tier {
             Some(bt) => bt,
             None => {
-                return Err(From::from(
+                return Err(Error::message(
+                    ErrorKind::DataConversion,
                     "Unable to determine current access tier for blob.",
                 ))
             }

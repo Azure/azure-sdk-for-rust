@@ -1,5 +1,4 @@
-use azure_core::headers::*;
-use azure_core::RequestId;
+use azure_core::{headers::*, RequestId};
 use chrono::{DateTime, Utc};
 
 #[cfg(not(feature = "azurite_workaround"))]

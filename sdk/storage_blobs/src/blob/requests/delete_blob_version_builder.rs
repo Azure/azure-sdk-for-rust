@@ -1,7 +1,9 @@
-use crate::blob::responses::DeleteBlobResponse;
-use crate::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
-use azure_core::prelude::*;
+use crate::{blob::responses::DeleteBlobResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref},
+    prelude::*,
+};
 
 #[derive(Debug, Clone)]
 pub struct DeleteBlobVersionBuilder<'a> {
@@ -32,9 +34,7 @@ impl<'a> DeleteBlobVersionBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<DeleteBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<DeleteBlobResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

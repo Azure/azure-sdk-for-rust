@@ -1,9 +1,10 @@
-use crate::container::responses::ReleaseLeaseResponse;
-use crate::prelude::*;
-use azure_core::headers::{add_mandatory_header, add_optional_header, LEASE_ACTION};
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{container::responses::ReleaseLeaseResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_mandatory_header, add_optional_header, LEASE_ACTION},
+    prelude::*,
+};
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct ReleaseLeaseBuilder<'a> {
@@ -26,9 +27,7 @@ impl<'a> ReleaseLeaseBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ReleaseLeaseResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ReleaseLeaseResponse> {
         let mut url = self.container_lease_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

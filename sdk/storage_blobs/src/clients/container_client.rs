@@ -1,18 +1,21 @@
-use crate::container::requests::*;
-use crate::prelude::PublicAccess;
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::prelude::*;
-use azure_core::HttpClient;
-use azure_storage::core::clients::{
-    AsStorageClient, StorageAccountClient, StorageClient, StorageCredentials,
+use crate::{container::requests::*, prelude::PublicAccess};
+use azure_core::{
+    error::{Error, ErrorKind, Result, ResultExt},
+    prelude::*,
+    HttpClient,
 };
-use azure_storage::shared_access_signature::{
-    service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
-    SasToken,
+use azure_storage::{
+    core::clients::{AsStorageClient, StorageAccountClient, StorageClient, StorageCredentials},
+    shared_access_signature::{
+        service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
+        SasToken,
+    },
 };
 use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+use http::{
+    method::Method,
+    request::{Builder, Request},
+};
 use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {

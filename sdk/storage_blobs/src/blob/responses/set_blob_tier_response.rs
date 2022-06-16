@@ -1,7 +1,9 @@
-use azure_core::headers::{
-    client_request_id_from_headers_optional, request_id_from_headers, version_from_headers,
+use azure_core::{
+    headers::{
+        client_request_id_from_headers_optional, request_id_from_headers, version_from_headers,
+    },
+    RequestId,
 };
-use azure_core::RequestId;
 use http::HeaderMap;
 use std::convert::TryFrom;
 

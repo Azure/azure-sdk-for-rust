@@ -1,9 +1,9 @@
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::headers::{self, Header};
-use azure_core::prelude::Range;
-use std::convert::TryFrom;
-use std::fmt;
-use std::str::FromStr;
+use azure_core::{
+    error::{Error, ErrorKind, Result, ResultExt},
+    headers::{self, Header},
+    prelude::Range,
+};
+use std::{convert::TryFrom, fmt, str::FromStr};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct BA512Range {

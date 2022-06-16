@@ -1,7 +1,7 @@
-use azure_core::headers::{
-    date_from_headers, etag_from_headers, request_id_from_headers, server_from_headers,
+use azure_core::{
+    headers::{date_from_headers, etag_from_headers, request_id_from_headers, server_from_headers},
+    RequestId,
 };
-use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 use std::convert::TryFrom;

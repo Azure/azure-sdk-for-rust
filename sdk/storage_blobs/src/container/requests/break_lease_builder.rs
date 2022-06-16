@@ -1,9 +1,10 @@
-use crate::container::responses::BreakLeaseResponse;
-use crate::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref, LEASE_ACTION};
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{container::responses::BreakLeaseResponse, prelude::*};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref, LEASE_ACTION},
+    prelude::*,
+};
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct BreakLeaseBuilder<'a> {
@@ -32,9 +33,7 @@ impl<'a> BreakLeaseBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        self,
-    ) -> Result<BreakLeaseResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(self) -> Result<BreakLeaseResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

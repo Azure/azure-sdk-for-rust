@@ -1,10 +1,7 @@
-use crate::blob::responses::ListBlobsResponse;
-use crate::prelude::*;
-use azure_core::headers::add_optional_header;
-use azure_core::prelude::*;
+use crate::{blob::responses::ListBlobsResponse, prelude::*};
+use azure_core::{error::Result, headers::add_optional_header, prelude::*};
 use futures::stream::{unfold, Stream};
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -61,9 +58,7 @@ impl<'a> ListBlobsBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ListBlobsResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ListBlobsResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
@@ -129,10 +124,7 @@ impl<'a> ListBlobsBuilder<'a> {
         Ok((&response).try_into()?)
     }
 
-    pub fn stream(
-        self,
-    ) -> impl Stream<Item = Result<ListBlobsResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
-    {
+    pub fn stream(self) -> impl Stream<Item = Result<ListBlobsResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

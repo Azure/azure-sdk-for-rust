@@ -9,14 +9,11 @@ mod list_containers_builder;
 mod release_lease_builder;
 mod renew_lease_builder;
 mod set_acl_builder;
-pub use self::acquire_lease_builder::AcquireLeaseBuilder;
-pub use self::break_lease_builder::BreakLeaseBuilder;
-pub use self::create_builder::CreateBuilder;
-pub use self::delete_builder::DeleteBuilder;
-pub use self::get_acl_builder::GetACLBuilder;
-pub use self::get_properties_builder::GetPropertiesBuilder;
-pub use self::list_blobs_builder::ListBlobsBuilder;
-pub use self::release_lease_builder::ReleaseLeaseBuilder;
-pub use self::renew_lease_builder::RenewLeaseBuilder;
-pub use self::set_acl_builder::SetACLBuilder;
+pub use self::{
+    acquire_lease_builder::AcquireLeaseBuilder, break_lease_builder::BreakLeaseBuilder,
+    create_builder::CreateBuilder, delete_builder::DeleteBuilder, get_acl_builder::GetACLBuilder,
+    get_properties_builder::GetPropertiesBuilder, list_blobs_builder::ListBlobsBuilder,
+    release_lease_builder::ReleaseLeaseBuilder, renew_lease_builder::RenewLeaseBuilder,
+    set_acl_builder::SetACLBuilder,
+};
 pub use list_containers_builder::ListContainersBuilder;

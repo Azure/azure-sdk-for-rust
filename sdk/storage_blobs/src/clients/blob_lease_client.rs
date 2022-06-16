@@ -1,12 +1,11 @@
-use crate::blob::requests::*;
-use crate::prelude::*;
-use azure_core::error::Result;
-use azure_core::prelude::*;
-use azure_core::HttpClient;
+use crate::{blob::requests::*, prelude::*};
+use azure_core::{error::Result, prelude::*, HttpClient};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+use http::{
+    method::Method,
+    request::{Builder, Request},
+};
 use std::sync::Arc;
 
 pub trait AsBlobLeaseClient {

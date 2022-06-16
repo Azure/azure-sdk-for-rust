@@ -1,6 +1,6 @@
+use azure_core::error::Result;
 use azure_storage::core::prelude::*;
-use azure_storage_blobs::blob::responses::GetBlobResponse;
-use azure_storage_blobs::prelude::*;
+use azure_storage_blobs::{blob::responses::GetBlobResponse, prelude::*};
 use futures::stream::StreamExt;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
@@ -10,7 +10,7 @@ use futures::stream::StreamExt;
 // We do not use leases here but you definitely want to do so otherwise the returned stream
 // is not guaranteed to be consistent.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> Result<()> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.
@@ -41,8 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 fn get_blob_stream(
     blob_client: &'_ BlobClient,
-) -> impl futures::Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + '_
-{
+) -> impl futures::Stream<Item = Result<GetBlobResponse>> + '_ {
     let stream = blob_client.get().stream(1024);
     stream
 }

@@ -1,9 +1,9 @@
-use crate::blob::responses::GetBlobResponse;
-use crate::prelude::*;
-use crate::Header;
-use azure_core::headers::AsHeaders;
-use azure_core::headers::{add_optional_header, add_optional_header_ref, CLIENT_REQUEST_ID};
-use azure_core::prelude::*;
+use crate::{blob::responses::GetBlobResponse, prelude::*, Header};
+use azure_core::{
+    error::Result,
+    headers::{add_optional_header, add_optional_header_ref, AsHeaders, CLIENT_REQUEST_ID},
+    prelude::*,
+};
 use futures::stream::Stream;
 use std::convert::TryInto;
 
@@ -64,9 +64,7 @@ impl<'a> GetBlobBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<GetBlobResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.blob_versioning.append_to_url_query(&mut url);
@@ -107,11 +105,7 @@ impl<'a> GetBlobBuilder<'a> {
         Ok((self.blob_client.blob_name(), response).try_into()?)
     }
 
-    pub fn stream(
-        self,
-        chunk_size: u64,
-    ) -> impl Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + 'a
-    {
+    pub fn stream(self, chunk_size: u64) -> impl Stream<Item = Result<GetBlobResponse>> + 'a {
         enum States {
             Init,
             Progress(Range),

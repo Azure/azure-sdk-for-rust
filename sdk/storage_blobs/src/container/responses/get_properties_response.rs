@@ -1,7 +1,9 @@
 use crate::container::Container;
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::headers::REQUEST_ID;
-use azure_core::RequestId;
+use azure_core::{
+    error::{Error, ErrorKind, Result, ResultExt},
+    headers::REQUEST_ID,
+    RequestId,
+};
 use chrono::{DateTime, FixedOffset};
 use http::{header, HeaderMap};
 use std::convert::TryFrom;

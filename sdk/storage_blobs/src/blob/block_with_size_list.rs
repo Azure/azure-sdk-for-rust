@@ -1,5 +1,4 @@
-use crate::blob::BlobBlockType;
-use crate::blob::BlobBlockWithSize;
+use crate::blob::{BlobBlockType, BlobBlockWithSize};
 use azure_core::error::{ErrorKind, ResultExt};
 
 #[derive(Debug, Deserialize)]

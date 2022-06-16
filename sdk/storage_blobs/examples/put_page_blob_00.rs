@@ -1,13 +1,12 @@
 #[macro_use]
 extern crate log;
-use azure_core::prelude::*;
+use azure_core::{error::Result, prelude::*};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{prelude::*, BA512Range};
 use bytes::Bytes;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     env_logger::init();
     trace!("example started");
 

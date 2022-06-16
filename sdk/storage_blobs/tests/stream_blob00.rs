@@ -1,5 +1,8 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
+use azure_core::{
+    error::{ErrorKind, Result, ResultExt},
+    prelude::*,
+};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
@@ -9,7 +12,7 @@ async fn create_blob_and_stream_back() {
     code().await.unwrap();
 }
 
-async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn code() -> Result<()> {
     let container_name = "azuresdkforrust";
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
@@ -81,7 +84,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         let returned_string = {
             let rlock = result.borrow();
-            String::from_utf8(rlock.to_vec())?
+            String::from_utf8(rlock.to_vec()).map_kind(ErrorKind::DataConversion)?
         };
 
         println!(

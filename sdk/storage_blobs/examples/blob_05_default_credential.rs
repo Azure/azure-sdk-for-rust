@@ -1,14 +1,16 @@
 #[macro_use]
 extern crate log;
 
-use azure_core::auth::TokenCredential;
+use azure_core::{
+    auth::TokenCredential,
+    error::{ErrorKind, Result, ResultExt},
+};
 use azure_identity::DefaultAzureCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     env_logger::init();
     // First we retrieve the account name, container and blob name from command line args
 
@@ -39,7 +41,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let response = blob_client.get().execute().await?;
 
-    let s_content = String::from_utf8(response.data.to_vec())?;
+    let s_content =
+        String::from_utf8(response.data.to_vec()).map_kind(ErrorKind::DataConversion)?;
     println!("blob == {:?}", blob);
     println!("s_content == {}", s_content);
 
