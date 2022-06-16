@@ -1,3 +1,4 @@
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::prelude::*;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::xml::read_xml;
@@ -56,14 +57,15 @@ pub struct Queue {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
-    type Error = crate::Error;
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    type Error = Error;
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         let headers = response.headers();
         let body = response.body();
 
         debug!("headers == {:?}", headers);
         debug!("body == {:#?}", body);
-        let mut response: ListQueuesResponseInternal = read_xml(body)?;
+        let mut response: ListQueuesResponseInternal =
+            read_xml(body).map_kind(ErrorKind::DataConversion)?;
 
         // get rid of the ugly Some("") empty string
         // we use None instead

@@ -9,11 +9,14 @@ use http::Method;
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;
+use std::sync::Arc;
 use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
+#[allow(clippy::manual_async_fn)]
+#[fix_hidden_lifetime_bug::fix_hidden_lifetime_bug]
 pub async fn exchange(
-    http_client: &dyn HttpClient,
+    http_client: Arc<dyn HttpClient>,
     tenant_id: &str,
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,

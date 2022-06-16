@@ -1,5 +1,5 @@
+use crate::error::{Error, ErrorKind, Result, ResultExt};
 use crate::headers::{AsHeaders, HeaderName, HeaderValue};
-use crate::ParseError;
 use std::convert::From;
 use std::fmt;
 use std::str::FromStr;
@@ -64,19 +64,20 @@ impl From<std::ops::Range<usize>> for Range {
 }
 
 impl FromStr for Range {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<Range, Self::Err> {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Range> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(ParseError::TokenNotFound {
-                item: "Range",
-                token: "/".to_owned(),
-                full: s.to_owned(),
-            });
+            return Err(Error::with_message(ErrorKind::Other, || {
+                format!(
+                    "expected token \"{}\" not found when parsing Range from \"{}\"",
+                    "/", s
+                )
+            }));
         }
 
-        let cp_start = v[0].parse::<u64>()?;
-        let cp_end = v[1].parse::<u64>()? + 1;
+        let cp_start = v[0].parse::<u64>().map_kind(ErrorKind::DataConversion)?;
+        let cp_end = v[1].parse::<u64>().map_kind(ErrorKind::DataConversion)? + 1;
 
         Ok(Range {
             start: cp_start,
@@ -105,21 +106,12 @@ mod test {
 
     #[test]
     fn test_range_parse_panic_1() {
-        let err = "abba/2000".parse::<Range>().unwrap_err();
-        assert!(matches!(err, ParseError::Int(_)));
+        "abba/2000".parse::<Range>().unwrap_err();
     }
 
     #[test]
     fn test_range_parse_panic_2() {
-        let err = "1000-2000".parse::<Range>().unwrap_err();
-        assert_eq!(
-            err,
-            ParseError::TokenNotFound {
-                item: "Range",
-                token: "/".to_string(),
-                full: "1000-2000".to_string()
-            }
-        );
+        "1000-2000".parse::<Range>().unwrap_err();
     }
 
     #[test]

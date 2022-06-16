@@ -1,43 +1,47 @@
 //! Parser helper utilities.
 
-use crate::TraversingError;
+use crate::error::{Error, ErrorKind, Result, ResultExt};
 
 pub trait FromStringOptional<T> {
-    fn from_str_optional(s: &str) -> Result<T, TraversingError>;
+    fn from_str_optional(s: &str) -> Result<T>;
 }
 
 impl FromStringOptional<u64> for u64 {
-    fn from_str_optional(s: &str) -> Result<u64, TraversingError> {
-        Ok(s.parse::<u64>()?)
+    fn from_str_optional(s: &str) -> Result<u64> {
+        s.parse::<u64>().map_kind(ErrorKind::DataConversion)
     }
 }
 
 impl FromStringOptional<String> for String {
-    fn from_str_optional(s: &str) -> Result<String, TraversingError> {
+    fn from_str_optional(s: &str) -> Result<String> {
         Ok(s.to_owned())
     }
 }
 
 impl FromStringOptional<bool> for bool {
-    fn from_str_optional(s: &str) -> Result<bool, TraversingError> {
+    fn from_str_optional(s: &str) -> Result<bool> {
         match s {
             "true" => Ok(true),
             "false" => Ok(false),
-            _ => Err(TraversingError::BooleanNotMatched(String::from(s))),
+            _ => Err(Error::with_message(ErrorKind::DataConversion, || {
+                "error parsing bool '{s}'"
+            })),
         }
     }
 }
 
 impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chrono::Utc> {
-    fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::Utc>, TraversingError> {
-        from_azure_time(s).map_err(TraversingError::DateTimeParse)
+    fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::Utc>> {
+        from_azure_time(s).with_context(ErrorKind::DataConversion, || {
+            format!("error parsing date time '{s}'")
+        })
     }
 }
 
 #[inline]
 #[cfg(not(feature = "azurite_workaround"))]
-pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
-    let dt = chrono::DateTime::parse_from_rfc2822(s)?;
+pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>> {
+    let dt = chrono::DateTime::parse_from_rfc2822(s).map_kind(ErrorKind::DataConversion)?;
     let dt_utc: chrono::DateTime<chrono::Utc> = dt.with_timezone(&chrono::Utc);
     Ok(dt_utc)
 }

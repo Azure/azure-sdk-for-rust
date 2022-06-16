@@ -16,7 +16,10 @@ pub trait HeaderMapExt {
         self.get_as_str(key).and_then(|s| s.parse::<u64>().ok())
     }
 
-    fn get_as_enum<K: AsHeaderName, V: FromStr<Err = E>, E>(&self, key: K) -> Result<Option<V>, E> {
+    fn get_as_enum<K: AsHeaderName, V: FromStr<Err = E>, E>(
+        &self,
+        key: K,
+    ) -> std::result::Result<Option<V>, E> {
         if let Some(s) = self.get_as_str(key) {
             return Ok(Some(s.parse::<V>()?));
         }

@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify the storage account name as first command line parameter");
 
-    let client = reqwest::Client::new();
+    let http_client = azure_core::new_http_client();
 
     // the process requires two steps. The first is to ask for
     // the code to show to the user. This is done with the following
@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // receive the refresh token as well.
     // We are requesting access to the storage account passed as parameter.
     let device_code_flow = device_code_flow::start(
-        &client,
+        http_client.clone(),
         &tenant_id,
         &client_id,
         &[
@@ -73,7 +73,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // this example we are creating an Azure Storage client
     // using the access token.
 
-    let http_client = azure_core::new_http_client();
     let storage_account_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,
@@ -89,7 +88,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // now let's refresh the token, if available
     if let Some(refresh_token) = authorization.refresh_token() {
         let refreshed_token =
-            refresh_token::exchange(&client, &tenant_id, &client_id, None, refresh_token).await?;
+            refresh_token::exchange(http_client, &tenant_id, &client_id, None, refresh_token)
+                .await?;
         println!("refreshed token == {:#?}", refreshed_token);
     }
 

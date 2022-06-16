@@ -5,7 +5,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub use azure_storage::{Error, Result};
+pub use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 
 mod access_tier;
 mod ba512_range;
@@ -18,7 +18,6 @@ mod condition_append_position;
 mod condition_max_size;
 pub mod container;
 mod delete_snapshot_method;
-mod errors;
 mod hash;
 mod headers;
 mod incomplete_vector;
@@ -34,7 +33,6 @@ pub use block_id::BlockId;
 pub use condition_append_position::ConditionAppendPosition;
 pub use condition_max_size::ConditionMaxSize;
 pub use delete_snapshot_method::DeleteSnapshotsMethod;
-pub use errors::*;
 pub use hash::Hash;
 pub use snapshot::Snapshot;
 pub use version_id::VersionId;

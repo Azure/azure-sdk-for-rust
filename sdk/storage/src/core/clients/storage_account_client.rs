@@ -7,6 +7,7 @@ use crate::{
     },
 };
 use azure_core::auth::TokenCredential;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::*;
 use azure_core::HttpClient;
 use bytes::Bytes;
@@ -73,10 +74,10 @@ pub struct StorageAccountClient {
     account: String,
 }
 
-fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
+fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>> {
     // Any base url will do: we just need to parse the SAS token
     // to get its query pairs.
-    let base_url = Url::parse("https://blob.core.windows.net")?;
+    let base_url = Url::parse("https://blob.core.windows.net").unwrap();
 
     let url = Url::options().base_url(Some(&base_url));
 
@@ -86,7 +87,10 @@ fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::Pa
         url.parse(sas_token)
     } else {
         url.parse(&format!("?{}", sas_token))
-    }?;
+    }
+    .with_context(ErrorKind::DataConversion, || {
+        format!("failed to parse SAS token: {sas_token}")
+    })?;
 
     Ok(url
         .query_pairs()
@@ -103,19 +107,16 @@ impl StorageAccountClient {
         let account = account.into();
 
         Arc::new(Self {
-            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
-                .unwrap(),
-            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_secondary_url: Url::parse(&format!(
-                "https://{}-secondary.queue.core.windows.net",
-                &account
-            ))
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{account}-secondary"),
+                "queue",
+            )
             .unwrap(),
-            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
-                .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
             storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
             http_client,
             account,
@@ -196,7 +197,7 @@ impl StorageAccountClient {
         http_client: Arc<dyn HttpClient>,
         account: A,
         sas_token: S,
-    ) -> Result<Arc<Self>, url::ParseError>
+    ) -> Result<Arc<Self>>
     where
         A: Into<String>,
         S: AsRef<str>,
@@ -204,14 +205,15 @@ impl StorageAccountClient {
         let account = account.into();
 
         Ok(Arc::new(Self {
-            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))?,
-            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))?,
-            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))?,
-            queue_storage_secondary_url: Url::parse(&format!(
-                "https://{}-secondary.queue.core.windows.net",
-                &account
-            ))?,
-            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))?,
+            blob_storage_url: get_endpoint_uri(None, &account, "blob")?,
+            table_storage_url: get_endpoint_uri(None, &account, "table")?,
+            queue_storage_url: get_endpoint_uri(None, &account, "queue")?,
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{account}-secondary"),
+                "queue",
+            )?,
+            filesystem_url: get_endpoint_uri(None, &account, "dfs")?,
             storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                 sas_token.as_ref(),
             )?),
@@ -233,19 +235,16 @@ impl StorageAccountClient {
         let bearer_token = bearer_token.into();
 
         Arc::new(Self {
-            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
-                .unwrap(),
-            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_secondary_url: Url::parse(&format!(
-                "https://{}-secondary.queue.core.windows.net",
-                &account
-            ))
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{}-secondary", account),
+                "queue",
+            )
             .unwrap(),
-            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
-                .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
             storage_credentials: StorageCredentials::BearerToken(bearer_token),
             http_client,
             account,
@@ -263,19 +262,16 @@ impl StorageAccountClient {
         let account = account.into();
 
         Arc::new(Self {
-            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
-                .unwrap(),
-            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_secondary_url: Url::parse(&format!(
-                "https://{}-secondary.queue.core.windows.net",
-                &account
-            ))
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{}-secondary", account),
+                "queue",
+            )
             .unwrap(),
-            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
-                .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
             storage_credentials: StorageCredentials::TokenCredential(token_credential),
             http_client,
             account,
@@ -285,7 +281,7 @@ impl StorageAccountClient {
     pub fn new_connection_string(
         http_client: Arc<dyn HttpClient>,
         connection_string: &str,
-    ) -> crate::Result<Arc<Self>> {
+    ) -> Result<Arc<Self>> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -346,12 +342,11 @@ impl StorageAccountClient {
                 queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
-                    account: account.to_string(),
+                account: account.to_string(),
             })),
            _ => {
-                Err(crate::Error::GenericErrorWithText(
+                Err(Error::message(ErrorKind::Other,
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
-                        .to_owned(),
                 ))
             }
         }
@@ -396,11 +391,13 @@ impl StorageAccountClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> Result<(Request<Bytes>, url::Url)> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-        let mut url = url::Url::parse(url)?;
+        let mut url = url::Url::parse(url).with_context(ErrorKind::DataConversion, || {
+            format!("failed to parse request url: {url}")
+        })?;
 
         // if we have a SAS token (in form of query pairs), let's add it to the url here
         if let StorageCredentials::SASToken(query_pairs) = &self.storage_credentials {
@@ -455,7 +452,8 @@ impl StorageAccountClient {
             }
             StorageCredentials::TokenCredential(token_credential) => {
                 let bearer_token_future = token_credential.get_token(STORAGE_TOKEN_SCOPE);
-                let bearer_token = futures::executor::block_on(bearer_token_future)?;
+                let bearer_token = futures::executor::block_on(bearer_token_future)
+                    .context(ErrorKind::Credential, "failed to get bearer token")?;
 
                 request.header(
                     AUTHORIZATION,
@@ -479,15 +477,12 @@ impl StorageAccountClient {
 impl ClientAccountSharedAccessSignature for StorageAccountClient {
     fn shared_access_signature(
         &self,
-    ) -> Result<AccountSharedAccessSignatureBuilder<No, No, No, No>, crate::Error> {
+    ) -> Result<AccountSharedAccessSignatureBuilder<No, No, No, No>> {
         match self.storage_credentials {
             StorageCredentials::Key(ref account, ref key) => {
                 Ok(AccountSharedAccessSignatureBuilder::new(account, key))
             }
-            _ => Err(crate::Error::OperationNotSupported(
-                "Shared access signature generation".to_owned(),
-                "SAS can be generated only from key and account clients".to_owned(),
-            )),
+            _ => Err(Error::message(ErrorKind::Other, "failed shared access signature generation. SAS can be generated only from key and account clients")),
         }
     }
 }
@@ -673,19 +668,15 @@ fn lexy_sort<'a>(
     v_values
 }
 
-fn get_endpoint_uri<URL>(
-    url: Option<URL>,
-    account: &str,
-    endpoint_type: &str,
-) -> Result<url::Url, url::ParseError>
-where
-    URL: AsRef<str>,
-{
+fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> Result<url::Url> {
     Ok(match url {
-        Some(value) => url::Url::parse(value.as_ref())?,
+        Some(value) => url::Url::parse(value)?,
         None => url::Url::parse(&format!(
             "https://{}.{}.core.windows.net",
             account, endpoint_type
-        ))?,
+        ))
+        .with_context(ErrorKind::DataConversion, || {
+            format!("failed to parse url: https://{account}.{endpoint_type}.core.windows.net")
+        })?,
     })
 }

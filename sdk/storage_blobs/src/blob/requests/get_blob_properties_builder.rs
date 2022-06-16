@@ -1,5 +1,6 @@
 use crate::blob::responses::GetBlobPropertiesResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 
@@ -30,9 +31,7 @@ impl<'a> GetBlobPropertiesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<GetBlobPropertiesResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<GetBlobPropertiesResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
@@ -62,9 +61,6 @@ impl<'a> GetBlobPropertiesBuilder<'a> {
         // TODO: Fix this
         //let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
         let blob = Blob::from_headers(self.blob_client.blob_name(), response.headers())?;
-        Ok(GetBlobPropertiesResponse::from_response(
-            response.headers(),
-            blob,
-        )?)
+        GetBlobPropertiesResponse::from_response(response.headers(), blob)
     }
 }

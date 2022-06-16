@@ -1,4 +1,5 @@
 use crate::container::Container;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::REQUEST_ID;
 use azure_core::RequestId;
 use chrono::{DateTime, FixedOffset};
@@ -16,7 +17,7 @@ pub struct GetPropertiesResponse {
 impl TryFrom<(&str, &HeaderMap)> for GetPropertiesResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&str, &HeaderMap)) -> Result<Self, Self::Error> {
+    fn try_from((body, header_map): (&str, &HeaderMap)) -> Result<Self> {
         GetPropertiesResponse::from_response(body, header_map)
     }
 }
@@ -27,15 +28,21 @@ impl GetPropertiesResponse {
         headers: &HeaderMap,
     ) -> crate::Result<GetPropertiesResponse> {
         let request_id = match headers.get(REQUEST_ID) {
-            Some(request_id) => Uuid::parse_str(request_id.to_str()?)?,
-            None => return Err(crate::Error::MissingHeaderError(REQUEST_ID.to_owned())),
+            Some(request_id) => {
+                Uuid::parse_str(request_id.to_str().map_kind(ErrorKind::DataConversion)?)
+                    .map_kind(ErrorKind::DataConversion)?
+            }
+            None => return Err(Error::message(ErrorKind::DataConversion, REQUEST_ID)),
         };
 
         let date = match headers.get(header::DATE) {
-            Some(date) => DateTime::parse_from_rfc2822(date.to_str()?)?,
+            Some(date) => {
+                DateTime::parse_from_rfc2822(date.to_str().map_kind(ErrorKind::DataConversion)?)
+                    .map_kind(ErrorKind::DataConversion)?
+            }
             None => {
                 static D: header::HeaderName = header::DATE;
-                return Err(crate::Error::MissingHeaderError(D.as_str().to_owned()));
+                return Err(Error::message(ErrorKind::DataConversion, D.as_str()));
             }
         };
 

@@ -1,6 +1,6 @@
 use super::Continuation;
-use crate::{AppendToUrlQuery, Error, HttpHeaderError};
-
+use crate::error::{ErrorKind, Result, ResultExt};
+use crate::AppendToUrlQuery;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,12 +31,12 @@ impl NextMarker {
         url.query_pairs_mut().append_pair("continuation", &self.0);
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>, Error> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>> {
         let header_as_str = headers
             .get("x-ms-continuation")
             .map(|item| item.to_str())
             .transpose()
-            .map_err(HttpHeaderError::ToStr)?;
+            .map_kind(ErrorKind::Other)?;
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

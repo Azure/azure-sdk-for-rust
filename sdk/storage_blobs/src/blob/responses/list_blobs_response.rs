@@ -1,4 +1,5 @@
 use crate::blob::Blob;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::NextMarker;
 use azure_core::RequestId;
@@ -45,11 +46,12 @@ pub struct BlobPrefix {
 impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
     type Error = crate::Error;
 
-    fn try_from(response: &http::Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &http::Response<Bytes>) -> Result<Self> {
         let body = response.body();
 
         trace!("body == {:?}", body);
-        let list_blobs_response_internal: ListBlobsResponseInternal = read_xml(body)?;
+        let list_blobs_response_internal: ListBlobsResponseInternal =
+            read_xml(body).map_kind(ErrorKind::DataConversion)?;
 
         Ok(Self {
             request_id: request_id_from_headers(response.headers())?,

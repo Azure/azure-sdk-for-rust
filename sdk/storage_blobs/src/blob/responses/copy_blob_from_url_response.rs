@@ -1,4 +1,5 @@
 use crate::blob::{copy_status_from_headers, CopyStatus};
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
     server_from_headers, version_from_headers,
@@ -26,16 +27,17 @@ pub struct CopyBlobFromUrlResponse {
 
 impl TryFrom<&HeaderMap> for CopyBlobFromUrlResponse {
     type Error = crate::Error;
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &HeaderMap) -> Result<Self> {
         debug!("headers == {:#?}", headers);
         Ok(Self {
-            content_md5: content_md5_from_headers_optional(headers)?,
+            content_md5: content_md5_from_headers_optional(headers)
+                .map_kind(ErrorKind::DataConversion)?,
             last_modified: last_modified_from_headers(headers)?,
             etag: etag_from_headers(headers)?,
             server: server_from_headers(headers)?.to_owned(),
             request_id: request_id_from_headers(headers)?,
             version: version_from_headers(headers)?.to_owned(),
-            copy_id: copy_id_from_headers(headers)?,
+            copy_id: copy_id_from_headers(headers).map_kind(ErrorKind::DataConversion)?,
             copy_status: copy_status_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })

@@ -1,4 +1,5 @@
 use crate::blob::Blob;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::ContentRange;
 use azure_core::RequestId;
@@ -19,7 +20,7 @@ pub struct GetBlobResponse {
 
 impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
     type Error = crate::Error;
-    fn try_from((blob_name, response): (&str, Response<Bytes>)) -> Result<Self, Self::Error> {
+    fn try_from((blob_name, response): (&str, Response<Bytes>)) -> Result<Self> {
         debug!("response.headers() == {:#?}", response.headers());
 
         let request_id = request_id_from_headers(response.headers())?;
@@ -27,7 +28,10 @@ impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
 
         let content_range_header = response.headers().get(http::header::CONTENT_RANGE);
         let content_range = match content_range_header {
-            Some(hv) => Some(ContentRange::from_str(hv.to_str()?)?),
+            Some(hv) => Some(
+                ContentRange::from_str(hv.to_str().map_kind(ErrorKind::DataConversion)?)
+                    .map_kind(ErrorKind::DataConversion)?,
+            ),
             None => None,
         };
 

@@ -1,17 +1,15 @@
-use azure_core::{parsing::FromStringOptional, TraversingError};
+use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::parsing::FromStringOptional;
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};
 
 #[inline]
-pub fn traverse_single_must<'a>(
-    node: &'a Element,
-    path: &[&str],
-) -> Result<&'a Element, TraversingError> {
+pub fn traverse_single_must<'a>(node: &'a Element, path: &[&str]) -> Result<&'a Element> {
     let vec = traverse(node, path, false)?;
     if vec.len() > 1 {
-        return Err(TraversingError::MultipleNode(
-            path[path.len() - 1].to_owned(),
-        ));
+        return Err(Error::with_message(ErrorKind::Other, || {
+            format!("multiple node: {}", path[path.len() - 1])
+        }));
     }
 
     Ok(vec[0])
@@ -20,12 +18,12 @@ pub fn traverse_single_must<'a>(
 pub fn traverse_single_optional<'a>(
     node: &'a Element,
     path: &[&str],
-) -> Result<Option<&'a Element>, TraversingError> {
+) -> Result<Option<&'a Element>> {
     let vec = traverse(node, path, true)?;
     if vec.len() > 1 {
-        return Err(TraversingError::MultipleNode(
-            path[path.len() - 1].to_owned(),
-        ));
+        return Err(Error::with_message(ErrorKind::Other, || {
+            format!("multiple node: {}", path[path.len() - 1])
+        }));
     }
 
     if vec.is_empty() {
@@ -40,7 +38,7 @@ pub fn traverse<'a>(
     node: &'a Element,
     path: &[&str],
     ignore_empty_leaf: bool,
-) -> Result<Vec<&'a Element>, TraversingError> {
+) -> Result<Vec<&'a Element>> {
     trace!(
         "traverse(node == {:?}, path == {:?}, ignore_empty_leaf == {})",
         node,
@@ -63,12 +61,16 @@ pub fn traverse<'a>(
             if (x + 1) >= path.len() && ignore_empty_leaf {
                 return Ok(vec);
             } else {
-                return Err(TraversingError::PathNotFound((*item).to_owned()));
+                return Err(Error::with_message(ErrorKind::Other, || {
+                    format!("path not found: {}", *item)
+                }));
             }
         }
 
         if vec.len() > 1 && (x + 1) < path.len() {
-            return Err(TraversingError::MultipleNode((*item).to_owned()));
+            return Err(Error::with_message(ErrorKind::Other, || {
+                format!("multiple node: {}", *item)
+            }));
         }
 
         if (x + 1) >= path.len() {
@@ -97,7 +99,7 @@ pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
 }
 
 #[inline]
-pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
+pub fn inner_text(node: &Element) -> Result<&str> {
     for child in &node.children {
         match *child {
             CharacterNode(ref txt) => return Ok(txt),
@@ -112,7 +114,7 @@ pub fn inner_text(node: &Element) -> Result<&str, TraversingError> {
 }
 
 #[inline]
-pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T>, TraversingError>
+pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T>>
 where
     T: FromStringOptional<T>,
 {
@@ -126,7 +128,7 @@ where
 }
 
 #[inline]
-pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T, TraversingError>
+pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T>
 where
     T: FromStringOptional<T>,
 {

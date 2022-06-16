@@ -1,4 +1,5 @@
 use crate::QueueServiceProperties;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
 use bytes::Bytes;
@@ -12,15 +13,16 @@ pub struct GetQueueServicePropertiesResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServicePropertiesResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: &Response<Bytes>) -> Result<Self> {
         let headers = response.headers();
         let body = response.body();
 
         debug!("headers == {:?}", headers);
         debug!("body == {:#?}", body);
-        let queue_service_properties: QueueServiceProperties = read_xml(body)?;
+        let queue_service_properties: QueueServiceProperties =
+            read_xml(body).map_kind(ErrorKind::DataConversion)?;
         debug!("deserde == {:#?}", response);
 
         Ok(GetQueueServicePropertiesResponse {

@@ -1,6 +1,6 @@
 [package]
 name = "azure_identity"
-version = "0.3.0"
+version = "0.4.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.2", default-features = false }
+azure_core = { path = "../core", version = "0.3", default-features = false }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
@@ -28,6 +28,8 @@ openssl = { version = "0.10",  optional=true }
 base64 = "0.13.0"
 uuid = { version = "1.0",  features = ["v4"] }
 http = "0.2"
+# work around https://github.com/rust-lang/rust/issues/63033
+fix-hidden-lifetime-bug = "0.2"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }

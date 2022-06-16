@@ -1,5 +1,6 @@
 use crate::container::requests::*;
 use crate::prelude::PublicAccess;
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_storage::core::clients::{
@@ -60,10 +61,7 @@ impl ContainerClient {
         self.storage_client.storage_account_client()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(
-        &'a self,
-        segments: I,
-    ) -> Result<url::Url, url::ParseError>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -118,11 +116,12 @@ impl ContainerClient {
     ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
+            .map_kind(ErrorKind::DataConversion)
     }
 
     pub fn shared_access_signature(
         &self,
-    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>, crate::Error> {
+    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}",
             self.storage_account_client().account(),
@@ -134,17 +133,13 @@ impl ContainerClient {
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Container),
             ),
-            _ => Err(crate::Error::OperationNotSupported(
-                "Shared access signature generation".to_owned(),
-                "SAS can be generated only from key and account clients".to_owned(),
+            _ => Err(Error::message(ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated only from key and account clients",
             )),
         }
     }
 
-    pub fn generate_signed_container_url<T>(
-        &self,
-        signature: &T,
-    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>>
+    pub fn generate_signed_container_url<T>(&self, signature: &T) -> Result<url::Url>
     where
         T: SasToken,
     {

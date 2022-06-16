@@ -1,8 +1,7 @@
+use crate::error::{Error, ErrorKind, Result, ResultExt};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-
-use crate::error::ResultExt;
 
 #[derive(Debug, Clone)]
 pub(crate) struct MockTransaction {
@@ -30,13 +29,11 @@ impl MockTransaction {
         self.number.fetch_add(1, Ordering::SeqCst)
     }
 
-    pub(crate) fn file_path(&self, create_when_not_exist: bool) -> crate::error::Result<PathBuf> {
-        let mut path = PathBuf::from(workspace_root().map_err(|e| {
-            super::MockFrameworkError::TransactionStorageError(format!(
-                "could not read the workspace_root from the cargo metadata: {}",
-                e,
-            ))
-        })?);
+    pub(crate) fn file_path(&self, create_when_not_exist: bool) -> Result<PathBuf> {
+        let mut path = PathBuf::from(workspace_root().context(
+            ErrorKind::MockFramework,
+            "could not read the workspace_root from the cargo metadata",
+        )?);
         path.push("test");
         path.push("transactions");
         let name = self.name();
@@ -51,15 +48,16 @@ impl MockTransaction {
 
         if !path.exists() {
             if create_when_not_exist {
-                std::fs::create_dir_all(&path)
-                    .with_context(crate::error::ErrorKind::MockFramework, || {
-                        format!("cannot create transaction folder: {}", path.display())
-                    })?;
+                std::fs::create_dir_all(&path).with_context(ErrorKind::MockFramework, || {
+                    format!("cannot create transaction folder: {}", path.display())
+                })?;
             } else {
-                return Err(super::MockFrameworkError::MissingTransaction(format!(
-                    "the transaction location '{}' does not exist",
-                    path.canonicalize().unwrap_or(path).display()
-                ))
+                return Err(Error::with_message(ErrorKind::MockFramework, || {
+                    format!(
+                        "the transaction location '{}' does not exist",
+                        path.canonicalize().unwrap_or(path).display()
+                    )
+                })
                 .into());
             }
         }
@@ -69,19 +67,25 @@ impl MockTransaction {
 }
 
 /// Run cargo to get the root of the workspace
-fn workspace_root() -> Result<String, Box<dyn std::error::Error>> {
+fn workspace_root() -> Result<String> {
     let output = std::process::Command::new("cargo")
         .arg("metadata")
         .output()?;
     let output = String::from_utf8_lossy(&output.stdout);
 
     let key = "workspace_root\":\"";
-    let index = output
-        .find(key)
-        .ok_or_else(|| format!("workspace_root key not found in metadata"))?;
+    let index = output.find(key).ok_or_else(|| {
+        Error::message(
+            ErrorKind::MockFramework,
+            "workspace_root key not found in metadata",
+        )
+    })?;
     let value = &output[index + key.len()..];
-    let end = value
-        .find("\"")
-        .ok_or_else(|| format!("workspace_root value was malformed"))?;
+    let end = value.find("\"").ok_or_else(|| {
+        Error::message(
+            ErrorKind::MockFramework,
+            "workspace_root value was malformed",
+        )
+    })?;
     Ok(value[..end].into())
 }

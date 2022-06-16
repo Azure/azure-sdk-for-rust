@@ -1,4 +1,4 @@
-use crate::ParseError;
+use crate::error::{Error, ErrorKind, Result, ResultExt};
 use std::fmt;
 use std::str::FromStr;
 
@@ -38,52 +38,68 @@ impl ContentRange {
 }
 
 impl FromStr for ContentRange {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<ContentRange, Self::Err> {
-        let remaining = s
-            .strip_prefix(PREFIX)
-            .ok_or_else(|| ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: PREFIX.to_owned(),
-                full: s.into(),
-            })?;
+    type Err = Error;
+    fn from_str(s: &str) -> Result<ContentRange> {
+        let remaining = s.strip_prefix(PREFIX).ok_or_else(|| {
+            Error::with_message(ErrorKind::Other, || {
+                format!(
+                    "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                    PREFIX, s
+                )
+            })
+        })?;
 
         let mut split_at_dash = remaining.split('-');
         let start = split_at_dash
             .next()
-            .ok_or_else(|| ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "-".to_owned(),
-                full: s.into(),
+            .ok_or_else(|| {
+                Error::with_message(ErrorKind::Other, || {
+                    format!(
+                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                        "-", s
+                    )
+                })
             })?
-            .parse()?;
+            .parse()
+            .map_kind(ErrorKind::DataConversion)?;
 
         let mut split_at_slash = split_at_dash
             .next()
-            .ok_or_else(|| ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "-".to_owned(),
-                full: s.into(),
+            .ok_or_else(|| {
+                Error::with_message(ErrorKind::Other, || {
+                    format!(
+                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                        "-", s
+                    )
+                })
             })?
             .split('/');
 
         let end = split_at_slash
             .next()
-            .ok_or_else(|| ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "/".to_owned(),
-                full: s.into(),
+            .ok_or_else(|| {
+                Error::with_message(ErrorKind::Other, || {
+                    format!(
+                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                        "/", s
+                    )
+                })
             })?
-            .parse()?;
+            .parse()
+            .map_kind(ErrorKind::DataConversion)?;
 
         let total_length = split_at_slash
             .next()
-            .ok_or_else(|| ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "/".to_owned(),
-                full: s.into(),
+            .ok_or_else(|| {
+                Error::with_message(ErrorKind::Other, || {
+                    format!(
+                        "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
+                        "/", s
+                    )
+                })
             })?
-            .parse()?;
+            .parse()
+            .map_kind(ErrorKind::DataConversion)?;
 
         Ok(ContentRange {
             start,
@@ -123,41 +139,17 @@ mod test {
 
     #[test]
     fn test_parse_no_starting_token() {
-        let err = "something else".parse::<ContentRange>().unwrap_err();
-        assert_eq!(
-            err,
-            ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "bytes ".to_string(),
-                full: "something else".to_string()
-            }
-        );
+        "something else".parse::<ContentRange>().unwrap_err();
     }
 
     #[test]
     fn test_parse_no_dash() {
-        let err = "bytes 100".parse::<ContentRange>().unwrap_err();
-        assert_eq!(
-            err,
-            ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "-".to_string(),
-                full: "bytes 100".to_string()
-            }
-        );
+        "bytes 100".parse::<ContentRange>().unwrap_err();
     }
 
     #[test]
     fn test_parse_no_slash() {
-        let err = "bytes 100-500".parse::<ContentRange>().unwrap_err();
-        assert_eq!(
-            err,
-            ParseError::TokenNotFound {
-                item: "ContentRange",
-                token: "/".to_string(),
-                full: "bytes 100-500".to_string()
-            }
-        );
+        "bytes 100-500".parse::<ContentRange>().unwrap_err();
     }
 
     #[test]

@@ -1,4 +1,5 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
+use azure_core::error::{Error, ErrorKind, Result};
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -36,14 +37,17 @@ impl StorageClient {
         self.storage_account_client.http_client()
     }
 
-    fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> Result<url::Url, url::ParseError>
+    fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
         {
-            let mut segs = url
-                .path_segments_mut()
-                .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?;
+            let original_url = url.clone();
+            let mut segs = url.path_segments_mut().map_err(|_| {
+                Error::with_message(ErrorKind::DataConversion, || {
+                    format!("failed to parse url path segments. url: {original_url}")
+                })
+            })?;
             for segment in segments.into_iter() {
                 segs.push(segment);
             }
@@ -51,7 +55,7 @@ impl StorageClient {
         Ok(url)
     }
 
-    pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url, url::ParseError>
+    pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -61,10 +65,7 @@ impl StorageClient {
         )
     }
 
-    pub fn queue_url_with_segments<'a, I>(
-        &'a self,
-        segments: I,
-    ) -> Result<url::Url, url::ParseError>
+    pub fn queue_url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -92,7 +93,7 @@ impl StorageClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> Result<(Request<Bytes>, url::Url)> {
         self.storage_account_client.prepare_request(
             url,
             method,

@@ -1,4 +1,5 @@
 use crate::container::{public_access_from_header, PublicAccess};
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use azure_core::headers::REQUEST_ID;
 use azure_core::RequestId;
 use azure_storage::core::StoredAccessPolicyList;
@@ -22,7 +23,7 @@ pub struct GetACLResponse {
 impl TryFrom<(&Bytes, &HeaderMap)> for GetACLResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&Bytes, &HeaderMap)) -> Result<Self, Self::Error> {
+    fn try_from((body, header_map): (&Bytes, &HeaderMap)) -> Result<Self> {
         GetACLResponse::from_response(body, header_map)
     }
 }
@@ -36,43 +37,45 @@ impl GetACLResponse {
         let public_access = public_access_from_header(headers)?;
 
         let etag = match headers.get(header::ETAG) {
-            Some(etag) => etag.to_str()?,
+            Some(etag) => etag.to_str().map_kind(ErrorKind::DataConversion)?,
             None => {
                 static E: header::HeaderName = header::ETAG;
-                return Err(crate::Error::MissingHeaderError(E.as_str().to_owned()));
+                return Err(Error::message(ErrorKind::DataConversion, E.as_str()));
             }
         };
 
         let last_modified = match headers.get(header::LAST_MODIFIED) {
-            Some(last_modified) => last_modified.to_str()?,
+            Some(last_modified) => last_modified.to_str().map_kind(ErrorKind::DataConversion)?,
             None => {
                 static LM: header::HeaderName = header::LAST_MODIFIED;
-                return Err(crate::Error::MissingHeaderError(LM.as_str().to_owned()));
+                return Err(Error::message(ErrorKind::DataConversion, LM.as_str()));
             }
         };
-        let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
+        let last_modified =
+            DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
         let request_id = match headers.get(REQUEST_ID) {
-            Some(request_id) => request_id.to_str()?,
-            None => return Err(crate::Error::MissingHeaderError(REQUEST_ID.to_owned())),
+            Some(request_id) => request_id.to_str().map_kind(ErrorKind::DataConversion)?,
+            None => return Err(Error::message(ErrorKind::DataConversion, REQUEST_ID)),
         };
 
         let date = match headers.get(header::DATE) {
-            Some(date) => date.to_str()?,
+            Some(date) => date.to_str().map_kind(ErrorKind::DataConversion)?,
             None => {
                 static D: header::HeaderName = header::DATE;
-                return Err(crate::Error::MissingHeaderError(D.as_str().to_owned()));
+                return Err(Error::message(ErrorKind::DataConversion, D.as_str()));
             }
         };
-        let date = DateTime::parse_from_rfc2822(date)?;
+        let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
 
-        let stored_access_policy_list = StoredAccessPolicyList::from_xml(body)?;
+        let stored_access_policy_list =
+            StoredAccessPolicyList::from_xml(body).map_kind(ErrorKind::DataConversion)?;
 
         Ok(GetACLResponse {
             public_access,
             etag: etag.to_owned(),
             last_modified,
-            request_id: Uuid::parse_str(request_id)?,
+            request_id: Uuid::parse_str(request_id).map_kind(ErrorKind::DataConversion)?,
             date,
             stored_access_policy_list,
         })

@@ -4,14 +4,14 @@ use azure_core::error::ResultExt;
 use azure_core::AppendToUrlQuery;
 use azure_core::{
     collect_pinned_stream,
-    error::{ErrorKind, Result},
+    error::{Error, ErrorKind, Result},
     prelude::*,
     Pageable, Response,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-type ListFileSystems = Pageable<ListFileSystemsResponse, azure_core::Error>;
+type ListFileSystems = Pageable<ListFileSystemsResponse, Error>;
 
 #[derive(Debug, Clone)]
 pub struct ListFileSystemsBuilder {
@@ -75,10 +75,7 @@ impl ListFileSystemsBuilder {
                     .send(&mut ctx.clone(), &mut request)
                     .await?;
 
-                match ListFileSystemsResponse::try_from(response).await {
-                    Ok(r) => Ok(r),
-                    Err(e) => Err(azure_core::Error::Other(Box::new(e))),
-                }
+                ListFileSystemsResponse::try_from(response).await
             }
         };
 

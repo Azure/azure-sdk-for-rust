@@ -1,3 +1,4 @@
+use azure_core::error::{Error, Result};
 use http::response::Response;
 use serde::Deserialize;
 
@@ -12,9 +13,9 @@ pub struct InvokeMethodResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for InvokeMethodResponse {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
         let body = response.body();
 
         let invoke_method_response: InvokeMethodResponse = serde_json::from_slice(body)?;

@@ -3,7 +3,6 @@ mod connection_string;
 mod connection_string_builder;
 mod copy_id;
 mod copy_progress;
-mod errors;
 pub mod hmac;
 mod into_azure_path;
 mod macros;
@@ -19,7 +18,7 @@ pub use copy_progress::CopyProgress;
 pub mod parsing_xml;
 pub mod storage_shared_key_credential;
 mod stored_access_policy;
-pub use errors::{Error, Result};
+pub use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 pub mod util;
 pub mod xml;
 
@@ -49,7 +48,7 @@ pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub use consistency::{ConsistencyCRC64, ConsistencyMD5};
 
 mod consistency {
-    use crate::Error;
+    use azure_core::error::{Error, ErrorKind, Result, ResultExt};
     use bytes::Bytes;
     use serde::{Deserialize, Deserializer};
     use std::convert::TryInto;
@@ -61,12 +60,17 @@ mod consistency {
 
     impl ConsistencyCRC64 {
         /// Decodes from base64 encoded input
-        pub fn decode(input: impl AsRef<[u8]>) -> crate::Result<Self> {
-            let bytes = base64::decode(input).map_err(Error::Base64DecodeError)?;
+        pub fn decode(input: impl AsRef<[u8]>) -> Result<Self> {
+            let bytes = base64::decode(input).context(
+                ErrorKind::DataConversion,
+                "ConsistencyCRC64 failed base64 decode",
+            )?;
             let bytes = Bytes::from(bytes);
             match bytes.len() {
                 CRC64_BYTE_LENGTH => Ok(Self(bytes)),
-                len => Err(Error::CRC64Not8BytesLong(len)),
+                len => Err(Error::with_message(ErrorKind::Other, || {
+                    format!("CRC64 not 8 bytes long. len: {len}")
+                })),
             }
         }
         pub fn bytes(&self) -> &Bytes {
@@ -85,7 +89,9 @@ mod consistency {
     }
 
     impl<'de> Deserialize<'de> for ConsistencyCRC64 {
-        fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+        fn deserialize<D>(
+            deserializer: D,
+        ) -> std::result::Result<Self, <D as Deserializer<'de>>::Error>
         where
             D: Deserializer<'de>,
         {
@@ -103,12 +109,15 @@ mod consistency {
 
     impl ConsistencyMD5 {
         /// Decodes from base64 encoded input
-        pub fn decode(input: impl AsRef<[u8]>) -> Result<Self, Error> {
-            let bytes = base64::decode(input).map_err(Error::Base64DecodeError)?;
+        pub fn decode(input: impl AsRef<[u8]>) -> Result<Self> {
+            let bytes = base64::decode(input)
+                .context(ErrorKind::DataConversion, "ConsistencyMD5 failed decode")?;
             let bytes = Bytes::from(bytes);
             match bytes.len() {
                 MD5_BYTE_LENGTH => Ok(Self(bytes)),
-                len => Err(Error::DigestNot16BytesLong(len)),
+                len => Err(Error::with_message(ErrorKind::Other, || {
+                    format!("MD5 digest not 16 bytes long. len: {len}")
+                })),
             }
         }
         pub fn bytes(&self) -> &Bytes {
@@ -127,7 +136,9 @@ mod consistency {
     }
 
     impl<'de> Deserialize<'de> for ConsistencyMD5 {
-        fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+        fn deserialize<D>(
+            deserializer: D,
+        ) -> std::result::Result<Self, <D as Deserializer<'de>>::Error>
         where
             D: Deserializer<'de>,
         {

@@ -1,3 +1,5 @@
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
 
@@ -7,16 +9,6 @@ pub struct CopyProgress {
     pub bytes_total: u64,
 }
 
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum CopyProgressParseError {
-    #[error("number parse error")]
-    Disconnect(#[from] std::num::ParseIntError),
-    #[error("isufficient tokens error")]
-    InsufficientTokens(),
-}
-
 impl fmt::Display for CopyProgress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}/{}", self.bytes_copied, self.bytes_total)
@@ -24,23 +16,33 @@ impl fmt::Display for CopyProgress {
 }
 
 impl FromStr for CopyProgress {
-    type Err = CopyProgressParseError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let tokens = s.split('/').collect::<Vec<&str>>();
         if tokens.len() < 2 {
-            return Err(CopyProgressParseError::InsufficientTokens());
+            return Err(Error::with_message(ErrorKind::DataConversion, || {
+                format!("copy progress has insufficient tokens: {s}")
+            }));
         }
 
         Ok(Self {
-            bytes_copied: tokens[0].parse()?,
-            bytes_total: tokens[1].parse()?,
+            bytes_copied: tokens[0]
+                .parse()
+                .with_context(ErrorKind::DataConversion, || {
+                    format!("failed to parse bytes_copied from copy progress: {}", s)
+                })?,
+            bytes_total: tokens[1]
+                .parse()
+                .with_context(ErrorKind::DataConversion, || {
+                    format!("failed to parse bytes_total from copy progress: {}", s)
+                })?,
         })
     }
 }
 
 impl Serialize for CopyProgress {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -49,13 +51,13 @@ impl Serialize for CopyProgress {
 }
 
 impl<'de> Deserialize<'de> for CopyProgress {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
 
         s.parse()
-            .map_err(|e: CopyProgressParseError| serde::de::Error::custom(e.to_string()))
+            .map_err(|_| serde::de::Error::custom("Failed to deserialize CopyProgress"))
     }
 }

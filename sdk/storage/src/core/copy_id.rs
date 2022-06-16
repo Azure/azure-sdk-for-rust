@@ -1,3 +1,5 @@
+use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+
 use http::HeaderMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::TryFrom;
@@ -8,11 +10,20 @@ use super::headers::COPY_ID;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyId(uuid::Uuid);
 
-pub fn copy_id_from_headers(headers: &HeaderMap) -> crate::Result<CopyId> {
+pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId> {
     let copy_id = headers
         .get(COPY_ID)
-        .ok_or_else(|| crate::Error::HeaderNotFound(COPY_ID.to_owned()))?;
-    Ok(CopyId(uuid::Uuid::parse_str(copy_id.to_str()?)?))
+        .ok_or_else(|| Error::message(ErrorKind::Other, "failed to get copy id from headers"))?;
+    Ok(CopyId(
+        uuid::Uuid::parse_str(copy_id.to_str().context(
+            ErrorKind::DataConversion,
+            "failed to convert copy id to string",
+        )?)
+        .context(
+            ErrorKind::DataConversion,
+            "failed to parse uuid from copy_id",
+        )?,
+    ))
 }
 
 impl From<uuid::Uuid> for CopyId {
@@ -22,10 +33,14 @@ impl From<uuid::Uuid> for CopyId {
 }
 
 impl TryFrom<&str> for CopyId {
-    type Error = uuid::Error;
+    type Error = Error;
 
-    fn try_from(s: &str) -> Result<Self, Self::Error> {
-        Ok(Self(s.parse()?))
+    fn try_from(s: &str) -> Result<Self> {
+        Ok(Self(
+            s.parse().with_context(ErrorKind::DataConversion, || {
+                format!("failed to parse CopyId from {s}")
+            })?,
+        ))
     }
 }
 
@@ -36,7 +51,7 @@ impl fmt::Display for CopyId {
 }
 
 impl Serialize for CopyId {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -45,7 +60,7 @@ impl Serialize for CopyId {
 }
 
 impl<'de> Deserialize<'de> for CopyId {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
