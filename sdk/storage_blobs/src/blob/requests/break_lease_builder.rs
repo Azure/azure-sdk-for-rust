@@ -1,5 +1,6 @@
 use crate::blob::responses::BreakBlobLeaseResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::LEASE_ACTION;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
@@ -31,9 +32,7 @@ impl<'a> BreakLeaseBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<BreakBlobLeaseResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<BreakBlobLeaseResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "lease");
@@ -60,6 +59,6 @@ impl<'a> BreakLeaseBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::ACCEPTED)
             .await?;
 
-        Ok(BreakBlobLeaseResponse::from_headers(response.headers())?)
+        BreakBlobLeaseResponse::from_headers(response.headers())
     }
 }

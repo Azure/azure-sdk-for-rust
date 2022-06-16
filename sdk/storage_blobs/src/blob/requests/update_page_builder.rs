@@ -1,6 +1,7 @@
 use crate::blob::responses::UpdatePageResponse;
 use crate::prelude::*;
 use crate::BA512Range;
+use azure_core::error::Result;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::headers::{BLOB_TYPE, PAGE_WRITE};
 use azure_core::prelude::*;
@@ -50,9 +51,7 @@ impl<'a> UpdatePageBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<UpdatePageResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute(&self) -> Result<UpdatePageResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
@@ -88,6 +87,6 @@ impl<'a> UpdatePageBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(UpdatePageResponse::from_headers(response.headers())?)
+        UpdatePageResponse::from_headers(response.headers())
     }
 }

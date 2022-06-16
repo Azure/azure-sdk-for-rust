@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use http::method::Method;
@@ -29,7 +30,7 @@ impl<'a> DeleteBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(self) -> Result<()> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

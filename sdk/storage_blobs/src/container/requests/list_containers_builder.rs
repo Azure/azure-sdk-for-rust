@@ -1,5 +1,6 @@
 use crate::container::incomplete_vector_from_container_response;
 use crate::container::responses::ListContainersResponse;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::headers::request_id_from_headers;
 use azure_core::prelude::*;
@@ -44,9 +45,7 @@ impl<'a> ListContainersBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ListContainersResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -100,10 +99,7 @@ impl<'a> ListContainersBuilder<'a> {
         })
     }
 
-    pub fn stream(
-        self,
-    ) -> impl Stream<Item = Result<ListContainersResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
-    {
+    pub fn stream(self) -> impl Stream<Item = Result<ListContainersResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

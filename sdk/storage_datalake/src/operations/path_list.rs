@@ -5,7 +5,7 @@ use crate::{
 };
 use azure_core::{
     collect_pinned_stream,
-    error::{Error, ErrorKind, Result},
+    error::{Error, Result},
     prelude::*,
     AppendToUrlQuery, Pageable, Response,
 };
@@ -85,10 +85,7 @@ impl ListPathsBuilder {
                     .send(&mut ctx.clone(), &mut request)
                     .await?;
 
-                match ListPathsResponse::try_from(response).await {
-                    Ok(r) => Ok(r),
-                    Err(e) => Err(Error::new(ErrorKind::DataConversion, e)),
-                }
+                ListPathsResponse::try_from(response).await
             }
         };
 
