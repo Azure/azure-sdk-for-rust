@@ -1,8 +1,8 @@
 use crate::{clients::PathClient, request_options::*, Properties};
 use azure_core::error::ResultExt;
 use azure_core::headers::{
-    content_length_from_headers, etag_from_headers, get_option_str_from_headers,
-    last_modified_from_headers,
+    etag_from_headers, get_from_headers, get_option_str_from_headers, last_modified_from_headers,
+    CONTENT_LENGTH, CONTENT_TYPE,
 };
 use azure_core::prelude::*;
 use azure_core::{
@@ -93,7 +93,8 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
-    pub content_length: i64,
+    pub content_length: Option<i64>,
+    pub content_type: Option<String>,
     pub last_modified: DateTime<Utc>,
     pub properties: Option<Properties>,
     pub acl: Option<String>,
@@ -107,7 +108,8 @@ impl HeadPathResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,
-            content_length: content_length_from_headers(headers)?,
+            content_length: get_from_headers(headers, CONTENT_LENGTH).ok(),
+            content_type: get_from_headers(headers, CONTENT_TYPE).ok(),
             properties: get_option_str_from_headers(headers, azure_core::headers::PROPERTIES)?
                 .map(Properties::try_from)
                 .transpose()
