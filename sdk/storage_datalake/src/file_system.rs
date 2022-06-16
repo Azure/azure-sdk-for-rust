@@ -91,3 +91,42 @@ where
         ))),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_path_serialization() {
+        let payload = json!({
+            "contentLength": 100 as i64,
+            "etag": "etag",
+            "group": "group",
+            "isDirectory": true,
+            "lastModified": "Thu, 16 Jun 2022 10:22:59 GMT",
+            "name": "name",
+            "permissions": "permissions",
+            "owner": "owner"
+        });
+
+        let path: Path = serde_json::from_slice(payload.to_string().as_ref()).unwrap();
+        assert_eq!(path.content_length, 100);
+        assert!(path.is_directory);
+
+        let payload_str = json!({
+            "contentLength": "100",
+            "etag": "etag",
+            "group": "group",
+            "isDirectory": "true",
+            "lastModified": "Thu, 16 Jun 2022 10:22:59 GMT",
+            "name": "name",
+            "permissions": "permissions",
+            "owner": "owner"
+        });
+
+        let path: Path = serde_json::from_slice(payload_str.to_string().as_ref()).unwrap();
+        assert_eq!(path.content_length, 100);
+        assert!(path.is_directory);
+    }
+}
