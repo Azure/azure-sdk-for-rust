@@ -1,9 +1,6 @@
-use crate::prelude::*;
-use crate::responses::*;
-use azure_core::prelude::*;
-use azure_core::{headers::add_optional_header, AppendToUrlQuery};
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{prelude::*, responses::*};
+use azure_core::{error::Result, headers::add_optional_header, prelude::*, AppendToUrlQuery};
+use http::{method::Method, status::StatusCode};
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -28,9 +25,7 @@ impl<'a> GetEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute<E>(
-        &self,
-    ) -> Result<GetEntityResponse<E>, Box<dyn std::error::Error + Sync + Send>>
+    pub async fn execute<E>(&self) -> Result<GetEntityResponse<E>>
     where
         E: DeserializeOwned,
     {

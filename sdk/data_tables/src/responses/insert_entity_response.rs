@@ -1,11 +1,10 @@
 use crate::EntityWithMetadata;
-use azure_core::error::{Error, ErrorKind, Result};
 use azure_core::{
+    error::{Error, ErrorKind, Result},
     headers::{etag_from_headers, get_str_from_headers},
     Etag,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
-use azure_storage::core::util::HeaderMapExt;
+use azure_storage::core::{headers::CommonStorageResponseHeaders, util::HeaderMapExt};
 use bytes::Bytes;
 use http::Response;
 use serde::de::DeserializeOwned;

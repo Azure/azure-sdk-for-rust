@@ -1,10 +1,12 @@
-use crate::responses::*;
-use crate::{prelude::*, ContinuationNextPartitionAndRowKey};
-use azure_core::prelude::*;
-use azure_core::{headers::add_optional_header, AppendToUrlQuery};
+use crate::{prelude::*, responses::*, ContinuationNextPartitionAndRowKey};
+use azure_core::{
+    error::{Error, ErrorKind, Result},
+    headers::add_optional_header,
+    prelude::*,
+    AppendToUrlQuery,
+};
 use futures::stream::{unfold, Stream};
-use http::method::Method;
-use http::status::StatusCode;
+use http::{method::Method, status::StatusCode};
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -38,15 +40,13 @@ impl<'a> QueryEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute<E>(
-        &self,
-    ) -> Result<QueryEntityResponse<E>, Box<dyn std::error::Error + Sync + Send>>
+    pub async fn execute<E>(&self) -> Result<QueryEntityResponse<E>>
     where
         E: DeserializeOwned,
     {
         let mut url = self.table_client.url().to_owned();
         url.path_segments_mut()
-            .map_err(|_| "Invalid table URL")?
+            .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
             .pop()
             .push(&format!("{}()", self.table_client.table_name()));
 
@@ -80,9 +80,7 @@ impl<'a> QueryEntityBuilder<'a> {
         Ok((&response).try_into()?)
     }
 
-    pub fn stream<E>(
-        self,
-    ) -> impl Stream<Item = Result<QueryEntityResponse<E>, Box<dyn std::error::Error + Sync + Send>>> + 'a
+    pub fn stream<E>(self) -> impl Stream<Item = Result<QueryEntityResponse<E>>> + 'a
     where
         E: DeserializeOwned,
     {

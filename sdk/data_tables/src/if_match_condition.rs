@@ -1,5 +1,7 @@
-use azure_core::headers::{self, Header};
-use azure_core::Etag;
+use azure_core::{
+    headers::{self, Header},
+    Etag,
+};
 use http::header::IF_MATCH;
 
 #[derive(Debug, Clone, PartialEq)]

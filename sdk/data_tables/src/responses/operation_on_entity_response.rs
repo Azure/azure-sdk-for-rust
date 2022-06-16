@@ -1,5 +1,8 @@
-use azure_core::error::{Error, Result};
-use azure_core::{headers::etag_from_headers, Etag};
+use azure_core::{
+    error::{Error, Result},
+    headers::etag_from_headers,
+    Etag,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
