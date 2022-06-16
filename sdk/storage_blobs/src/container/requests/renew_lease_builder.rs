@@ -1,5 +1,6 @@
 use crate::container::responses::RenewLeaseResponse;
 use crate::prelude::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_mandatory_header, add_optional_header, LEASE_ACTION};
 use azure_core::prelude::*;
 use http::method::Method;
@@ -21,9 +22,7 @@ impl<'a> RenewLeaseBuilder<'a> {
         }
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<RenewLeaseResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<RenewLeaseResponse> {
         let mut url = self.container_lease_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
@@ -49,6 +48,6 @@ impl<'a> RenewLeaseBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok(RenewLeaseResponse::from_headers(response.headers())?)
+        RenewLeaseResponse::from_headers(response.headers())
     }
 }

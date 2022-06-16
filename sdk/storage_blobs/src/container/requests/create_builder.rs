@@ -1,4 +1,5 @@
 use crate::{container::PublicAccess, prelude::*};
+use azure_core::error::Result;
 use azure_core::{
     headers::{add_mandatory_header, add_optional_header, AsHeaders},
     prelude::*,
@@ -32,7 +33,7 @@ impl<'a> CreateBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(self) -> Result<()> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
