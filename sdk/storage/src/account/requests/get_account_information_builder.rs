@@ -39,8 +39,6 @@ impl<'a> GetAccountInformationBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
 
-        Ok(GetAccountInformationResponse::from_headers(
-            response.headers(),
-        )?)
+        GetAccountInformationResponse::from_headers(response.headers())
     }
 }

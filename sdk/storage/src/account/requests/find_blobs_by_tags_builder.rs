@@ -72,6 +72,6 @@ impl<'a> FindBlobsByTagsBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }
