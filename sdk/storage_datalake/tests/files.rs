@@ -5,7 +5,7 @@ use std::{assert_eq, assert_ne, error::Error};
 mod setup;
 
 #[tokio::test]
-async fn file_create_delete() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn file_create_delete() -> Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_create_delete")
         .await
         .unwrap();
@@ -41,7 +41,7 @@ async fn file_create_delete() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 
 #[tokio::test]
-async fn file_upload() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn file_upload() -> Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_read")
         .await
         .unwrap();
@@ -78,7 +78,7 @@ async fn file_upload() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 
 #[tokio::test]
-async fn file_read() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn file_read() -> Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_upload")
         .await
         .unwrap();
@@ -118,7 +118,7 @@ async fn file_read() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 
 #[tokio::test]
-async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn file_rename() -> Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_rename")
         .await
         .unwrap();
@@ -178,7 +178,7 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 
 #[tokio::test]
-async fn file_get_properties() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn file_get_properties() -> Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_properties")
         .await
         .unwrap();
