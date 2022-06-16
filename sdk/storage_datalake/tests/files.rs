@@ -1,6 +1,7 @@
 #![cfg(feature = "mock_transport_framework")]
+use azure_core::error::Result;
 use azure_storage_datalake::Properties;
-use std::{assert_eq, assert_ne, error::Error};
+use std::{assert_eq, assert_ne};
 
 mod setup;
 
