@@ -83,7 +83,7 @@ async fn file_system_create_delete() -> Result<()> {
 }
 
 #[tokio::test]
-async fn file_system_list_paths() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn file_system_list_paths() -> Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_system_list_paths")
         .await
         .unwrap();
