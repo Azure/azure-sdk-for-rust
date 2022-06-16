@@ -1,5 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -33,10 +34,7 @@ impl<'a> SetQueueMetadataBuilder<'a> {
     /// back to SetQueueMetadata.
     /// If you just want to clear the metadata, just pass an empty Metadata
     /// struct.
-    pub async fn execute(
-        &self,
-        metadata: &Metadata,
-    ) -> Result<SetQueueMetadataResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self, metadata: &Metadata) -> Result<SetQueueMetadataResponse> {
         let mut url = self.queue_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");

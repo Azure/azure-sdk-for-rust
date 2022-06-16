@@ -1,4 +1,5 @@
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
@@ -40,9 +41,7 @@ impl<'a> ListQueuesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ListQueuesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ListQueuesResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -84,10 +83,7 @@ impl<'a> ListQueuesBuilder<'a> {
         Ok((&response).try_into()?)
     }
 
-    pub fn stream(
-        self,
-    ) -> impl Stream<Item = Result<ListQueuesResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
-    {
+    pub fn stream(self) -> impl Stream<Item = Result<ListQueuesResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

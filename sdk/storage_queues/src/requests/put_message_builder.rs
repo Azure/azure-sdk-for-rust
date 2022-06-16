@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -31,10 +32,7 @@ impl<'a> PutMessageBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-        body: impl AsRef<str>,
-    ) -> Result<PutMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self, body: impl AsRef<str>) -> Result<PutMessageResponse> {
         let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         self.visibility_timeout.append_to_url_query(&mut url);

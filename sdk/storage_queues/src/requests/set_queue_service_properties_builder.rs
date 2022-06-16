@@ -1,5 +1,6 @@
 use crate::responses::*;
 use crate::QueueServiceProperties;
+use azure_core::error::{ErrorKind, Result, ResultExt};
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use azure_storage::core::clients::StorageClient;
@@ -32,7 +33,7 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
     pub async fn execute(
         &self,
         queue_service_properties: &QueueServiceProperties,
-    ) -> Result<SetQueueServicePropertiesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<SetQueueServicePropertiesResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -43,7 +44,8 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
         url.query_pairs_mut().append_pair("comp", "properties");
         self.timeout.append_to_url_query(&mut url);
 
-        let xml_body = serde_xml_rs::to_string(&queue_service_properties)?;
+        let xml_body = serde_xml_rs::to_string(&queue_service_properties)
+            .map_kind(ErrorKind::DataConversion)?;
         debug!("xml about to be sent == {}", xml_body);
 
         let request = self.storage_client.prepare_request(

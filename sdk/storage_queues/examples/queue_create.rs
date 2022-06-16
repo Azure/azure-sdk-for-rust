@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate log;
+use azure_core::error::Result;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
 use chrono::{Duration, Utc};
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
