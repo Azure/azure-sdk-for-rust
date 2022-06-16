@@ -1,5 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -25,9 +26,7 @@ impl<'a> DeleteQueueBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<DeleteQueueResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<DeleteQueueResponse> {
         let mut url = self.queue_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
@@ -50,6 +49,6 @@ impl<'a> DeleteQueueBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

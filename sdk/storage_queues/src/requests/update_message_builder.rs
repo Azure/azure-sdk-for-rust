@@ -1,6 +1,7 @@
 use crate::clients::PopReceiptClient;
 use crate::prelude::*;
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -31,10 +32,7 @@ impl<'a> UpdateMessageBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-        new_body: impl AsRef<str>,
-    ) -> Result<UpdateMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self, new_body: impl AsRef<str>) -> Result<UpdateMessageResponse> {
         let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
         self.visibility_timeout.append_to_url_query(&mut url);
@@ -68,6 +66,6 @@ impl<'a> UpdateMessageBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

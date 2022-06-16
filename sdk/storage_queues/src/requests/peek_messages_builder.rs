@@ -1,6 +1,7 @@
 use crate::clients::QueueClient;
 use crate::prelude::*;
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -29,9 +30,7 @@ impl<'a> PeekMessagesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<PeekMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<PeekMessagesResponse> {
         let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         url.query_pairs_mut().append_pair("peekonly", "true");
@@ -58,6 +57,6 @@ impl<'a> PeekMessagesBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::OK)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

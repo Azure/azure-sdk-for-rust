@@ -1,5 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -25,9 +26,7 @@ impl<'a> ClearMessagesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(
-        &self,
-    ) -> Result<ClearMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn execute(&self) -> Result<ClearMessagesResponse> {
         let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         self.timeout.append_to_url_query(&mut url);
@@ -52,6 +51,6 @@ impl<'a> ClearMessagesBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

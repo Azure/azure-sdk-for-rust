@@ -1,6 +1,7 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
 use crate::QueueStoredAccessPolicy;
+use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use azure_storage::StoredAccessPolicyList;
@@ -36,7 +37,7 @@ impl<'a> SetQueueACLBuilder<'a> {
     pub async fn execute(
         &self,
         queue_stored_access_policies: &[QueueStoredAccessPolicy],
-    ) -> Result<SetQueueACLResponse, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<SetQueueACLResponse> {
         let mut url = self.queue_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "acl");
@@ -74,6 +75,6 @@ impl<'a> SetQueueACLBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }
