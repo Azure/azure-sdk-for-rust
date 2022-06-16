@@ -69,7 +69,7 @@ impl FileSystemClient {
     }
 
     pub fn list_paths(&self) -> ListPathsBuilder {
-        ListPathsBuilder::new(self.clone(), self.context.clone())
+        ListPathsBuilder::new(self.clone(), self.context.clone()).recursive(true)
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {
