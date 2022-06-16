@@ -69,6 +69,6 @@ impl<'a> SetACLBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok(public_access_from_header(response.headers())?)
+        public_access_from_header(response.headers())
     }
 }

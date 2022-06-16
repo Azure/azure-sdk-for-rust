@@ -59,6 +59,6 @@ impl<'a> BreakLeaseBuilder<'a> {
             .execute_request_check_status(request, http::StatusCode::ACCEPTED)
             .await?;
 
-        Ok(BreakBlobLeaseResponse::from_headers(response.headers())?)
+        BreakBlobLeaseResponse::from_headers(response.headers())
     }
 }

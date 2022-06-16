@@ -59,9 +59,9 @@ impl<'a> GetPageRangesBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(GetPageRangesResponse::from_response(
+        GetPageRangesResponse::from_response(
             response.headers(),
             response.body(),
-        )?)
+        )
     }
 }

@@ -53,6 +53,6 @@ impl<'a> ReleaseLeaseBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok(ReleaseLeaseResponse::from_headers(response.headers())?)
+        ReleaseLeaseResponse::from_headers(response.headers())
     }
 }

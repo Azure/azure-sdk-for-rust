@@ -48,6 +48,6 @@ impl<'a> RenewLeaseBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok(RenewLeaseResponse::from_headers(response.headers())?)
+        RenewLeaseResponse::from_headers(response.headers())
     }
 }

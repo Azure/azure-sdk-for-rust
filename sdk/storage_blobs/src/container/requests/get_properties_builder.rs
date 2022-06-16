@@ -57,6 +57,6 @@ impl<'a> GetPropertiesBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok((self.container_client.container_name(), response.headers()).try_into()?)
+        (self.container_client.container_name(), response.headers()).try_into()
     }
 }

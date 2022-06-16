@@ -59,6 +59,6 @@ impl<'a> GetACLBuilder<'a> {
             .await?;
 
         // todo: parse SAS policies
-        Ok((response.body(), response.headers()).try_into()?)
+        (response.body(), response.headers()).try_into()
     }
 }

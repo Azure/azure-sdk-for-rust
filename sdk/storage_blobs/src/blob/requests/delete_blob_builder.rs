@@ -59,6 +59,6 @@ impl<'a> DeleteBlobBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(DeleteBlobResponse::from_headers(response.headers())?)
+        DeleteBlobResponse::from_headers(response.headers())
     }
 }

@@ -81,6 +81,6 @@ impl<'a> PutAppendBlobBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        Ok(PutBlobResponse::from_headers(response.headers())?)
+        PutBlobResponse::from_headers(response.headers())
     }
 }

@@ -102,7 +102,7 @@ impl<'a> GetBlobBuilder<'a> {
             .execute_request_check_status(request, expected_status_code)
             .await?;
 
-        Ok((self.blob_client.blob_name(), response).try_into()?)
+        (self.blob_client.blob_name(), response).try_into()
     }
 
     pub fn stream(self, chunk_size: u64) -> impl Stream<Item = Result<GetBlobResponse>> + 'a {
