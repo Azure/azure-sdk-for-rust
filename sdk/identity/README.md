@@ -18,7 +18,6 @@ To authenticate using the client credential flow, you can do the following:
 ```rust
 use azure_identity::client_credentials_flow;
 use oauth2::{ClientId, ClientSecret};
-use url::Url;
 
 use std::env;
 use std::error::Error;
@@ -31,8 +30,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."),
     );
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let subscription_id =
-        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
     let client = reqwest::Client::new();
     // This will give you the final token to use in authorization.
