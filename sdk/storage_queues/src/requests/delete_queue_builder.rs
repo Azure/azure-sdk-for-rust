@@ -49,6 +49,6 @@ impl<'a> DeleteQueueBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

@@ -57,6 +57,6 @@ impl<'a> PeekMessagesBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::OK)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

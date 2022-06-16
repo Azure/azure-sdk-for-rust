@@ -69,6 +69,6 @@ impl<'a> PutMessageBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::CREATED)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }

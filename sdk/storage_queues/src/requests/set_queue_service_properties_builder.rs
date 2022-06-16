@@ -65,6 +65,6 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::ACCEPTED)
             .await?;
 
-        Ok((&response).try_into()?)
+        (&response).try_into()
     }
 }
