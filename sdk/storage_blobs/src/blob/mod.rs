@@ -35,11 +35,12 @@ use http::header;
 use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
-fn get_creation_time(h: &header::HeaderMap) -> crate::Result<Option<DateTime<Utc>>> {
+fn get_creation_time(h: &header::HeaderMap) -> azure_core::error::Result<Option<DateTime<Utc>>> {
     if let Some(creation_time) = h.get(CREATION_TIME) {
         // Check that the creation time is valid
-        let creation_time = creation_time.to_str()?;
-        let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
+        let creation_time = creation_time.to_str().map_kind(ErrorKind::DataConversion)?;
+        let creation_time =
+            DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
         let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
         Ok(Some(creation_time))
     } else {
