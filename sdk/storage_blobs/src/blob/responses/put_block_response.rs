@@ -17,7 +17,7 @@ pub struct PutBlockResponse {
 }
 
 impl PutBlockResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> crate::Result<PutBlockResponse> {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlockResponse> {
         debug!("{:#?}", headers);
 
         let (content_md5, content_crc64) =

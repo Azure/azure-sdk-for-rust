@@ -2,7 +2,7 @@
 //!
 //! You can learn more about the OAuth2 authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{ClientId, ClientSecret};
@@ -78,7 +78,7 @@ impl AuthorizationCodeFlow {
     pub async fn exchange(
         self,
         code: oauth2::AuthorizationCode,
-    ) -> Result<
+    ) -> azure_core::Result<
         oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
     > {
         self.client

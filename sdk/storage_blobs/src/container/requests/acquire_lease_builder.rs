@@ -1,6 +1,5 @@
 use crate::{container::responses::AcquireLeaseResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, LEASE_ACTION},
     prelude::*,
 };
@@ -38,7 +37,7 @@ impl<'a> AcquireLeaseBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(&self) -> Result<AcquireLeaseResponse> {
+    pub async fn execute(&self) -> azure_core::Result<AcquireLeaseResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

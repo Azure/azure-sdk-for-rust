@@ -3,9 +3,7 @@ use azure_core::error::ResultExt;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
 use azure_core::{
-    collect_pinned_stream,
-    error::{ErrorKind, Result},
-    AppendToUrlQuery, Response as HttpResponse,
+    collect_pinned_stream, error::ErrorKind, AppendToUrlQuery, Response as HttpResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
@@ -14,7 +12,7 @@ use std::convert::TryInto;
 use std::str::FromStr;
 
 /// A future of a delete file response
-type GetFile = futures::future::BoxFuture<'static, Result<GetFileResponse>>;
+type GetFile = futures::future::BoxFuture<'static, azure_core::Result<GetFileResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct GetFileBuilder {
@@ -92,7 +90,7 @@ pub struct GetFileResponse {
 }
 
 impl GetFileResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
 
         let data = collect_pinned_stream(pinned_stream).await?;

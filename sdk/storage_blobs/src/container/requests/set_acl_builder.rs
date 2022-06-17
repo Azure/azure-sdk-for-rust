@@ -1,6 +1,5 @@
 use crate::{container::public_access_from_header, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_optional_header, add_optional_header_ref, AsHeaders},
     prelude::*,
 };
@@ -37,7 +36,7 @@ impl<'a> SetACLBuilder<'a> {
         stored_access_policy_list: &'a StoredAccessPolicyList => Some(stored_access_policy_list),
     }
 
-    pub async fn execute(&self) -> Result<PublicAccess> {
+    pub async fn execute(&self) -> azure_core::Result<PublicAccess> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

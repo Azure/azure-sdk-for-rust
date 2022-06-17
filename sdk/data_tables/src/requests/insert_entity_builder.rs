@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*, TransactionOperation};
 use azure_core::{
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     headers::{add_mandatory_header, add_optional_header},
     prelude::*,
 };
@@ -32,7 +32,7 @@ impl<'a> InsertEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute<E>(&self, entity: &E) -> Result<InsertEntityResponse<E>>
+    pub async fn execute<E>(&self, entity: &E) -> azure_core::Result<InsertEntityResponse<E>>
     where
         E: Serialize + DeserializeOwned,
     {
@@ -72,7 +72,10 @@ impl<'a> InsertEntityBuilder<'a> {
         (&response).try_into()
     }
 
-    pub fn to_transaction_operation<E>(&self, entity: &E) -> Result<TransactionOperation>
+    pub fn to_transaction_operation<E>(
+        &self,
+        entity: &E,
+    ) -> azure_core::Result<TransactionOperation>
     where
         E: Serialize,
     {

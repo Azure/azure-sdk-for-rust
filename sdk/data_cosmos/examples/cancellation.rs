@@ -4,7 +4,7 @@ use stop_token::StopSource;
 use tokio::time::{Duration, Instant};
 
 #[tokio::main]
-async fn main() -> azure_core::error::Result<()> {
+async fn main() -> azure_core::Result<()> {
     env_logger::init();
     // First we retrieve the account name and master key from environment variables, and
     // create an authorization token.

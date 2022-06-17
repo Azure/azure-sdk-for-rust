@@ -1,8 +1,8 @@
 use crate::clients::PopReceiptClient;
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+
 use std::convert::TryInto;
 
 #[derive(Debug)]
@@ -26,7 +26,7 @@ impl<'a> DeleteMessageBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<DeleteMessageResponse> {
+    pub async fn execute(&self) -> azure_core::Result<DeleteMessageResponse> {
         let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
         self.timeout.append_to_url_query(&mut url);

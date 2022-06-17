@@ -18,7 +18,7 @@ pub use copy_progress::CopyProgress;
 pub mod parsing_xml;
 pub mod storage_shared_key_credential;
 mod stored_access_policy;
-pub use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+pub use azure_core::error::{Error, ErrorKind, ResultExt};
 pub mod util;
 pub mod xml;
 
@@ -48,7 +48,7 @@ pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub use consistency::{ConsistencyCRC64, ConsistencyMD5};
 
 mod consistency {
-    use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+    use azure_core::error::{Error, ErrorKind, ResultExt};
     use bytes::Bytes;
     use serde::{Deserialize, Deserializer};
     use std::convert::TryInto;
@@ -60,7 +60,7 @@ mod consistency {
 
     impl ConsistencyCRC64 {
         /// Decodes from base64 encoded input
-        pub fn decode(input: impl AsRef<[u8]>) -> Result<Self> {
+        pub fn decode(input: impl AsRef<[u8]>) -> azure_core::Result<Self> {
             let bytes = base64::decode(input).context(
                 ErrorKind::DataConversion,
                 "ConsistencyCRC64 failed base64 decode",
@@ -109,7 +109,7 @@ mod consistency {
 
     impl ConsistencyMD5 {
         /// Decodes from base64 encoded input
-        pub fn decode(input: impl AsRef<[u8]>) -> Result<Self> {
+        pub fn decode(input: impl AsRef<[u8]>) -> azure_core::Result<Self> {
             let bytes = base64::decode(input)
                 .context(ErrorKind::DataConversion, "ConsistencyMD5 failed decode")?;
             let bytes = Bytes::from(bytes);

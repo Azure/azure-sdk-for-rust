@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*, ContinuationNextPartitionAndRowKey};
 use azure_core::{
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     headers::add_optional_header,
     prelude::*,
     AppendToUrlQuery,
@@ -40,7 +40,7 @@ impl<'a> QueryEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute<E>(&self) -> Result<QueryEntityResponse<E>>
+    pub async fn execute<E>(&self) -> azure_core::Result<QueryEntityResponse<E>>
     where
         E: DeserializeOwned,
     {
@@ -80,7 +80,7 @@ impl<'a> QueryEntityBuilder<'a> {
         (&response).try_into()
     }
 
-    pub fn stream<E>(self) -> impl Stream<Item = Result<QueryEntityResponse<E>>> + 'a
+    pub fn stream<E>(self) -> impl Stream<Item = azure_core::Result<QueryEntityResponse<E>>> + 'a
     where
         E: DeserializeOwned,
     {

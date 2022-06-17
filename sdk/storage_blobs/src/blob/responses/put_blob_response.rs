@@ -18,7 +18,7 @@ pub struct PutBlobResponse {
 }
 
 impl PutBlobResponse {
-    pub fn from_headers(headers: &HeaderMap) -> crate::Result<PutBlobResponse> {
+    pub fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlobResponse> {
         debug!("{:#?}", headers);
 
         let etag = etag_from_headers(headers)?;

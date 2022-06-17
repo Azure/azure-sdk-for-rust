@@ -1,7 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 extern crate log;
 
-use azure_core::error::Result;
 use azure_messaging_servicebus::service_bus::Client;
 use chrono::Duration;
 
@@ -83,7 +82,7 @@ async fn unlock_message() {
         .expect("Failed to unlock message's lock");
 }
 
-fn create_client() -> Result<Client> {
+fn create_client() -> azure_core::Result<Client> {
     let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
         .expect("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");
 

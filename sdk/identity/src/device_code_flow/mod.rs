@@ -8,7 +8,7 @@ mod device_code_responses;
 use async_timer::timer::new_timer;
 use azure_core::{
     content_type,
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     headers, HttpClient, Request, Response,
 };
 pub use device_code_responses::*;
@@ -26,7 +26,7 @@ pub async fn start<'a, 'b, T>(
     tenant_id: T,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
-) -> Result<DeviceCodePhaseOneResponse<'a>>
+) -> azure_core::Result<DeviceCodePhaseOneResponse<'a>>
 where
     T: Into<Cow<'a, str>>,
 {
@@ -95,7 +95,9 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
     /// Polls the token endpoint while the user signs in.
     /// This will continue until either success or error is returned.
-    pub fn stream(&self) -> impl futures::Stream<Item = Result<DeviceCodeAuthorization>> + '_ {
+    pub fn stream(
+        &self,
+    ) -> impl futures::Stream<Item = azure_core::Result<DeviceCodeAuthorization>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum NextState {
             Continue,
@@ -170,7 +172,7 @@ async fn post_form(
     http_client: Arc<dyn HttpClient>,
     url: &str,
     form_body: String,
-) -> Result<Response> {
+) -> azure_core::Result<Response> {
     let url = Url::parse(url)?;
     let mut req = Request::new(url, Method::POST);
     req.headers_mut().insert(

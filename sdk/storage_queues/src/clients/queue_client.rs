@@ -1,5 +1,5 @@
 use crate::requests::*;
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::clients::{AsStorageClient, StorageAccountClient, StorageClient};
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -38,7 +38,7 @@ impl QueueClient {
         self.storage_client.as_ref()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {

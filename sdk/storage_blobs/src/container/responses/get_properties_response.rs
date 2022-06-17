@@ -1,6 +1,6 @@
 use crate::container::Container;
 use azure_core::{
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     headers::REQUEST_ID,
     RequestId,
 };
@@ -19,7 +19,7 @@ pub struct GetPropertiesResponse {
 impl TryFrom<(&str, &HeaderMap)> for GetPropertiesResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&str, &HeaderMap)) -> Result<Self> {
+    fn try_from((body, header_map): (&str, &HeaderMap)) -> azure_core::Result<Self> {
         GetPropertiesResponse::from_response(body, header_map)
     }
 }
@@ -28,7 +28,7 @@ impl GetPropertiesResponse {
     pub(crate) fn from_response(
         container_name: &str,
         headers: &HeaderMap,
-    ) -> crate::Result<GetPropertiesResponse> {
+    ) -> azure_core::Result<GetPropertiesResponse> {
         let request_id = match headers.get(REQUEST_ID) {
             Some(request_id) => {
                 Uuid::parse_str(request_id.to_str().map_kind(ErrorKind::DataConversion)?)

@@ -41,7 +41,7 @@ pub struct BlockWithSizeList {
 }
 
 impl BlockWithSizeList {
-    pub fn try_from_xml(xml: &str) -> crate::Result<Self> {
+    pub fn try_from_xml(xml: &str) -> azure_core::Result<Self> {
         let bl: BlockList =
             serde_xml_rs::de::from_reader(xml.as_bytes()).map_kind(ErrorKind::DataConversion)?;
         debug!("bl == {:?}", bl);

@@ -1,4 +1,3 @@
-use azure_core::error::Result;
 use http::Method;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -99,7 +98,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
     }
 
     /// Performs the create or update request on the device identity
-    pub async fn execute(self) -> Result<ConfigurationResponse> {
+    pub async fn execute(self) -> azure_core::Result<ConfigurationResponse> {
         let uri = format!(
             "https://{}.azure-devices.net/configurations/{}?api-version={}",
             self.service_client.iot_hub_name, &self.configuration_id, API_VERSION

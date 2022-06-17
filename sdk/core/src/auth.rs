@@ -1,6 +1,5 @@
 //! Azure authentication and authorization.
 
-use crate::error::Error;
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use std::fmt::Debug;
@@ -25,5 +24,5 @@ impl TokenResponse {
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error>;
+    async fn get_token(&self, resource: &str) -> crate::Result<TokenResponse>;
 }

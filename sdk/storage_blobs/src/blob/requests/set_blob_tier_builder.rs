@@ -1,6 +1,6 @@
 use crate::{blob::responses::SetBlobTierResponse, prelude::*};
 use azure_core::{
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     headers::{add_mandatory_header, add_optional_header},
     prelude::*,
 };
@@ -39,7 +39,7 @@ impl<'a> SetBlobTierBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(self) -> Result<SetBlobTierResponse> {
+    pub async fn execute(self) -> azure_core::Result<SetBlobTierResponse> {
         // Get the blob properties first. Need this to determine what HTTP status code to expect later.
         let blob_properties = self.blob_client.get_properties().execute().await?;
         let blob_tier = blob_properties.blob.properties.access_tier;

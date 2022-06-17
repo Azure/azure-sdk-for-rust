@@ -48,10 +48,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
         context: Context => context,
     }
 
-    pub fn partition_key<T: Serialize>(
-        &mut self,
-        partition_key: &T,
-    ) -> azure_core::error::Result<()> {
+    pub fn partition_key<T: Serialize>(&mut self, partition_key: &T) -> azure_core::Result<()> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(())
     }
@@ -96,7 +93,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 
 /// The future returned by calling `into_future` on the builder.
 pub type ReplaceDocument =
-    futures::future::BoxFuture<'static, azure_core::error::Result<ReplaceDocumentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<ReplaceDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
@@ -136,7 +133,7 @@ pub struct ReplaceDocumentResponse {
 }
 
 impl ReplaceDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         let document_attributes = serde_json::from_slice(&*body)?;

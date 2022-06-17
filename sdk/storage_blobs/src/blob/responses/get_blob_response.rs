@@ -1,6 +1,6 @@
 use crate::blob::Blob;
 use azure_core::{
-    error::{ErrorKind, Result, ResultExt},
+    error::{ErrorKind, ResultExt},
     headers::{date_from_headers, request_id_from_headers},
     prelude::ContentRange,
     RequestId,
@@ -21,7 +21,7 @@ pub struct GetBlobResponse {
 
 impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
     type Error = crate::Error;
-    fn try_from((blob_name, response): (&str, Response<Bytes>)) -> Result<Self> {
+    fn try_from((blob_name, response): (&str, Response<Bytes>)) -> azure_core::Result<Self> {
         debug!("response.headers() == {:#?}", response.headers());
 
         let request_id = request_id_from_headers(response.headers())?;

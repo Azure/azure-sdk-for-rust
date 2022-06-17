@@ -1,8 +1,8 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+
 use http::method::Method;
 use http::status::StatusCode;
 use std::convert::TryInto;
@@ -28,7 +28,7 @@ impl<'a> GetQueueACLBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<GetQueueACLResponse> {
+    pub async fn execute(&self) -> azure_core::Result<GetQueueACLResponse> {
         let mut url = self.queue_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "acl");

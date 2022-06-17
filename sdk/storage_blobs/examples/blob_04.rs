@@ -1,10 +1,10 @@
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::{BufMut, Bytes};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     env_logger::init();
 
     // First we retrieve the account name and master key from environment variables.

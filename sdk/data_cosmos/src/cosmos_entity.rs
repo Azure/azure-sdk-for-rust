@@ -19,7 +19,7 @@ impl CosmosEntity for serde_json::Value {
 }
 
 /// Serialize the partition key in the format CosmosDB expects.
-pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> azure_core::error::Result<String> {
+pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> azure_core::Result<String> {
     use azure_core::error::ResultExt;
     // this must be serialized as an array even tough CosmosDB supports only a sigle partition key.
     serde_json::to_string(&[pk]).context(

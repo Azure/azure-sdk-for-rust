@@ -1,11 +1,12 @@
 use crate::clients::FileSystemClient;
 use azure_core::prelude::*;
-use azure_core::{error::Result, AppendToUrlQuery, Response as HttpResponse};
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 /// A future of a create file system response
-type DeleteFileSystem = futures::future::BoxFuture<'static, Result<DeleteFileSystemResponse>>;
+type DeleteFileSystem =
+    futures::future::BoxFuture<'static, azure_core::Result<DeleteFileSystemResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct DeleteFileSystemBuilder {
@@ -65,7 +66,7 @@ pub struct DeleteFileSystemResponse {
 }
 
 impl DeleteFileSystemResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

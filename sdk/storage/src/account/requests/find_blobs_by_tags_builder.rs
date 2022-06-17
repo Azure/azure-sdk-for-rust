@@ -1,6 +1,5 @@
 use crate::account::responses::ListBlobsByTagsResponse;
 use crate::core::prelude::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -41,7 +40,7 @@ impl<'a> FindBlobsByTagsBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(&self) -> Result<ListBlobsByTagsResponse> {
+    pub async fn execute(&self) -> azure_core::Result<ListBlobsByTagsResponse> {
         let mut url = self
             .client
             .storage_account_client()

@@ -3,7 +3,7 @@ use crate::{util::*, Properties};
 use azure_core::error::ResultExt;
 use azure_core::prelude::*;
 use azure_core::{
-    error::{ErrorKind, Result},
+    error::ErrorKind,
     headers::{etag_from_headers, last_modified_from_headers},
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
@@ -13,7 +13,7 @@ use std::convert::TryInto;
 
 /// A future of a file system get properties response
 type GetFileSystemProperties =
-    futures::future::BoxFuture<'static, Result<GetFileSystemPropertiesResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<GetFileSystemPropertiesResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct GetFileSystemPropertiesBuilder {
@@ -73,7 +73,7 @@ pub struct GetFileSystemPropertiesResponse {
 }
 
 impl GetFileSystemPropertiesResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(GetFileSystemPropertiesResponse {

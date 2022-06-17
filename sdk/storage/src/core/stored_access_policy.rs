@@ -1,5 +1,5 @@
 use crate::xml::read_xml;
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
 
@@ -41,7 +41,7 @@ impl StoredAccessPolicyList {
         StoredAccessPolicyList::default()
     }
 
-    pub fn from_xml(xml: &Bytes) -> Result<StoredAccessPolicyList> {
+    pub fn from_xml(xml: &Bytes) -> azure_core::Result<StoredAccessPolicyList> {
         debug!("{:?}", xml);
 
         let mut sal = StoredAccessPolicyList::default();

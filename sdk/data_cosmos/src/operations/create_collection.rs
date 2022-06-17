@@ -78,7 +78,7 @@ impl std::future::IntoFuture for CreateCollectionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateCollection =
-    futures::future::BoxFuture<'static, azure_core::error::Result<CreateCollectionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<CreateCollectionResponse>>;
 
 /// Body for the create collection request
 #[derive(Serialize, Debug)]
@@ -108,7 +108,7 @@ pub struct CreateCollectionResponse {
 }
 
 impl CreateCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::error::Result;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
@@ -7,7 +6,7 @@ use chrono::Utc;
 use std::time::Duration;
 
 #[tokio::test]
-async fn queue_create_put_and_get() -> Result<()> {
+async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let master_key =

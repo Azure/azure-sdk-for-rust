@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::headers::utc_date_from_rfc2822;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
@@ -45,7 +45,7 @@ struct PeekMessagesInternal {
 impl std::convert::TryFrom<&Response<Bytes>> for PeekMessagesResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self> {
+    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

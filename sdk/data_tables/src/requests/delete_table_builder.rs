@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*};
 use azure_core::{
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     headers::add_optional_header,
     prelude::*,
 };
@@ -28,7 +28,7 @@ impl<'a> DeleteTableBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<DeleteTableResponse> {
+    pub async fn execute(&self) -> azure_core::Result<DeleteTableResponse> {
         let mut url = self.table_client.url().to_owned();
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?

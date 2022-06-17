@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
@@ -81,7 +81,7 @@ impl ServiceClient {
         key_name: &str,
         private_key: &str,
         expires_in_seconds: i64,
-    ) -> Result<String> {
+    ) -> azure_core::Result<String> {
         type HmacSHA256 = Hmac<Sha256>;
         let expiry_date = chrono::Utc::now() + chrono::Duration::seconds(expires_in_seconds);
         let expiry_date_seconds = expiry_date.timestamp();
@@ -136,7 +136,7 @@ impl ServiceClient {
         key_name: T,
         private_key: U,
         expires_in_seconds: i64,
-    ) -> Result<Self>
+    ) -> azure_core::Result<Self>
     where
         S: Into<String>,
         T: AsRef<str>,
@@ -176,7 +176,7 @@ impl ServiceClient {
         http_client: Arc<dyn HttpClient>,
         connection_string: S,
         expires_in_seconds: i64,
-    ) -> Result<Self>
+    ) -> azure_core::Result<Self>
     where
         S: AsRef<str>,
     {
@@ -328,7 +328,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> Result<ModuleTwinResponse>
+    ) -> azure_core::Result<ModuleTwinResponse>
     where
         S: Into<String>,
         T: Into<String>,
@@ -352,7 +352,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_device_twin("some-device");
     /// ```
-    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse>
+    pub async fn get_device_twin<S>(&self, device_id: S) -> azure_core::Result<DeviceTwinResponse>
     where
         S: Into<String>,
     {
@@ -475,7 +475,10 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_device_identity("some-device");
     /// ```
-    pub async fn get_device_identity<S>(&self, device_id: S) -> Result<DeviceIdentityResponse>
+    pub async fn get_device_identity<S>(
+        &self,
+        device_id: S,
+    ) -> azure_core::Result<DeviceIdentityResponse>
     where
         S: Into<String>,
     {
@@ -560,7 +563,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> Result<ModuleIdentityResponse>
+    ) -> azure_core::Result<ModuleIdentityResponse>
     where
         S: Into<String>,
         T: Into<String>,
@@ -682,7 +685,10 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configuration("some-configuration");
     /// ```
-    pub async fn get_configuration<S>(&self, configuration_id: S) -> Result<ConfigurationResponse>
+    pub async fn get_configuration<S>(
+        &self,
+        configuration_id: S,
+    ) -> azure_core::Result<ConfigurationResponse>
     where
         S: Into<String>,
     {
@@ -700,7 +706,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configurations();
     /// ```
-    pub async fn get_configurations(&self) -> Result<MultipleConfigurationResponse> {
+    pub async fn get_configurations(&self) -> azure_core::Result<MultipleConfigurationResponse> {
         get_configuration(self, None).await
     }
 

@@ -1,6 +1,6 @@
 use super::{authority_hosts, TokenCredential};
 use azure_core::auth::TokenResponse;
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use base64::{CharacterSet, Config};
 use chrono::Utc;
 use oauth2::AccessToken;
@@ -142,7 +142,7 @@ fn get_encoded_cert(cert: &X509) -> Result<String, ClientCertificateCredentialEr
 
 #[async_trait::async_trait]
 impl TokenCredential for ClientCertificateCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let options = self.options();
         let url = &format!(
             "{}/{}/oauth2/v2.0/token",

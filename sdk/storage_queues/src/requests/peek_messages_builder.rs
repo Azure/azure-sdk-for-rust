@@ -1,9 +1,9 @@
 use crate::clients::QueueClient;
 use crate::prelude::*;
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -30,7 +30,7 @@ impl<'a> PeekMessagesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<PeekMessagesResponse> {
+    pub async fn execute(&self) -> azure_core::Result<PeekMessagesResponse> {
         let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         url.query_pairs_mut().append_pair("peekonly", "true");

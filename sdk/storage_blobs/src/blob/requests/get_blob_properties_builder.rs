@@ -1,6 +1,5 @@
 use crate::{blob::responses::GetBlobPropertiesResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_optional_header, add_optional_header_ref},
     prelude::*,
 };
@@ -32,7 +31,7 @@ impl<'a> GetBlobPropertiesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<GetBlobPropertiesResponse> {
+    pub async fn execute(&self) -> azure_core::Result<GetBlobPropertiesResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

@@ -1,11 +1,10 @@
-use azure_core::error::Result;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 use std::{num::NonZeroU32, time::Duration};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     // First we retrieve the account connection string from environment variables.
     let connection_string =
         std::env::var("CONNECTION_STRING").expect("Set env variable CONNECTION_STRING first!");

@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use azure_storage::StoredAccessPolicy;
 use chrono::{DateTime, FixedOffset};
 use std::convert::TryFrom;
@@ -92,7 +92,7 @@ impl QueueStoredAccessPolicy {
 impl TryFrom<StoredAccessPolicy> for QueueStoredAccessPolicy {
     type Error = Error;
 
-    fn try_from(sap: StoredAccessPolicy) -> Result<Self> {
+    fn try_from(sap: StoredAccessPolicy) -> azure_core::Result<Self> {
         let mut queue_sap = Self::new(sap.id, sap.start, sap.expiry);
 
         for token in sap.permission.chars() {

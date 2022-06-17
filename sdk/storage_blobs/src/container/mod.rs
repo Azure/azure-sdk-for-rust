@@ -40,7 +40,9 @@ impl AsHeaders for PublicAccess {
     }
 }
 
-pub(crate) fn public_access_from_header(header_map: &HeaderMap) -> crate::Result<PublicAccess> {
+pub(crate) fn public_access_from_header(
+    header_map: &HeaderMap,
+) -> azure_core::Result<PublicAccess> {
     let pa = match header_map.get(BLOB_PUBLIC_ACCESS) {
         Some(pa) => PublicAccess::from_str(pa.to_str().map_kind(ErrorKind::DataConversion)?)
             .map_kind(ErrorKind::DataConversion)?,
@@ -85,7 +87,10 @@ impl Container {
         }
     }
 
-    pub(crate) fn from_response<NAME>(name: NAME, headers: &HeaderMap) -> crate::Result<Container>
+    pub(crate) fn from_response<NAME>(
+        name: NAME,
+        headers: &HeaderMap,
+    ) -> azure_core::Result<Container>
     where
         NAME: Into<String>,
     {
@@ -192,7 +197,7 @@ impl Container {
         })
     }
 
-    fn parse(elem: &Element) -> crate::Result<Container> {
+    fn parse(elem: &Element) -> azure_core::Result<Container> {
         let name = cast_must::<String>(elem, &["Name"]).map_kind(ErrorKind::DataConversion)?;
         let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])
             .map_kind(ErrorKind::DataConversion)?;
@@ -283,7 +288,7 @@ impl Container {
 
 pub(crate) fn incomplete_vector_from_container_response(
     body: &str,
-) -> crate::Result<IncompleteVector<Container>> {
+) -> azure_core::Result<IncompleteVector<Container>> {
     let elem: Element = body.parse().map_kind(ErrorKind::Other)?;
 
     let mut v = Vec::new();

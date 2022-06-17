@@ -1,6 +1,6 @@
 use azure_core::{
     auth::{TokenCredential, TokenResponse},
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
 };
 use azure_identity::AutoRefreshingTokenCredential;
 use const_format::formatcp;
@@ -43,7 +43,7 @@ impl DeviceUpdateClient {
     pub fn new(
         device_update_url: &str,
         token_credential: Arc<dyn TokenCredential>,
-    ) -> Result<Self> {
+    ) -> azure_core::Result<Self> {
         let device_update_url = Url::parse(device_update_url)
             .with_context(ErrorKind::DataConversion, || {
                 format!("failed to parse update url: {device_update_url}")
@@ -59,14 +59,14 @@ impl DeviceUpdateClient {
         Ok(client)
     }
 
-    async fn get_token(&self) -> Result<TokenResponse> {
+    async fn get_token(&self) -> azure_core::Result<TokenResponse> {
         self.token_credential
             .get_token(&self.endpoint)
             .await
             .context(ErrorKind::Credential, "get token failed")
     }
 
-    pub(crate) async fn get<R>(&self, uri: String) -> Result<R>
+    pub(crate) async fn get<R>(&self, uri: String) -> azure_core::Result<R>
     where
         R: DeserializeOwned,
     {
@@ -88,7 +88,11 @@ impl DeviceUpdateClient {
         )
     }
 
-    pub(crate) async fn post(&self, uri: String, json_body: Option<String>) -> Result<String> {
+    pub(crate) async fn post(
+        &self,
+        uri: String,
+        json_body: Option<String>,
+    ) -> azure_core::Result<String> {
         let mut req = reqwest::Client::new()
             .post(&uri)
             .bearer_auth(self.get_token().await?.token.secret());
@@ -122,7 +126,7 @@ impl DeviceUpdateClient {
         }))
     }
 
-    pub(crate) async fn delete(&self, uri: String) -> Result<String> {
+    pub(crate) async fn delete(&self, uri: String) -> azure_core::Result<String> {
         let resp = reqwest::Client::new()
             .delete(&uri)
             .bearer_auth(self.get_token().await?.token.secret())
@@ -141,7 +145,7 @@ impl DeviceUpdateClient {
 
 /// Helper to get vault endpoint with a scheme and a trailing slash
 /// ex. `https://vault.azure.net/` where the full client url is `https://myvault.vault.azure.net`
-fn extract_endpoint(url: &Url) -> Result<String> {
+fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
     let endpoint = url
         .host_str()
         .ok_or_else(|| {
@@ -162,10 +166,9 @@ fn extract_endpoint(url: &Url) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::error::Result;
 
     #[test]
-    fn can_extract_endpoint() -> Result<()> {
+    fn can_extract_endpoint() -> azure_core::Result<()> {
         let url = "https://myadu.api.adu.microsoft.com";
         let suffix = extract_endpoint(&Url::parse(url)?)?;
         assert_eq!(suffix, "https://api.adu.microsoft.com");
@@ -182,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn can_not_extract_endpoint() -> Result<()> {
+    fn can_not_extract_endpoint() -> azure_core::Result<()> {
         let url = "https://shouldfail";
         let suffix = extract_endpoint(&Url::parse(url)?);
         assert_eq!(suffix.unwrap_err().kind(), &ErrorKind::DataConversion);

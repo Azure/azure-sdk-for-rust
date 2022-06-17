@@ -1,5 +1,5 @@
 use azure_core::{
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     Etag,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -25,7 +25,7 @@ pub struct SubmitTransactionResponse {
 impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self> {
+    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
         let body = std::str::from_utf8(response.body())?;
         debug!("{}", body);
         debug!("headers == {:#?}", response.headers());

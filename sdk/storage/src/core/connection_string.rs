@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";
@@ -72,7 +72,7 @@ pub struct ConnectionString<'a> {
 }
 
 impl<'a> ConnectionString<'a> {
-    pub fn new(connection_string: &'a str) -> Result<Self> {
+    pub fn new(connection_string: &'a str) -> azure_core::Result<Self> {
         let mut account_name = None;
         let mut account_key = None;
         let mut sas = None;

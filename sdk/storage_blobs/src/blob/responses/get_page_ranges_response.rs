@@ -22,7 +22,7 @@ impl GetPageRangesResponse {
     pub(crate) fn from_response(
         headers: &HeaderMap,
         body: &[u8],
-    ) -> crate::Result<GetPageRangesResponse> {
+    ) -> azure_core::Result<GetPageRangesResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;

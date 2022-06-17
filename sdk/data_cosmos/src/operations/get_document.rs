@@ -76,7 +76,7 @@ impl GetDocumentBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type GetDocument<T> =
-    futures::future::BoxFuture<'static, azure_core::error::Result<GetDocumentResponse<T>>>;
+    futures::future::BoxFuture<'static, azure_core::Result<GetDocumentResponse<T>>>;
 
 #[derive(Debug, Clone)]
 // note(rylev): clippy seems to be falsely detecting that
@@ -92,7 +92,7 @@ impl<T> GetDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (status_code, headers, pinned_stream) = response.deconstruct();
 
         let has_been_found =
@@ -143,7 +143,7 @@ impl<T> FoundDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    async fn try_from(headers: &HeaderMap, body: bytes::Bytes) -> azure_core::error::Result<Self> {
+    async fn try_from(headers: &HeaderMap, body: bytes::Bytes) -> azure_core::Result<Self> {
         Ok(Self {
             document: serde_json::from_slice(&body)?,
 
@@ -196,7 +196,7 @@ pub struct NotFoundDocumentResponse {
 }
 
 impl NotFoundDocumentResponse {
-    async fn try_from(headers: &HeaderMap) -> azure_core::error::Result<Self> {
+    async fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
         Ok(Self {
             content_location: content_location_from_headers(headers)?.to_owned(),
             last_state_change: last_state_change_from_headers(headers)?,

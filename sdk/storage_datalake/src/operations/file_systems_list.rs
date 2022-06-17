@@ -4,7 +4,7 @@ use azure_core::error::ResultExt;
 use azure_core::AppendToUrlQuery;
 use azure_core::{
     collect_pinned_stream,
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     prelude::*,
     Pageable, Response,
 };
@@ -91,7 +91,7 @@ pub struct ListFileSystemsResponse {
 }
 
 impl ListFileSystemsResponse {
-    pub(crate) async fn try_from(response: Response) -> Result<Self> {
+    pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         let file_system_list: FileSystemList =

@@ -1,5 +1,5 @@
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::Result;
+
 use http::{Method, StatusCode};
 
 /// The DeleteConfigurationBuilder is used to construct a request to delete a configuration.
@@ -23,7 +23,7 @@ impl<'a> DeleteConfigurationBuilder<'a> {
     }
 
     /// Execute the request to delete the configuration.
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> azure_core::Result<()> {
         let uri = format!(
             "https://{}.azure-devices.net/configurations/{}?api-version={}",
             self.service_client.iot_hub_name, self.configuration_id, API_VERSION

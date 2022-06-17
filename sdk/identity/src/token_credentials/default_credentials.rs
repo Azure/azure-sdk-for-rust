@@ -1,6 +1,6 @@
 use super::{AzureCliCredential, EnvironmentCredential, ImdsManagedIdentityCredential};
 use azure_core::auth::{TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 
 #[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
@@ -79,7 +79,7 @@ pub enum DefaultAzureCredentialEnum {
 
 #[async_trait::async_trait]
 impl TokenCredential for DefaultAzureCredentialEnum {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         match self {
             DefaultAzureCredentialEnum::Environment(credential) => {
                 credential.get_token(resource).await.context(
@@ -140,7 +140,7 @@ impl Default for DefaultAzureCredential {
 #[async_trait::async_trait]
 impl TokenCredential for DefaultAzureCredential {
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let mut errors = Vec::new();
         for source in &self.sources {
             let token_res = source.get_token(resource).await;

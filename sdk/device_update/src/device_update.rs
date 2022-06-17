@@ -1,6 +1,6 @@
 use crate::{client::API_VERSION_PARAM, DeviceUpdateClient};
 use azure_core::{
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     sleep,
 };
 use chrono::{DateTime, Utc};
@@ -167,7 +167,7 @@ impl DeviceUpdateClient {
         &self,
         instance_id: &str,
         import_json: String,
-    ) -> Result<UpdateOperation> {
+    ) -> azure_core::Result<UpdateOperation> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates");
         uri.set_path(&path);
@@ -219,7 +219,7 @@ impl DeviceUpdateClient {
         provider: &str,
         name: &str,
         version: &str,
-    ) -> Result<String> {
+    ) -> azure_core::Result<String> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}");
         uri.set_path(&path);
@@ -237,7 +237,7 @@ impl DeviceUpdateClient {
         name: &str,
         version: &str,
         file_id: &str,
-    ) -> Result<UpdateFile> {
+    ) -> azure_core::Result<UpdateFile> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}/files/{file_id}");
         uri.set_path(&path);
@@ -252,7 +252,7 @@ impl DeviceUpdateClient {
         &self,
         instance_id: &str,
         operation_id: &str,
-    ) -> Result<UpdateOperation> {
+    ) -> azure_core::Result<UpdateOperation> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/operations/{operation_id}");
         uri.set_path(&path);
@@ -269,7 +269,7 @@ impl DeviceUpdateClient {
         provider: &str,
         name: &str,
         version: &str,
-    ) -> Result<Update> {
+    ) -> azure_core::Result<Update> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}");
         uri.set_path(&path);
@@ -286,7 +286,7 @@ impl DeviceUpdateClient {
         provider: &str,
         name: &str,
         version: &str,
-    ) -> Result<Vec<String>> {
+    ) -> azure_core::Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions/{version}/files");
         uri.set_path(&path);
@@ -315,7 +315,11 @@ impl DeviceUpdateClient {
 
     /// Get a list of all update names that match the specified provider.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names?api-version=2021-06-01-preview
-    pub async fn list_names(&self, instance_id: &str, provider: &str) -> Result<Vec<String>> {
+    pub async fn list_names(
+        &self,
+        instance_id: &str,
+        provider: &str,
+    ) -> azure_core::Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names");
         uri.set_path(&path);
@@ -350,7 +354,7 @@ impl DeviceUpdateClient {
         instance_id: &str,
         filter: Option<&str>,
         top: Option<&str>,
-    ) -> Result<Vec<UpdateOperation>> {
+    ) -> azure_core::Result<Vec<UpdateOperation>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/operations");
 
@@ -386,7 +390,7 @@ impl DeviceUpdateClient {
 
     /// Get a list of all update providers that have been imported to Device Update for IoT Hub.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers?api-version=2021-06-01-preview
-    pub async fn list_providers(&self, instance_id: &str) -> Result<Vec<String>> {
+    pub async fn list_providers(&self, instance_id: &str) -> azure_core::Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers");
         uri.set_path(&path);
@@ -420,7 +424,7 @@ impl DeviceUpdateClient {
         instance_id: &str,
         filter: Option<&str>,
         search: Option<&str>,
-    ) -> Result<Vec<Update>> {
+    ) -> azure_core::Result<Vec<Update>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates");
         uri.set_path(&path);
@@ -463,7 +467,7 @@ impl DeviceUpdateClient {
         provider: &str,
         name: &str,
         filter: Option<&str>,
-    ) -> Result<Vec<String>> {
+    ) -> azure_core::Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!(
             "deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions"
@@ -504,10 +508,9 @@ mod tests {
     use serde_json::json;
 
     use crate::{client::API_VERSION, tests::mock_client};
-    use azure_core::error::Result;
 
     #[tokio::test]
-    async fn can_import_update() -> Result<()> {
+    async fn can_import_update() -> azure_core::Result<()> {
         let _m = mock("POST", "/deviceupdate/test-instance/updates")
             .match_query(Matcher::UrlEncoded(
                 "api-version".into(),

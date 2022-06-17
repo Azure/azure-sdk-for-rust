@@ -1,6 +1,5 @@
 use crate::{blob::responses::SetBlobMetadataResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_mandatory_header, add_optional_header, add_optional_header_ref},
     prelude::*,
 };
@@ -33,7 +32,7 @@ impl<'a> SetBlobMetadataBuilder<'a> {
         metadata: &'a Metadata => Some(metadata),
     }
 
-    pub async fn execute(self) -> Result<SetBlobMetadataResponse> {
+    pub async fn execute(self) -> azure_core::Result<SetBlobMetadataResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");

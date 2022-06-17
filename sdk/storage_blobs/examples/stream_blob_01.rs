@@ -1,4 +1,3 @@
-use azure_core::error::Result;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{blob::responses::GetBlobResponse, prelude::*};
 use futures::stream::StreamExt;
@@ -10,7 +9,7 @@ use futures::stream::StreamExt;
 // We do not use leases here but you definitely want to do so otherwise the returned stream
 // is not guaranteed to be consistent.
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.
@@ -41,7 +40,7 @@ async fn main() -> Result<()> {
 
 fn get_blob_stream(
     blob_client: &'_ BlobClient,
-) -> impl futures::Stream<Item = Result<GetBlobResponse>> + '_ {
+) -> impl futures::Stream<Item = azure_core::Result<GetBlobResponse>> + '_ {
     let stream = blob_client.get().stream(1024);
     stream
 }
