@@ -17,7 +17,7 @@ use http::Method;
 use oauth2::ClientId;
 use serde::Deserialize;
 use std::{borrow::Cow, sync::Arc, time::Duration};
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.
 /// The user has only 15 minutes to sign in (the usual value for expires_in).
@@ -171,7 +171,7 @@ async fn post_form(
     url: &str,
     form_body: String,
 ) -> Result<Response> {
-    let url = Request::parse_uri(url)?;
+    let url = Url::parse(url)?;
     let mut req = Request::new(url, Method::POST);
     req.headers_mut().insert(
         headers::CONTENT_TYPE,

@@ -1,6 +1,8 @@
+use crate::authorization_policy::AuthorizationPolicy;
 use crate::headers::CONTENT_MD5;
+use crate::ConnectionString;
 use crate::{
-    core::{ConnectionString, No},
+    core::No,
     hmac::sign,
     shared_access_signature::account_sas::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
@@ -8,8 +10,9 @@ use crate::{
 };
 use azure_core::auth::TokenCredential;
 use azure_core::error::{Error, ErrorKind, Result, ResultExt};
-use azure_core::headers::*;
-use azure_core::HttpClient;
+use azure_core::Request as CoreRequest;
+use azure_core::{headers::*, Pipeline};
+use azure_core::{ClientOptions, HttpClient};
 use bytes::Bytes;
 use http::header::AsHeaderName;
 use http::HeaderMap;
@@ -35,11 +38,12 @@ const HEADER_VERSION: &str = "x-ms-version";
 
 const AZURE_VERSION: &str = "2019-12-12";
 
+#[derive(Clone)]
 pub enum StorageCredentials {
     Key(String, String),
     SASToken(Vec<(String, String)>),
     BearerToken(String),
-    TokenCredential(Box<dyn TokenCredential>),
+    TokenCredential(Arc<dyn TokenCredential>),
 }
 
 impl std::fmt::Debug for StorageCredentials {
@@ -72,6 +76,7 @@ pub struct StorageAccountClient {
     queue_storage_secondary_url: Url,
     filesystem_url: Url,
     account: String,
+    pipeline: Pipeline,
 }
 
 fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>> {
@@ -105,6 +110,10 @@ impl StorageAccountClient {
         K: Into<String>,
     {
         let account = account.into();
+        let key = key.into();
+        let storage_credentials = StorageCredentials::Key(account.clone(), key);
+        let pipeline =
+            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
         Arc::new(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -117,9 +126,10 @@ impl StorageAccountClient {
             )
             .unwrap(),
             filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
-            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
+            storage_credentials,
             http_client,
             account,
+            pipeline,
         })
     }
 
@@ -172,6 +182,9 @@ impl StorageAccountClient {
         K: Into<String>,
     {
         let account = account.into();
+        let key = key.into();
+        let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
+        let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials);
         let blob_storage_url =
             Url::parse(&format!("{}{}", blob_storage_url.as_str(), account)).unwrap();
         let table_storage_url =
@@ -187,9 +200,10 @@ impl StorageAccountClient {
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
+            storage_credentials: StorageCredentials::Key(account.clone(), key),
             http_client,
             account,
+            pipeline,
         })
     }
 
@@ -204,6 +218,11 @@ impl StorageAccountClient {
     {
         let account = account.into();
 
+        let storage_credentials =
+            StorageCredentials::SASToken(get_sas_token_parms(sas_token.as_ref())?);
+        let pipeline =
+            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+
         Ok(Arc::new(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob")?,
             table_storage_url: get_endpoint_uri(None, &account, "table")?,
@@ -214,11 +233,10 @@ impl StorageAccountClient {
                 "queue",
             )?,
             filesystem_url: get_endpoint_uri(None, &account, "dfs")?,
-            storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
-                sas_token.as_ref(),
-            )?),
+            storage_credentials,
             http_client,
             account,
+            pipeline,
         }))
     }
 
@@ -233,6 +251,9 @@ impl StorageAccountClient {
     {
         let account = account.into();
         let bearer_token = bearer_token.into();
+        let storage_credentials = StorageCredentials::BearerToken(bearer_token);
+        let pipeline =
+            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
         Arc::new(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -245,21 +266,25 @@ impl StorageAccountClient {
             )
             .unwrap(),
             filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
-            storage_credentials: StorageCredentials::BearerToken(bearer_token),
+            storage_credentials,
             http_client,
             account,
+            pipeline,
         })
     }
 
     pub fn new_token_credential<A>(
         http_client: Arc<dyn HttpClient>,
         account: A,
-        token_credential: Box<dyn TokenCredential>,
+        token_credential: Arc<dyn TokenCredential>,
     ) -> Arc<Self>
     where
         A: Into<String>,
     {
         let account = account.into();
+        let storage_credentials = StorageCredentials::TokenCredential(token_credential);
+        let pipeline =
+            new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
         Arc::new(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
@@ -272,9 +297,10 @@ impl StorageAccountClient {
             )
             .unwrap(),
             filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
-            storage_credentials: StorageCredentials::TokenCredential(token_credential),
+            storage_credentials,
             http_client,
             account,
+            pipeline,
         })
     }
 
@@ -295,10 +321,13 @@ impl StorageAccountClient {
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
 
+                let storage_credentials =  StorageCredentials::SASToken(get_sas_token_parms(
+                    sas_token,
+                )?);
+                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+
                 Ok(Arc::new(Self {
-                    storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
-                        sas_token,
-                    )?),
+                    storage_credentials,
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                     table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
@@ -306,6 +335,7 @@ impl StorageAccountClient {
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     http_client,
                     account: account.to_string(),
+                    pipeline
                 }))
             }
             ConnectionString {
@@ -316,16 +346,21 @@ impl StorageAccountClient {
                 queue_endpoint,
                 file_endpoint,
                 ..
-            } => Ok(Arc::new(Self {
-                storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)?),
-                blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
-                table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
-                queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
-                queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
-                filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                http_client,
+            } => {
+                let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
+                let pipeline =
+                new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                Ok(Arc::new(Self {
+                    storage_credentials,
+                    blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                    table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                    queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
+                    filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
+                    http_client,
                     account: account.to_string(),
-            })),
+                    pipeline
+            }))},
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(key),
@@ -334,8 +369,12 @@ impl StorageAccountClient {
                 queue_endpoint,
                 file_endpoint,
                 ..
-            } => Ok(Arc::new(Self {
-                storage_credentials: StorageCredentials::Key(account.to_owned(), key.to_owned()),
+            } => {
+
+                let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
+                let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
+                Ok(Arc::new(Self {
+                storage_credentials,
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
@@ -343,7 +382,9 @@ impl StorageAccountClient {
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
                 account: account.to_string(),
-            })),
+                pipeline
+            }))
+        },
            _ => {
                 Err(Error::message(ErrorKind::Other,
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
@@ -472,6 +513,20 @@ impl StorageAccountClient {
 
         Ok((request, url))
     }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        &self.pipeline
+    }
+
+    /// Prepares' an `azure_core::Request`.
+    pub(crate) fn blob_storage_request(
+        &self,
+        uri_path: &str,
+        http_method: http::Method,
+    ) -> CoreRequest {
+        let uri = format!("{}/{}", self.blob_storage_url(), uri_path);
+        CoreRequest::new(uri.parse().unwrap(), http_method)
+    }
 }
 
 impl ClientAccountSharedAccessSignature for StorageAccountClient {
@@ -496,13 +551,7 @@ fn generate_authorization(
     service_type: ServiceType,
 ) -> String {
     let str_to_sign = string_to_sign(h, u, method, account, service_type);
-
-    // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
-    // debug!("str_to_sign == {}", str_to_sign);
-
     let auth = sign(&str_to_sign, key).unwrap();
-    // debug!("auth == {:?}", auth);
-
     format!("SharedKey {}:{}", account, auth)
 }
 
@@ -679,4 +728,32 @@ fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> Re
             format!("failed to parse url: https://{account}.{endpoint_type}.core.windows.net")
         })?,
     })
+}
+
+/// Create a Pipeline from CosmosOptions
+fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
+    let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
+
+    // The `AuthorizationPolicy` must be the **last** retry policy.
+    // Policies can change the url and/or the headers, and the `AuthorizationPolicy`
+    // must be able to inspect them or the resulting token will be invalid.
+    let per_retry_policies = vec![auth_policy];
+
+    Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        options.options,
+        Vec::new(),
+        per_retry_policies,
+    )
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct StorageOptions {
+    options: ClientOptions,
+}
+impl StorageOptions {
+    fn new() -> StorageOptions {
+        Self::default()
+    }
 }

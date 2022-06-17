@@ -10,7 +10,7 @@ use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 
 /// Exchange a refresh token for a new access token and refresh token
 #[allow(clippy::manual_async_fn)]
@@ -34,7 +34,7 @@ pub async fn exchange(
     let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
     let encoded = encoded.finish();
 
-    let url = Request::parse_uri(&format!(
+    let url = Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))?;

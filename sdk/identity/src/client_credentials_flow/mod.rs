@@ -47,7 +47,7 @@ use azure_core::{
 use http::Method;
 use login_response::LoginResponse;
 use std::sync::Arc;
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 
 /// Perform the client credentials flow
 #[allow(clippy::manual_async_fn)]
@@ -66,7 +66,7 @@ pub async fn perform(
         .append_pair("grant_type", "client_credentials")
         .finish();
 
-    let url = Request::parse_uri(&format!(
+    let url = Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))

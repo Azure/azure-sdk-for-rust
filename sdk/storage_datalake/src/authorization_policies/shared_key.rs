@@ -40,10 +40,9 @@ impl Policy for SharedKeyAuthorizationPolicy {
             HeaderValue::from_str("2019-12-12")?,
         ); // TODO: Remove duplication with storage_account_client.rs
 
-        let url = url::Url::parse(&request.uri().to_string()).unwrap();
         let auth = generate_authorization(
             request.headers(),
-            &url,
+            request.url(),
             &request.method(),
             &self.credential.account_name,
             &self.credential.account_key,
@@ -84,10 +83,10 @@ fn string_to_sign(
     http_method: &Method,
     storage_account_name: &str,
 ) -> String {
-    // content lenght must only be specified if != 0
+    // content length must only be specified if != 0
     // this is valid from 2015-02-21
     let cl = http_headers
-        .get(&http::header::CONTENT_LENGTH.into())
+        .get(http::header::CONTENT_LENGTH)
         .map(|s| if s.as_str() == "0" { "" } else { s.as_str() })
         .unwrap_or("");
     format!(
@@ -130,7 +129,7 @@ fn string_to_sign(
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
-    match h.get(key) {
+    match h.get(key.clone()) {
         Some(ce) => ce.as_str(),
         None => "",
     }
@@ -147,7 +146,7 @@ fn canonicalize_header(h: &Headers) -> String {
     let mut can = String::new();
 
     for header_name in v_headers {
-        let s = h.get(header_name).unwrap().as_str();
+        let s = h.get(header_name.clone()).unwrap().as_str();
         can = can + header_name.as_str() + ":" + s + "\n";
     }
     can

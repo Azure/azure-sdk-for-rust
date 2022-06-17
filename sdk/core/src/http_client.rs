@@ -98,7 +98,7 @@ impl HttpClient for reqwest::Client {
     }
 
     async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response> {
-        let url = url::Url::parse(&request.uri().to_string())?;
+        let url = request.url().clone();
         let mut reqwest_request = self.request(request.method(), url);
         for (name, value) in request.headers().iter() {
             reqwest_request = reqwest_request.header(name, value);

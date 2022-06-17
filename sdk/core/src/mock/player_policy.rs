@@ -51,12 +51,8 @@ impl Policy for MockTransportPlayerPolicy {
         let expected_request: Request = serde_json::from_str(&expected_request)?;
         let expected_response = serde_json::from_str::<MockResponse>(&expected_response)?;
 
-        let expected_uri = expected_request.uri().to_string();
-        let actual_uri = request
-            .uri()
-            .path_and_query()
-            .map(|p| p.to_string())
-            .unwrap_or_else(String::new);
+        let expected_uri = expected_request.path_and_query();
+        let actual_uri = request.path_and_query();
         if expected_uri != actual_uri {
             return Err(Error::with_message(ErrorKind::MockFramework, || {
                 format!(

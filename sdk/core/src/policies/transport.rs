@@ -34,6 +34,6 @@ impl Policy for TransportPolicy {
 
         let response = { self.transport_options.http_client.execute_request2(request) };
 
-        Ok(response.await?)
+        response.await
     }
 }

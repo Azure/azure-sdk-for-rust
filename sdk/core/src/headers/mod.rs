@@ -61,8 +61,8 @@ impl Headers {
     }
 
     /// Get a header value given a specific header name
-    pub fn get(&self, key: &HeaderName) -> Option<&HeaderValue> {
-        self.0.get(key)
+    pub fn get<T: Into<HeaderName>>(&self, key: T) -> Option<&HeaderValue> {
+        self.0.get(&key.into())
     }
 
     /// Insert a header name/value pair

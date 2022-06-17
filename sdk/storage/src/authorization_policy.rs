@@ -1,0 +1,224 @@
+use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::*, Context, Policy, PolicyResult, Request};
+use http::header::AUTHORIZATION;
+use http::Method;
+use std::borrow::Cow;
+use std::sync::Arc;
+use url::Url;
+
+use crate::clients::{ServiceType, StorageCredentials};
+
+const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
+
+#[derive(Debug, Clone)]
+pub struct AuthorizationPolicy {
+    credentials: StorageCredentials,
+}
+
+impl AuthorizationPolicy {
+    pub(crate) fn new(credentials: StorageCredentials) -> Self {
+        Self { credentials }
+    }
+}
+
+#[async_trait::async_trait]
+impl Policy for AuthorizationPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        trace!("called AuthorizationPolicy::send. self == {:#?}", self);
+
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
+        let request = match &self.credentials {
+            StorageCredentials::Key(account, key) => {
+                if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
+                    let auth = generate_authorization(
+                        request.headers(),
+                        request.url(),
+                        &request.method(),
+                        account,
+                        key,
+                        ctx.get()
+                            .expect("ServiceType must be in the Context at this point"),
+                    );
+                    request.headers_mut().insert(AUTHORIZATION, auth)
+                }
+                request
+            }
+            StorageCredentials::SASToken(query_pairs) => {
+                request
+                    .url_mut()
+                    .query_pairs_mut()
+                    .extend_pairs(query_pairs);
+
+                request
+            }
+            StorageCredentials::BearerToken(token) => {
+                request
+                    .headers_mut()
+                    .insert(AUTHORIZATION, format!("Bearer {}", token));
+                request
+            }
+            StorageCredentials::TokenCredential(token_credential) => {
+                let bearer_token_future = token_credential.get_token(STORAGE_TOKEN_SCOPE);
+                let bearer_token = futures::executor::block_on(bearer_token_future)
+                    .context(ErrorKind::Credential, "failed to get bearer token")?;
+
+                request.headers_mut().insert(
+                    AUTHORIZATION,
+                    format!("Bearer {}", bearer_token.token.secret()),
+                );
+                request
+            }
+        };
+
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+fn generate_authorization(
+    h: &Headers,
+    u: &Url,
+    method: &Method,
+    account: &str,
+    key: &str,
+    service_type: &ServiceType,
+) -> String {
+    let str_to_sign = string_to_sign(h, u, method, account, service_type);
+    let auth = crate::hmac::sign(&str_to_sign, key).unwrap();
+    format!("SharedKey {}:{}", account, auth)
+}
+
+fn add_if_exists<'a>(h: &'a Headers, key: &'static str) -> &'a str {
+    h.get(key).map(|ce| ce.as_str()).unwrap_or_default()
+}
+
+#[allow(unknown_lints)]
+fn string_to_sign(
+    h: &Headers,
+    u: &Url,
+    method: &Method,
+    account: &str,
+    service_type: &ServiceType,
+) -> String {
+    match service_type {
+        ServiceType::Table => {
+            format!(
+                "{}\n{}\n{}\n{}\n{}",
+                method.as_str(),
+                add_if_exists(h, CONTENT_MD5),
+                add_if_exists(h, CONTENT_TYPE),
+                add_if_exists(h, MS_DATE),
+                canonicalized_resource_table(account, u)
+            )
+        }
+        _ => {
+            // content length must only be specified if != 0
+            // this is valid from 2015-02-21
+            let content_length = h
+                .get(CONTENT_LENGTH)
+                .map(|v| if v.as_str() == "0" { "" } else { v.as_str() })
+                .unwrap_or_default();
+            format!(
+                "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
+                method.as_str(),
+                add_if_exists(h, CONTENT_ENCODING),
+                add_if_exists(h, CONTENT_LANGUAGE),
+                content_length,
+                add_if_exists(h, CONTENT_MD5),
+                add_if_exists(h, CONTENT_TYPE),
+                add_if_exists(h, DATE),
+                add_if_exists(h, IF_MODIFIED_SINCE),
+                add_if_exists(h, IF_MATCH),
+                add_if_exists(h, IF_NONE_MATCH),
+                add_if_exists(h, IF_UNMODIFIED_SINCE),
+                add_if_exists(h, RANGE),
+                canonicalize_header(h),
+                canonicalized_resource(account, u)
+            )
+        }
+    }
+}
+
+fn canonicalize_header(h: &Headers) -> String {
+    let mut v_headers = h
+        .iter()
+        .filter(|(k, _)| k.as_str().starts_with("x-ms"))
+        .map(|(k, _)| k)
+        .collect::<Vec<_>>();
+    v_headers.sort_unstable();
+
+    let mut can = String::new();
+
+    for header_name in v_headers {
+        let s = h.get(header_name.clone()).unwrap().as_str();
+        let header_name = header_name.as_str();
+        can = format!("{can}{header_name}:{s}\n");
+    }
+    can
+}
+
+fn canonicalized_resource_table(account: &str, u: &Url) -> String {
+    format!("/{}{}", account, u.path())
+}
+
+fn canonicalized_resource(account: &str, uri: &Url) -> String {
+    let mut can_res: String = String::new();
+    can_res += "/";
+    can_res += account;
+
+    for p in uri.path_segments().into_iter().flatten() {
+        can_res.push('/');
+        can_res.push_str(p);
+    }
+    can_res += "\n";
+
+    // query parameters
+    let query_pairs = uri.query_pairs();
+    {
+        let mut qps: Vec<String> = Vec::new();
+        for (q, _) in query_pairs {
+            if !(qps.iter().any(|x| x == &*q)) {
+                qps.push(q.into_owned());
+            }
+        }
+
+        qps.sort();
+
+        for qparam in qps {
+            // find correct parameter
+            let ret = lexy_sort(query_pairs, &qparam);
+
+            can_res = can_res + &qparam.to_lowercase() + ":";
+
+            for (i, item) in ret.iter().enumerate() {
+                if i > 0 {
+                    can_res += ","
+                }
+                can_res += item;
+            }
+
+            can_res += "\n";
+        }
+    };
+
+    can_res[0..can_res.len() - 1].to_owned()
+}
+
+fn lexy_sort<'a>(
+    vec: impl Iterator<Item = (Cow<'a, str>, Cow<'a, str>)> + 'a,
+    query_param: &str,
+) -> Vec<Cow<'a, str>> {
+    let mut values = vec
+        .filter(|(k, _)| *k == query_param)
+        .map(|(_, v)| v)
+        .collect::<Vec<_>>();
+    values.sort_unstable();
+    values
+}
