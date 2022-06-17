@@ -1,8 +1,20 @@
 //! Azure authentication and authorization.
 
 use chrono::{DateTime, Utc};
-use oauth2::AccessToken;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AccessToken(String);
+
+impl AccessToken {
+    pub fn new(access_token: String) -> Self {
+        Self(access_token)
+    }
+    pub fn secret(&self) -> &str {
+        self.0.as_str()
+    }
+}
 
 /// Represents an Azure service bearer access token with expiry information.
 #[derive(Debug, Clone)]

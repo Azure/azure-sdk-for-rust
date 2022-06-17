@@ -1,5 +1,5 @@
+use azure_core::auth::AccessToken;
 use chrono::{DateTime, TimeZone, Utc};
-use oauth2::AccessToken;
 use serde::{de, Deserialize, Deserializer};
 
 #[derive(Debug, Clone, Deserialize)]

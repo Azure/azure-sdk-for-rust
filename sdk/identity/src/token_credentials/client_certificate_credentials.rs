@@ -1,9 +1,8 @@
 use super::{authority_hosts, TokenCredential};
-use azure_core::auth::TokenResponse;
+use azure_core::auth::{AccessToken, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
 use base64::{CharacterSet, Config};
 use chrono::Utc;
-use oauth2::AccessToken;
 use openssl::{
     error::ErrorStack,
     hash::{hash, DigestBytes, MessageDigest},

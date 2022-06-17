@@ -8,10 +8,9 @@ use crate::device_update::UpdateOperation;
 
 #[cfg(test)]
 mod tests {
-    use azure_core::auth::{TokenCredential, TokenResponse};
+    use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
     use azure_identity::AutoRefreshingTokenCredential;
     use chrono::{Duration, Utc};
-    use oauth2::AccessToken;
     use std::sync::Arc;
 
     pub(crate) fn mock_client() -> crate::client::DeviceUpdateClient {

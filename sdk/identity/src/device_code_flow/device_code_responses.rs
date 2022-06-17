@@ -1,4 +1,4 @@
-use oauth2::AccessToken;
+use azure_core::auth::AccessToken;
 use serde::Deserialize;
 use std::fmt;
 

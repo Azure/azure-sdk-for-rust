@@ -1,12 +1,13 @@
 //! Refresh token utilities
 
 use azure_core::{
+    auth::AccessToken,
     content_type,
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
 use http::Method;
-use oauth2::{AccessToken, ClientId, ClientSecret};
+use oauth2::{ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
