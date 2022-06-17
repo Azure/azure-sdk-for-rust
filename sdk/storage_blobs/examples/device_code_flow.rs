@@ -58,10 +58,6 @@ async fn main() -> azure_core::Result<()> {
 
     println!("{:?}", authorization);
 
-    // remove the option (this is safe since we
-    // unwrapped the errors before).
-    let authorization = authorization.unwrap();
-
     println!(
         "\nReceived valid bearer token: {}",
         &authorization.access_token().secret()
