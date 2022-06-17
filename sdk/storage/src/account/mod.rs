@@ -1,6 +1,4 @@
 pub mod operations;
-pub mod requests;
-pub mod responses;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Account {

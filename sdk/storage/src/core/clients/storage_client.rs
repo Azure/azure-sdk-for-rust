@@ -81,8 +81,8 @@ impl StorageClient {
         GetAccountInformationBuilder::new(self.clone())
     }
 
-    pub fn find_blobs_by_tags(&self) -> crate::account::requests::FindBlobsByTagsBuilder {
-        crate::account::requests::FindBlobsByTagsBuilder::new(self)
+    pub fn find_blobs_by_tags(&self) -> FindBlobsByTagsBuilder {
+        FindBlobsByTagsBuilder::new(self.clone())
     }
 
     #[allow(dead_code)]

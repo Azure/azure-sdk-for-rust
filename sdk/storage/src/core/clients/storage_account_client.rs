@@ -519,13 +519,8 @@ impl StorageAccountClient {
     }
 
     /// Prepares' an `azure_core::Request`.
-    pub(crate) fn blob_storage_request(
-        &self,
-        uri_path: &str,
-        http_method: http::Method,
-    ) -> CoreRequest {
-        let uri = format!("{}/{}", self.blob_storage_url(), uri_path);
-        CoreRequest::new(uri.parse().unwrap(), http_method)
+    pub(crate) fn blob_storage_request(&self, http_method: http::Method) -> CoreRequest {
+        CoreRequest::new(self.blob_storage_url().clone(), http_method)
     }
 }
 
