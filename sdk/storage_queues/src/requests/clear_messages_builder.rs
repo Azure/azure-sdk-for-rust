@@ -1,8 +1,8 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+
 use std::convert::TryInto;
 
 #[derive(Debug)]
@@ -26,7 +26,7 @@ impl<'a> ClearMessagesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<ClearMessagesResponse> {
+    pub async fn execute(&self) -> azure_core::Result<ClearMessagesResponse> {
         let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         self.timeout.append_to_url_query(&mut url);

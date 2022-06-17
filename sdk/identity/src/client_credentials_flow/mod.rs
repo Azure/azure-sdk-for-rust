@@ -41,7 +41,7 @@ mod login_response;
 
 use azure_core::{
     content_type,
-    error::{ErrorKind, Result, ResultExt},
+    error::{ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
 use http::Method;
@@ -58,7 +58,7 @@ pub async fn perform(
     client_secret: &oauth2::ClientSecret,
     scopes: &[&str],
     tenant_id: &str,
-) -> Result<LoginResponse> {
+) -> azure_core::Result<LoginResponse> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id.as_str())
         .append_pair("scope", &scopes.join(" "))

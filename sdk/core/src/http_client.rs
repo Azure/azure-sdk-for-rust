@@ -1,4 +1,3 @@
-use crate::error::Result;
 #[allow(unused_imports)]
 use crate::error::{Error, ErrorKind, ResultExt};
 #[allow(unused_imports)]
@@ -24,7 +23,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// Send out a request using `hyperium/http`'s types.
     ///
     /// This method is considered deprecated and should not be used in new code.
-    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>>;
+    async fn execute_request(&self, request: Request<Bytes>) -> crate::Result<Response<Bytes>>;
 
     /// Send out a request using `azure_core`'s types.
     ///
@@ -34,7 +33,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// responsibility of another policy (not the transport one). It does not consume the request.
     /// Implementors are expected to clone the necessary parts of the request and pass them to the
     /// underlying transport.
-    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response>;
+    async fn execute_request2(&self, request: &crate::Request) -> crate::Result<crate::Response>;
 
     /// Send out a request and validate it was in the `2xx` range, using
     /// `hyperium/http`'s types.
@@ -46,7 +45,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
         _expected_status: StatusCode,
-    ) -> Result<Response<Bytes>> {
+    ) -> crate::Result<Response<Bytes>> {
         let response = self.execute_request(request).await?;
         let status = response.status();
         if (200..400).contains(&status.as_u16()) {
@@ -62,7 +61,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 #[cfg(not(target_arch = "wasm32"))]
 #[async_trait]
 impl HttpClient for reqwest::Client {
-    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>> {
+    async fn execute_request(&self, request: Request<Bytes>) -> crate::Result<Response<Bytes>> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method().clone(), url);
         for (header, value) in request.headers() {
@@ -97,7 +96,7 @@ impl HttpClient for reqwest::Client {
         Ok(response)
     }
 
-    async fn execute_request2(&self, request: &crate::Request) -> Result<crate::Response> {
+    async fn execute_request2(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
         let mut reqwest_request = self.request(request.method(), url);
         for (name, value) in request.headers().iter() {
@@ -146,7 +145,7 @@ impl HttpClient for reqwest::Client {
 }
 
 /// Serialize a type to json.
-pub fn to_json<T>(value: &T) -> Result<Bytes>
+pub fn to_json<T>(value: &T) -> crate::Result<Bytes>
 where
     T: ?Sized + Serialize,
 {

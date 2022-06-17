@@ -1,4 +1,3 @@
-use azure_core::error::Result;
 /// This sample showcases execution of stored procedure
 /// Create stored procedure called test_proc, like so:
 /// function f(personToGreet) {
@@ -9,7 +8,7 @@ use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     let database = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");

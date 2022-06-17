@@ -54,7 +54,7 @@ impl GetCollectionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type GetCollection =
-    futures::future::BoxFuture<'static, azure_core::error::Result<GetCollectionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<GetCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetCollectionBuilder {
@@ -95,7 +95,7 @@ pub struct GetCollectionResponse {
 }
 
 impl GetCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

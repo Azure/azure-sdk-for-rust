@@ -1,4 +1,4 @@
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use azure_core::headers::{self, continuation_token_from_headers_optional, get_str_from_headers};
 use http::response::Response;
 use serde_json::Value;
@@ -16,7 +16,7 @@ pub struct QueryResponse {
 impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
+    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body: &[u8] = response.body();
 

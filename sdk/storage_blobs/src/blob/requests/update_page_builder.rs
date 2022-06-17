@@ -1,6 +1,5 @@
 use crate::{blob::responses::UpdatePageResponse, prelude::*, BA512Range};
 use azure_core::{
-    error::Result,
     headers::{
         add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
     },
@@ -52,7 +51,7 @@ impl<'a> UpdatePageBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(&self) -> Result<UpdatePageResponse> {
+    pub async fn execute(&self) -> azure_core::Result<UpdatePageResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

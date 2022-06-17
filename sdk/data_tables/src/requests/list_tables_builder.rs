@@ -1,5 +1,5 @@
 use crate::{prelude::*, responses::*, ContinuationNextTableName};
-use azure_core::{error::Result, headers::add_optional_header, prelude::*, AppendToUrlQuery};
+use azure_core::{headers::add_optional_header, prelude::*, AppendToUrlQuery};
 use futures::stream::{unfold, Stream};
 use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
@@ -37,7 +37,7 @@ impl<'a> ListTablesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<ListTablesResponse> {
+    pub async fn execute(&self) -> azure_core::Result<ListTablesResponse> {
         let mut url = self.table_service_client.url().to_owned();
 
         self.filter.append_to_url_query(&mut url);
@@ -70,7 +70,7 @@ impl<'a> ListTablesBuilder<'a> {
         (&response).try_into()
     }
 
-    pub fn stream(self) -> impl Stream<Item = Result<ListTablesResponse>> + 'a {
+    pub fn stream(self) -> impl Stream<Item = azure_core::Result<ListTablesResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

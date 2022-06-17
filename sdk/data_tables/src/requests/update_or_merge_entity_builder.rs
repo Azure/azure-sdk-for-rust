@@ -1,6 +1,5 @@
 use crate::{prelude::*, responses::*, IfMatchCondition, TransactionOperation};
 use azure_core::{
-    error::Result,
     headers::{add_mandatory_header, add_optional_header},
     prelude::*,
 };
@@ -42,7 +41,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         &self,
         entity: &E,
         if_match_condition: &IfMatchCondition,
-    ) -> Result<OperationOnEntityResponse>
+    ) -> azure_core::Result<OperationOnEntityResponse>
     where
         E: Serialize,
     {
@@ -82,7 +81,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         &self,
         entity: &E,
         if_match_condition: &IfMatchCondition,
-    ) -> Result<TransactionOperation>
+    ) -> azure_core::Result<TransactionOperation>
     where
         E: Serialize,
     {

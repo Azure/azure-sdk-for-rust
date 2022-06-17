@@ -1,5 +1,5 @@
 use super::Continuation;
-use crate::error::{ErrorKind, Result, ResultExt};
+use crate::error::{ErrorKind, ResultExt};
 use crate::AppendToUrlQuery;
 use serde::{Deserialize, Serialize};
 
@@ -31,7 +31,7 @@ impl NextMarker {
         url.query_pairs_mut().append_pair("continuation", &self.0);
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> crate::Result<Option<Self>> {
         let header_as_str = headers
             .get("x-ms-continuation")
             .map(|item| item.to_str())

@@ -60,7 +60,7 @@ impl QueryDocumentsBuilder {
         context: Context => context,
     }
 
-    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> azure_core::error::Result<Self> {
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> azure_core::Result<Self> {
         Ok(Self {
             partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
             ..self
@@ -206,7 +206,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(self) -> azure_core::error::Result<QueryDocumentsResponseDocuments<T>> {
+    pub fn into_documents(self) -> azure_core::Result<QueryDocumentsResponseDocuments<T>> {
         self.try_into()
     }
 }
@@ -215,7 +215,7 @@ impl<T> QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

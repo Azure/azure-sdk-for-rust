@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use azure_core::auth::TokenCredential;
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::Request as CoreRequest;
 use azure_core::{headers::*, Pipeline};
 use azure_core::{ClientOptions, HttpClient};
@@ -79,7 +79,7 @@ pub struct StorageAccountClient {
     pipeline: Pipeline,
 }
 
-fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>> {
+fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
     // Any base url will do: we just need to parse the SAS token
     // to get its query pairs.
     let base_url = Url::parse("https://blob.core.windows.net").unwrap();
@@ -211,7 +211,7 @@ impl StorageAccountClient {
         http_client: Arc<dyn HttpClient>,
         account: A,
         sas_token: S,
-    ) -> Result<Arc<Self>>
+    ) -> azure_core::Result<Arc<Self>>
     where
         A: Into<String>,
         S: AsRef<str>,
@@ -307,7 +307,7 @@ impl StorageAccountClient {
     pub fn new_connection_string(
         http_client: Arc<dyn HttpClient>,
         connection_string: &str,
-    ) -> Result<Arc<Self>> {
+    ) -> azure_core::Result<Arc<Self>> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -432,7 +432,7 @@ impl StorageAccountClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -532,7 +532,7 @@ impl StorageAccountClient {
 impl ClientAccountSharedAccessSignature for StorageAccountClient {
     fn shared_access_signature(
         &self,
-    ) -> Result<AccountSharedAccessSignatureBuilder<No, No, No, No>> {
+    ) -> azure_core::Result<AccountSharedAccessSignatureBuilder<No, No, No, No>> {
         match self.storage_credentials {
             StorageCredentials::Key(ref account, ref key) => {
                 Ok(AccountSharedAccessSignatureBuilder::new(account, key))
@@ -717,7 +717,11 @@ fn lexy_sort<'a>(
     v_values
 }
 
-fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> Result<url::Url> {
+fn get_endpoint_uri(
+    url: Option<&str>,
+    account: &str,
+    endpoint_type: &str,
+) -> azure_core::Result<url::Url> {
     Ok(match url {
         Some(value) => url::Url::parse(value)?,
         None => url::Url::parse(&format!(

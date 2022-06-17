@@ -1,6 +1,6 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
 use crate::operations::*;
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -38,7 +38,7 @@ impl StorageClient {
         self.storage_account_client.http_client()
     }
 
-    fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> Result<url::Url>
+    fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -56,7 +56,7 @@ impl StorageClient {
         Ok(url)
     }
 
-    pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
+    pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -66,7 +66,7 @@ impl StorageClient {
         )
     }
 
-    pub fn queue_url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
+    pub fn queue_url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -92,7 +92,7 @@ impl StorageClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
         self.storage_account_client.prepare_request(
             url,
             method,

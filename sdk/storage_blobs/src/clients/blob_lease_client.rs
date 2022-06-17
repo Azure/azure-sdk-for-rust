@@ -1,5 +1,5 @@
 use crate::{blob::requests::*, prelude::*};
-use azure_core::{error::Result, prelude::*, HttpClient};
+use azure_core::{prelude::*, HttpClient};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use http::{
@@ -55,7 +55,7 @@ impl BlobLeaseClient {
         self.blob_client.as_ref()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -80,7 +80,7 @@ impl BlobLeaseClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
         self.blob_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

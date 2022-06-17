@@ -52,7 +52,7 @@ impl DeletePermissionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeletePermission =
-    futures::future::BoxFuture<'static, azure_core::error::Result<DeletePermissionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<DeletePermissionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeletePermissionBuilder {
@@ -73,7 +73,7 @@ pub struct DeletePermissionResponse {
 }
 
 impl DeletePermissionResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

@@ -40,6 +40,7 @@ use uuid::Uuid;
 pub use bytes_stream::*;
 pub use constants::*;
 pub use context::Context;
+pub use error::Result;
 #[doc(inline)]
 pub use headers::Header;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]

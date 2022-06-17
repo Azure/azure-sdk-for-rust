@@ -1,5 +1,5 @@
 use crate::{prelude::*, responses::*};
-use azure_core::{error::Result, headers::add_optional_header, prelude::*};
+use azure_core::{headers::add_optional_header, prelude::*};
 use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
 
@@ -21,7 +21,7 @@ impl<'a> CreateTableBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<CreateTableResponse> {
+    pub async fn execute(&self) -> azure_core::Result<CreateTableResponse> {
         let url = self.table_client.url();
         debug!("url = {}", url);
 

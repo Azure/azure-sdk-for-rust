@@ -1,7 +1,7 @@
 use crate::service::resources::{identity::IdentityOperation, AuthenticationMechanism};
 use crate::service::responses::ModuleIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
@@ -34,7 +34,7 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
         module_id: T,
         managed_by: U,
         authentication: AuthenticationMechanism,
-    ) -> Result<ModuleIdentityResponse>
+    ) -> azure_core::Result<ModuleIdentityResponse>
     where
         S: AsRef<str>,
         T: AsRef<str>,

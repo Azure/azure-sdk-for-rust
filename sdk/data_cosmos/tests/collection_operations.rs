@@ -1,13 +1,12 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::error::Result;
 use azure_data_cosmos::resources::collection::*;
 use futures::StreamExt;
 
 mod setup;
 
 #[tokio::test]
-async fn collection_operations() -> Result<()> {
+async fn collection_operations() -> azure_core::Result<()> {
     env_logger::init();
 
     let client = setup::initialize("collection_operations")?;

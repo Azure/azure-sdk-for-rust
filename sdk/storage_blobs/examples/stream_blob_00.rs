@@ -1,4 +1,4 @@
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
@@ -11,7 +11,7 @@ use std::{cell::RefCell, rc::Rc};
 // We do not use leases here but you definitely want to do so otherwise the returned stream
 // is not guaranteed to be consistent.
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and master key from environment variables.

@@ -4,7 +4,7 @@ use futures::StreamExt;
 use http::{HeaderMap, StatusCode};
 use std::pin::Pin;
 
-type PinnedStream = Pin<Box<dyn Stream<Item = crate::error::Result<Bytes>> + Send + Sync>>;
+type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg(not(target_arch = "wasm32"))]

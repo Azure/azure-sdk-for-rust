@@ -1,11 +1,11 @@
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use std::borrow::Borrow;
 
 pub trait IntoAzurePath {
-    fn container_name(&self) -> Result<&str>;
-    fn blob_name(&self) -> Result<&str>;
+    fn container_name(&self) -> azure_core::Result<&str>;
+    fn blob_name(&self) -> azure_core::Result<&str>;
 
-    fn components(&self) -> Result<(&str, &str)> {
+    fn components(&self) -> azure_core::Result<(&str, &str)> {
         Ok((self.container_name()?, self.blob_name()?))
     }
 }
@@ -14,25 +14,25 @@ impl<T> IntoAzurePath for (T, T)
 where
     T: Borrow<str> + Clone,
 {
-    fn container_name(&self) -> Result<&str> {
+    fn container_name(&self) -> azure_core::Result<&str> {
         Ok(self.0.borrow())
     }
-    fn blob_name(&self) -> Result<&str> {
+    fn blob_name(&self) -> azure_core::Result<&str> {
         Ok(self.1.borrow())
     }
 }
 
 impl<'a> IntoAzurePath for &'a str {
-    fn container_name(&self) -> Result<&str> {
+    fn container_name(&self) -> azure_core::Result<&str> {
         split(self.borrow()).map(|(container_name, _blob_name)| container_name)
     }
 
-    fn blob_name(&self) -> Result<&str> {
+    fn blob_name(&self) -> azure_core::Result<&str> {
         split(self.borrow()).map(|(_container_name, blob_name)| blob_name)
     }
 }
 
-fn split(b: &str) -> Result<(&str, &str)> {
+fn split(b: &str) -> azure_core::Result<(&str, &str)> {
     let slash_pos = b.find('/').ok_or_else(|| {
         Error::with_message(ErrorKind::Other, || {
             format!("failed to find path separator. path: {b}")

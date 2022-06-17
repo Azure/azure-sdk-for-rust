@@ -1,6 +1,6 @@
 use crate::container::{public_access_from_header, PublicAccess};
 use azure_core::{
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     headers::REQUEST_ID,
     RequestId,
 };
@@ -24,7 +24,7 @@ pub struct GetACLResponse {
 impl TryFrom<(&Bytes, &HeaderMap)> for GetACLResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&Bytes, &HeaderMap)) -> Result<Self> {
+    fn try_from((body, header_map): (&Bytes, &HeaderMap)) -> azure_core::Result<Self> {
         GetACLResponse::from_response(body, header_map)
     }
 }
@@ -34,7 +34,7 @@ impl GetACLResponse {
     pub(crate) fn from_response(
         body: &Bytes,
         headers: &HeaderMap,
-    ) -> crate::Result<GetACLResponse> {
+    ) -> azure_core::Result<GetACLResponse> {
         let public_access = public_access_from_header(headers)?;
 
         let etag = match headers.get(header::ETAG) {

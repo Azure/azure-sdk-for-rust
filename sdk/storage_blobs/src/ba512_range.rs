@@ -1,5 +1,5 @@
 use azure_core::{
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     headers::{self, Header},
     prelude::Range,
 };
@@ -19,7 +19,7 @@ impl BA512Range {
         self.end
     }
 
-    pub fn new(start: u64, end: u64) -> Result<Self> {
+    pub fn new(start: u64, end: u64) -> azure_core::Result<Self> {
         if start % 512 != 0 {
             return Err(Error::with_message(ErrorKind::Other, || {
                 format!("start range not 512-byte aligned: {}", start)
@@ -52,7 +52,7 @@ impl From<BA512Range> for Range {
 impl TryFrom<Range> for BA512Range {
     type Error = Error;
 
-    fn try_from(r: Range) -> Result<Self> {
+    fn try_from(r: Range) -> azure_core::Result<Self> {
         BA512Range::new(r.start, r.end)
     }
 }
@@ -60,7 +60,7 @@ impl TryFrom<Range> for BA512Range {
 impl TryFrom<(u64, u64)> for BA512Range {
     type Error = Error;
 
-    fn try_from((start, end): (u64, u64)) -> Result<Self> {
+    fn try_from((start, end): (u64, u64)) -> azure_core::Result<Self> {
         BA512Range::new(start, end)
     }
 }
@@ -77,7 +77,7 @@ impl Header for BA512Range {
 
 impl FromStr for BA512Range {
     type Err = Error;
-    fn from_str(s: &str) -> Result<BA512Range> {
+    fn from_str(s: &str) -> azure_core::Result<BA512Range> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
             return Err(Error::message(ErrorKind::Other, "split not found"));

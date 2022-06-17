@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
@@ -18,7 +18,7 @@ impl fmt::Display for CopyProgress {
 impl FromStr for CopyProgress {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self> {
+    fn from_str(s: &str) -> azure_core::Result<Self> {
         let tokens = s.split('/').collect::<Vec<&str>>();
         if tokens.len() < 2 {
             return Err(Error::with_message(ErrorKind::DataConversion, || {

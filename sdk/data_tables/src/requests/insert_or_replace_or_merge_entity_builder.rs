@@ -1,5 +1,5 @@
 use crate::{prelude::*, responses::*, TransactionOperation};
-use azure_core::{error::Result, headers::add_optional_header, prelude::*};
+use azure_core::{headers::add_optional_header, prelude::*};
 use http::{method::Method, StatusCode};
 use serde::Serialize;
 use std::convert::TryInto;
@@ -33,7 +33,7 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute<E>(&self, entity: &E) -> Result<OperationOnEntityResponse>
+    pub async fn execute<E>(&self, entity: &E) -> azure_core::Result<OperationOnEntityResponse>
     where
         E: Serialize,
     {
@@ -70,7 +70,10 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
         (&response).try_into()
     }
 
-    pub fn to_transaction_operation<E>(&self, entity: &E) -> Result<TransactionOperation>
+    pub fn to_transaction_operation<E>(
+        &self,
+        entity: &E,
+    ) -> azure_core::Result<TransactionOperation>
     where
         E: Serialize,
     {

@@ -83,17 +83,17 @@ mod tests {
 
     #[test]
     fn ensure_works() {
-        fn test_ensure(predicate: bool) -> Result<()> {
+        fn test_ensure(predicate: bool) -> crate::Result<()> {
             ensure!(predicate, ErrorKind::Other, "predicate failed");
             Ok(())
         }
 
-        fn test_ensure_eq(item1: &str, item2: &str) -> Result<()> {
+        fn test_ensure_eq(item1: &str, item2: &str) -> crate::Result<()> {
             ensure_eq!(item1, item2, ErrorKind::Other, "predicate failed");
             Ok(())
         }
 
-        fn test_ensure_ne(item1: &str, item2: &str) -> Result<()> {
+        fn test_ensure_ne(item1: &str, item2: &str) -> crate::Result<()> {
             ensure_ne!(item1, item2, ErrorKind::Other, "predicate failed");
             Ok(())
         }

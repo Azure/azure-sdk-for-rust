@@ -20,7 +20,7 @@ impl DocumentClient {
         collection: CollectionClient,
         document_name: S,
         partition_key: &PK,
-    ) -> azure_core::error::Result<Self> {
+    ) -> azure_core::Result<Self> {
         Ok(Self {
             collection,
             document_name: document_name.into(),

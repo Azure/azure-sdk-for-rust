@@ -1,6 +1,5 @@
 use crate::{container::responses::RenewLeaseResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_mandatory_header, add_optional_header, LEASE_ACTION},
     prelude::*,
 };
@@ -22,7 +21,7 @@ impl<'a> RenewLeaseBuilder<'a> {
         }
     }
 
-    pub async fn execute(&self) -> Result<RenewLeaseResponse> {
+    pub async fn execute(&self) -> azure_core::Result<RenewLeaseResponse> {
         let mut url = self.container_lease_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

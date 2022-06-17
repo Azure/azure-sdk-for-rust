@@ -1,5 +1,5 @@
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 use std::convert::TryFrom;
@@ -10,7 +10,7 @@ pub(crate) async fn get_twin<T>(
     service_client: &ServiceClient,
     device_id: String,
     module_id: Option<String>,
-) -> Result<T>
+) -> azure_core::Result<T>
 where
     T: TryFrom<Response<Bytes>, Error = Error>,
 {

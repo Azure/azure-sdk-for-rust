@@ -136,7 +136,7 @@ impl<T> ListDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub(crate) async fn try_from(response: Response) -> azure_core::error::Result<Self> {
+    pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
         let headers = &headers;

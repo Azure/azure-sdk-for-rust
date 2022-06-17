@@ -69,7 +69,7 @@ impl std::future::IntoFuture for CreateDatabaseBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateDatabase =
-    futures::future::BoxFuture<'static, azure_core::error::Result<CreateDatabaseResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<CreateDatabaseResponse>>;
 
 #[derive(Serialize)]
 struct CreateDatabaseBody<'a> {
@@ -95,7 +95,7 @@ pub struct CreateDatabaseResponse {
 }
 
 impl CreateDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
 

@@ -71,7 +71,7 @@ impl ReplacePermissionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type ReplacePermission =
-    futures::future::BoxFuture<'static, azure_core::error::Result<PermissionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<PermissionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplacePermissionBuilder {

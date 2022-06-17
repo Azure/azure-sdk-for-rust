@@ -1,4 +1,4 @@
-use crate::error::{Error, ErrorKind, Result, ResultExt};
+use crate::error::{Error, ErrorKind, ResultExt};
 use std::fmt;
 use std::str::FromStr;
 
@@ -39,7 +39,7 @@ impl ContentRange {
 
 impl FromStr for ContentRange {
     type Err = Error;
-    fn from_str(s: &str) -> Result<ContentRange> {
+    fn from_str(s: &str) -> crate::Result<ContentRange> {
         let remaining = s.strip_prefix(PREFIX).ok_or_else(|| {
             Error::with_message(ErrorKind::Other, || {
                 format!(

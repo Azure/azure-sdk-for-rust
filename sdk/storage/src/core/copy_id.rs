@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 
 use http::HeaderMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -10,7 +10,7 @@ use super::headers::COPY_ID;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyId(uuid::Uuid);
 
-pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId> {
+pub fn copy_id_from_headers(headers: &HeaderMap) -> azure_core::Result<CopyId> {
     let copy_id = headers
         .get(COPY_ID)
         .ok_or_else(|| Error::message(ErrorKind::Other, "failed to get copy id from headers"))?;
@@ -35,7 +35,7 @@ impl From<uuid::Uuid> for CopyId {
 impl TryFrom<&str> for CopyId {
     type Error = Error;
 
-    fn try_from(s: &str) -> Result<Self> {
+    fn try_from(s: &str) -> azure_core::Result<Self> {
         Ok(Self(
             s.parse().with_context(ErrorKind::DataConversion, || {
                 format!("failed to parse CopyId from {s}")

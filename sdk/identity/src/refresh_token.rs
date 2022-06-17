@@ -2,7 +2,7 @@
 
 use azure_core::{
     content_type,
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
 use http::Method;
@@ -21,7 +21,7 @@ pub async fn exchange(
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
-) -> Result<RefreshTokenResponse> {
+) -> azure_core::Result<RefreshTokenResponse> {
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("grant_type", "refresh_token");
     let encoded = encoded.append_pair("client_id", client_id.as_str());

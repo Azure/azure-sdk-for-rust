@@ -4,7 +4,7 @@ use crate::service::resources::{
 };
 use crate::service::responses::DeviceIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
@@ -46,7 +46,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         device_id: S,
         status: Status,
         authentication: AuthenticationMechanism,
-    ) -> Result<DeviceIdentityResponse>
+    ) -> azure_core::Result<DeviceIdentityResponse>
     where
         S: AsRef<str>,
     {

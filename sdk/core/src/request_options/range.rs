@@ -1,4 +1,4 @@
-use crate::error::{Error, ErrorKind, Result, ResultExt};
+use crate::error::{Error, ErrorKind, ResultExt};
 use crate::headers::{AsHeaders, HeaderName, HeaderValue};
 use std::convert::From;
 use std::fmt;
@@ -65,7 +65,7 @@ impl From<std::ops::Range<usize>> for Range {
 
 impl FromStr for Range {
     type Err = Error;
-    fn from_str(s: &str) -> Result<Range> {
+    fn from_str(s: &str) -> crate::Result<Range> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
             return Err(Error::with_message(ErrorKind::Other, || {

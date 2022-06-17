@@ -1,5 +1,5 @@
 use azure_core::{
-    error::{ErrorKind, Result, ResultExt},
+    error::{ErrorKind, ResultExt},
     AppendToUrlQuery,
 };
 
@@ -18,7 +18,7 @@ impl ContinuationNextPartitionAndRowKey {
         &self.0
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> azure_core::Result<Option<Self>> {
         let partition_header_as_str = headers
             .get("x-ms-continuation-NextPartitionKey")
             .map(|item| item.to_str())

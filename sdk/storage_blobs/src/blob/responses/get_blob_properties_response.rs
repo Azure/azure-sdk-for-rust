@@ -17,7 +17,7 @@ impl GetBlobPropertiesResponse {
     pub(crate) fn from_response(
         headers: &HeaderMap,
         blob: Blob,
-    ) -> crate::Result<GetBlobPropertiesResponse> {
+    ) -> azure_core::Result<GetBlobPropertiesResponse> {
         debug!("headers == {:#?}", headers);
 
         let request_id = request_id_from_headers(headers)?;

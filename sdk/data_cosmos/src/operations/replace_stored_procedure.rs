@@ -72,6 +72,6 @@ impl std::future::IntoFuture for ReplaceStoredProcedureBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type ReplaceStoredProcedure =
-    futures::future::BoxFuture<'static, azure_core::error::Result<ReplaceStoredProcedureResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<ReplaceStoredProcedureResponse>>;
 
 pub type ReplaceStoredProcedureResponse = CreateStoredProcedureResponse;

@@ -1,4 +1,3 @@
-use azure_core::error::Result;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -6,7 +5,7 @@ use futures::stream::StreamExt;
 use std::num::NonZeroU32;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     let data_lake_client = create_data_lake_client().await.unwrap();
 
     let file_system_name = format!("azurerustsdk-datalake-example00-{}", Utc::now().timestamp());
@@ -66,7 +65,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn create_data_lake_client() -> Result<DataLakeClient> {
+async fn create_data_lake_client() -> azure_core::Result<DataLakeClient> {
     let account_name = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
     let account_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")

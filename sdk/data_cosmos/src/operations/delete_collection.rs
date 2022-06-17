@@ -51,7 +51,7 @@ impl DeleteCollectionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteCollection =
-    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteCollectionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<DeleteCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteCollectionBuilder {
@@ -91,7 +91,7 @@ pub struct DeleteCollectionResponse {
 }
 
 impl DeleteCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

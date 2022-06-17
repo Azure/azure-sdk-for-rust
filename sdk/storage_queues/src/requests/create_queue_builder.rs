@@ -1,6 +1,5 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -29,7 +28,7 @@ impl<'a> CreateQueueBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<CreateQueueResponse> {
+    pub async fn execute(&self) -> azure_core::Result<CreateQueueResponse> {
         let mut url = self.queue_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

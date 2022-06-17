@@ -1,5 +1,5 @@
 use crate::{prelude::*, requests::*};
-use azure_core::error::Result;
+
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use http::{
@@ -61,7 +61,7 @@ impl PartitionKeyClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
         self.table_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

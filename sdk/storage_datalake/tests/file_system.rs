@@ -1,6 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::error::Result;
 use azure_storage_datalake::prelude::*;
 use futures::stream::StreamExt;
 use std::num::NonZeroU32;
@@ -8,7 +7,7 @@ use std::num::NonZeroU32;
 mod setup;
 
 #[tokio::test]
-async fn file_system_create_delete() -> Result<()> {
+async fn file_system_create_delete() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_system")
         .await
         .unwrap();
@@ -83,7 +82,7 @@ async fn file_system_create_delete() -> Result<()> {
 }
 
 #[tokio::test]
-async fn file_system_list_paths() -> Result<()> {
+async fn file_system_list_paths() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_system_list_paths")
         .await
         .unwrap();

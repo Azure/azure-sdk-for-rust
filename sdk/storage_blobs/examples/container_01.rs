@@ -1,11 +1,11 @@
-use azure_core::{error::Result, prelude::*};
+use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use chrono::{FixedOffset, Utc};
 use std::{ops::Add, time::Duration};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");

@@ -1,6 +1,6 @@
 use crate::{blob::requests::*, prelude::*, BA512Range};
 use azure_core::{
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     prelude::*,
     HttpClient,
 };
@@ -67,7 +67,7 @@ impl BlobClient {
         self.container_client.as_ref()
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url>
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -178,7 +178,7 @@ impl BlobClient {
 
     pub fn shared_access_signature(
         &self,
-    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
+    ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
             self.container_client.storage_account_client().account(),
@@ -197,7 +197,7 @@ impl BlobClient {
         }
     }
 
-    pub fn generate_signed_blob_url<T>(&self, signature: &T) -> Result<url::Url>
+    pub fn generate_signed_blob_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
     where
         T: SasToken,
     {
@@ -212,12 +212,12 @@ impl BlobClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
         self.container_client
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    pub async fn exists(&self) -> Result<bool> {
+    pub async fn exists(&self) -> azure_core::Result<bool> {
         let result = self.get_properties().execute().await.map(|_| true);
         if let Err(err) = result {
             if let ErrorKind::HttpResponse { status, .. } = err.kind() {
