@@ -40,10 +40,9 @@ impl Policy for SharedKeyAuthorizationPolicy {
             HeaderValue::from_str("2019-12-12")?,
         ); // TODO: Remove duplication with storage_account_client.rs
 
-        let url = url::Url::parse(&request.url().to_string()).unwrap();
         let auth = generate_authorization(
             request.headers(),
-            &url,
+            request.url(),
             &request.method(),
             &self.credential.account_name,
             &self.credential.account_key,

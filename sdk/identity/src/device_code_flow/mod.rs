@@ -8,7 +8,7 @@ mod device_code_responses;
 use async_timer::timer::new_timer;
 use azure_core::{
     content_type,
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, Result},
     headers, HttpClient, Request, Response,
 };
 pub use device_code_responses::*;
@@ -171,7 +171,7 @@ async fn post_form(
     url: &str,
     form_body: String,
 ) -> Result<Response> {
-    let url = Url::parse(url).map_kind(ErrorKind::DataConversion)?;
+    let url = Url::parse(url)?;
     let mut req = Request::new(url, Method::POST);
     req.headers_mut().insert(
         headers::CONTENT_TYPE,
