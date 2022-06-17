@@ -8,8 +8,7 @@ use crate::device_update::UpdateOperation;
 
 #[cfg(test)]
 mod tests {
-    use azure_core::auth::AccessToken;
-    use azure_core::auth::{TokenCredential, TokenResponse};
+    use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
     use azure_identity::AutoRefreshingTokenCredential;
     use chrono::{Duration, Utc};
     use std::sync::Arc;
