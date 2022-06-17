@@ -56,7 +56,7 @@ async fn main() -> azure_core::Result<()> {
         }
     };
 
-    println!("{:?}", auth);
+    println!("{:?}", authorization);
 
     // remove the option (this is safe since we
     // unwrapped the errors before).
