@@ -60,6 +60,15 @@ impl Request {
         &mut self.url
     }
 
+    pub fn path_and_query(&self) -> String {
+        let mut result = self.url.path().to_owned();
+        if let Some(query) = self.url.query() {
+            result.push('?');
+            result.push_str(query)
+        }
+        result
+    }
+
     pub fn method(&self) -> Method {
         self.method.clone()
     }

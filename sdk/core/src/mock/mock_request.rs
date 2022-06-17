@@ -1,10 +1,11 @@
 use crate::{Body, Request};
-use http::{Method, Uri};
+use http::Method;
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::str::FromStr;
+use url::Url;
 
 const FIELDS: &[&str] = &["uri", "method", "headers", "body"];
 
@@ -83,8 +84,11 @@ impl<'de> Visitor<'de> for RequestVisitor {
             hm.insert(k.to_owned().into(), v.into());
         }
 
+        // `url` cannot be relative
+        let url = Url::parse("http://example.com").unwrap();
+        let url = url.join(uri.1).expect("expected a valid uri");
         Ok(Self::Value {
-            uri: Uri::from_str(uri.1).expect("expected a valid uri"),
+            url,
             method: Method::from_str(method.1).expect("expected a valid HTTP method"),
             headers: hm.into(),
             body: bytes::Bytes::from(body).into(),
@@ -107,14 +111,7 @@ impl Serialize for Request {
         }
 
         let mut state = serializer.serialize_struct("Request", 4)?;
-        state.serialize_field(
-            FIELDS[0],
-            &self
-                .uri
-                .path_and_query()
-                .map(|p| p.to_string())
-                .unwrap_or_else(String::new),
-        )?;
+        state.serialize_field(FIELDS[0], &self.path_and_query())?;
         state.serialize_field(FIELDS[1], &self.method.to_string())?;
         state.serialize_field(FIELDS[2], &hm)?;
         state.serialize_field(

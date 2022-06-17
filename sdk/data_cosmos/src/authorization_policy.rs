@@ -57,11 +57,7 @@ impl Policy for AuthorizationPolicy {
 
         let time_nonce = TimeNonce::new();
 
-        let mut uri_path = request.url().path().to_owned();
-        if let Some(query) = request.url().query() {
-            uri_path.push('?');
-            uri_path.push_str(query);
-        }
+        let uri_path = request.path_and_query();
         trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
 
         let auth = {
