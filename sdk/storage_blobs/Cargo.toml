@@ -14,7 +14,7 @@ edition = "2021"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.3", default-features = false }
-azure_storage = { path = "../storage", version = "0.3", default-features = false, features = [
+azure_storage = { path = "../storage", version = "0.4", default-features = false, features = [
   "account",
 ] }
 base64 = "0.13"

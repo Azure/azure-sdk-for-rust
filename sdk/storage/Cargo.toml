@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage"
-version = "0.3.0"
+version = "0.4.0"
 description = "Azure Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
