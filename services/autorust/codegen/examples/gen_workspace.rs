@@ -2,9 +2,9 @@
 
 use autorust_codegen::{
     crates::{list_crate_names, list_dirs},
-    jinja::{CargoToml, CheckAllServicesYml},
+    jinja::{CargoToml, CheckAllServicesYml, PublishSdksYml, PublishServicesYml},
+    Result,
 };
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
     let dirs = list_dirs()?;
@@ -19,7 +19,37 @@ fn main() -> Result<()> {
     let yml = CheckAllServicesYml { packages };
     yml.create("../../.github/workflows/check-all-services.yml")?;
 
-    // let yml = PublishServicesYml { packages };
-    // yml.create("../../.github/workflows/publish-services.yml")?;
+    if std::env::args().any(|arg| arg == "publish") {
+        publish_sdks()?;
+        publish_services()?;
+    }
+    Ok(())
+}
+
+fn publish_sdks() -> Result<()> {
+    let packages = &vec![
+        "azure_core",
+        "azure_data_cosmos",
+        "azure_data_tables",
+        "azure_identity",
+        "azure_iot_hub",
+        "azure_messaging_eventgrid",
+        "azure_messaging_servicebus",
+        "azure_security_keyvault",
+        "azure_storage",
+        "azure_storage_blobs",
+        "azure_storage_datalake",
+        "azure_storage_queues",
+    ];
+    let yml = PublishSdksYml { packages };
+    yml.create("../../.github/workflows/publish-sdks.yml")?;
+    Ok(())
+}
+
+fn publish_services() -> Result<()> {
+    let packages = list_crate_names()?;
+    let packages = &packages.iter().map(String::as_str).collect();
+    let yml = PublishServicesYml { packages };
+    yml.create("../../.github/workflows/publish-services.yml")?;
     Ok(())
 }

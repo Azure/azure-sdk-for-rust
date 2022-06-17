@@ -23,6 +23,18 @@ impl<'a> PublishServicesYml<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "publish-sdks.yml.jinja")]
+pub struct PublishSdksYml<'a> {
+    pub packages: &'a Vec<&'a str>,
+}
+
+impl<'a> PublishSdksYml<'a> {
+    pub fn create(&self, path: impl AsRef<Utf8Path>) -> Result<()> {
+        render(self, path)
+    }
+}
+
+#[derive(Template)]
 #[template(path = "check-all-services.yml.jinja")]
 pub struct CheckAllServicesYml<'a> {
     pub packages: &'a Vec<&'a str>,
