@@ -1,3 +1,4 @@
+use crate::{ErrorKind, Result, ResultExt};
 use camino::{Utf8Path, Utf8PathBuf};
 use serde::Deserialize;
 use std::io::BufRead;
@@ -6,7 +7,6 @@ use std::{
     io::BufReader,
     str::FromStr,
 };
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Get all directories below the given directory.
 fn list_dirs_in(dir: impl AsRef<Utf8Path>) -> Result<Vec<Utf8PathBuf>> {
@@ -52,7 +52,7 @@ pub fn has_version(name: &str, version: &str) -> Result<bool> {
 fn get_versions(crate_name: &str) -> Result<Vec<CrateVersion>> {
     // all of these crates begin with "azure".
     let path = format!("../../../crates.io-index/az/ur/{}", crate_name);
-    let path = Utf8PathBuf::from_str(&path)?;
+    let path = Utf8PathBuf::from_str(&path).map_kind(ErrorKind::Parse)?;
     let mut versions = Vec::new();
     if path.exists() {
         let file = File::open(path)?;
