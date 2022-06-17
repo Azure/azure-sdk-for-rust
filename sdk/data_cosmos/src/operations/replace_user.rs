@@ -57,7 +57,7 @@ struct ReplaceUserBody<'a> {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type ReplaceUser = futures::future::BoxFuture<'static, azure_core::error::Result<UserResponse>>;
+pub type ReplaceUser = futures::future::BoxFuture<'static, azure_core::Result<UserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceUserBuilder {

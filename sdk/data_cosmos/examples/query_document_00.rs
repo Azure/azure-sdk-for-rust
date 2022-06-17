@@ -1,4 +1,3 @@
-use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -20,7 +19,7 @@ struct MySecondSampleStructOwned {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     let database_name = std::env::args()
         .nth(1)
         .expect("please specify database name as first command line parameter");

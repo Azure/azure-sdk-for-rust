@@ -1,4 +1,4 @@
-use crate::error::{Error, ErrorKind, Result, ResultExt};
+use crate::error::{Error, ErrorKind, ResultExt};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -29,7 +29,7 @@ impl MockTransaction {
         self.number.fetch_add(1, Ordering::SeqCst)
     }
 
-    pub(crate) fn file_path(&self, create_when_not_exist: bool) -> Result<PathBuf> {
+    pub(crate) fn file_path(&self, create_when_not_exist: bool) -> crate::Result<PathBuf> {
         let mut path = PathBuf::from(workspace_root().context(
             ErrorKind::MockFramework,
             "could not read the workspace_root from the cargo metadata",
@@ -67,7 +67,7 @@ impl MockTransaction {
 }
 
 /// Run cargo to get the root of the workspace
-fn workspace_root() -> Result<String> {
+fn workspace_root() -> crate::Result<String> {
     let output = std::process::Command::new("cargo")
         .arg("metadata")
         .output()?;

@@ -2,7 +2,6 @@ use crate::container::{
     incomplete_vector_from_container_response, responses::ListContainersResponse,
 };
 use azure_core::{
-    error::Result,
     headers::{add_optional_header, request_id_from_headers},
     prelude::*,
 };
@@ -46,7 +45,7 @@ impl<'a> ListContainersBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(&self) -> Result<ListContainersResponse> {
+    pub async fn execute(&self) -> azure_core::Result<ListContainersResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -100,7 +99,7 @@ impl<'a> ListContainersBuilder<'a> {
         })
     }
 
-    pub fn stream(self) -> impl Stream<Item = Result<ListContainersResponse>> + 'a {
+    pub fn stream(self) -> impl Stream<Item = azure_core::Result<ListContainersResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

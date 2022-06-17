@@ -1,6 +1,5 @@
 use crate::{blob::responses::PutBlockResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_optional_header, add_optional_header_ref},
     prelude::*,
 };
@@ -41,7 +40,7 @@ impl<'a> AppendBlockBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(&self) -> Result<PutBlockResponse> {
+    pub async fn execute(&self) -> azure_core::Result<PutBlockResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

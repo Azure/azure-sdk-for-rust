@@ -2,11 +2,10 @@
 
 mod setup;
 
-use azure_core::error::Result;
 use futures::StreamExt;
 
 #[tokio::test]
-async fn database_operations() -> Result<()> {
+async fn database_operations() -> azure_core::Result<()> {
     const DATABASE_NAME: &str = "cosmos-test-db-create-and-delete-database";
 
     let client = setup::initialize("database_operations")?;

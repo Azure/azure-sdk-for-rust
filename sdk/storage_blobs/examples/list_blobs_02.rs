@@ -1,9 +1,8 @@
-use azure_core::error::Result;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -30,7 +29,7 @@ async fn main() -> Result<()> {
 async fn create_container_and_list(
     storage_client: std::sync::Arc<StorageClient>,
     container_name: &str,
-) -> Result<()> {
+) -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(container_name);
 
     container_client.create().execute().await?;

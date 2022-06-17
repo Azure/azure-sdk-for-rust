@@ -135,7 +135,7 @@ impl CosmosClient {
         mut request: Request,
         mut context: Context,
         resource_type: ResourceType,
-    ) -> azure_core::error::Result<Response> {
+    ) -> azure_core::Result<Response> {
         self.pipeline
             .send(context.insert(resource_type), &mut request)
             .await

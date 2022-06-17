@@ -45,7 +45,7 @@ impl DeleteDatabaseBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteDatabase =
-    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteDatabaseResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<DeleteDatabaseResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDatabaseBuilder {
@@ -66,7 +66,7 @@ pub struct DeleteDatabaseResponse {
 }
 
 impl DeleteDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         let charge = request_charge_from_headers(headers)?;

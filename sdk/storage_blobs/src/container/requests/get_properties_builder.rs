@@ -1,6 +1,5 @@
 use crate::{container::responses::GetPropertiesResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_optional_header, add_optional_header_ref},
     prelude::*,
 };
@@ -31,7 +30,7 @@ impl<'a> GetPropertiesBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
     }
 
-    pub async fn execute(&self) -> Result<GetPropertiesResponse> {
+    pub async fn execute(&self) -> azure_core::Result<GetPropertiesResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

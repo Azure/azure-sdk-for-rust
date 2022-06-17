@@ -5,16 +5,13 @@ use azure_core::headers::{
     last_modified_from_headers, CONTENT_LENGTH, CONTENT_TYPE,
 };
 use azure_core::prelude::*;
-use azure_core::{
-    error::{ErrorKind, Result},
-    AppendToUrlQuery, Response as HttpResponse,
-};
+use azure_core::{error::ErrorKind, AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type HeadPath = futures::future::BoxFuture<'static, Result<HeadPathResponse>>;
+type HeadPath = futures::future::BoxFuture<'static, azure_core::Result<HeadPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct HeadPathBuilder<C>
@@ -101,7 +98,7 @@ pub struct HeadPathResponse {
 }
 
 impl HeadPathResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {

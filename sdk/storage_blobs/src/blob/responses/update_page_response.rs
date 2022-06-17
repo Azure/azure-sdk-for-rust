@@ -22,7 +22,7 @@ pub struct UpdatePageResponse {
 }
 
 impl UpdatePageResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> crate::Result<UpdatePageResponse> {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<UpdatePageResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
         let content_md5 = content_md5_from_headers(headers).map_kind(ErrorKind::DataConversion)?;

@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate log;
 
-use azure_core::{error::Result, prelude::*};
+use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     env_logger::init();
 
     // First we retrieve the account name and master key from environment variables.

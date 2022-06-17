@@ -41,7 +41,7 @@ impl CollectionClient {
         &self,
         document_name: S,
         partition_key: &PK,
-    ) -> azure_core::error::Result<DocumentClient> {
+    ) -> azure_core::Result<DocumentClient> {
         DocumentClient::new(self.clone(), document_name, partition_key)
     }
 

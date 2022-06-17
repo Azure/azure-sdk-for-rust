@@ -1,7 +1,7 @@
 use super::{DataLakeClient, DirectoryClient, FileClient};
 use crate::operations::*;
 use crate::Properties;
-use azure_core::{error::Result, ClientOptions, Context, Pipeline};
+use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use url::Url;
 
@@ -36,7 +36,7 @@ impl FileSystemClient {
             .into_file_system_client(file_system_name.into())
     }
 
-    pub(crate) fn url(&self) -> Result<Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
         Ok(url::Url::parse(self.data_lake_client.url())?.join(&self.name)?)
     }
 

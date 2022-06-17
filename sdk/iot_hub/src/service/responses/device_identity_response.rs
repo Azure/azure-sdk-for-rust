@@ -1,7 +1,7 @@
 use crate::service::resources::{
     AuthenticationMechanism, ConnectionState, DeviceCapabilities, Status,
 };
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use http::Response;
 use serde::{Deserialize, Serialize};
 
@@ -41,7 +41,7 @@ pub struct DeviceIdentityResponse {
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeviceIdentityResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
+    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
         let body = response.body();
 
         let device_identity_response: DeviceIdentityResponse = serde_json::from_slice(body)?;

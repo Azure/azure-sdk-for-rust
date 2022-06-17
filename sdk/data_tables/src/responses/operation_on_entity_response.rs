@@ -1,8 +1,4 @@
-use azure_core::{
-    error::{Error, Result},
-    headers::etag_from_headers,
-    Etag,
-};
+use azure_core::{error::Error, headers::etag_from_headers, Etag};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
@@ -17,7 +13,7 @@ pub struct OperationOnEntityResponse {
 impl TryFrom<&Response<Bytes>> for OperationOnEntityResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self> {
+    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
         debug!("{}", std::str::from_utf8(response.body())?);
         debug!("headers == {:#?}", response.headers());
 

@@ -1,5 +1,5 @@
 use crate::{prelude::*, requests::*};
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use bytes::Bytes;
 use http::{
     method::Method,
@@ -9,11 +9,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub trait AsEntityClient<RK: Into<String>> {
-    fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>>;
+    fn as_entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>>;
 }
 
 impl<RK: Into<String>> AsEntityClient<RK> for Arc<PartitionKeyClient> {
-    fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>> {
+    fn as_entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>> {
         EntityClient::new(self.clone(), row_key)
     }
 }
@@ -29,7 +29,7 @@ impl EntityClient {
     pub(crate) fn new<RK: Into<String>>(
         partition_key_client: Arc<PartitionKeyClient>,
         row_key: RK,
-    ) -> Result<Arc<Self>> {
+    ) -> azure_core::Result<Arc<Self>> {
         let row_key = row_key.into();
         let mut url = partition_key_client
             .storage_account_client()
@@ -104,7 +104,7 @@ impl EntityClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
         self.partition_key_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

@@ -37,7 +37,7 @@ impl From<Bytes> for BytesStream {
 }
 
 impl Stream for BytesStream {
-    type Item = crate::error::Result<Bytes>;
+    type Item = crate::Result<Bytes>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -58,7 +58,7 @@ impl Stream for BytesStream {
 
 #[async_trait::async_trait]
 impl SeekableStream for BytesStream {
-    async fn reset(&mut self) -> crate::error::Result<()> {
+    async fn reset(&mut self) -> crate::Result<()> {
         self.bytes_read = 0;
         Ok(())
     }

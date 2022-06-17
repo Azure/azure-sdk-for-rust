@@ -1,12 +1,11 @@
 #![cfg(feature = "mock_transport_framework")]
-use azure_core::error::Result;
 use azure_storage_datalake::Properties;
 use std::{assert_eq, assert_ne};
 
 mod setup;
 
 #[tokio::test]
-async fn file_create_delete() -> Result<()> {
+async fn file_create_delete() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_create_delete")
         .await
         .unwrap();
@@ -42,7 +41,7 @@ async fn file_create_delete() -> Result<()> {
 }
 
 #[tokio::test]
-async fn file_upload() -> Result<()> {
+async fn file_upload() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_read")
         .await
         .unwrap();
@@ -79,7 +78,7 @@ async fn file_upload() -> Result<()> {
 }
 
 #[tokio::test]
-async fn file_read() -> Result<()> {
+async fn file_read() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_upload")
         .await
         .unwrap();
@@ -119,7 +118,7 @@ async fn file_read() -> Result<()> {
 }
 
 #[tokio::test]
-async fn file_rename() -> Result<()> {
+async fn file_rename() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_rename")
         .await
         .unwrap();
@@ -179,7 +178,7 @@ async fn file_rename() -> Result<()> {
 }
 
 #[tokio::test]
-async fn file_get_properties() -> Result<()> {
+async fn file_get_properties() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_properties")
         .await
         .unwrap();

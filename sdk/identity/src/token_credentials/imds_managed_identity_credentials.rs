@@ -1,5 +1,5 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::{HttpClient, Request};
 use chrono::{DateTime, TimeZone, Utc};
 use http::Method;
@@ -89,7 +89,7 @@ impl ImdsManagedIdentityCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for ImdsManagedIdentityCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 

@@ -1,6 +1,5 @@
 use crate::{blob::responses::AcquireBlobLeaseResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, LEASE_ACTION},
     prelude::*,
 };
@@ -34,7 +33,7 @@ impl<'a> AcquireLeaseBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(self) -> Result<AcquireBlobLeaseResponse> {
+    pub async fn execute(self) -> azure_core::Result<AcquireBlobLeaseResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "lease");

@@ -1,6 +1,5 @@
 use super::{DataLakeClient, FileSystemClient, PathClient};
 use crate::{operations::*, request_options::*, Properties};
-use azure_core::error::Result;
 use azure_core::prelude::IfMatchCondition;
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
@@ -14,7 +13,7 @@ pub struct FileClient {
 }
 
 impl PathClient for FileClient {
-    fn url(&self) -> Result<Url> {
+    fn url(&self) -> azure_core::Result<Url> {
         let fs_url = self.file_system_client.url()?;
         let file_path = vec![fs_url.path(), &self.file_path].join("/");
         Ok(self.file_system_client.url()?.join(&file_path)?)

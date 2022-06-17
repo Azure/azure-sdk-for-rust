@@ -71,7 +71,7 @@ impl DeleteDocumentBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteDocument =
-    futures::future::BoxFuture<'static, azure_core::error::Result<DeleteDocumentResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<DeleteDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDocumentBuilder {
@@ -90,7 +90,7 @@ pub struct DeleteDocumentResponse {
 }
 
 impl DeleteDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         let charge = request_charge_from_headers(&headers)?;

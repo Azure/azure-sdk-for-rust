@@ -1,5 +1,5 @@
 use crate::service::resources::Configuration;
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use http::Response;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,7 @@ pub struct MultipleConfigurationResponse(Vec<ConfigurationResponse>);
 impl std::convert::TryFrom<Response<bytes::Bytes>> for ConfigurationResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
+    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
         let body = response.body();
 
         let configuration_response: ConfigurationResponse = serde_json::from_slice(body)?;
@@ -25,7 +25,7 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for ConfigurationResponse {
 impl std::convert::TryFrom<Response<bytes::Bytes>> for MultipleConfigurationResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self> {
+    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
         let body = response.body();
 
         let configuration_response: MultipleConfigurationResponse = serde_json::from_slice(body)?;

@@ -1,5 +1,4 @@
 use crate::core::prelude::*;
-use azure_core::error::Result;
 use azure_core::headers::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
 };
@@ -10,14 +9,14 @@ use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct GetAccountInformationBuilder {
-    storage_client: StorageClient,
+    client: StorageClient,
     context: Context,
 }
 
 impl GetAccountInformationBuilder {
-    pub(crate) fn new(storage_client: StorageClient) -> Self {
+    pub(crate) fn new(client: StorageClient) -> Self {
         Self {
-            storage_client,
+            client,
             context: Context::new(),
         }
     }
@@ -29,16 +28,16 @@ impl GetAccountInformationBuilder {
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
             let mut request = self
-                .storage_client
+                .client
                 .storage_account_client()
-                .blob_storage_request("", http::Method::GET);
+                .blob_storage_request(http::Method::GET);
 
             for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
                 request.url_mut().query_pairs_mut().append_pair(k, v);
             }
 
             let response = self
-                .storage_client
+                .client
                 .storage_account_client()
                 .pipeline()
                 .send(&mut self.context, &mut request)
@@ -51,7 +50,7 @@ impl GetAccountInformationBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type GetAccountInformation =
-    futures::future::BoxFuture<'static, azure_core::error::Result<GetAccountInformationResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<GetAccountInformationResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetAccountInformationBuilder {
@@ -71,7 +70,9 @@ pub struct GetAccountInformationResponse {
 }
 
 impl GetAccountInformationResponse {
-    pub(crate) fn try_from(headers: &HeaderMap) -> Result<GetAccountInformationResponse> {
+    pub(crate) fn try_from(
+        headers: &HeaderMap,
+    ) -> azure_core::Result<GetAccountInformationResponse> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let sku_name = sku_name_from_headers(headers)?;

@@ -2,7 +2,6 @@ use azure_data_tables::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MyEntity {
@@ -14,7 +13,7 @@ struct MyEntity {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");

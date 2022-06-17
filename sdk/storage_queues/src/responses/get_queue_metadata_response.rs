@@ -1,4 +1,4 @@
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use azure_core::prelude::*;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
@@ -14,7 +14,7 @@ pub struct GetQueueMetadataResponse {
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueMetadataResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self> {
+    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         debug!("headers == {:?}", headers);

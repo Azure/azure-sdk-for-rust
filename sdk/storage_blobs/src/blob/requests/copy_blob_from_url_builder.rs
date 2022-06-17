@@ -1,7 +1,6 @@
 use super::SourceContentMD5;
 use crate::{blob::responses::CopyBlobFromUrlResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{
         add_mandatory_header, add_optional_header, add_optional_header_ref, COPY_SOURCE,
         REQUIRES_SYNC,
@@ -56,7 +55,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
         source_content_md5: &'a SourceContentMD5 => Some(source_content_md5),
     }
 
-    pub async fn execute(&self) -> Result<CopyBlobFromUrlResponse> {
+    pub async fn execute(&self) -> azure_core::Result<CopyBlobFromUrlResponse> {
         let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);

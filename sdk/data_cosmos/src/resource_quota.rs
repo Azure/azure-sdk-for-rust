@@ -1,4 +1,4 @@
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 
 /// A resource quota for the given resource kind
 ///
@@ -39,7 +39,9 @@ const INTEROP_USERS: &str = "interopUsers=";
 const AUTH_POLICY_ELEMENTS: &str = "authPolicyElements=";
 
 /// Parse a collection of [`ResourceQuota`] from a string
-pub(crate) fn resource_quotas_from_str(full_string: &str) -> Result<Vec<ResourceQuota>> {
+pub(crate) fn resource_quotas_from_str(
+    full_string: &str,
+) -> azure_core::Result<Vec<ResourceQuota>> {
     debug!("resource_quotas_from_str(\"{}\") called", full_string);
     let tokens: Vec<&str> = full_string.split(';').collect();
     let mut v = Vec::with_capacity(tokens.len());

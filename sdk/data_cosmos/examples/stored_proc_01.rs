@@ -1,4 +1,3 @@
-use azure_core::error::Result;
 /// This sample showcases execution of stored procedure
 /// Create stored procedure called test_proc, like so:
 /// function f(personToGreet) {
@@ -10,7 +9,7 @@ use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     let function_body: &str = r#"
         function f(personToGreet) {
             var context = getContext();

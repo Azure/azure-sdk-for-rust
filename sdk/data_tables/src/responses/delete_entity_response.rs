@@ -1,4 +1,4 @@
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
@@ -12,7 +12,7 @@ pub struct DeleteEntityResponse {
 impl TryFrom<&Response<Bytes>> for DeleteEntityResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self> {
+    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
         debug!("{}", std::str::from_utf8(response.body())?);
         debug!("headers == {:#?}", response.headers());
 

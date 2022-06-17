@@ -4,7 +4,6 @@ use crate::{
     TransactionOperation,
 };
 use azure_core::{
-    error::Result,
     headers::{add_mandatory_header, add_optional_header},
     prelude::*,
 };
@@ -35,7 +34,7 @@ impl<'a> DeleteEntityBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<DeleteEntityResponse> {
+    pub async fn execute(&self) -> azure_core::Result<DeleteEntityResponse> {
         let mut url = self.entity_client.url().clone();
 
         self.timeout.append_to_url_query(&mut url);
@@ -63,7 +62,7 @@ impl<'a> DeleteEntityBuilder<'a> {
         (&response).try_into()
     }
 
-    pub fn to_transaction_operation(&self) -> Result<TransactionOperation> {
+    pub fn to_transaction_operation(&self) -> azure_core::Result<TransactionOperation> {
         let url = self.entity_client.url();
 
         let request = http::Request::builder()

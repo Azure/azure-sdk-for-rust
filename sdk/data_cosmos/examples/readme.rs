@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
-use azure_core::error::Result;
+
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -31,7 +31,7 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 // 4. Delete the documents returned by task 4.
 // 5. Check the remaining documents.
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
     let master_key =

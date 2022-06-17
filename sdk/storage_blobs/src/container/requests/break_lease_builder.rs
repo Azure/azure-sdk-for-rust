@@ -1,6 +1,5 @@
 use crate::{container::responses::BreakLeaseResponse, prelude::*};
 use azure_core::{
-    error::Result,
     headers::{add_optional_header, add_optional_header_ref, LEASE_ACTION},
     prelude::*,
 };
@@ -33,7 +32,7 @@ impl<'a> BreakLeaseBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(self) -> Result<BreakLeaseResponse> {
+    pub async fn execute(self) -> azure_core::Result<BreakLeaseResponse> {
         let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");

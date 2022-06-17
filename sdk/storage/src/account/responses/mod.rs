@@ -1,2 +1,0 @@
-mod list_blobs_by_tags_response;
-pub use list_blobs_by_tags_response::ListBlobsByTagsResponse;

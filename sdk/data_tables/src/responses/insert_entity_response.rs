@@ -1,6 +1,6 @@
 use crate::EntityWithMetadata;
 use azure_core::{
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
     headers::{etag_from_headers, get_str_from_headers},
     Etag,
 };
@@ -28,7 +28,7 @@ where
 {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self> {
+    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
         debug!("{}", std::str::from_utf8(response.body())?);
         debug!("headers == {:#?}", response.headers());
 

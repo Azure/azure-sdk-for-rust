@@ -1,10 +1,13 @@
-use azure_core::error::{Error, ErrorKind, Result};
+use azure_core::error::{Error, ErrorKind};
 use azure_core::parsing::FromStringOptional;
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};
 
 #[inline]
-pub fn traverse_single_must<'a>(node: &'a Element, path: &[&str]) -> Result<&'a Element> {
+pub fn traverse_single_must<'a>(
+    node: &'a Element,
+    path: &[&str],
+) -> azure_core::Result<&'a Element> {
     let vec = traverse(node, path, false)?;
     if vec.len() > 1 {
         return Err(Error::with_message(ErrorKind::Other, || {
@@ -18,7 +21,7 @@ pub fn traverse_single_must<'a>(node: &'a Element, path: &[&str]) -> Result<&'a 
 pub fn traverse_single_optional<'a>(
     node: &'a Element,
     path: &[&str],
-) -> Result<Option<&'a Element>> {
+) -> azure_core::Result<Option<&'a Element>> {
     let vec = traverse(node, path, true)?;
     if vec.len() > 1 {
         return Err(Error::with_message(ErrorKind::Other, || {
@@ -38,7 +41,7 @@ pub fn traverse<'a>(
     node: &'a Element,
     path: &[&str],
     ignore_empty_leaf: bool,
-) -> Result<Vec<&'a Element>> {
+) -> azure_core::Result<Vec<&'a Element>> {
     trace!(
         "traverse(node == {:?}, path == {:?}, ignore_empty_leaf == {})",
         node,
@@ -99,7 +102,7 @@ pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
 }
 
 #[inline]
-pub fn inner_text(node: &Element) -> Result<&str> {
+pub fn inner_text(node: &Element) -> azure_core::Result<&str> {
     for child in &node.children {
         match *child {
             CharacterNode(ref txt) => return Ok(txt),
@@ -114,7 +117,7 @@ pub fn inner_text(node: &Element) -> Result<&str> {
 }
 
 #[inline]
-pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> Result<Option<T>>
+pub fn cast_optional<'a, T>(node: &'a Element, path: &[&str]) -> azure_core::Result<Option<T>>
 where
     T: FromStringOptional<T>,
 {
@@ -128,7 +131,7 @@ where
 }
 
 #[inline]
-pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> Result<T>
+pub fn cast_must<'a, T>(node: &'a Element, path: &[&str]) -> azure_core::Result<T>
 where
     T: FromStringOptional<T>,
 {

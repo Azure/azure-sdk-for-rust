@@ -1,5 +1,5 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use chrono::Utc;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthType, AuthUrl, Scope, TokenUrl};
 use std::{str, time::Duration};
@@ -93,7 +93,7 @@ impl ClientSecretCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let options = self.options();
         let authority_host = options.authority_host();
 

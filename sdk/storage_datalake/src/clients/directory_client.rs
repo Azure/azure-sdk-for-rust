@@ -6,7 +6,7 @@ use crate::{
     Properties,
 };
 use azure_core::prelude::IfMatchCondition;
-use azure_core::{error::Result, ClientOptions, Context, Pipeline};
+use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use url::Url;
 
@@ -17,7 +17,7 @@ pub struct DirectoryClient {
 }
 
 impl PathClient for DirectoryClient {
-    fn url(&self) -> Result<Url> {
+    fn url(&self) -> azure_core::Result<Url> {
         let fs_url = self.file_system_client.url()?;
         let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
         Ok(self.file_system_client.url()?.join(&dir_path)?)

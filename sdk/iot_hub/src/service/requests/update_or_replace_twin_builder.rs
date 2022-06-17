@@ -1,4 +1,4 @@
-use azure_core::error::{Error, Result};
+use azure_core::error::Error;
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 use serde::Serialize;
@@ -126,7 +126,7 @@ where
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub async fn execute(self) -> Result<R> {
+    pub async fn execute(self) -> azure_core::Result<R> {
         let body = DesiredTwinBody {
             tags: self.desired_tags,
             properties: DesiredTwinProperties {

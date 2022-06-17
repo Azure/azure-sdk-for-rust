@@ -79,7 +79,7 @@ pub struct ListPermissionsResponse {
 }
 
 impl ListPermissionsResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

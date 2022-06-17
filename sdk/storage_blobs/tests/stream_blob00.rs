@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::{
-    error::{ErrorKind, Result, ResultExt},
+    error::{ErrorKind, ResultExt},
     prelude::*,
 };
 use azure_storage::core::prelude::*;
@@ -12,7 +12,7 @@ async fn create_blob_and_stream_back() {
     code().await.unwrap();
 }
 
-async fn code() -> Result<()> {
+async fn code() -> azure_core::Result<()> {
     let container_name = "azuresdkforrust";
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 

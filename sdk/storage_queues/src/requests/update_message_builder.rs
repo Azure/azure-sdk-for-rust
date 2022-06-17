@@ -1,9 +1,9 @@
 use crate::clients::PopReceiptClient;
 use crate::prelude::*;
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -32,7 +32,10 @@ impl<'a> UpdateMessageBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self, new_body: impl AsRef<str>) -> Result<UpdateMessageResponse> {
+    pub async fn execute(
+        &self,
+        new_body: impl AsRef<str>,
+    ) -> azure_core::Result<UpdateMessageResponse> {
         let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
         self.visibility_timeout.append_to_url_query(&mut url);

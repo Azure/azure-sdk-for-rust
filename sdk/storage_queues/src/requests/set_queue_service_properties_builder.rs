@@ -1,6 +1,6 @@
 use crate::responses::*;
 use crate::QueueServiceProperties;
-use azure_core::error::{ErrorKind, Result, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use azure_storage::core::clients::StorageClient;
@@ -33,7 +33,7 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
     pub async fn execute(
         &self,
         queue_service_properties: &QueueServiceProperties,
-    ) -> Result<SetQueueServicePropertiesResponse> {
+    ) -> azure_core::Result<SetQueueServicePropertiesResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()

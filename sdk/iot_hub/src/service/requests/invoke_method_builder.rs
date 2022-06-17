@@ -1,6 +1,5 @@
 use crate::service::responses::InvokeMethodResponse;
 use crate::service::{ServiceClient, API_VERSION};
-use azure_core::error::Result;
 use http::{Method, StatusCode};
 use serde::Serialize;
 use std::convert::TryInto;
@@ -60,7 +59,10 @@ impl<'a> InvokeMethodBuilder<'a> {
     ///
     /// great_method.execute(serde_json::json!({"hello": "world"}));
     /// ```
-    pub async fn execute(&self, payload: serde_json::Value) -> Result<InvokeMethodResponse> {
+    pub async fn execute(
+        &self,
+        payload: serde_json::Value,
+    ) -> azure_core::Result<InvokeMethodResponse> {
         let uri = match &self.module_id {
             Some(module_id_value) => format!(
                 "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",

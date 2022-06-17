@@ -21,7 +21,7 @@ pub struct PutBlockListResponse {
 }
 
 impl PutBlockListResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> crate::Result<PutBlockListResponse> {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlockListResponse> {
         debug!("headers == {:#?}", headers);
 
         let etag = etag_from_headers(headers)?;

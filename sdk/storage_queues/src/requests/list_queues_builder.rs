@@ -1,7 +1,7 @@
 use crate::responses::*;
-use azure_core::error::Result;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+
 use azure_storage::core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::method::Method;
@@ -41,7 +41,7 @@ impl<'a> ListQueuesBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self) -> Result<ListQueuesResponse> {
+    pub async fn execute(&self) -> azure_core::Result<ListQueuesResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -83,7 +83,7 @@ impl<'a> ListQueuesBuilder<'a> {
         (&response).try_into()
     }
 
-    pub fn stream(self) -> impl Stream<Item = Result<ListQueuesResponse>> + 'a {
+    pub fn stream(self) -> impl Stream<Item = azure_core::Result<ListQueuesResponse>> + 'a {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

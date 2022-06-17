@@ -3,14 +3,14 @@ use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
-use azure_core::{error::Result, AppendToUrlQuery, Response as HttpResponse};
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use futures::future::BoxFuture;
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type PutPath = BoxFuture<'static, Result<PutPathResponse>>;
+type PutPath = BoxFuture<'static, azure_core::Result<PutPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct PutPathBuilder<C>
@@ -135,7 +135,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
         context: Context => context,
     }
 
-    pub fn into_future(self) -> BoxFuture<'static, Result<C>> {
+    pub fn into_future(self) -> BoxFuture<'static, azure_core::Result<C>> {
         let this = self.clone();
         let ctx = self.context.clone();
 
@@ -176,7 +176,7 @@ pub struct PutPathResponse {
 }
 
 impl PutPathResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

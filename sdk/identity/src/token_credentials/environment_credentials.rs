@@ -1,6 +1,6 @@
 use super::{ClientSecretCredential, TokenCredentialOptions};
 use azure_core::auth::{TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
@@ -36,7 +36,7 @@ impl EnvironmentCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for EnvironmentCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let tenant_id =
             std::env::var(AZURE_TENANT_ID_ENV_KEY).with_context(ErrorKind::Credential, || {
                 format!(

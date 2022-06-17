@@ -1,9 +1,8 @@
-use azure_core::error::Result;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =

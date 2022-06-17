@@ -1,5 +1,5 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, Result, ResultExt};
+use azure_core::error::{Error, ErrorKind, ResultExt};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::process::Command;
@@ -41,7 +41,7 @@ pub struct AzureCliCredential;
 
 impl AzureCliCredential {
     /// Get an access token for an optional resource
-    fn get_access_token(resource: Option<&str>) -> Result<CliTokenResponse> {
+    fn get_access_token(resource: Option<&str>) -> azure_core::Result<CliTokenResponse> {
         // on window az is a cmd and it should be called like this
         // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
         let program = if cfg!(target_os = "windows") {
@@ -89,13 +89,13 @@ impl AzureCliCredential {
     }
 
     /// Returns the current subscription ID from the Azure CLI.
-    pub fn get_subscription() -> Result<String> {
+    pub fn get_subscription() -> azure_core::Result<String> {
         let tr = Self::get_access_token(None)?;
         Ok(tr.subscription)
     }
 
     /// Returns the current tenant ID from the Azure CLI.
-    pub fn get_tenant() -> Result<String> {
+    pub fn get_tenant() -> azure_core::Result<String> {
         let tr = Self::get_access_token(None)?;
         Ok(tr.tenant)
     }
@@ -103,7 +103,7 @@ impl AzureCliCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for AzureCliCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let tr = Self::get_access_token(Some(resource))?;
         Ok(TokenResponse::new(tr.access_token, tr.expires_on))
     }

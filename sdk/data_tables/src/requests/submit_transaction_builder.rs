@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*};
 use azure_core::{
-    error::{Error, ErrorKind, Result, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     headers::add_optional_header,
     prelude::*,
 };
@@ -28,7 +28,10 @@ impl<'a> SubmitTransactionBuilder<'a> {
         client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub async fn execute(&self, batch: &Transaction) -> Result<SubmitTransactionResponse> {
+    pub async fn execute(
+        &self,
+        batch: &Transaction,
+    ) -> azure_core::Result<SubmitTransactionResponse> {
         let mut url = self.partition_key_client.table_client().url().to_owned();
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
