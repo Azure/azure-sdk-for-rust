@@ -19,12 +19,13 @@ fn main() -> Result<()> {
     let yml = CheckAllServicesYml { packages };
     yml.create("../../.github/workflows/check-all-services.yml")?;
 
-    // publish_sdks()?;
-    // publish_services()?;
+    if std::env::args().any(|arg| arg == "publish") {
+        publish_sdks()?;
+        publish_services()?;
+    }
     Ok(())
 }
 
-#[allow(dead_code)]
 fn publish_sdks() -> Result<()> {
     let packages = &vec![
         "azure_core",
@@ -45,7 +46,6 @@ fn publish_sdks() -> Result<()> {
     Ok(())
 }
 
-#[allow(dead_code)]
 fn publish_services() -> Result<()> {
     let packages = list_crate_names()?;
     let packages = &packages.iter().map(String::as_str).collect();
