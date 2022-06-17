@@ -95,7 +95,7 @@ pub mod rfc2822_time_format_optional {
 
 #[inline]
 #[cfg(feature = "azurite_workaround")]
-pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>, chrono::ParseError> {
+pub fn from_azure_time(s: &str) -> Result<chrono::DateTime<chrono::Utc>> {
     if let Ok(dt) = chrono::DateTime::parse_from_rfc2822(s) {
         let dt_utc: chrono::DateTime<chrono::Utc> = dt.with_timezone(&chrono::Utc);
         Ok(dt_utc)
