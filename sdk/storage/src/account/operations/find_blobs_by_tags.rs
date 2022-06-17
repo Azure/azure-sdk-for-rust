@@ -68,7 +68,7 @@ impl FindBlobsByTagsBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type FindBlobsByTags =
-    futures::future::BoxFuture<'static, azure_core::error::Result<ListBlobsByTagsResponse>>;
+    futures::future::BoxFuture<'static, azure_core::Result<ListBlobsByTagsResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for FindBlobsByTagsBuilder {
@@ -116,7 +116,7 @@ pub struct Blob {
 }
 
 impl ListBlobsByTagsResponse {
-    async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
+    async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         let list_blobs_response_internal: ListBlobsByTagsResponseInternal = read_xml(&body)?;
