@@ -65,6 +65,9 @@ jobs:
       - name: check core for wasm
         run: cargo check -p azure_core --target=wasm32-unknown-unknown
 
+      - name: check for azurite_workaround
+        run: cargo check --all --feature azurite_workaround
+
       - name: sdk tests
         run: cargo test --all --features mock_transport_framework
 
