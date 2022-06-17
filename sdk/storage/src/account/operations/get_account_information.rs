@@ -10,14 +10,14 @@ use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct GetAccountInformationBuilder {
-    storage_client: StorageClient,
+    client: StorageClient,
     context: Context,
 }
 
 impl GetAccountInformationBuilder {
-    pub(crate) fn new(storage_client: StorageClient) -> Self {
+    pub(crate) fn new(client: StorageClient) -> Self {
         Self {
-            storage_client,
+            client,
             context: Context::new(),
         }
     }
@@ -29,16 +29,16 @@ impl GetAccountInformationBuilder {
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
             let mut request = self
-                .storage_client
+                .client
                 .storage_account_client()
-                .blob_storage_request("", http::Method::GET);
+                .blob_storage_request(http::Method::GET);
 
             for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
                 request.url_mut().query_pairs_mut().append_pair(k, v);
             }
 
             let response = self
-                .storage_client
+                .client
                 .storage_account_client()
                 .pipeline()
                 .send(&mut self.context, &mut request)
