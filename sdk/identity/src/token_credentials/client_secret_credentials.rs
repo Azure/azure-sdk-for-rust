@@ -1,9 +1,7 @@
-use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, Result, ResultExt};
 use chrono::Utc;
-use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope, TokenUrl,
-};
+use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthType, AuthUrl, Scope, TokenUrl};
 use std::{str, time::Duration};
 use url::Url;
 

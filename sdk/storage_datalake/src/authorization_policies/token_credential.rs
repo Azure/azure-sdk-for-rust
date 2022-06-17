@@ -44,7 +44,7 @@ impl Policy for TokenCredentialAuthorizationPolicy {
         );
 
         let token = self.credential.get_token(&self.resource).await?;
-        let auth_header_value = format!("Bearer {}", token.token.secret().clone());
+        let auth_header_value = format!("Bearer {}", token.token.secret());
 
         request
             .headers_mut()

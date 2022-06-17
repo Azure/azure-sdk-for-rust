@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
     let storage_account_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,
-        authorization.access_token().secret() as &str,
+        authorization.access_token().secret(),
     );
     let blob_service_client = storage_account_client.as_blob_service_client();
 

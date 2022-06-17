@@ -1,7 +1,6 @@
-use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, Result, ResultExt};
 use chrono::{DateTime, Utc};
-use oauth2::AccessToken;
 use serde::Deserialize;
 use std::process::Command;
 use std::str;

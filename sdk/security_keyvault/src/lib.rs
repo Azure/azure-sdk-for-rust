@@ -7,9 +7,9 @@ pub use client::{CertificateClient, KeyClient};
 
 #[cfg(test)]
 mod tests {
+    use azure_core::auth::AccessToken;
     use azure_core::auth::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
-    use oauth2::AccessToken;
 
     #[macro_export]
     macro_rules! mock_key_client {
