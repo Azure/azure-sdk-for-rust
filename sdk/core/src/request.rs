@@ -69,8 +69,8 @@ impl Request {
         result
     }
 
-    pub fn method(&self) -> Method {
-        self.method.clone()
+    pub fn method(&self) -> &Method {
+        &self.method
     }
 
     pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) {

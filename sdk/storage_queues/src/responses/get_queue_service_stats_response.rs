@@ -34,10 +34,10 @@ struct GeoReplication {
     pub last_sync_time: Option<String>,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
+impl std::convert::TryFrom<CollectedResponse> for GetQueueServiceStatsResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

@@ -1,11 +1,8 @@
 use crate::{clients::TableServiceClient, requests::*};
-
+use azure_core::Request;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
-use http::{
-    method::Method,
-    request::{Builder, Request},
-};
+use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {
@@ -70,12 +67,20 @@ impl TableClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<Request> {
         self.table_service_client
-            .prepare_request(url, method, http_header_adder, request_body)
+            .prepare_request(url, method, request_body)
+    }
+
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
+    pub(crate) async fn execute_request_check_status(
+        &self,
+        request: &Request,
+    ) -> azure_core::Result<azure_core::CollectedResponse> {
+        azure_core::execute_request_check_status(self.http_client(), request).await
     }
 }
 

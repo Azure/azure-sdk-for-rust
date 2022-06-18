@@ -44,10 +44,10 @@ impl<'a> BreakLeaseBuilder<'a> {
             url.as_str(),
             &Method::PUT,
             &|mut request| {
-                request = request.header(LEASE_ACTION, "break");
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.lease_break_period, request);
+                request.insert_header(LEASE_ACTION, "break");
+                request.add_optional_header(&self.client_request_id, request);
+                request.add_optional_header_ref(&self.lease_id, request);
+                request.add_optional_header(&self.lease_break_period, request);
                 request
             },
             None,

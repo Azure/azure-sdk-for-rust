@@ -1,7 +1,5 @@
-use azure_core::{error::Error, headers::etag_from_headers, Etag};
+use azure_core::{error::Error, headers::etag_from_headers, CollectedResponse, Etag};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use bytes::Bytes;
-use http::Response;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 
@@ -24,16 +22,13 @@ struct GetEntityResponseInternal<E> {
     pub value: E,
 }
 
-impl<E> TryFrom<&Response<Bytes>> for GetEntityResponse<E>
+impl<E> TryFrom<CollectedResponse> for GetEntityResponse<E>
 where
     E: DeserializeOwned,
 {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
-        debug!("{}", std::str::from_utf8(response.body())?);
-        debug!("headers == {:#?}", response.headers());
-
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let get_entity_response_internal: GetEntityResponseInternal<E> =
             serde_json::from_slice(response.body())?;
 

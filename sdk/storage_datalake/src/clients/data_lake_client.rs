@@ -7,7 +7,6 @@ use azure_core::auth::TokenCredential;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
 use azure_storage::core::clients::ServiceType;
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
-use http::request::Builder;
 use std::sync::Arc;
 
 const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";

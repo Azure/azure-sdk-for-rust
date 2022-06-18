@@ -45,11 +45,11 @@ impl<'a> AcquireLeaseBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = request.header(LEASE_ACTION, "acquire");
-                request = add_mandatory_header(&self.lease_duration, request);
-                request = add_optional_header_ref(&self.proposed_lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
+                request.insert_header(LEASE_ACTION, "acquire");
+                request.add_mandatory_header(&self.lease_duration, request);
+                request.add_optional_header_ref(&self.proposed_lease_id, request);
+                request.add_optional_header(&self.client_request_id, request);
+                request.add_optional_header_ref(&self.lease_id, request);
                 request
             },
             None,

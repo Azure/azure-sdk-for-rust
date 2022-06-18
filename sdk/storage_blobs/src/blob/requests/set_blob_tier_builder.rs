@@ -1,7 +1,6 @@
 use crate::{blob::responses::SetBlobTierResponse, prelude::*};
 use azure_core::{
     error::{Error, ErrorKind},
-    headers::{add_mandatory_header, add_optional_header},
     prelude::*,
 };
 use std::convert::TryInto;
@@ -65,9 +64,9 @@ impl<'a> SetBlobTierBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = add_mandatory_header(&self.access_tier, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header(&self.rehydrate_priority, request);
+                request.add_mandatory_header(&self.access_tier, request);
+                request.add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.rehydrate_priority, request);
 
                 request
             },

@@ -57,7 +57,7 @@ impl<'a> UpdateMessageBuilder<'a> {
             url.as_str(),
             &http::method::Method::PUT,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(message.into()),
@@ -69,6 +69,6 @@ impl<'a> UpdateMessageBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

@@ -76,20 +76,20 @@ impl<'a> PutBlockListBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = request.header("Content-MD5", &md5);
-                request = add_optional_header(&self.content_type, request);
-                request = add_optional_header(&self.content_encoding, request);
-                request = add_optional_header(&self.content_language, request);
-                request = add_optional_header(&self.content_disposition, request);
-                request = add_optional_header(&self.content_md5, request);
+                request.insert_header("Content-MD5", &md5);
+                request.add_optional_header(&self.content_type, request);
+                request.add_optional_header(&self.content_encoding, request);
+                request.add_optional_header(&self.content_language, request);
+                request.add_optional_header(&self.content_disposition, request);
+                request.add_optional_header(&self.content_md5, request);
                 if let Some(metadata) = &self.metadata {
                     for m in metadata.iter() {
-                        request = add_mandatory_header(&m, request);
+                        request.add_mandatory_header(&m, request);
                     }
                 }
-                request = add_optional_header(&self.access_tier, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.access_tier, request);
+                request.add_optional_header_ref(&self.lease_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(body_bytes),

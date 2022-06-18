@@ -42,8 +42,8 @@ impl<'a> GetACLBuilder<'a> {
             url.as_str(),
             &Method::GET,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
+                request.add_optional_header(&self.client_request_id, request);
+                request.add_optional_header_ref(&self.lease_id, request);
                 request
             },
             None,

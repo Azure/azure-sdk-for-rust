@@ -66,20 +66,20 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = request.header(COPY_SOURCE, self.source_url);
-                request = request.header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
+                request.insert_header(COPY_SOURCE, self.source_url);
+                request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
                 if let Some(metadata) = &self.metadata {
                     for m in metadata.iter() {
-                        request = add_mandatory_header(&m, request);
+                        request.add_mandatory_header(&m, request);
                     }
                 }
-                request = add_optional_header(&self.if_modified_since_condition, request);
-                request = add_optional_header(&self.if_match_condition, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header(&self.if_source_since_condition, request);
-                request = add_optional_header(&self.if_source_match_condition, request);
-                request = add_optional_header_ref(&self.source_content_md5, request);
+                request.add_optional_header(&self.if_modified_since_condition, request);
+                request.add_optional_header(&self.if_match_condition, request);
+                request.add_optional_header_ref(&self.lease_id, request);
+                request.add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.if_source_since_condition, request);
+                request.add_optional_header(&self.if_source_match_condition, request);
+                request.add_optional_header_ref(&self.source_content_md5, request);
                 request
             },
             None,

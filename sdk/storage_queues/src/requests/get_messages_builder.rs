@@ -46,7 +46,7 @@ impl<'a> GetMessagesBuilder<'a> {
             url.as_str(),
             &http::method::Method::GET,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,
@@ -60,6 +60,6 @@ impl<'a> GetMessagesBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::OK)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

@@ -52,11 +52,11 @@ impl<'a> AppendBlockBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = add_optional_header_ref(&self.hash, request);
-                request = add_optional_header(&self.condition_max_size, request);
-                request = add_optional_header(&self.condition_append_position, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header_ref(&self.hash, request);
+                request.add_optional_header(&self.condition_max_size, request);
+                request.add_optional_header(&self.condition_append_position, request);
+                request.add_optional_header_ref(&self.lease_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(self.body.clone()),

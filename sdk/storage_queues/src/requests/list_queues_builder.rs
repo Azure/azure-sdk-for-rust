@@ -67,7 +67,7 @@ impl<'a> ListQueuesBuilder<'a> {
             url.as_str(),
             &Method::GET,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,
@@ -80,7 +80,7 @@ impl<'a> ListQueuesBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 
     pub fn stream(self) -> impl Stream<Item = azure_core::Result<ListQueuesResponse>> + 'a {

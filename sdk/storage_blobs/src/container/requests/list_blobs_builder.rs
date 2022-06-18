@@ -1,5 +1,5 @@
 use crate::{blob::responses::ListBlobsResponse, prelude::*};
-use azure_core::{headers::add_optional_header, prelude::*};
+use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
@@ -107,7 +107,7 @@ impl<'a> ListBlobsBuilder<'a> {
             url.as_str(),
             &Method::GET,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,
@@ -121,7 +121,7 @@ impl<'a> ListBlobsBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 
     pub fn stream(self) -> impl Stream<Item = azure_core::Result<ListBlobsResponse>> + 'a {

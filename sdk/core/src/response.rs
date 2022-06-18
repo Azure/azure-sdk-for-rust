@@ -109,7 +109,7 @@ pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::er
 }
 
 /// A response with the body collected as bytes
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CollectedResponse {
     status: StatusCode,
     headers: HeaderMap,

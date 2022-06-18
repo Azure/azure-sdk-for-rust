@@ -2,7 +2,7 @@ use crate::{blob::requests::*, prelude::*, BA512Range};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    HttpClient,
+    HttpClient, Request,
 };
 use azure_storage::core::{
     clients::StorageCredentials,
@@ -13,10 +13,7 @@ use azure_storage::core::{
     },
 };
 use bytes::Bytes;
-use http::{
-    method::Method,
-    request::{Builder, Request},
-};
+use http::method::Method;
 use std::sync::Arc;
 use url::Url;
 
@@ -209,12 +206,11 @@ impl BlobClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<Request> {
         self.container_client
-            .prepare_request(url, method, http_header_adder, request_body)
+            .prepare_request(url, method, request_body)
     }
 
     pub async fn exists(&self) -> azure_core::Result<bool> {

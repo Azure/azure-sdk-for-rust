@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*};
-use azure_core::{error::Result, headers::add_optional_header, prelude::*, AppendToUrlQuery};
-use http::{method::Method, status::StatusCode};
+use azure_core::{error::Result, prelude::*, AppendToUrlQuery};
+use http::method::Method;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -33,27 +33,17 @@ impl<'a> GetEntityBuilder<'a> {
 
         self.select.append_to_url_query(&mut url);
 
-        debug!("list tables url = {}", url);
-
-        let request = self.entity_client.prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = request.header("Accept", "application/json;odata=fullmetadata");
-                request
-            },
-            None,
-        )?;
-
-        debug!("request == {:#?}\n", request);
+        let mut request = self
+            .entity_client
+            .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json;odata=fullmetadata");
 
         let response = self
             .entity_client
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

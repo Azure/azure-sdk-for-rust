@@ -35,7 +35,7 @@ impl<'a> DeleteQueueBuilder<'a> {
             url.as_str(),
             &http::method::Method::DELETE,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,
@@ -49,6 +49,6 @@ impl<'a> DeleteQueueBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

@@ -55,7 +55,7 @@ impl<'a> PutMessageBuilder<'a> {
             url.as_str(),
             &http::method::Method::POST,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(message.into()),
@@ -69,6 +69,6 @@ impl<'a> PutMessageBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::CREATED)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

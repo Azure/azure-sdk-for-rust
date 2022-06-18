@@ -9,10 +9,10 @@ pub struct ClearMessagesResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for ClearMessagesResponse {
+impl std::convert::TryFrom<CollectedResponse> for ClearMessagesResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         debug!("response == {:?}", response);
 
         Ok(ClearMessagesResponse {

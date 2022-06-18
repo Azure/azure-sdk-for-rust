@@ -3,7 +3,6 @@ mod utilities;
 
 pub use utilities::*;
 
-use http::request::Builder;
 use std::collections::HashMap;
 
 /// A trait for converting a type into request headers
@@ -186,27 +185,6 @@ impl From<&HeaderValue> for http::header::HeaderValue {
     fn from(n: &HeaderValue) -> Self {
         http::header::HeaderValue::from_bytes(n.as_str().as_bytes()).unwrap()
     }
-}
-
-#[must_use]
-pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builder) -> Builder {
-    if let Some(item) = item {
-        builder = builder.header(item.name().as_str(), item.value().as_str())
-    }
-    builder
-}
-
-#[must_use]
-pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) -> Builder {
-    if let Some(item) = item {
-        builder = builder.header(item.name().as_str(), item.value().as_str())
-    }
-    builder
-}
-
-#[must_use]
-pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
-    builder.header(item.name().as_str(), item.value().as_str())
 }
 
 // headers are case insensitive

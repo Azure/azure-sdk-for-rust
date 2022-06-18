@@ -52,7 +52,7 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
             url.as_str(),
             &http::method::Method::PUT,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             Some(xml_body.into()),
@@ -65,6 +65,6 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::ACCEPTED)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

@@ -55,18 +55,18 @@ impl<'a> PutAppendBlobBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = request.header(BLOB_TYPE, "AppendBlob");
-                request = add_optional_header(&self.content_type, request);
-                request = add_optional_header(&self.content_encoding, request);
-                request = add_optional_header(&self.content_language, request);
-                request = add_optional_header(&self.content_disposition, request);
+                request.insert_header(BLOB_TYPE, "AppendBlob");
+                request.add_optional_header(&self.content_type, request);
+                request.add_optional_header(&self.content_encoding, request);
+                request.add_optional_header(&self.content_language, request);
+                request.add_optional_header(&self.content_disposition, request);
                 if let Some(metadata) = &self.metadata {
                     for m in metadata.iter() {
-                        request = add_mandatory_header(&m, request);
+                        request.add_mandatory_header(&m, request);
                     }
                 }
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header_ref(&self.lease_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,

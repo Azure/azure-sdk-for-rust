@@ -37,10 +37,10 @@ impl<'a> CreateQueueBuilder<'a> {
             url.as_str(),
             &http::method::Method::PUT,
             &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 if let Some(metadata) = &self.metadata {
                     for m in metadata.iter() {
-                        request = add_mandatory_header(&m, request);
+                        request.add_mandatory_header(&m, request);
                     }
                 }
                 request
@@ -56,6 +56,6 @@ impl<'a> CreateQueueBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::CREATED)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

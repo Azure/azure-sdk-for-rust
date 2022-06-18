@@ -13,10 +13,10 @@ pub struct UpdateMessageResponse {
     pub pop_receipt: String,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for UpdateMessageResponse {
+impl std::convert::TryFrom<CollectedResponse> for UpdateMessageResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         debug!("response == {:?}", response);
 
         Ok(UpdateMessageResponse {

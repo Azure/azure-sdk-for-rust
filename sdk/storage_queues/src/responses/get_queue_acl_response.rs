@@ -12,10 +12,10 @@ pub struct GetQueueACLResponse {
     pub stored_access_policies: Vec<QueueStoredAccessPolicy>,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for GetQueueACLResponse {
+impl std::convert::TryFrom<CollectedResponse> for GetQueueACLResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

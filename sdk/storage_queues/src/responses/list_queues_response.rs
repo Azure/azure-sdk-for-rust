@@ -56,9 +56,9 @@ pub struct Queue {
     pub metadata: Option<std::collections::HashMap<String, String>>,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
+impl std::convert::TryFrom<CollectedResponse> for ListQueuesResponse {
     type Error = Error;
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

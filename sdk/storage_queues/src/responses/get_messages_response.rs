@@ -54,10 +54,10 @@ struct MessagesInternal {
     pub messages: Option<Vec<MessageInternal>>,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for GetMessagesResponse {
+impl std::convert::TryFrom<CollectedResponse> for GetMessagesResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

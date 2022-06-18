@@ -33,9 +33,9 @@ impl<'a> RenewLeaseBuilder<'a> {
             url.as_str(),
             &Method::PUT,
             &|mut request| {
-                request = request.header(LEASE_ACTION, "renew");
-                request = add_mandatory_header(self.container_lease_client.lease_id(), request);
-                request = add_optional_header(&self.client_request_id, request);
+                request.insert_header(LEASE_ACTION, "renew");
+                request.add_mandatory_header(self.container_lease_client.lease_id(), request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,

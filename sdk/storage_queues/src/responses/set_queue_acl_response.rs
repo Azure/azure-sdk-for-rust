@@ -9,10 +9,10 @@ pub struct SetQueueACLResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for SetQueueACLResponse {
+impl std::convert::TryFrom<CollectedResponse> for SetQueueACLResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         debug!("response == {:?}", response);
 
         Ok(SetQueueACLResponse {

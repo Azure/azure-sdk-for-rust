@@ -11,10 +11,10 @@ pub struct GetQueueMetadataResponse {
     pub metadata: Metadata,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for GetQueueMetadataResponse {
+impl std::convert::TryFrom<CollectedResponse> for GetQueueMetadataResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         debug!("headers == {:?}", headers);

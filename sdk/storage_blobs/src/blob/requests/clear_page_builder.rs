@@ -53,14 +53,14 @@ impl<'a> ClearPageBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = request.header(PAGE_WRITE, "clear");
-                request = request.header(BLOB_TYPE, "PageBlob");
-                request = add_mandatory_header(&self.ba512_range, request);
-                request = add_optional_header(&self.sequence_number_condition, request);
-                request = add_optional_header(&self.if_modified_since_condition, request);
-                request = add_optional_header(&self.if_match_condition, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
+                request.insert_header(PAGE_WRITE, "clear");
+                request.insert_header(BLOB_TYPE, "PageBlob");
+                request.add_mandatory_header(&self.ba512_range, request);
+                request.add_optional_header(&self.sequence_number_condition, request);
+                request.add_optional_header(&self.if_modified_since_condition, request);
+                request.add_optional_header(&self.if_match_condition, request);
+                request.add_optional_header(&self.client_request_id, request);
+                request.add_optional_header_ref(&self.lease_id, request);
                 request
             },
             None,

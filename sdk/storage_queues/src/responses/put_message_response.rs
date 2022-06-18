@@ -42,9 +42,9 @@ struct QueueMessageInternal {
     pub time_next_visible: String,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for PutMessageResponse {
+impl std::convert::TryFrom<CollectedResponse> for PutMessageResponse {
     type Error = Error;
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

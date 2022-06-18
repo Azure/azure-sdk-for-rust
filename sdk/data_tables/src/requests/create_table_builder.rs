@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*};
-use azure_core::{headers::add_optional_header, prelude::*};
-use http::{method::Method, status::StatusCode};
+use azure_core::prelude::*;
+use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,6 @@ impl<'a> CreateTableBuilder<'a> {
 
     pub async fn execute(&self) -> azure_core::Result<CreateTableResponse> {
         let url = self.table_client.url();
-        debug!("url = {}", url);
 
         #[derive(Debug, Clone, Serialize)]
         struct RequestBody<'a> {
@@ -34,29 +33,22 @@ impl<'a> CreateTableBuilder<'a> {
         let request_body_serialized = serde_json::to_string(&RequestBody {
             table_name: self.table_client.table_name(),
         })?;
-        debug!("payload == {}", request_body_serialized);
 
-        let request = self.table_client.prepare_request(
+        let mut request = self.table_client.prepare_request(
             url.as_str(),
-            &Method::POST,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = request.header("Accept", "application/json;odata=fullmetadata");
-                request = request.header("Content-Type", "application/json");
-                request = request.header("Prefer", "return-content");
-                request
-            },
+            Method::POST,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-
-        debug!("request == {:#?}\n", request);
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        request.insert_header("Content-Type", "application/json");
+        request.insert_header("Prefer", "return-content");
 
         let response = self
             .table_client
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

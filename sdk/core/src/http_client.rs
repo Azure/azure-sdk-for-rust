@@ -32,7 +32,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 impl HttpClient for reqwest::Client {
     async fn execute_request2(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
-        let mut reqwest_request = self.request(request.method(), url);
+        let mut reqwest_request = self.request(request.method().clone(), url);
         for (name, value) in request.headers().iter() {
             reqwest_request = reqwest_request.header(name, value);
         }

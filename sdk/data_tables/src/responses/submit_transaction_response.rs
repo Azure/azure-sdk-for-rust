@@ -1,10 +1,9 @@
 use azure_core::{
     error::{Error, ErrorKind},
-    Etag,
+    CollectedResponse, Etag,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use bytes::Bytes;
-use http::{Response, StatusCode};
+use http::StatusCode;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
 
@@ -22,13 +21,11 @@ pub struct SubmitTransactionResponse {
     pub operation_responses: Vec<OperationResponse>,
 }
 
-impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
+impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let body = std::str::from_utf8(response.body())?;
-        debug!("{}", body);
-        debug!("headers == {:#?}", response.headers());
 
         let mut operation_responses = Vec::new();
 

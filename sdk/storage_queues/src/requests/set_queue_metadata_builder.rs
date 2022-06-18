@@ -48,9 +48,9 @@ impl<'a> SetQueueMetadataBuilder<'a> {
             &http::method::Method::PUT,
             &|mut request| {
                 for m in metadata.iter() {
-                    request = add_mandatory_header(&m, request);
+                    request.add_mandatory_header(&m, request);
                 }
-                request = add_optional_header(&self.client_request_id, request);
+                request.add_optional_header(&self.client_request_id, request);
                 request
             },
             None,
@@ -64,6 +64,6 @@ impl<'a> SetQueueMetadataBuilder<'a> {
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }
