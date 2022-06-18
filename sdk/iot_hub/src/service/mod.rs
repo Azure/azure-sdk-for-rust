@@ -1,9 +1,9 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::HttpClient;
+use azure_core::{collect_pinned_stream, HttpClient, Request, Url};
 use base64::{decode, encode_config};
+use bytes::Bytes;
 use hmac::{Hmac, Mac};
-use http::request::Builder as RequestBuilder;
-use http::{header, Method};
+use http::{header, HeaderMap, Method, StatusCode};
 use sha2::Sha256;
 use std::sync::Arc;
 
@@ -803,12 +803,56 @@ impl ServiceClient {
     }
 
     /// Prepares a request that can be used by any request builders.
-    pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> RequestBuilder {
-        RequestBuilder::new()
-            .uri(uri)
-            .method(method)
-            .header(header::AUTHORIZATION, &self.sas_token)
-            .header(header::CONTENT_TYPE, "application/json")
+    pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> azure_core::Result<Request> {
+        let mut request = Request::new(Url::parse(uri)?, method);
+        let headers = request.headers_mut();
+        headers.insert(header::AUTHORIZATION, &self.sas_token);
+        headers.insert(header::CONTENT_TYPE, "application/json");
+        Ok(request)
+    }
+
+    pub(crate) async fn execute_request_check_status(
+        &self,
+        request: &Request,
+    ) -> azure_core::Result<CollectedResponse> {
+        let http_client = self.http_client();
+        let rsp = http_client.execute_request2(request).await?;
+        let (status, headers, body) = rsp.deconstruct();
+        let body = collect_pinned_stream(body).await?;
+        if !status.is_success() {
+            return Err(ErrorKind::http_response_from_body(status.as_u16(), &body).into_error());
+        }
+        Ok(CollectedResponse::new(status, headers, body))
+    }
+}
+
+/// A response with the body collected as bytes
+pub struct CollectedResponse {
+    status: StatusCode,
+    headers: HeaderMap,
+    body: Bytes,
+}
+
+impl CollectedResponse {
+    /// Create a new instance
+    pub fn new(status: StatusCode, headers: HeaderMap, body: Bytes) -> Self {
+        Self {
+            status,
+            headers,
+            body,
+        }
+    }
+    /// Get the status
+    pub fn status(&self) -> &StatusCode {
+        &self.status
+    }
+    /// Get the headers
+    pub fn headers(&self) -> &HeaderMap {
+        &self.headers
+    }
+    /// Get the body
+    pub fn body(&self) -> &Bytes {
+        &self.body
     }
 }
 
