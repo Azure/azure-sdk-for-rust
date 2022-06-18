@@ -196,7 +196,7 @@ pub struct NotFoundDocumentResponse {
 }
 
 impl NotFoundDocumentResponse {
-    async fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
+    async fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
             content_location: content_location_from_headers(headers)?.to_owned(),
             last_state_change: last_state_change_from_headers(headers)?,

@@ -53,7 +53,6 @@ impl<'a> PeekMessagesBuilder<'a> {
             .queue_client
             .storage_client()
             .storage_account_client()
-            .http_client()
             .execute_request_check_status(request.0, http::status::StatusCode::OK)
             .await?;
 

@@ -60,20 +60,12 @@ impl<'a> SetBlobTierBuilder<'a> {
 
         trace!("url == {:?}", url);
 
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request.add_mandatory_header(&self.access_tier, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header(&self.rehydrate_priority, request);
-
-                request
-            },
-            None,
-        )?;
-
-        info!("request == {:?}", request);
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
+        request.add_mandatory_header(&self.access_tier);
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(&self.rehydrate_priority);
 
         let expected_status: http::StatusCode;
 
@@ -89,8 +81,7 @@ impl<'a> SetBlobTierBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, expected_status)
+            .execute_request_check_status(&request)
             .await?;
 
         response.headers().try_into()

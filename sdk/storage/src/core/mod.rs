@@ -19,7 +19,6 @@ pub mod parsing_xml;
 pub mod storage_shared_key_credential;
 mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
-pub mod util;
 pub mod xml;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]

@@ -495,6 +495,15 @@ impl StorageAccountClient {
         Ok(request)
     }
 
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
+    pub async fn execute_request_check_status(
+        &self,
+        request: &Request,
+    ) -> azure_core::Result<azure_core::CollectedResponse> {
+        azure_core::execute_request_check_status(self.http_client(), request).await
+    }
+
     pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }

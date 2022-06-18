@@ -1,8 +1,5 @@
 use crate::{blob::responses::GetBlobMetadataResponse, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::prelude::*;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -39,23 +36,15 @@ impl<'a> GetBlobMetadataBuilder<'a> {
         self.blob_versioning.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::GET,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         response.headers().try_into()

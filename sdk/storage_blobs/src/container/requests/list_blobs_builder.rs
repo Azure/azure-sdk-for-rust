@@ -1,7 +1,7 @@
 use crate::{blob::responses::ListBlobsResponse, prelude::*};
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -101,24 +101,16 @@ impl<'a> ListBlobsBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("list blob url = {}", url);
-
-        let request = self.container_client.prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let request = self
+            .container_client
+            .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .container_client
             .storage_client()
             .storage_account_client()
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         response.try_into()

@@ -1,8 +1,5 @@
 use crate::{blob::responses::PutBlockBlobResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE},
-    prelude::*,
-};
+use azure_core::{headers::BLOB_TYPE, prelude::*};
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]
@@ -58,30 +55,25 @@ impl<'a> PutBlockBlobBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
+        let mut request = self.blob_client.prepare_request(
             url.as_str(),
             &http::Method::PUT,
-            &|mut request| {
-                request.insert_header(BLOB_TYPE, "BlockBlob");
-                request.add_optional_header_ref(&self.hash, request);
-                request.add_optional_header(&self.content_type, request);
-                request.add_optional_header(&self.content_encoding, request);
-                request.add_optional_header(&self.content_language, request);
-                request.add_optional_header(&self.content_disposition, request);
-                if let Some(metadata) = &self.metadata {
-                    for m in metadata.iter() {
-                        request.add_mandatory_header(&m, request);
-                    }
-                }
-                request.add_optional_header(&self.access_tier, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
             Some(self.body.clone()),
         )?;
+        request.insert_header(BLOB_TYPE, "BlockBlob");
+        request.add_optional_header_ref(&self.hash);
+        request.add_optional_header(&self.content_type);
+        request.add_optional_header(&self.content_encoding);
+        request.add_optional_header(&self.content_language);
+        request.add_optional_header(&self.content_disposition);
+        if let Some(metadata) = &self.metadata {
+            for m in metadata.iter() {
+                request.add_mandatory_header(&m);
+            }
+        }
+        request.add_optional_header(&self.access_tier);
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .blob_client

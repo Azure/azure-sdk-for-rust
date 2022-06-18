@@ -79,4 +79,13 @@ impl BlobLeaseClient {
     ) -> azure_core::Result<Request> {
         self.blob_client.prepare_request(url, method, request_body)
     }
+
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
+    pub(crate) async fn execute_request_check_status(
+        &self,
+        request: &Request,
+    ) -> azure_core::Result<azure_core::CollectedResponse> {
+        azure_core::execute_request_check_status(self.http_client(), request).await
+    }
 }

@@ -1,8 +1,5 @@
 use crate::{blob::responses::DeleteBlobResponse, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct DeleteBlobSnapshotBuilder<'a> {
@@ -44,16 +41,11 @@ impl<'a> DeleteBlobSnapshotBuilder<'a> {
 
         trace!("delete_blob snapshot url == {:?}", url);
 
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::DELETE,
-            &|mut request| {
-                request.add_optional_header_ref(&self.lease_id, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), &http::Method::DELETE, None)?;
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .blob_client

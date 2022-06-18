@@ -29,9 +29,9 @@ pub struct CopyBlobFromUrlResponse {
     pub date: DateTime<Utc>,
 }
 
-impl TryFrom<&HeaderMap> for CopyBlobFromUrlResponse {
+impl TryFrom<&Headers> for CopyBlobFromUrlResponse {
     type Error = crate::Error;
-    fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
+    fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         debug!("headers == {:#?}", headers);
         Ok(Self {
             content_md5: content_md5_from_headers_optional(headers)

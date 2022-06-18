@@ -1,11 +1,10 @@
 use crate::core::prelude::*;
 use azure_core::headers::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
+    Headers,
 };
-
 use azure_core::{Context, RequestId};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct GetAccountInformationBuilder {
@@ -70,9 +69,7 @@ pub struct GetAccountInformationResponse {
 }
 
 impl GetAccountInformationResponse {
-    pub(crate) fn try_from(
-        headers: &HeaderMap,
-    ) -> azure_core::Result<GetAccountInformationResponse> {
+    pub(crate) fn try_from(headers: &Headers) -> azure_core::Result<GetAccountInformationResponse> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let sku_name = sku_name_from_headers(headers)?;

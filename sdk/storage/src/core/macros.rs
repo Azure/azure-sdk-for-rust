@@ -10,7 +10,7 @@ macro_rules! response_from_headers {
         }
 
         impl $cn {
-            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::Error> {
+            pub(crate) fn from_headers(headers: &Headers) -> Result<$cn, $crate::Error> {
                $(
                     let $na = $fh(headers)?;
                 )+

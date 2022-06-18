@@ -1,8 +1,5 @@
 use crate::{container::responses::RenewLeaseResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, LEASE_ACTION},
-    prelude::*,
-};
+use azure_core::{headers::LEASE_ACTION, prelude::*};
 use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
@@ -44,7 +41,7 @@ impl<'a> RenewLeaseBuilder<'a> {
         let response = self
             .container_lease_client
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         RenewLeaseResponse::from_headers(response.headers())

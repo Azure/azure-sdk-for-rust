@@ -1,8 +1,5 @@
 use crate::{blob::responses::SetBlobMetadataResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::{headers::add_optional_header_ref, prelude::*};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -38,25 +35,16 @@ impl<'a> SetBlobMetadataBuilder<'a> {
         url.query_pairs_mut().append_pair("comp", "metadata");
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                if let Some(metadata) = &self.metadata {
-                    for m in metadata.iter() {
-                        request.add_mandatory_header(&m, request);
-                    }
-                }
-                request
-            },
-            None,
-        )?;
-
-        info!("request == {:?}", request);
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
+        if let Some(metadata) = &self.metadata {
+            for m in metadata.iter() {
+                request.add_mandatory_header(&m);
+            }
+        }
 
         let response = self
             .blob_client

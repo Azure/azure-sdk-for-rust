@@ -1,8 +1,5 @@
 use crate::{container::responses::GetPropertiesResponse, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::prelude::*;
 use http::{method::Method, status::StatusCode};
 use std::convert::TryInto;
 
@@ -37,23 +34,17 @@ impl<'a> GetPropertiesBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        let request = self.container_client.prepare_request(
-            url.as_str(),
-            &Method::HEAD,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.container_client
+                .prepare_request(url.as_str(), Method::HEAD, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .container_client
             .storage_client()
             .storage_account_client()
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         (self.container_client.container_name(), response.headers()).try_into()

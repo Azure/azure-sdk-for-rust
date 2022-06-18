@@ -1,8 +1,6 @@
 use crate::{blob::responses::UpdatePageResponse, prelude::*, BA512Range};
 use azure_core::{
-    headers::{
-        add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
-    },
+    headers::{BLOB_TYPE, PAGE_WRITE},
     prelude::*,
 };
 use bytes::Bytes;
@@ -57,35 +55,26 @@ impl<'a> UpdatePageBuilder<'a> {
         self.timeout.append_to_url_query(&mut url);
         url.query_pairs_mut().append_pair("comp", "page");
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
+        let mut request = self.blob_client.prepare_request(
             url.as_str(),
             &http::Method::PUT,
-            &|mut request| {
-                request.insert_header(PAGE_WRITE, "update");
-                request.insert_header(BLOB_TYPE, "PageBlob");
-                request.add_mandatory_header(&self.ba512_range, request);
-                request.add_optional_header(&self.sequence_number_condition, request);
-                request.add_optional_header_ref(&self.hash, request);
-                request.add_optional_header(&self.if_modified_since_condition, request);
-                request.add_optional_header(&self.if_match_condition, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request
-            },
             Some(self.content.clone()),
         )?;
-
-        trace!("request.headers() == {:#?}", request.headers());
+        request.insert_header(PAGE_WRITE, "update");
+        request.insert_header(BLOB_TYPE, "PageBlob");
+        request.add_mandatory_header(&self.ba512_range);
+        request.add_optional_header(&self.sequence_number_condition);
+        request.add_optional_header_ref(&self.hash);
+        request.add_optional_header(&self.if_modified_since_condition);
+        request.add_optional_header(&self.if_match_condition);
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .blob_client
             .http_client()
             .execute_request_check_status(request, http::StatusCode::CREATED)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         UpdatePageResponse::from_headers(response.headers())
     }

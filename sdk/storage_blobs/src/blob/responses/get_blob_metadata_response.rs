@@ -16,10 +16,10 @@ pub struct GetBlobMetadataResponse {
     pub metadata: Metadata,
 }
 
-impl TryFrom<&HeaderMap> for GetBlobMetadataResponse {
+impl TryFrom<&Headers> for GetBlobMetadataResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);
 
         Ok(GetBlobMetadataResponse {

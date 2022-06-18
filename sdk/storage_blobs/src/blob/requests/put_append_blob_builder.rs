@@ -1,8 +1,5 @@
 use crate::{blob::responses::PutBlobResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE},
-    prelude::*,
-};
+use azure_core::{headers::BLOB_TYPE, prelude::*};
 
 #[derive(Debug, Clone)]
 pub struct PutAppendBlobBuilder<'a> {
@@ -51,26 +48,21 @@ impl<'a> PutAppendBlobBuilder<'a> {
 
         trace!("url == {:?}", url);
 
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request.insert_header(BLOB_TYPE, "AppendBlob");
-                request.add_optional_header(&self.content_type, request);
-                request.add_optional_header(&self.content_encoding, request);
-                request.add_optional_header(&self.content_language, request);
-                request.add_optional_header(&self.content_disposition, request);
-                if let Some(metadata) = &self.metadata {
-                    for m in metadata.iter() {
-                        request.add_mandatory_header(&m, request);
-                    }
-                }
-                request.add_optional_header_ref(&self.lease_id, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), &http::Method::PUT, None)?;
+        request.insert_header(BLOB_TYPE, "AppendBlob");
+        request.add_optional_header(&self.content_type);
+        request.add_optional_header(&self.content_encoding);
+        request.add_optional_header(&self.content_language);
+        request.add_optional_header(&self.content_disposition);
+        if let Some(metadata) = &self.metadata {
+            for m in metadata.iter() {
+                request.add_mandatory_header(&m);
+            }
+        }
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .blob_client

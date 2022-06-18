@@ -49,10 +49,10 @@ impl Header for Properties {
     }
 }
 
-impl TryFrom<&HeaderMap> for Properties {
+impl TryFrom<&Headers> for Properties {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         let header_value = headers
             .get(PROPERTIES)
             .ok_or_else(|| Error::message(ErrorKind::Other, PROPERTIES.to_owned()))?

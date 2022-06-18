@@ -1,10 +1,7 @@
 use crate::container::{
     incomplete_vector_from_container_response, responses::ListContainersResponse,
 };
-use azure_core::{
-    headers::{add_optional_header, request_id_from_headers},
-    prelude::*,
-};
+use azure_core::{headers::request_id_from_headers, prelude::*};
 use azure_storage::core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::{method::Method, status::StatusCode};
@@ -67,23 +64,15 @@ impl<'a> ListContainersBuilder<'a> {
         self.max_results.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        debug!("generated url = {}", url);
-
-        let (request, _url) = self.storage_client.prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request = self
+            .storage_client
+            .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .storage_client
             .storage_account_client()
-            .http_client()
-            .execute_request_check_status(request, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         debug!("response == {:?}", response);

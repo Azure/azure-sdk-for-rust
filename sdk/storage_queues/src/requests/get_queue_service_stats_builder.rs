@@ -55,8 +55,7 @@ impl<'a> GetQueueServiceStatsBuilder<'a> {
         let response = self
             .storage_client
             .storage_account_client()
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         response.try_into()

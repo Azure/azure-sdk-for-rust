@@ -1,9 +1,6 @@
 use crate::{container::responses::GetACLResponse, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
-use http::{method::Method, status::StatusCode};
+use azure_core::prelude::*;
+use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -38,23 +35,17 @@ impl<'a> GetACLBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        let request = self.container_client.prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request = self
+            .container_client
+            .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .container_client
             .storage_client()
             .storage_account_client()
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         // todo: parse SAS policies

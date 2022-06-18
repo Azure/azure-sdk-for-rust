@@ -1,8 +1,5 @@
 use crate::{blob::responses::ChangeBlobLeaseResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, LEASE_ACTION},
-    prelude::*,
-};
+use azure_core::{headers::LEASE_ACTION, prelude::*};
 
 #[derive(Debug, Clone)]
 pub struct ChangeLeaseBuilder<'a> {
@@ -38,23 +35,17 @@ impl<'a> ChangeLeaseBuilder<'a> {
 
         trace!("url == {:?}", url);
 
-        let (request, _url) = self.blob_lease_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request.insert_header(LEASE_ACTION, "change");
-                request.add_mandatory_header(self.blob_lease_client.lease_id(), request);
-                request.add_mandatory_header(self.proposed_lease_id, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_lease_client
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
+        request.insert_header(LEASE_ACTION, "change");
+        request.add_mandatory_header(self.blob_lease_client.lease_id());
+        request.add_mandatory_header(self.proposed_lease_id);
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .blob_lease_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         ChangeBlobLeaseResponse::from_headers(response.headers())

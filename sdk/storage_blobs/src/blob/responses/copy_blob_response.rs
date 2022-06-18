@@ -26,11 +26,10 @@ pub struct CopyBlobResponse {
     pub client_request_id: Option<String>,
 }
 
-impl TryFrom<&HeaderMap> for CopyBlobResponse {
+impl TryFrom<&Headers> for CopyBlobResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
-        trace!("CopyBlobResponse headers == {:#?}", headers);
+    fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,

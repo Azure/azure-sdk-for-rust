@@ -1,10 +1,7 @@
 use super::SourceContentMD5;
 use crate::{blob::responses::CopyBlobFromUrlResponse, prelude::*};
 use azure_core::{
-    headers::{
-        add_mandatory_header, add_optional_header, add_optional_header_ref, COPY_SOURCE,
-        REQUIRES_SYNC,
-    },
+    headers::{COPY_SOURCE, REQUIRES_SYNC},
     prelude::*,
 };
 use std::convert::TryInto;
@@ -62,28 +59,23 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
 
         trace!("url == {:?}", url);
 
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request.insert_header(COPY_SOURCE, self.source_url);
-                request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
-                if let Some(metadata) = &self.metadata {
-                    for m in metadata.iter() {
-                        request.add_mandatory_header(&m, request);
-                    }
-                }
-                request.add_optional_header(&self.if_modified_since_condition, request);
-                request.add_optional_header(&self.if_match_condition, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request.add_optional_header(&self.if_source_since_condition, request);
-                request.add_optional_header(&self.if_source_match_condition, request);
-                request.add_optional_header_ref(&self.source_content_md5, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), &http::Method::PUT, None)?;
+        request.insert_header(COPY_SOURCE, self.source_url);
+        request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
+        if let Some(metadata) = &self.metadata {
+            for m in metadata.iter() {
+                request.add_mandatory_header(&m);
+            }
+        }
+        request.add_optional_header(&self.if_modified_since_condition);
+        request.add_optional_header(&self.if_match_condition);
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(&self.if_source_since_condition);
+        request.add_optional_header(&self.if_source_match_condition);
+        request.add_optional_header_ref(&self.source_content_md5);
 
         let response = self
             .blob_client

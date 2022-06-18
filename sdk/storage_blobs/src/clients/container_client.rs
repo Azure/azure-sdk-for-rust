@@ -118,6 +118,15 @@ impl ContainerClient {
             .map_kind(ErrorKind::DataConversion)
     }
 
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
+    pub(crate) async fn execute_request_check_status(
+        &self,
+        request: &Request,
+    ) -> azure_core::Result<azure_core::CollectedResponse> {
+        azure_core::execute_request_check_status(self.http_client(), request).await
+    }
+
     pub fn shared_access_signature(
         &self,
     ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {

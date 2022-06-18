@@ -1,6 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
@@ -52,7 +52,6 @@ impl<'a> CreateQueueBuilder<'a> {
             .queue_client
             .storage_client()
             .storage_account_client()
-            .http_client()
             .execute_request_check_status(request.0, http::status::StatusCode::CREATED)
             .await?;
 

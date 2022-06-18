@@ -213,6 +213,15 @@ impl BlobClient {
             .prepare_request(url, method, request_body)
     }
 
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
+    pub(crate) async fn execute_request_check_status(
+        &self,
+        request: &Request,
+    ) -> azure_core::Result<azure_core::CollectedResponse> {
+        azure_core::execute_request_check_status(self.http_client(), request).await
+    }
+
     pub async fn exists(&self) -> azure_core::Result<bool> {
         let result = self.get_properties().execute().await.map(|_| true);
         if let Err(err) = result {

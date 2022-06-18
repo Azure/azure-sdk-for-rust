@@ -1,8 +1,5 @@
 use crate::{container::public_access_from_header, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref, AsHeaders},
-    prelude::*,
-};
+use azure_core::{headers::AsHeaders, prelude::*};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use http::{method::Method, status::StatusCode};
@@ -64,8 +61,7 @@ impl<'a> SetACLBuilder<'a> {
             .container_client
             .storage_client()
             .storage_account_client()
-            .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         public_access_from_header(response.headers())

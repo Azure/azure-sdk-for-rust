@@ -1,8 +1,5 @@
 use crate::{blob::responses::PutBlockListResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::{headers::add_optional_header_ref, prelude::*};
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]
@@ -59,8 +56,6 @@ impl<'a> PutBlockListBuilder<'a> {
         url.query_pairs_mut().append_pair("comp", "blocklist");
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
         let body = self.block_list.to_xml();
         let body_bytes = Bytes::from(body);
 
@@ -72,36 +67,28 @@ impl<'a> PutBlockListBuilder<'a> {
             base64::encode(hash.0)
         };
 
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request.insert_header("Content-MD5", &md5);
-                request.add_optional_header(&self.content_type, request);
-                request.add_optional_header(&self.content_encoding, request);
-                request.add_optional_header(&self.content_language, request);
-                request.add_optional_header(&self.content_disposition, request);
-                request.add_optional_header(&self.content_md5, request);
-                if let Some(metadata) = &self.metadata {
-                    for m in metadata.iter() {
-                        request.add_mandatory_header(&m, request);
-                    }
-                }
-                request.add_optional_header(&self.access_tier, request);
-                request.add_optional_header_ref(&self.lease_id, request);
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            Some(body_bytes),
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), &http::Method::PUT, Some(body_bytes))?;
+        request.insert_header("Content-MD5", &md5);
+        request.add_optional_header(&self.content_type);
+        request.add_optional_header(&self.content_encoding);
+        request.add_optional_header(&self.content_language);
+        request.add_optional_header(&self.content_disposition);
+        request.add_optional_header(&self.content_md5);
+        if let Some(metadata) = &self.metadata {
+            for m in metadata.iter() {
+                request.add_mandatory_header(&m);
+            }
+        }
+        request.add_optional_header(&self.access_tier);
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         PutBlockListResponse::from_headers(response.headers())
     }

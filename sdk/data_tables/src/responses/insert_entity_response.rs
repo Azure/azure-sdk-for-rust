@@ -4,7 +4,7 @@ use azure_core::{
     headers::{etag_from_headers, get_str_from_headers},
     CollectedResponse, Etag,
 };
-use azure_storage::core::{headers::CommonStorageResponseHeaders, util::HeaderMapExt};
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
@@ -42,7 +42,10 @@ where
         Ok(InsertEntityResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?.into(),
-            location: headers.get_as_str("location").map(Url::parse).transpose()?,
+            location: headers
+                .get("location")
+                .map(|location| Url::parse(location.as_str()))
+                .transpose()?,
             entity_with_metadata,
         })
     }
