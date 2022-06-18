@@ -1,6 +1,6 @@
 use crate::service::{ServiceClient, API_VERSION};
 
-use http::{Method, StatusCode};
+use http::Method;
 use serde::Serialize;
 /// The ApplyOnEdgeDeviceBuilder is used to construct a new device identity
 /// or the update an existing one.
@@ -96,7 +96,7 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
             self.service_client.iot_hub_name, self.device_id, API_VERSION
         );
 
-        let request = self.service_client.prepare_request(&uri, Method::POST);
+        let mut request = self.service_client.prepare_request(&uri, Method::POST)?;
         let body = ApplyOnEdgeDeviceBody {
             device_content: self.device_content,
             module_content: self.module_content,
@@ -104,11 +104,10 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
         };
 
         let body = azure_core::to_json(&body)?;
-        let request = request.body(body)?;
+        request.set_body(body);
 
         self.service_client
-            .http_client()
-            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
         Ok(())
     }

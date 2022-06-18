@@ -48,12 +48,12 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
             API_VERSION
         );
 
-        let mut request = self.service_client.prepare_request(&uri, Method::PUT);
+        let mut request = self.service_client.prepare_request(&uri, Method::PUT)?;
 
         if self.operation == IdentityOperation::Update {
             match &self.etag {
                 Some(etag) => {
-                    request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                    request.insert_header(http::header::IF_MATCH, format!("\"{}\"", etag));
                 }
                 None => return Err(Error::message(ErrorKind::Other, "etag is not set")),
             }
@@ -68,11 +68,10 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
         };
 
         let body = azure_core::to_json(&body)?;
-        let request = request.body(body)?;
+        request.set_body(body);
 
         self.service_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?
             .try_into()
     }
