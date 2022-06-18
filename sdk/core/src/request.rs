@@ -94,6 +94,24 @@ impl Request {
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }
+
+    pub fn insert_header<K, V>(&mut self, key: K, value: V)
+    where
+        K: Into<crate::headers::HeaderName>,
+        V: Into<crate::headers::HeaderValue>,
+    {
+        self.headers.insert(key, value)
+    }
+
+    pub fn add_optional_header<T: crate::Header>(&mut self, item: &Option<T>) {
+        if let Some(item) = item {
+            self.insert_header(item.name(), item.value())
+        }
+    }
+
+    pub fn add_mandatory_header<T: crate::Header>(&mut self, item: &T) {
+        self.insert_header(item.name(), item.value())
+    }
 }
 
 /// Temporary hack to convert preexisting requests into the new format. It
