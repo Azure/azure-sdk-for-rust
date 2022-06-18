@@ -57,11 +57,11 @@ impl Policy for AuthorizationPolicy {
 
         let time_nonce = TimeNonce::new();
 
-        let uri_path = request.path_and_query();
+        let uri_path = &request.path_and_query()[1..];
         trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
 
         let auth = {
-            let resource_link = generate_resource_link(&uri_path);
+            let resource_link = generate_resource_link(uri_path);
             trace!("resource_link == {}", resource_link);
             generate_authorization(
                 &self.authorization_token,
