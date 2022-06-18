@@ -1,6 +1,5 @@
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
-    execute_request_check_status, CollectedResponse, HttpClient, Request, Url,
+    error::Error, execute_request_check_status, CollectedResponse, HttpClient, Request, Url,
 };
 use chrono::Duration;
 use http::{
@@ -181,13 +180,7 @@ async fn peek_lock_message2(
 
     let status = res.status();
     let lock_location: String = match res.headers().get("Location") {
-        Some(header_value) => header_value
-            .to_str()
-            .context(
-                ErrorKind::DataConversion,
-                "failed to get lock location from header",
-            )?
-            .to_owned(),
+        Some(header_value) => header_value.as_str().to_owned(),
         _ => "".to_owned(),
     };
     let body = body_bytes_to_utf8(&res.into_body().await)?;
