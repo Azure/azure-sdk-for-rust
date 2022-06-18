@@ -48,15 +48,15 @@ async fn main() -> azure_core::Result<()> {
     // Success or Pending. The loop will continue until we
     // get either a Success or an error.
     let mut stream = Box::pin(device_code_flow.stream());
-    let mut authorization = None;
-    while let Some(Ok(auth)) = stream.next().await {
-        println!("{:?}", auth);
-        authorization = Some(auth);
-    }
 
-    // remove the option (this is safe since we
-    // unwrapped the errors before).
-    let authorization = authorization.unwrap();
+    let authorization = loop {
+        let response = stream.next().await.expect("device code flow stream failed");
+        if let Ok(auth) = response {
+            break auth;
+        }
+    };
+
+    println!("{:?}", authorization);
 
     println!(
         "\nReceived valid bearer token: {}",
