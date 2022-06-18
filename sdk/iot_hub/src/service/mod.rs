@@ -1,5 +1,5 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::{collect_pinned_stream, HttpClient, Request, Url};
+use azure_core::{collect_pinned_stream, CollectedResponse, HttpClient, Request, Url};
 use base64::{decode, encode_config};
 use bytes::Bytes;
 use hmac::{Hmac, Mac};
@@ -811,48 +811,13 @@ impl ServiceClient {
         Ok(request)
     }
 
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
     pub(crate) async fn execute_request_check_status(
         &self,
         request: &Request,
     ) -> azure_core::Result<CollectedResponse> {
-        let http_client = self.http_client();
-        let rsp = http_client.execute_request2(request).await?;
-        let (status, headers, body) = rsp.deconstruct();
-        let body = collect_pinned_stream(body).await?;
-        if !status.is_success() {
-            return Err(ErrorKind::http_response_from_body(status.as_u16(), &body).into_error());
-        }
-        Ok(CollectedResponse::new(status, headers, body))
-    }
-}
-
-/// A response with the body collected as bytes
-pub struct CollectedResponse {
-    status: StatusCode,
-    headers: HeaderMap,
-    body: Bytes,
-}
-
-impl CollectedResponse {
-    /// Create a new instance
-    pub fn new(status: StatusCode, headers: HeaderMap, body: Bytes) -> Self {
-        Self {
-            status,
-            headers,
-            body,
-        }
-    }
-    /// Get the status
-    pub fn status(&self) -> &StatusCode {
-        &self.status
-    }
-    /// Get the headers
-    pub fn headers(&self) -> &HeaderMap {
-        &self.headers
-    }
-    /// Get the body
-    pub fn body(&self) -> &Bytes {
-        &self.body
+        azure_core::execute_request_check_status(self.http_client(), request).await
     }
 }
 
