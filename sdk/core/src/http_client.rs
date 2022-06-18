@@ -21,12 +21,8 @@ pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// Send out a request using `azure_core`'s types.
     ///
-    /// This function will be the only one remaining in the trait as soon as the trait stabilizes.
-    /// It will be renamed to `execute_request`. The other helper functions (ie
-    /// `execute_request_check_status`) will be removed since the status check will be
-    /// responsibility of another policy (not the transport one). It does not consume the request.
-    /// Implementors are expected to clone the necessary parts of the request and pass them to the
-    /// underlying transport.
+    /// It does not consume the request. Implementors are expected to clone the necessary parts
+    /// of the request and pass them to the underlying transport.
     async fn execute_request2(&self, request: &crate::Request) -> crate::Result<crate::Response>;
 }
 
@@ -88,4 +84,19 @@ where
     T: ?Sized + Serialize,
 {
     Ok(Bytes::from(serde_json::to_vec(value)?))
+}
+
+/// Send out the request and collect the response body.
+/// An error is returned if the status is not success.
+pub async fn execute_request_check_status(
+    http_client: &dyn HttpClient,
+    request: &crate::Request,
+) -> crate::Result<crate::CollectedResponse> {
+    let rsp = http_client.execute_request2(request).await?;
+    let (status, headers, body) = rsp.deconstruct();
+    let body = crate::collect_pinned_stream(body).await?;
+    if !status.is_success() {
+        return Err(ErrorKind::http_response_from_body(status.as_u16(), &body).into_error());
+    }
+    Ok(crate::CollectedResponse::new(status, headers, body))
 }
