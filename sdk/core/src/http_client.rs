@@ -2,6 +2,7 @@
 use crate::error::{Error, ErrorKind, ResultExt};
 #[allow(unused_imports)]
 use crate::Body;
+use crate::{headers::Headers, PinnedStream};
 use async_trait::async_trait;
 use bytes::Bytes;
 #[allow(unused_imports)]
@@ -37,7 +38,6 @@ impl HttpClient for reqwest::Client {
             reqwest_request = reqwest_request.header(name, value);
         }
 
-        // We clone the body since we need to give ownership of it to Reqwest.
         let body = request.body().clone();
 
         let reqwest_request = match body {
@@ -59,22 +59,18 @@ impl HttpClient for reqwest::Client {
             .execute(reqwest_request)
             .await
             .context(ErrorKind::Io, "failed to execute request")?;
-        let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
-        for (key, value) in reqwest_response.headers() {
-            response.with_header(key, value.clone());
-        }
+        let status = reqwest_response.status();
+        let headers = Headers::from(reqwest_response.headers());
+        let body: PinnedStream = Box::pin(reqwest_response.bytes_stream().map_err(|error| {
+            Error::full(
+                ErrorKind::Io,
+                error,
+                "error converting `reqwest` request into a byte stream",
+            )
+        }));
 
-        let response =
-            response.with_pinned_stream(Box::pin(reqwest_response.bytes_stream().map_err(|e| {
-                Error::full(
-                    ErrorKind::Io,
-                    e,
-                    "error converting `reqwest` request into a byte stream",
-                )
-            })));
-
-        Ok(response)
+        Ok(crate::Response::new(status, headers, body))
     }
 }
 

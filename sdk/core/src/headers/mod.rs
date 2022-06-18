@@ -95,16 +95,16 @@ impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
     }
 }
 
-impl From<http::HeaderMap> for Headers {
-    fn from(map: http::HeaderMap) -> Self {
+impl From<&http::HeaderMap> for Headers {
+    fn from(map: &http::HeaderMap) -> Self {
         let map = map
             .into_iter()
-            .filter_map(|(k, v)| {
-                let key = k?.as_str().to_owned();
+            .map(|(k, v)| {
+                let key = k.as_str().to_owned();
                 let value = std::str::from_utf8(v.as_bytes())
                     .expect("non-UTF8 header value")
                     .to_owned();
-                Some((key.into(), value.into()))
+                (key.into(), value.into())
             })
             .collect::<HashMap<HeaderName, HeaderValue>>();
         Self(map)

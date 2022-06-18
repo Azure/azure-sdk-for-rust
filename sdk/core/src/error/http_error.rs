@@ -20,9 +20,8 @@ impl HttpError {
         let mut error_code = get_error_code_from_header(&response);
         let mut headers = HashMap::new();
 
-        for (name, value) in response.headers() {
-            let value = String::from_utf8_lossy(value.as_bytes()).to_string();
-            headers.insert(name.to_string(), value);
+        for (name, value) in response.headers().iter() {
+            headers.insert(name.as_str().to_string(), value.as_str().to_string());
         }
 
         let body = response.into_body().await;
@@ -76,9 +75,8 @@ fn get_error_code_from_header(response: &Response) -> Option<String> {
     Some(
         response
             .headers()
-            .get(http::header::HeaderName::from_static("x-ms-error-code"))?
-            .to_str()
-            .ok()?
+            .get("x-ms-error-code")?
+            .as_str()
             .to_owned(),
     )
 }
