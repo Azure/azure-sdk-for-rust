@@ -1,10 +1,9 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::headers::utc_date_from_rfc2822;
+use azure_core::CollectedResponse;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -49,10 +48,7 @@ impl std::convert::TryFrom<CollectedResponse> for PeekMessagesResponse {
         let headers = response.headers();
         let body = response.body();
 
-        debug!("headers == {:?}", headers);
-        debug!("body == {:#?}", body);
         let response: PeekMessagesInternal = read_xml(body).map_kind(ErrorKind::DataConversion)?;
-        debug!("response == {:?}", response);
 
         let mut messages = Vec::new();
         for message in response.messages.unwrap_or_default().into_iter() {

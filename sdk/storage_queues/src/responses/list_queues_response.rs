@@ -1,9 +1,7 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::prelude::*;
+use azure_core::{prelude::*, CollectedResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::xml::read_xml;
-use bytes::Bytes;
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

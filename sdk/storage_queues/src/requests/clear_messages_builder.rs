@@ -1,6 +1,5 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 
 use std::convert::TryInto;
@@ -31,23 +30,18 @@ impl<'a> ClearMessagesBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        debug!("url == {}", url);
-
-        let request = self.queue_client.storage_client().prepare_request(
+        let mut request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::DELETE,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
+            http::method::Method::DELETE,
             None,
         )?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .queue_client
             .storage_client()
             .storage_account_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
 
         response.try_into()

@@ -1,6 +1,5 @@
 use crate::clients::PopReceiptClient;
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 
 use std::convert::TryInto;
@@ -31,22 +30,17 @@ impl<'a> DeleteMessageBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        debug!("url == {}", url.as_str());
-
-        let request = self.pop_receipt_client.storage_client().prepare_request(
+        let mut request = self.pop_receipt_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::DELETE,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
+            http::method::Method::DELETE,
             None,
         )?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .pop_receipt_client
-            .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
+            .storage_client()
+            .execute_request_check_status(&request)
             .await?;
 
         response.try_into()

@@ -1,9 +1,10 @@
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::{
+    error::{Error, ErrorKind, ResultExt},
+    CollectedResponse,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone, Deserialize)]

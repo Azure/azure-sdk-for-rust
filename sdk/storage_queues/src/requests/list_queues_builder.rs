@@ -1,11 +1,8 @@
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-
 use azure_storage::core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::method::Method;
-use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -61,17 +58,10 @@ impl<'a> ListQueuesBuilder<'a> {
         self.timeout.append_to_url_query(&mut url);
         AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
 
-        trace!("url == {}", url);
-
-        let request = self.storage_client.prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request = self
+            .storage_client
+            .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .storage_client
@@ -92,7 +82,6 @@ impl<'a> ListQueuesBuilder<'a> {
         unfold(Some(States::Init), move |next_marker: Option<States>| {
             let req = self.clone();
             async move {
-                debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
                     Some(States::NextMarker(next_marker)) => {

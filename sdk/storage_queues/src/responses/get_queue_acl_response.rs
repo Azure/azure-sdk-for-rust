@@ -1,9 +1,8 @@
 use crate::QueueStoredAccessPolicy;
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::CollectedResponse;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::StoredAccessPolicyList;
-use bytes::Bytes;
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -18,8 +17,6 @@ impl std::convert::TryFrom<CollectedResponse> for GetQueueACLResponse {
     fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
-
-        debug!("headers == {:?}", headers);
 
         let a: azure_core::Result<Vec<QueueStoredAccessPolicy>> =
             StoredAccessPolicyList::from_xml(body)

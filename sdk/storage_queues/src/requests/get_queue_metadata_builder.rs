@@ -1,10 +1,7 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-
 use http::method::Method;
-use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -35,22 +32,15 @@ impl<'a> GetQueueMetadataBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {}", url);
-
-        let request = self.queue_client.storage_client().prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request.add_optional_header(&self.client_request_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.queue_client
+                .storage_client()
+                .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .queue_client
             .storage_client()
-            .storage_account_client()
             .execute_request_check_status(&request)
             .await?;
 
