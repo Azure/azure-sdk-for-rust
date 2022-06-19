@@ -1,5 +1,5 @@
 use crate::{blob::responses::PutBlockListResponse, prelude::*};
-use azure_core::{headers::add_optional_header_ref, prelude::*};
+use azure_core::prelude::*;
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ impl<'a> PutBlockListBuilder<'a> {
 
         let mut request =
             self.blob_client
-                .prepare_request(url.as_str(), &http::Method::PUT, Some(body_bytes))?;
+                .prepare_request(url.as_str(), http::Method::PUT, Some(body_bytes))?;
         request.insert_header("Content-MD5", &md5);
         request.add_optional_header(&self.content_type);
         request.add_optional_header(&self.content_encoding);

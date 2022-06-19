@@ -47,7 +47,7 @@ impl<'a> PutBlockBuilder<'a> {
 
         let mut request = self.blob_client.prepare_request(
             url.as_str(),
-            &http::Method::PUT,
+            http::Method::PUT,
             Some(self.body.clone()),
         )?;
         request.add_optional_header(&self.client_request_id);

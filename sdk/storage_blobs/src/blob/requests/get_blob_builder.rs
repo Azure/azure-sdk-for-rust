@@ -71,25 +71,18 @@ impl<'a> GetBlobBuilder<'a> {
 
         let mut request =
             self.blob_client
-                .prepare_request(url.as_str(), &http::Method::GET, None)?;
+                .prepare_request(url.as_str(), http::Method::GET, None)?;
         if let Some(item) = &self.range {
             for (name, value) in item.as_headers() {
-                request.insert_header(name.as_str(), value.as_str())
+                request.insert_header(name, value);
             }
         }
         request.add_optional_header(&self.client_request_id);
         request.add_optional_header_ref(&self.lease_id);
 
-        let expected_status_code = if self.range.is_some() {
-            http::StatusCode::PARTIAL_CONTENT
-        } else {
-            http::StatusCode::OK
-        };
-
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, expected_status_code)
+            .execute_request_check_status(&request)
             .await?;
 
         (self.blob_client.blob_name(), response).try_into()

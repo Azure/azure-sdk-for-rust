@@ -44,8 +44,7 @@ impl<'a> GetBlobPropertiesBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         // TODO: Fix this

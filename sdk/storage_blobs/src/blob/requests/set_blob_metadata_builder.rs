@@ -1,5 +1,5 @@
 use crate::{blob::responses::SetBlobMetadataResponse, prelude::*};
-use azure_core::{headers::add_optional_header_ref, prelude::*};
+use azure_core::prelude::*;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -48,8 +48,7 @@ impl<'a> SetBlobMetadataBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         response.headers().try_into()

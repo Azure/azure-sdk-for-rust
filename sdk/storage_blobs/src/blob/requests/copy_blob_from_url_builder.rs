@@ -57,12 +57,10 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
         let mut request =
             self.blob_client
-                .prepare_request(url.as_str(), &http::Method::PUT, None)?;
-        request.insert_header(COPY_SOURCE, self.source_url);
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
+        request.insert_header(COPY_SOURCE, self.source_url.to_owned());
         request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
         if let Some(metadata) = &self.metadata {
             for m in metadata.iter() {
@@ -79,11 +77,8 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+            .execute_request_check_status(&request)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         (response.headers()).try_into()
     }

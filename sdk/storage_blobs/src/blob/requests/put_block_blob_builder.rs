@@ -57,7 +57,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
 
         let mut request = self.blob_client.prepare_request(
             url.as_str(),
-            &http::Method::PUT,
+            http::Method::PUT,
             Some(self.body.clone()),
         )?;
         request.insert_header(BLOB_TYPE, "BlockBlob");
@@ -77,11 +77,8 @@ impl<'a> PutBlockBlobBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         PutBlockBlobResponse::from_headers(response.headers())
     }

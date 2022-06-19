@@ -64,7 +64,7 @@ impl<'a> CopyBlobBuilder<'a> {
         let mut request =
             self.blob_client
                 .prepare_request(url.as_str(), http::Method::PUT, None)?;
-        request.insert_header(COPY_SOURCE, self.source_url.as_str());
+        request.insert_header(COPY_SOURCE, self.source_url.as_str().to_owned());
         if let Some(metadata) = &self.metadata {
             for m in metadata.iter() {
                 request.add_mandatory_header(&m);

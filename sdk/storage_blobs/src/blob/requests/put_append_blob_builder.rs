@@ -50,7 +50,7 @@ impl<'a> PutAppendBlobBuilder<'a> {
 
         let mut request =
             self.blob_client
-                .prepare_request(url.as_str(), &http::Method::PUT, None)?;
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
         request.insert_header(BLOB_TYPE, "AppendBlob");
         request.add_optional_header(&self.content_type);
         request.add_optional_header(&self.content_encoding);
@@ -66,8 +66,7 @@ impl<'a> PutAppendBlobBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
 
         debug!("response.headers() == {:#?}", response.headers());

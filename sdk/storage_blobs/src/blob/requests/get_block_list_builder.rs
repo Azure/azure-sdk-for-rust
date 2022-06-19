@@ -43,14 +43,13 @@ impl<'a> GetBlockListBuilder<'a> {
 
         let mut request =
             self.blob_client
-                .prepare_request(url.as_str(), &http::Method::GET, None)?;
+                .prepare_request(url.as_str(), http::Method::GET, None)?;
         request.add_optional_header_ref(&self.lease_id);
         request.add_optional_header(&self.client_request_id);
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         GetBlockListResponse::from_response(response.headers(), response.body())

@@ -1,9 +1,9 @@
 //! Azure HTTP headers.
 mod utilities;
 
+use crate::error::{Error, ErrorKind, ResultExt};
+use std::{collections::HashMap, fmt::Debug, str::FromStr};
 pub use utilities::*;
-
-use std::collections::HashMap;
 
 /// A trait for converting a type into request headers
 pub trait AsHeaders {
@@ -62,6 +62,80 @@ impl Headers {
     /// Get a header value given a specific header name
     pub fn get<T: Into<HeaderName>>(&self, key: T) -> Option<&HeaderValue> {
         self.0.get(&key.into())
+    }
+
+    /// Get a header value or error if it is not found
+    pub fn get_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<&HeaderValue> {
+        let key: &HeaderName = &key.into();
+        let value = self.0.get(key);
+        value.ok_or_else(|| {
+            Error::with_message(ErrorKind::Other, || {
+                format!("header not found {}", key.as_str())
+            })
+        })
+    }
+
+    /// Get a header value as a str
+    pub fn get_as_str<T: Into<HeaderName>>(&self, key: T) -> Option<&str> {
+        self.get(key).map(|v| v.as_str())
+    }
+
+    /// Get a header value as a str or error if it is not found
+    pub fn get_as_str_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<&str> {
+        self.get_or_err(key).map(|v| v.as_str())
+    }
+
+    /// Get a header value as a String
+    pub fn get_as_string<T: Into<HeaderName>>(&self, key: T) -> Option<String> {
+        self.get(key).map(|v| v.as_str().to_string())
+    }
+
+    /// Get a header value as a String or error if it is not found
+    pub fn get_as_string_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<String> {
+        self.get_or_err(key).map(|v| v.as_str().to_string())
+    }
+
+    /// Get a header value as a u64
+    pub fn get_as_u64<T: Into<HeaderName>>(&self, key: T) -> crate::Result<Option<u64>> {
+        let key = key.into();
+        self.get(key.clone())
+            .map(|v: &HeaderValue| {
+                let v = v.as_str();
+                v.parse::<u64>()
+                    .with_context(ErrorKind::DataConversion, || {
+                        format!("unable to parse header into u64 {key:?}: {v}",)
+                    })
+            })
+            .transpose()
+    }
+
+    /// Get a header value as a u64 or error if it is not found
+    pub fn get_as_u64_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<u64> {
+        let key = key.into();
+        let v = self.get_or_err(key.clone())?;
+        let v = v.as_str();
+        v.parse::<u64>()
+            .with_context(ErrorKind::DataConversion, || {
+                format!("unable to parse header into u64 {key:?}: {v}")
+            })
+    }
+
+    pub fn get_as_enum<T: Into<HeaderName>, V: FromStr<Err = E>, E>(
+        &self,
+        key: T,
+    ) -> crate::Result<Option<V>>
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        let key = key.into();
+        self.get(key.clone())
+            .map(|v: &HeaderValue| {
+                let v = v.as_str();
+                v.parse::<V>().with_context(ErrorKind::DataConversion, || {
+                    format!("unable to parse header into enum {key:?}: {v}")
+                })
+            })
+            .transpose()
     }
 
     /// Insert a header name/value pair

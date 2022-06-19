@@ -106,4 +106,8 @@ impl CollectedResponse {
     pub fn body(&self) -> &Bytes {
         &self.body
     }
+    /// Into the body
+    pub fn into_body(self) -> Bytes {
+        self.body
+    }
 }

@@ -1,6 +1,6 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::headers::Headers;
 use azure_core::headers::{self, Header, PROPERTIES};
-use http::HeaderMap;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;

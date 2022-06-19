@@ -1,4 +1,5 @@
 use crate::blob::PageRangeList;
+use azure_core::headers::Headers;
 use azure_core::{
     headers::{
         date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
@@ -6,7 +7,6 @@ use azure_core::{
     RequestId,
 };
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::str::from_utf8;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,7 +20,7 @@ pub struct GetPageRangesResponse {
 
 impl GetPageRangesResponse {
     pub(crate) fn from_response(
-        headers: &HeaderMap,
+        headers: &Headers,
         body: &[u8],
     ) -> azure_core::Result<GetPageRangesResponse> {
         let etag = etag_from_headers(headers)?;

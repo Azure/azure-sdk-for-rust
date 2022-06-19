@@ -1,6 +1,6 @@
 use crate::{container::responses::AcquireLeaseResponse, prelude::*};
 use azure_core::{headers::LEASE_ACTION, prelude::*};
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct AcquireLeaseBuilder<'a> {

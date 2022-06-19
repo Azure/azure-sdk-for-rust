@@ -57,7 +57,7 @@ impl<'a> UpdatePageBuilder<'a> {
 
         let mut request = self.blob_client.prepare_request(
             url.as_str(),
-            &http::Method::PUT,
+            http::Method::PUT,
             Some(self.content.clone()),
         )?;
         request.insert_header(PAGE_WRITE, "update");
@@ -72,8 +72,7 @@ impl<'a> UpdatePageBuilder<'a> {
 
         let response = self
             .blob_client
-            .http_client()
-            .execute_request_check_status(request, http::StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
 
         UpdatePageResponse::from_headers(response.headers())

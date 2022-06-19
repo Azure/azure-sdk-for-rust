@@ -1,7 +1,7 @@
 use crate::headers;
+use crate::headers::Headers;
 use crate::Header;
 use bytes::Bytes;
-use http::HeaderMap;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -69,17 +69,16 @@ impl Header for Metadatum {
     }
 }
 
-impl From<&HeaderMap> for Metadata {
-    fn from(header_map: &HeaderMap) -> Self {
+impl From<&Headers> for Metadata {
+    fn from(header_map: &Headers) -> Self {
         let mut metadata = Metadata::new();
-        header_map
-            .iter()
-            .map(|header| (header.0.as_str(), header.1.as_bytes()))
-            .for_each(|(key, value)| {
-                if let Some(key) = key.strip_prefix("x-ms-meta-") {
-                    metadata.insert(key.to_owned(), value.to_owned());
-                }
-            });
+        header_map.iter().for_each(|(name, value)| {
+            let name = name.as_str();
+            let value = value.as_str();
+            if let Some(name) = name.strip_prefix("x-ms-meta-") {
+                metadata.insert(name.to_owned(), value.to_owned());
+            }
+        });
 
         metadata
     }

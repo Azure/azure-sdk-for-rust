@@ -30,7 +30,7 @@ impl<'a> ReleaseLeaseBuilder<'a> {
 
         let mut request =
             self.blob_lease_client
-                .prepare_request(url.as_str(), &http::Method::PUT, None)?;
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
         request.insert_header(LEASE_ACTION, "release");
         request.add_mandatory_header(self.blob_lease_client.lease_id());
         request.add_optional_header(&self.client_request_id);

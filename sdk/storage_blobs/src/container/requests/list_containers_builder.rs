@@ -4,7 +4,7 @@ use crate::container::{
 use azure_core::{headers::request_id_from_headers, prelude::*};
 use azure_storage::core::prelude::*;
 use futures::stream::{unfold, Stream};
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct ListContainersBuilder<'a> {

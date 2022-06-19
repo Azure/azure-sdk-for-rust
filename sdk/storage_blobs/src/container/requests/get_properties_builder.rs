@@ -1,6 +1,6 @@
 use crate::{container::responses::GetPropertiesResponse, prelude::*};
 use azure_core::prelude::*;
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
