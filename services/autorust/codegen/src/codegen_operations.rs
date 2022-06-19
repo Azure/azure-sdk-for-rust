@@ -16,6 +16,10 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use std::collections::{BTreeSet, HashSet};
 
+pub mod query_param {
+    pub const API_VERSION: &str = "api-version";
+}
+
 fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
@@ -118,10 +122,9 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
             pub(crate) fn scopes(&self) -> Vec<&str> {
                 self.scopes.iter().map(String::as_str).collect()
             }
-            pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> azure_core::error::Result<azure_core::Response> {
+            pub(crate) async fn send(&self, request: &mut azure_core::Request) -> azure_core::Result<azure_core::Response> {
                 let mut context = azure_core::Context::default();
-                let mut request = request.into();
-                self.pipeline.send(&mut context, &mut request).await
+                self.pipeline.send(&mut context, request).await
             }
             pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>) -> Self {
                 let endpoint = endpoint.into();
@@ -304,7 +307,7 @@ impl ToTokens for RequestCode {
         let auth = &self.auth;
         let verb = verb_to_tokens(&self.verb);
         tokens.extend(quote! {
-            req_builder = req_builder.method(#verb);
+            let mut req = azure_core::Request::new(url, #verb);
             #auth
         })
     }
@@ -318,9 +321,8 @@ impl ToTokens for AuthCode {
             let credential = this.client.token_credential();
             let token_response = credential
                 .get_token(&this.client.scopes().join(" "))
-                .await
-                .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                .await?;
+            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         })
     }
 }
@@ -362,13 +364,13 @@ impl ToTokens for BuildRequestParamsCode {
                                 if param.is_string(){
                                     quote! {
                                         for value in &this.#param_name_var {
-                                            url.query_pairs_mut().append_pair(#param_name, value);
+                                            req.url_mut().query_pairs_mut().append_pair(#param_name, value);
                                         }
                                     }
                                 } else {
                                     quote! {
                                         for value in &this.#param_name_var {
-                                            url.query_pairs_mut().append_pair(#param_name, &value.to_string());
+                                            req.url_mut().query_pairs_mut().append_pair(#param_name, &value.to_string());
                                         }
                                     }
                                 }
@@ -381,11 +383,11 @@ impl ToTokens for BuildRequestParamsCode {
                     } else {
                         Some(if param.is_string() {
                             quote! {
-                                url.query_pairs_mut().append_pair(#param_name, #param_name_var);
+                                req.url_mut().query_pairs_mut().append_pair(#param_name, #param_name_var);
                             }
                         } else {
                             quote! {
-                                url.query_pairs_mut().append_pair(#param_name, &#param_name_var.to_string());
+                                req.url_mut().query_pairs_mut().append_pair(#param_name, &#param_name_var.to_string());
                             }
                         })
                     };
@@ -408,23 +410,23 @@ impl ToTokens for BuildRequestParamsCode {
                     if !param.optional() || is_vec {
                         if param.is_string() {
                             tokens.extend(quote! {
-                                req_builder = req_builder.header(#param_name, &this.#param_name_var);
+                                req.insert_header(#param_name, &this.#param_name_var);
                             });
                         } else {
                             tokens.extend(quote! {
-                                req_builder = req_builder.header(#param_name, &this.#param_name_var.to_string());
+                                req.insert_header(#param_name, &this.#param_name_var.to_string());
                             });
                         }
                     } else if param.is_string() {
                         tokens.extend(quote! {
                             if let Some(#param_name_var) = &this.#param_name_var {
-                                req_builder = req_builder.header(#param_name, #param_name_var);
+                                req.insert_header(#param_name, #param_name_var);
                             }
                         });
                     } else {
                         tokens.extend(quote! {
                             if let Some(#param_name_var) = &this.#param_name_var {
-                                req_builder = req_builder.header(#param_name, &#param_name_var.to_string());
+                                req.insert_header(#param_name, &#param_name_var.to_string());
                             }
                         });
                     }
@@ -433,7 +435,7 @@ impl ToTokens for BuildRequestParamsCode {
                     let set_content_type = if !self.params.has_content_type_header() {
                         let content_type = &self.content_type;
                         quote! {
-                            req_builder = req_builder.header("content-type", #content_type);
+                            req.insert_header("content-type", #content_type);
                         }
                     } else {
                         quote! {}
@@ -462,13 +464,13 @@ impl ToTokens for BuildRequestParamsCode {
                     });
                     // https://github.com/Azure/azure-sdk-for-rust/issues/500
                     // if required {
-                    //     cargo run --example gen_svc --release
-                    //         req_builder = req_builder.form(&self.#param_name_var);
+                    //     ts_request_builder.extend(quote! {
+                    //         req.set_body_from_form(&self.#param_name_var)?;
                     //     });
                     // } else {
                     //     ts_request_builder.extend(quote! {
                     //         if let Some(#param_name_var) = &self.#param_name_var {
-                    //             req_builder = req_builder.form(#param_name_var);
+                    //             req.set_body_from_form(#param_name_var)?;
                     //         }
                     //     });
                     // }
@@ -495,25 +497,24 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
     let parameters = operation.0.parameters();
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name()).collect();
-    let has_param_api_version = param_names.contains("api-version");
+    let has_param_api_version = param_names.contains(query_param::API_VERSION);
     let mut skip = parse_query_params(&operation.0.path)?;
-    skip.insert("api-version".to_string());
+    skip.insert(query_param::API_VERSION.to_string());
     let parameters: Vec<&WebParameter> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
     let parameters = create_function_params_code(&parameters)?;
 
     let verb = operation.0.verb.clone();
     let is_post = verb == WebVerb::Post;
     let auth = AuthCode {};
-    let request_code = RequestCode { verb, auth };
+    let new_request_code = RequestCode { verb, auth };
 
     let mut ts_request_builder = TokenStream::new(); // TODO change to type
-    ts_request_builder.extend(request_code.to_token_stream());
 
     // api-version param
     if has_param_api_version {
         let api_version = operation.api_version();
         ts_request_builder.extend(quote! {
-            url.query_pairs_mut().append_pair("api-version", #api_version);
+            req.url_mut().query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
         });
     }
 
@@ -539,7 +540,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     // if it is a post and there is no body, set the Content-Length to 0
     if is_post && !has_body_parameter {
         ts_request_builder.extend(quote! {
-            req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+            req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
         });
     }
 
@@ -670,17 +671,15 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let builder_setters_code = BuilderSettersCode::new(&parameters);
 
     let basic_future = quote! {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
-                    let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                    let mut req_builder = http::request::Builder::new();
+                    let url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
+                    #new_request_code
                     #ts_request_builder
-                    req_builder = req_builder.uri(url.as_str());
-                    let req = req_builder.body(req_body).context(azure_core::error::ErrorKind::Other, "build request")?;
-                    let rsp = this.client.send(req).await.context(azure_core::error::ErrorKind::Io, "execute request")?;
+                    req.set_body(req_body);
+                    let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         #match_status
@@ -715,9 +714,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             if has_param_api_version {
                 let api_version = operation.api_version();
                 stream_api_version = quote! {
-                    let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
+                    let has_api_version_already = req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                     if !has_api_version_already {
-                        url.query_pairs_mut().append_pair("api-version", #api_version);
+                        req.url_mut().query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
                     }
                 };
             }
@@ -727,26 +726,23 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                     let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                         let this = self.clone();
                         async move {
-                            let url_str = &format!(#fpath, this.client.endpoint(), #url_str_args);
-                            let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
+                            let mut url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
 
-                            let mut req_builder = http::request::Builder::new();
                             let rsp = match continuation {
                                 Some(token) => {
                                     url.set_path("");
-                                    url = url.join(&token.into_raw()).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
+                                    url = url.join(&token.into_raw())?;
+                                    #new_request_code
                                     #stream_api_version
-                                    req_builder = req_builder.uri(url.as_str());
-                                    #request_code
                                     let req_body = azure_core::EMPTY_BODY;
-                                    let req = req_builder.body(req_body).context(azure_core::error::ErrorKind::Other, "build request")?;
-                                    this.client.send(req).await.context(azure_core::error::ErrorKind::Io, "execute request")?
+                                    req.set_body(req_body);
+                                    this.client.send(&mut req).await?
                                 }
                                 None => {
+                                    #new_request_code
                                     #ts_request_builder
-                                    req_builder = req_builder.uri(url.as_str());
-                                    let req = req_builder.body(req_body).context(azure_core::error::ErrorKind::Other, "build request")?;
-                                    this.client.send(req).await.context(azure_core::error::ErrorKind::Io, "execute request")?
+                                    req.set_body(req_body);
+                                    this.client.send(&mut req).await?
                                 }
                             };
                             let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -783,7 +779,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
         pub mod #fname {
             use super::models;
-            use azure_core::error::ResultExt;
 
             #response_enum
 
