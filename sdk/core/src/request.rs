@@ -94,18 +94,28 @@ impl Request {
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }
-}
 
-/// Temporary hack to convert preexisting requests into the new format. It
-/// will be removed as soon as we remove the dependency from `http::Request`.
-impl From<http::Request<bytes::Bytes>> for Request {
-    fn from(request: http::Request<bytes::Bytes>) -> Self {
-        let (parts, body) = request.into_parts();
-        Self {
-            url: Url::parse(&parts.uri.to_string()).unwrap(),
-            method: parts.method,
-            headers: parts.headers.into(),
-            body: Body::Bytes(body),
+    pub fn insert_header<K, V>(&mut self, key: K, value: V)
+    where
+        K: Into<crate::headers::HeaderName>,
+        V: Into<crate::headers::HeaderValue>,
+    {
+        self.headers.insert(key, value)
+    }
+
+    pub fn add_optional_header_ref<T: crate::Header>(&mut self, item: &Option<&T>) {
+        if let Some(item) = item {
+            self.insert_header(item.name(), item.value())
         }
+    }
+
+    pub fn add_optional_header<T: crate::Header>(&mut self, item: &Option<T>) {
+        if let Some(item) = item {
+            self.insert_header(item.name(), item.value())
+        }
+    }
+
+    pub fn add_mandatory_header<T: crate::Header>(&mut self, item: &T) {
+        self.insert_header(item.name(), item.value())
     }
 }

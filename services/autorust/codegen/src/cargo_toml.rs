@@ -35,7 +35,6 @@ serde = {{ version = "1.0", features = ["derive"] }}
 serde_json = "1.0"
 bytes = "1.0"
 http = "0.2"
-url = "2.2"
 futures = "0.3"
 
 [dev-dependencies]

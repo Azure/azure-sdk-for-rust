@@ -25,4 +25,9 @@ pub mod content_type {
 
     pub const APPLICATION_XML: &str = "application/xml";
     pub const APPLICATION_JSON: &str = "application/json";
+    pub const APPLICATION_OCTET_STREAM: &str = "application/octet-stream";
+}
+
+pub mod query_param {
+    pub const API_VERSION: &str = "api-version";
 }
