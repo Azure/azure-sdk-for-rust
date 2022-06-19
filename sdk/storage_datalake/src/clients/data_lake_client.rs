@@ -4,7 +4,7 @@ use crate::authorization_policies::{
 use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystemsBuilder;
 use azure_core::auth::TokenCredential;
-use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
+use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::clients::ServiceType;
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use std::sync::Arc;
@@ -110,24 +110,25 @@ impl DataLakeClient {
         FileSystemClient::new(self, file_system_name.into())
     }
 
-    pub(crate) fn prepare_request(
-        &self,
-        uri: &str,
-        http_method: http::Method,
-    ) -> azure_core::Request {
-        Builder::new()
-            .method(http_method)
-            .uri(uri)
-            .body(bytes::Bytes::new())
-            .unwrap()
-            .into()
-    }
+    // pub(crate) fn prepare_request(
+    //     &self,
+    //     url: Url,
+    //     http_method: http::Method,
+    // ) -> azure_core::Request {
+    //     Request::new()
+    //     Builder::new()
+    //         .method(http_method)
+    //         .uri(uri)
+    //         .body(bytes::Bytes::new())
+    //         .unwrap()
+    //         .into()
+    // }
 
     pub fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }
 
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.pipeline.http_client()
-    }
+    // pub fn http_client(&self) -> &dyn HttpClient {
+    //     self.pipeline.http_client()
+    // }
 }

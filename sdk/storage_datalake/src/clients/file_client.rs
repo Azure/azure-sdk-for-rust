@@ -19,10 +19,6 @@ impl PathClient for FileClient {
         Ok(self.file_system_client.url()?.join(&file_path)?)
     }
 
-    fn prepare_request(&self, uri: &str, http_method: http::Method) -> azure_core::Request {
-        self.file_system_client.prepare_request(uri, http_method)
-    }
-
     fn pipeline(&self) -> &Pipeline {
         self.file_system_client.pipeline()
     }

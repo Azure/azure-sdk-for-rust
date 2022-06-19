@@ -4,8 +4,8 @@ use azure_core::headers::{
     etag_from_headers, get_option_from_headers, get_option_str_from_headers,
     last_modified_from_headers, CONTENT_LENGTH, CONTENT_TYPE,
 };
-use azure_core::prelude::*;
 use azure_core::{error::ErrorKind, AppendToUrlQuery, Response as HttpResponse};
+use azure_core::{prelude::*, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
@@ -66,9 +66,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             self.upn.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this
-                .client
-                .prepare_request(url.as_str(), http::Method::HEAD);
+            let mut request = Request::new(url, http::Method::HEAD);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.if_match_condition);
