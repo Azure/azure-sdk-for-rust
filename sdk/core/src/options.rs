@@ -33,6 +33,7 @@ pub struct ClientOptions {
     /// Telemetry options.
     pub(crate) telemetry: TelemetryOptions,
     /// Transport options.
+    #[allow(dead_code)] // wasm
     pub(crate) transport: TransportOptions,
 }
 
@@ -180,6 +181,7 @@ impl TelemetryOptions {
 #[derive(Clone, Debug)]
 pub struct TransportOptions {
     /// The HTTP client implementation to use for requests.
+    #[allow(dead_code)] // wasm
     pub(crate) http_client: Arc<dyn HttpClient>,
     #[cfg(feature = "mock_transport_framework")]
     /// The name of the transaction used when reading or writing mock requests and responses.
