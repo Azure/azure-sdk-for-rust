@@ -2,6 +2,7 @@
 use crate::error::{Error, ErrorKind, ResultExt};
 #[allow(unused_imports)]
 use crate::Body;
+#[allow(unused_imports)]
 use crate::{headers::Headers, PinnedStream};
 use async_trait::async_trait;
 use bytes::Bytes;
